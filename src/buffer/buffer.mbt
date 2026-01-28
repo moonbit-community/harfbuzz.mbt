@@ -15,6 +15,11 @@ pub struct GlyphPosition {
 } derive(Eq, Show, ToJson)
 
 ///|
+suberror ShapeError {
+  Font(@font.FontError)
+} derive(Eq, Show, ToJson)
+
+///|
 /// Text buffer for shaping.
 pub struct Buffer {
   mut infos : Array[GlyphInfo]
@@ -137,4 +142,35 @@ pub fn Buffer::set_language(self : Buffer, language : @common.Language) -> Unit 
 /// Get language.
 pub fn Buffer::get_language(self : Buffer) -> @common.Language {
   self.language
+}
+
+///|
+/// Populate glyph IDs and advances using cmap + hmtx.
+pub fn Buffer::shape_basic(
+  self : Buffer,
+  font : @font.Font,
+) -> Result[Unit, ShapeError] {
+  let new_infos : Array[GlyphInfo] = []
+  let new_positions : Array[GlyphPosition] = []
+  for info in self.infos {
+    let glyph = match font.glyph_for_codepoint(info.codepoint) {
+      Err(err) => return Err(Font(err))
+      Ok(None) => 0U
+      Ok(Some(value)) => value
+    }
+    let advance = match font.glyph_h_advance(glyph) {
+      Err(err) => return Err(Font(err))
+      Ok(value) => value
+    }
+    new_infos.push(GlyphInfo::{ codepoint: glyph, cluster: info.cluster })
+    new_positions.push(GlyphPosition::{
+      x_advance: advance,
+      y_advance: 0,
+      x_offset: 0,
+      y_offset: 0,
+    })
+  }
+  self.infos = new_infos
+  self.positions = new_positions
+  Ok(())
 }
