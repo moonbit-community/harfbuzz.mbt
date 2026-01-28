@@ -1,5 +1,17 @@
 {
   "import": [
-    "moonbit-community/harfbuzz/face"
+    "moonbit-community/harfbuzz/face",
+    {
+      "path": "moonbit-community/harfbuzz/common",
+      "alias": "common"
+    },
+    {
+      "path": "moonbit-community/harfbuzz/sfnt",
+      "alias": "sfnt"
+    },
+    {
+      "path": "moonbit-community/harfbuzz/blob",
+      "alias": "blob"
+    }
   ]
 }
