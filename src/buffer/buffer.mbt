@@ -234,30 +234,36 @@ pub fn Buffer::shape_ot(
       Ok(value) => value
     }
     let glyphs : Array[UInt] = []
+    let clusters : Array[Int] = []
     for info in self.infos {
       glyphs.push(info.codepoint)
+      clusters.push(info.cluster)
     }
-    let changed = match gsub.apply_single_with_lookups(glyphs, lookup_offsets[:]) {
+    let result = match gsub.apply_with_lookups(
+      glyphs,
+      clusters,
+      lookup_offsets[:],
+    ) {
       Err(err) => return Err(Layout(err))
       Ok(value) => value
     }
-    if changed {
+    let (next_glyphs, next_clusters, changed) = result
+    if changed || next_glyphs.length() != self.infos.length() {
       let new_infos : Array[GlyphInfo] = []
       let new_positions : Array[GlyphPosition] = []
-      for i in 0..<self.infos.length() {
-        let info = self.infos[i]
-        let glyph = glyphs[i]
+      for i in 0..<next_glyphs.length() {
+        let glyph = next_glyphs[i]
+        let cluster = next_clusters[i]
         let advance = match font.glyph_h_advance(glyph) {
           Err(err) => return Err(Font(err))
           Ok(value) => value
         }
-        new_infos.push(GlyphInfo::{ codepoint: glyph, cluster: info.cluster })
-        let pos = self.positions[i]
+        new_infos.push(GlyphInfo::{ codepoint: glyph, cluster })
         new_positions.push(GlyphPosition::{
           x_advance: advance,
-          y_advance: pos.y_advance,
-          x_offset: pos.x_offset,
-          y_offset: pos.y_offset,
+          y_advance: 0,
+          x_offset: 0,
+          y_offset: 0,
         })
       }
       self.infos = new_infos
