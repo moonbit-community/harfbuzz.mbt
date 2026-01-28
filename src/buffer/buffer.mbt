@@ -28,6 +28,8 @@ pub struct Buffer {
   mut direction : @common.Direction
   mut script : @common.Script
   mut language : @common.Language
+  mut gsub_features : Array[@common.Tag]
+  mut gpos_features : Array[@common.Tag]
 } derive(Show, ToJson)
 
 ///|
@@ -39,6 +41,8 @@ pub fn Buffer::new() -> Buffer {
     direction: @common.direction_invalid,
     script: @common.script_unknown,
     language: @common.language_invalid,
+    gsub_features: default_gsub_features(),
+    gpos_features: default_gpos_features(),
   }
 }
 
@@ -140,6 +144,42 @@ pub fn Buffer::set_language(self : Buffer, language : @common.Language) -> Unit 
 }
 
 ///|
+pub fn Buffer::set_gsub_features(
+  self : Buffer,
+  features : Array[@common.Tag],
+) -> Unit {
+  self.gsub_features = features
+}
+
+///|
+pub fn Buffer::set_gpos_features(
+  self : Buffer,
+  features : Array[@common.Tag],
+) -> Unit {
+  self.gpos_features = features
+}
+
+///|
+pub fn Buffer::gsub_features(self : Buffer) -> ArrayView[@common.Tag] {
+  self.gsub_features[:]
+}
+
+///|
+pub fn Buffer::gpos_features(self : Buffer) -> ArrayView[@common.Tag] {
+  self.gpos_features[:]
+}
+
+///|
+fn default_gsub_features() -> Array[@common.Tag] {
+  [@common.Tag::from_chars('l', 'i', 'g', 'a')]
+}
+
+///|
+fn default_gpos_features() -> Array[@common.Tag] {
+  [@common.Tag::from_chars('k', 'e', 'r', 'n')]
+}
+
+///|
 /// Get language.
 pub fn Buffer::get_language(self : Buffer) -> @common.Language {
   self.language
@@ -224,15 +264,12 @@ pub fn Buffer::shape_ot(
     Ok(value) => value
   }
   if gsub is Some(gsub) {
-    let gsub_features : Array[@common.Tag] = [
-      @common.Tag::from_chars('l', 'i', 'g', 'a'),
-    ]
     let script_tag = self.script.to_tag()
     let lang_tag = language_to_ot_tag(self.language)
     let lookup_offsets = match gsub.layout().select_lookup_offsets_with_features(
       script_tag,
       language_tag=lang_tag,
-      feature_tags=gsub_features,
+      feature_tags=self.gsub_features,
     ) {
       Err(err) => return Err(Layout(err))
       Ok(value) => value
@@ -279,15 +316,12 @@ pub fn Buffer::shape_ot(
     Ok(value) => value
   }
   if gpos is Some(gpos) {
-    let gpos_features : Array[@common.Tag] = [
-      @common.Tag::from_chars('k', 'e', 'r', 'n'),
-    ]
     let script_tag = self.script.to_tag()
     let lang_tag = language_to_ot_tag(self.language)
     let lookup_offsets = match gpos.layout().select_lookup_offsets_with_features(
       script_tag,
       language_tag=lang_tag,
-      feature_tags=gpos_features,
+      feature_tags=self.gpos_features,
     ) {
       Err(err) => return Err(Layout(err))
       Ok(value) => value
