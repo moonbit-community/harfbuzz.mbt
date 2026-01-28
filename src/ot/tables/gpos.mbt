@@ -30,6 +30,62 @@ fn add_value_record(a : ValueRecord, b : ValueRecord) -> ValueRecord {
 }
 
 ///|
+/// Compute GPOS positioning deltas for a glyph sequence.
+pub fn GposTable::position_deltas(
+  self : GposTable,
+  glyphs : ArrayView[UInt],
+) -> Result[Array[ValueRecord], OtLayoutError] {
+  let layout = self.layout
+  self.position_deltas_with_lookups(glyphs, layout.lookup_list.offsets[:])
+}
+
+///|
+pub fn GposTable::position_deltas_with_lookups(
+  self : GposTable,
+  glyphs : ArrayView[UInt],
+  lookup_offsets : ArrayView[Int],
+) -> Result[Array[ValueRecord], OtLayoutError] {
+  let deltas : Array[ValueRecord] = Array::make(
+    glyphs.length(),
+    value_record_zero(),
+  )
+  let data = self.layout.data
+  for lookup_offset in lookup_offsets {
+    let parsed = parse_lookup(data, lookup_offset)
+    match parsed {
+      Err(err) => return Err(err)
+      Ok((lookup_type, subtable_offsets)) => {
+        if lookup_type == 1 {
+          for subtable_offset in subtable_offsets {
+            let res = apply_single_pos_subtable(
+              data,
+              subtable_offset,
+              glyphs,
+              deltas,
+            )
+            match res {
+              Err(err) => return Err(err)
+              Ok(_) => ()
+            }
+          }
+        } else if lookup_type == 2 {
+          for subtable_offset in subtable_offsets {
+            let res = apply_pair_subtable(data, subtable_offset, glyphs, deltas)
+            match res {
+              Err(err) => return Err(err)
+              Ok(_) => ()
+            }
+          }
+        } else {
+          continue
+        }
+      }
+    }
+  }
+  Ok(deltas)
+}
+
+///|
 /// Compute pair adjustment deltas for a glyph sequence.
 pub fn GposTable::pair_adjust_deltas(
   self : GposTable,
@@ -59,24 +115,10 @@ pub fn GposTable::pair_adjust_deltas_with_lookups(
           continue
         }
         for subtable_offset in subtable_offsets {
-          let format = read_u16_int(data, subtable_offset)
-          match format {
+          let res = apply_pair_subtable(data, subtable_offset, glyphs, deltas)
+          match res {
             Err(err) => return Err(err)
-            Ok(format) => if format == 1 {
-              let res = apply_pair_format1(data, subtable_offset, glyphs, deltas)
-              match res {
-                Err(err) => return Err(err)
-                Ok(_) => ()
-              }
-            } else if format == 2 {
-              let res = apply_pair_format2(data, subtable_offset, glyphs, deltas)
-              match res {
-                Err(err) => return Err(err)
-                Ok(_) => ()
-              }
-            } else {
-              continue
-            }
+            Ok(_) => ()
           }
         }
       }
@@ -135,6 +177,142 @@ fn apply_pair_format2(
     }
   }
   Ok(())
+}
+
+///|
+fn apply_pair_subtable(
+  data : BytesView,
+  offset : Int,
+  glyphs : ArrayView[UInt],
+  deltas : Array[ValueRecord],
+) -> Result[Unit, OtLayoutError] {
+  let format = read_u16_int(data, offset)
+  match format {
+    Err(err) => Err(err)
+    Ok(format) => if format == 1 {
+      apply_pair_format1(data, offset, glyphs, deltas)
+    } else if format == 2 {
+      apply_pair_format2(data, offset, glyphs, deltas)
+    } else {
+      Ok(())
+    }
+  }
+}
+
+///|
+fn apply_single_pos_subtable(
+  data : BytesView,
+  offset : Int,
+  glyphs : ArrayView[UInt],
+  deltas : Array[ValueRecord],
+) -> Result[Unit, OtLayoutError] {
+  let format = read_u16_int(data, offset)
+  match format {
+    Err(err) => Err(err)
+    Ok(format) => if format == 1 {
+      apply_single_pos_format1(data, offset, glyphs, deltas)
+    } else if format == 2 {
+      apply_single_pos_format2(data, offset, glyphs, deltas)
+    } else {
+      Ok(())
+    }
+  }
+}
+
+///|
+fn apply_single_pos_format1(
+  data : BytesView,
+  offset : Int,
+  glyphs : ArrayView[UInt],
+  deltas : Array[ValueRecord],
+) -> Result[Unit, OtLayoutError] {
+  if offset < 0 || offset + 6 > data.length() {
+    return Err(UnexpectedEof)
+  }
+  let coverage_offset = read_u16_int(data, offset + 2)
+  let value_format = read_u16_int(data, offset + 4)
+  match (coverage_offset, value_format) {
+    (Err(err), _) => Err(err)
+    (_, Err(err)) => Err(err)
+    (Ok(coverage_offset), Ok(value_format)) => {
+      let coverage_base = offset + coverage_offset
+      let record_size = value_record_size(value_format)
+      let record_base = offset + 6
+      if record_base < 0 || record_base + record_size > data.length() {
+        return Err(UnexpectedEof)
+      }
+      let value = read_value_record(data, record_base, value_format)
+      match value {
+        Err(err) => Err(err)
+        Ok((value, _)) => {
+          for i in 0..<glyphs.length() {
+            let glyph = glyphs[i]
+            let covered = coverage_index(data, coverage_base, glyph)
+            match covered {
+              Err(err) => return Err(err)
+              Ok(None) => ()
+              Ok(Some(_)) =>
+                deltas[i] = add_value_record(deltas[i], value)
+            }
+          }
+          Ok(())
+        }
+      }
+    }
+  }
+}
+
+///|
+fn apply_single_pos_format2(
+  data : BytesView,
+  offset : Int,
+  glyphs : ArrayView[UInt],
+  deltas : Array[ValueRecord],
+) -> Result[Unit, OtLayoutError] {
+  if offset < 0 || offset + 8 > data.length() {
+    return Err(UnexpectedEof)
+  }
+  let coverage_offset = read_u16_int(data, offset + 2)
+  let value_format = read_u16_int(data, offset + 4)
+  let value_count = read_u16_int(data, offset + 6)
+  match (coverage_offset, value_format, value_count) {
+    (Err(err), _, _) => Err(err)
+    (_, Err(err), _) => Err(err)
+    (_, _, Err(err)) => Err(err)
+    (Ok(coverage_offset), Ok(value_format), Ok(value_count)) => {
+      if value_count <= 0 {
+        return Err(InvalidFormat)
+      }
+      let coverage_base = offset + coverage_offset
+      let record_size = value_record_size(value_format)
+      let record_base = offset + 8
+      let total_size = value_count * record_size
+      if record_base < 0 || record_base + total_size > data.length() {
+        return Err(UnexpectedEof)
+      }
+      for i in 0..<glyphs.length() {
+        let glyph = glyphs[i]
+        let index = coverage_index(data, coverage_base, glyph)
+        match index {
+          Err(err) => return Err(err)
+          Ok(None) => ()
+          Ok(Some(index)) => {
+            if index < 0 || index >= value_count {
+              return Err(InvalidFormat)
+            }
+            let entry_base = record_base + index * record_size
+            let value = read_value_record(data, entry_base, value_format)
+            match value {
+              Err(err) => return Err(err)
+              Ok((value, _)) =>
+                deltas[i] = add_value_record(deltas[i], value)
+            }
+          }
+        }
+      }
+      Ok(())
+    }
+  }
 }
 
 ///|

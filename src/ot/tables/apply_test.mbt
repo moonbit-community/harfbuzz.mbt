@@ -205,6 +205,66 @@ fn build_gpos_lookup_format2() -> Bytes {
 }
 
 ///|
+fn build_gpos_single_subtable_format1() -> Bytes {
+  let bytes : Array[Byte] = []
+  push_u16(bytes, 1)
+  push_u16(bytes, 10)
+  push_u16(bytes, 0x0005)
+  push_i16(bytes, 7)
+  push_i16(bytes, 15)
+  // coverage table
+  push_u16(bytes, 1)
+  push_u16(bytes, 1)
+  push_u16(bytes, 3)
+  Bytes::from_array(bytes)
+}
+
+///|
+fn build_gpos_single_lookup_format1() -> Bytes {
+  let subtable = build_gpos_single_subtable_format1()
+  let bytes : Array[Byte] = []
+  push_u16(bytes, 1)
+  push_u16(bytes, 0)
+  push_u16(bytes, 1)
+  push_u16(bytes, 8)
+  for b in subtable {
+    bytes.push(b)
+  }
+  Bytes::from_array(bytes)
+}
+
+///|
+fn build_gpos_single_subtable_format2() -> Bytes {
+  let bytes : Array[Byte] = []
+  push_u16(bytes, 2)
+  push_u16(bytes, 12)
+  push_u16(bytes, 0x0004)
+  push_u16(bytes, 2)
+  push_i16(bytes, 10)
+  push_i16(bytes, -5)
+  // coverage table
+  push_u16(bytes, 1)
+  push_u16(bytes, 2)
+  push_u16(bytes, 3)
+  push_u16(bytes, 4)
+  Bytes::from_array(bytes)
+}
+
+///|
+fn build_gpos_single_lookup_format2() -> Bytes {
+  let subtable = build_gpos_single_subtable_format2()
+  let bytes : Array[Byte] = []
+  push_u16(bytes, 1)
+  push_u16(bytes, 0)
+  push_u16(bytes, 1)
+  push_u16(bytes, 8)
+  for b in subtable {
+    bytes.push(b)
+  }
+  Bytes::from_array(bytes)
+}
+
+///|
 fn build_gsub_ligature_subtable() -> Bytes {
   let bytes : Array[Byte] = []
   push_u16(bytes, 1)
@@ -288,6 +348,41 @@ test "gpos pair adjust format2" {
   inspect(deltas.length(), content="2")
   inspect(deltas[0].x_advance, content="30")
   inspect(deltas[1].x_advance, content="-10")
+}
+
+///|
+test "gpos single adjust format1" {
+  let gpos_bytes = build_layout_table(build_gpos_single_lookup_format1())
+  let gpos = match GposTable::parse(@blob.Blob::from_bytes(gpos_bytes)) {
+    Err(err) => fail("parse error: \{err}")
+    Ok(value) => value
+  }
+  let glyphs : Array[UInt] = [3U, 4U]
+  let deltas = match gpos.position_deltas(glyphs[:]) {
+    Err(err) => fail("apply error: \{err}")
+    Ok(value) => value
+  }
+  inspect(deltas.length(), content="2")
+  inspect(deltas[0].x_placement, content="7")
+  inspect(deltas[0].x_advance, content="15")
+  inspect(deltas[1].x_advance, content="0")
+}
+
+///|
+test "gpos single adjust format2" {
+  let gpos_bytes = build_layout_table(build_gpos_single_lookup_format2())
+  let gpos = match GposTable::parse(@blob.Blob::from_bytes(gpos_bytes)) {
+    Err(err) => fail("parse error: \{err}")
+    Ok(value) => value
+  }
+  let glyphs : Array[UInt] = [3U, 4U]
+  let deltas = match gpos.position_deltas(glyphs[:]) {
+    Err(err) => fail("apply error: \{err}")
+    Ok(value) => value
+  }
+  inspect(deltas.length(), content="2")
+  inspect(deltas[0].x_advance, content="10")
+  inspect(deltas[1].x_advance, content="-5")
 }
 
 ///|

@@ -288,7 +288,7 @@ pub fn Buffer::shape_ot(
     for info in self.infos {
       glyphs.push(info.codepoint)
     }
-    let deltas = match gpos.pair_adjust_deltas_with_lookups(
+    let deltas = match gpos.position_deltas_with_lookups(
       glyphs[:],
       lookup_offsets[:],
     ) {

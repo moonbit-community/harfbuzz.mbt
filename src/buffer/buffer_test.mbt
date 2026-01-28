@@ -272,6 +272,35 @@ fn build_gpos_lookup() -> Bytes {
 }
 
 ///|
+fn build_gpos_single_subtable() -> Bytes {
+  let bytes : Array[Byte] = []
+  push_u16(bytes, 1)
+  push_u16(bytes, 10)
+  push_u16(bytes, 0x0005)
+  push_i16(bytes, 6)
+  push_i16(bytes, 20)
+  // coverage table
+  push_u16(bytes, 1)
+  push_u16(bytes, 1)
+  push_u16(bytes, 3)
+  Bytes::from_array(bytes)
+}
+
+///|
+fn build_gpos_single_lookup() -> Bytes {
+  let subtable = build_gpos_single_subtable()
+  let bytes : Array[Byte] = []
+  push_u16(bytes, 1)
+  push_u16(bytes, 0)
+  push_u16(bytes, 1)
+  push_u16(bytes, 8)
+  for b in subtable {
+    bytes.push(b)
+  }
+  Bytes::from_array(bytes)
+}
+
+///|
 fn build_ot_table(tag : @common.Tag, lookup : Bytes) -> (@common.Tag, Bytes) {
   (tag, build_layout_table(lookup))
 }
@@ -337,6 +366,26 @@ fn build_font_bytes_ot() -> Bytes {
 }
 
 ///|
+fn build_font_bytes_ot_single() -> Bytes {
+  let tables : Array[(@common.Tag, Bytes)] = [
+    (@common.Tag::from_chars('h', 'e', 'a', 'd'), build_head(1000, 0)),
+    (@common.Tag::from_chars('m', 'a', 'x', 'p'), build_maxp(4)),
+    (@common.Tag::from_chars('h', 'h', 'e', 'a'), build_hhea(4)),
+    (@common.Tag::from_chars('h', 'm', 't', 'x'), build_hmtx_ot()),
+    (
+      @common.Tag::from_chars('c', 'm', 'a', 'p'),
+      build_cmap_table(build_cmap_format12(0x41U, 0x41U, 1U)),
+    ),
+    build_ot_table(@common.Tag::from_chars('G', 'S', 'U', 'B'), build_gsub_lookup()),
+    build_ot_table(
+      @common.Tag::from_chars('G', 'P', 'O', 'S'),
+      build_gpos_single_lookup(),
+    ),
+  ]
+  build_sfnt(tables)
+}
+
+///|
 test "buffer shape basic" {
   let font = @font.Font::from_bytes(build_font_bytes())
   let buffer = Buffer::new()
@@ -369,4 +418,21 @@ test "buffer shape ot" {
   inspect(positions[0].x_advance, content="480")
   inspect(positions[0].x_offset, content="5")
   inspect(positions[1].x_advance, content="410")
+}
+
+///|
+test "buffer shape ot single pos" {
+  let font = @font.Font::from_bytes(build_font_bytes_ot_single())
+  let buffer = Buffer::new()
+  buffer.add_string("A")
+  let result = buffer.shape_ot(font)
+  match result {
+    Err(err) => fail("shape error: \{err}")
+    Ok(_) => ()
+  }
+  let infos = buffer.infos()
+  let positions = buffer.positions()
+  inspect(infos[0].codepoint, content="3")
+  inspect(positions[0].x_advance, content="520")
+  inspect(positions[0].x_offset, content="6")
 }
