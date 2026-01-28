@@ -81,9 +81,3 @@ pub fn Face::set_table(
 ) -> Unit {
   self.tables[tag] = blob
 }
-
-///|
-/// Reference a table blob by tag.
-pub fn Face::reference_table(self : Face, tag : @common.Tag) -> @blob.Blob? {
-  self.tables.get(tag)
-}

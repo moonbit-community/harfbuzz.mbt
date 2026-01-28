@@ -16,8 +16,8 @@ test "face table storage" {
   face.set_table(tag, table)
   let found = face.reference_table(tag)
   let size = match found {
-    None => None
-    Some(blob) => Some(blob.len())
+    Err(_) => None
+    Ok(blob) => Some(blob.len())
   }
   inspect(size, content="Some(2)")
 }
