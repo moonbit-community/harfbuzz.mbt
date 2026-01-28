@@ -17,6 +17,7 @@ pub struct GlyphPosition {
 ///|
 suberror ShapeError {
   Font(@font.FontError)
+  Layout(@ot_tables.OtLayoutError)
 } derive(Eq, Show, ToJson)
 
 ///|
@@ -172,5 +173,80 @@ pub fn Buffer::shape_basic(
   }
   self.infos = new_infos
   self.positions = new_positions
+  Ok(())
+}
+
+///|
+/// Shape with GSUB single substitution and GPOS pair adjustment.
+pub fn Buffer::shape_ot(
+  self : Buffer,
+  font : @font.Font,
+) -> Result[Unit, ShapeError] {
+  match self.shape_basic(font) {
+    Err(err) => return Err(err)
+    Ok(_) => ()
+  }
+  let gsub = match font.gsub() {
+    Err(err) => return Err(Font(err))
+    Ok(value) => value
+  }
+  if gsub is Some(gsub) {
+    let glyphs : Array[UInt] = []
+    for info in self.infos {
+      glyphs.push(info.codepoint)
+    }
+    let changed = match gsub.apply_single(glyphs) {
+      Err(err) => return Err(Layout(err))
+      Ok(value) => value
+    }
+    if changed {
+      let new_infos : Array[GlyphInfo] = []
+      let new_positions : Array[GlyphPosition] = []
+      for i in 0..<self.infos.length() {
+        let info = self.infos[i]
+        let glyph = glyphs[i]
+        let advance = match font.glyph_h_advance(glyph) {
+          Err(err) => return Err(Font(err))
+          Ok(value) => value
+        }
+        new_infos.push(GlyphInfo::{ codepoint: glyph, cluster: info.cluster })
+        let pos = self.positions[i]
+        new_positions.push(GlyphPosition::{
+          x_advance: advance,
+          y_advance: pos.y_advance,
+          x_offset: pos.x_offset,
+          y_offset: pos.y_offset,
+        })
+      }
+      self.infos = new_infos
+      self.positions = new_positions
+    }
+  }
+  let gpos = match font.gpos() {
+    Err(err) => return Err(Font(err))
+    Ok(value) => value
+  }
+  if gpos is Some(gpos) {
+    let glyphs : Array[UInt] = []
+    for info in self.infos {
+      glyphs.push(info.codepoint)
+    }
+    let deltas = match gpos.pair_adjust_deltas(glyphs[:]) {
+      Err(err) => return Err(Layout(err))
+      Ok(value) => value
+    }
+    let new_positions : Array[GlyphPosition] = []
+    for i in 0..<self.positions.length() {
+      let pos = self.positions[i]
+      let delta = deltas[i]
+      new_positions.push(GlyphPosition::{
+        x_advance: pos.x_advance + delta.x_advance,
+        y_advance: pos.y_advance + delta.y_advance,
+        x_offset: pos.x_offset + delta.x_placement,
+        y_offset: pos.y_offset + delta.y_placement,
+      })
+    }
+    self.positions = new_positions
+  }
   Ok(())
 }

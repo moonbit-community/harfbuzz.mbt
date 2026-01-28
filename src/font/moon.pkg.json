@@ -12,6 +12,10 @@
     {
       "path": "moonbit-community/harfbuzz/blob",
       "alias": "blob"
+    },
+    {
+      "path": "moonbit-community/harfbuzz/ot/tables",
+      "alias": "ot_tables"
     }
   ]
 }

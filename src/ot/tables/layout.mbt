@@ -380,6 +380,14 @@ fn read_u32_int(data : BytesView, offset : Int) -> Result[Int, OtLayoutError] {
 }
 
 ///|
+fn read_i16(data : BytesView, offset : Int) -> Result[Int, OtLayoutError] {
+  match read_u16_int(data, offset) {
+    Err(err) => Err(err)
+    Ok(value) => if value >= 0x8000 { Ok(value - 0x10000) } else { Ok(value) }
+  }
+}
+
+///|
 fn read_tag(data : BytesView, offset : Int) -> Result[@common.Tag, OtLayoutError] {
   match check_range(data, offset, 4) {
     Err(err) => return Err(err)

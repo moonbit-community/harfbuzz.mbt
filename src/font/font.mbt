@@ -2,6 +2,7 @@
 suberror FontError {
   FaceTable(@face.FaceTableError)
   Parse(@sfnt.SfntError)
+  Layout(@ot_tables.OtLayoutError)
   GlyphOutOfRange
 } derive(Eq, Show, ToJson)
 
@@ -20,6 +21,8 @@ pub struct Font {
   mut cmap : @sfnt.CmapTable?
   mut loca : @sfnt.LocaTable?
   mut glyf : @sfnt.GlyfTable?
+  mut gsub : @ot_tables.GsubTable?
+  mut gpos : @ot_tables.GposTable?
 } derive(Show, ToJson)
 
 ///|
@@ -44,6 +47,12 @@ let tag_loca : @common.Tag = @common.Tag::from_chars('l', 'o', 'c', 'a')
 let tag_glyf : @common.Tag = @common.Tag::from_chars('g', 'l', 'y', 'f')
 
 ///|
+let tag_gsub : @common.Tag = @common.Tag::from_chars('G', 'S', 'U', 'B')
+
+///|
+let tag_gpos : @common.Tag = @common.Tag::from_chars('G', 'P', 'O', 'S')
+
+///|
 /// Create a font from a face.
 pub fn Font::new(face : @face.Face) -> Font {
   Font::{
@@ -59,6 +68,8 @@ pub fn Font::new(face : @face.Face) -> Font {
     cmap: None,
     loca: None,
     glyf: None,
+    gsub: None,
+    gpos: None,
   }
 }
 
@@ -268,6 +279,46 @@ fn Font::ensure_glyf(self : Font) -> Result[@sfnt.GlyfTable, FontError] {
             Ok(glyf) => {
               self.glyf = Some(glyf)
               Ok(glyf)
+            }
+          }
+      }
+  }
+}
+
+///|
+pub fn Font::gsub(self : Font) -> Result[@ot_tables.GsubTable?, FontError] {
+  match self.gsub {
+    Some(gsub) => Ok(Some(gsub))
+    None =>
+      match self.face.reference_table_optional(tag_gsub) {
+        Err(err) => Err(FaceTable(err))
+        Ok(None) => Ok(None)
+        Ok(Some(blob)) =>
+          match @ot_tables.GsubTable::parse(blob) {
+            Err(err) => Err(Layout(err))
+            Ok(gsub) => {
+              self.gsub = Some(gsub)
+              Ok(Some(gsub))
+            }
+          }
+      }
+  }
+}
+
+///|
+pub fn Font::gpos(self : Font) -> Result[@ot_tables.GposTable?, FontError] {
+  match self.gpos {
+    Some(gpos) => Ok(Some(gpos))
+    None =>
+      match self.face.reference_table_optional(tag_gpos) {
+        Err(err) => Err(FaceTable(err))
+        Ok(None) => Ok(None)
+        Ok(Some(blob)) =>
+          match @ot_tables.GposTable::parse(blob) {
+            Err(err) => Err(Layout(err))
+            Ok(gpos) => {
+              self.gpos = Some(gpos)
+              Ok(Some(gpos))
             }
           }
       }

@@ -43,3 +43,16 @@ pub fn Face::reference_table(
       }
   }
 }
+
+///|
+/// Reference a table blob, returning None when the table is missing.
+pub fn Face::reference_table_optional(
+  self : Face,
+  tag : @common.Tag,
+) -> Result[@blob.Blob?, FaceTableError] {
+  match self.reference_table(tag) {
+    Ok(blob) => Ok(Some(blob))
+    Err(TableNotFound) => Ok(None)
+    Err(err) => Err(err)
+  }
+}
