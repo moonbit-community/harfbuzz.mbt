@@ -29,7 +29,8 @@ fn add_value_record(a : ValueRecord, b : ValueRecord) -> ValueRecord {
   }
 }
 
-///|\n/// Compute pair adjustment deltas for a glyph sequence.
+///|
+/// Compute pair adjustment deltas for a glyph sequence.
 pub fn GposTable::pair_adjust_deltas(
   self : GposTable,
   glyphs : ArrayView[UInt],
