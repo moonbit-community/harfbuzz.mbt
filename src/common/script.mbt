@@ -5,70 +5,6 @@ pub struct Script {
 } derive(Eq, Show, ToJson)
 
 ///|
-/// Script constants (subset; extend as needed).
-pub let script_common : Script = Script::{
-  tag: Tag::from_chars('Z', 'y', 'y', 'y'),
-}
-
-///|
-pub let script_inherited : Script = Script::{
-  tag: Tag::from_chars('Z', 'i', 'n', 'h'),
-}
-
-///|
-pub let script_unknown : Script = Script::{
-  tag: Tag::from_chars('Z', 'z', 'z', 'z'),
-}
-
-///|
-pub let script_invalid : Script = Script::{ tag: tag_none }
-
-///|
-pub let script_arabic : Script = Script::{
-  tag: Tag::from_chars('A', 'r', 'a', 'b'),
-}
-
-///|
-pub let script_cyrillic : Script = Script::{
-  tag: Tag::from_chars('C', 'y', 'r', 'l'),
-}
-
-///|
-pub let script_georgian : Script = Script::{
-  tag: Tag::from_chars('G', 'e', 'o', 'r'),
-}
-
-///|
-pub let script_hangul : Script = Script::{
-  tag: Tag::from_chars('H', 'a', 'n', 'g'),
-}
-
-///|
-pub let script_han : Script = Script::{
-  tag: Tag::from_chars('H', 'a', 'n', 'i'),
-}
-
-///|
-pub let script_hebrew : Script = Script::{
-  tag: Tag::from_chars('H', 'e', 'b', 'r'),
-}
-
-///|
-pub let script_latin : Script = Script::{
-  tag: Tag::from_chars('L', 'a', 't', 'n'),
-}
-
-///|
-pub let script_syriac : Script = Script::{
-  tag: Tag::from_chars('S', 'y', 'r', 'c'),
-}
-
-///|
-pub let script_coptic : Script = Script::{
-  tag: Tag::from_chars('C', 'o', 'p', 't'),
-}
-
-///|
 fn canonicalize_script_tag(tag : Tag) -> Tag {
   let (b1, b2, b3, b4) = tag.bytes()
   let u1 = b1.to_uint()
@@ -170,12 +106,61 @@ pub fn Script::to_iso15924_tag(self : Script) -> Tag {
 }
 
 ///|
+fn is_rtl_tag(tag : Tag) -> Bool {
+  tag == script_arabic.tag ||
+  tag == script_hebrew.tag ||
+  tag == script_syriac.tag ||
+  tag == script_thaana.tag ||
+  tag == script_cypriot.tag ||
+  tag == script_kharoshthi.tag ||
+  tag == script_phoenician.tag ||
+  tag == script_nko.tag ||
+  tag == script_lydian.tag ||
+  tag == script_avestan.tag ||
+  tag == script_imperial_aramaic.tag ||
+  tag == script_inscriptional_pahlavi.tag ||
+  tag == script_inscriptional_parthian.tag ||
+  tag == script_old_south_arabian.tag ||
+  tag == script_old_turkic.tag ||
+  tag == script_samaritan.tag ||
+  tag == script_mandaic.tag ||
+  tag == script_meroitic_cursive.tag ||
+  tag == script_meroitic_hieroglyphs.tag ||
+  tag == script_manichaean.tag ||
+  tag == script_mende_kikakui.tag ||
+  tag == script_nabataean.tag ||
+  tag == script_old_north_arabian.tag ||
+  tag == script_palmyrene.tag ||
+  tag == script_psalter_pahlavi.tag ||
+  tag == script_hatran.tag ||
+  tag == script_adlam.tag ||
+  tag == script_hanifi_rohingya.tag ||
+  tag == script_old_sogdian.tag ||
+  tag == script_sogdian.tag ||
+  tag == script_elymaic.tag ||
+  tag == script_chorasmian.tag ||
+  tag == script_yezidi.tag ||
+  tag == script_old_uyghur.tag ||
+  tag == script_garay.tag ||
+  tag == script_sidetic.tag
+}
+
+///|
+fn is_horizontal_ambiguous_tag(tag : Tag) -> Bool {
+  tag == script_old_hungarian.tag ||
+  tag == script_old_italic.tag ||
+  tag == script_runic.tag ||
+  tag == script_tifinagh.tag
+}
+
+///|
 /// Fetch the horizontal direction for the script.
 pub fn Script::horizontal_direction(self : Script) -> Direction {
-  if self.tag == script_arabic.tag ||
-    self.tag == script_hebrew.tag ||
-    self.tag == script_syriac.tag {
+  let tag = self.tag
+  if is_rtl_tag(tag) {
     direction_rtl
+  } else if is_horizontal_ambiguous_tag(tag) {
+    direction_invalid
   } else {
     direction_ltr
   }

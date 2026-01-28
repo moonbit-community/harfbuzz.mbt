@@ -41,3 +41,14 @@ test "script aliases and direction" {
   let arabic = Script::from_string("Arab")
   inspect(arabic.horizontal_direction().to_string(), content="rtl")
 }
+
+///|
+test "script horizontal direction mapping" {
+  inspect(
+    script_old_italic.horizontal_direction().to_string(),
+    content="invalid",
+  )
+  inspect(script_tifinagh.horizontal_direction().to_string(), content="invalid")
+  inspect(script_adlam.horizontal_direction().to_string(), content="rtl")
+  inspect(script_latin.horizontal_direction().to_string(), content="ltr")
+}
