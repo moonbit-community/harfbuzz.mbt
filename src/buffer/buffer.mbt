@@ -146,6 +146,39 @@ pub fn Buffer::get_language(self : Buffer) -> @common.Language {
 }
 
 ///|
+fn language_to_ot_tag(lang : @common.Language) -> @common.Tag {
+  match lang.to_string() {
+    None => @common.tag_none
+    Some(value) => {
+      let bytes : Array[Byte] = []
+      for c in value {
+        if c == '-' || c == '_' {
+          break
+        }
+        if c.is_ascii_alphabetic() {
+          bytes.push(c.to_ascii_uppercase().to_uint().to_byte())
+        } else if c.is_ascii_digit() {
+          bytes.push(c.to_uint().to_byte())
+        } else {
+          break
+        }
+        if bytes.length() == 4 {
+          break
+        }
+      }
+      if bytes.is_empty() {
+        @common.tag_none
+      } else {
+        for _ in bytes.length()..<4 {
+          bytes.push(b' ')
+        }
+        @common.Tag::from_bytes(bytes[0], bytes[1], bytes[2], bytes[3])
+      }
+    }
+  }
+}
+
+///|
 /// Populate glyph IDs and advances using cmap + hmtx.
 pub fn Buffer::shape_basic(
   self : Buffer,
@@ -191,11 +224,20 @@ pub fn Buffer::shape_ot(
     Ok(value) => value
   }
   if gsub is Some(gsub) {
+    let script_tag = self.script.to_tag()
+    let lang_tag = language_to_ot_tag(self.language)
+    let lookup_offsets = match gsub.layout().select_lookup_offsets(
+      script_tag,
+      language_tag=lang_tag,
+    ) {
+      Err(err) => return Err(Layout(err))
+      Ok(value) => value
+    }
     let glyphs : Array[UInt] = []
     for info in self.infos {
       glyphs.push(info.codepoint)
     }
-    let changed = match gsub.apply_single(glyphs) {
+    let changed = match gsub.apply_single_with_lookups(glyphs, lookup_offsets[:]) {
       Err(err) => return Err(Layout(err))
       Ok(value) => value
     }
@@ -227,11 +269,23 @@ pub fn Buffer::shape_ot(
     Ok(value) => value
   }
   if gpos is Some(gpos) {
+    let script_tag = self.script.to_tag()
+    let lang_tag = language_to_ot_tag(self.language)
+    let lookup_offsets = match gpos.layout().select_lookup_offsets(
+      script_tag,
+      language_tag=lang_tag,
+    ) {
+      Err(err) => return Err(Layout(err))
+      Ok(value) => value
+    }
     let glyphs : Array[UInt] = []
     for info in self.infos {
       glyphs.push(info.codepoint)
     }
-    let deltas = match gpos.pair_adjust_deltas(glyphs[:]) {
+    let deltas = match gpos.pair_adjust_deltas_with_lookups(
+      glyphs[:],
+      lookup_offsets[:],
+    ) {
       Err(err) => return Err(Layout(err))
       Ok(value) => value
     }

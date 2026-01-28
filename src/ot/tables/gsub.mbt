@@ -4,8 +4,16 @@ pub fn GsubTable::apply_single(
   glyphs : Array[UInt],
 ) -> Result[Bool, OtLayoutError] {
   let layout = self.layout
-  let data = layout.data
-  let lookup_offsets = layout.lookup_list.offsets
+  self.apply_single_with_lookups(glyphs, layout.lookup_list.offsets[:])
+}
+
+///|
+pub fn GsubTable::apply_single_with_lookups(
+  self : GsubTable,
+  glyphs : Array[UInt],
+  lookup_offsets : ArrayView[Int],
+) -> Result[Bool, OtLayoutError] {
+  let data = self.layout.data
   let mut changed = false
   for lookup_offset in lookup_offsets {
     let parsed = parse_lookup(data, lookup_offset)

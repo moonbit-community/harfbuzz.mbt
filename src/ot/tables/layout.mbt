@@ -92,6 +92,102 @@ pub fn LayoutTable::lookup_list(self : LayoutTable) -> LookupList {
 }
 
 ///|
+/// Select lookup offsets for a script/language pair using the default LangSys.
+pub fn LayoutTable::select_lookup_offsets(
+  self : LayoutTable,
+  script_tag : @common.Tag,
+  language_tag? : @common.Tag = @common.tag_none,
+) -> Result[Array[Int], OtLayoutError] {
+  let normalized_script = lowercase_tag(script_tag)
+  let script_offset = match find_script_offset(self.script_list.records, normalized_script) {
+    Some(offset) => Some(offset)
+    None => if normalized_script != script_tag {
+        find_script_offset(self.script_list.records, script_tag)
+      } else {
+        None
+      }
+  }
+  let script_offset = match script_offset {
+    Some(offset) => Some(offset)
+    None => find_script_offset(
+      self.script_list.records,
+      @common.Tag::from_chars('D', 'F', 'L', 'T'),
+    )
+  }
+  let resolved_script_offset = match script_offset {
+    Some(offset) => offset
+    None =>
+      if self.script_list.records.is_empty() {
+        return Ok([])
+      } else {
+        self.script_list.records[0].offset
+      }
+  }
+  let (default_lang, lang_records) = match parse_script_table(
+    self.data,
+    resolved_script_offset,
+  ) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  let lang_offset = if language_tag != @common.tag_none {
+    find_lang_sys_offset(lang_records, language_tag)
+  } else {
+    None
+  }
+  let resolved_lang_offset = match lang_offset {
+    Some(offset) => Some(offset)
+    None => default_lang
+  }
+  let final_lang_offset = match resolved_lang_offset {
+    Some(offset) => offset
+    None =>
+      if lang_records.is_empty() {
+        return Ok([])
+      } else {
+        lang_records[0].1
+      }
+  }
+  let (required_feature, feature_indices) = match parse_lang_sys_table(
+    self.data,
+    final_lang_offset,
+  ) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  let selected_features : Array[Int] = []
+  match required_feature {
+    None => ()
+    Some(feature) => push_unique_int(selected_features, feature)
+  }
+  for feature in feature_indices {
+    push_unique_int(selected_features, feature)
+  }
+  let lookup_indices : Array[Int] = []
+  for feature_index in selected_features {
+    if feature_index < 0 || feature_index >= self.feature_list.records.length() {
+      return Err(InvalidFormat)
+    }
+    let record = self.feature_list.records[feature_index]
+    let lookup_list = match parse_feature_table(self.data, record.offset) {
+      Err(err) => return Err(err)
+      Ok(value) => value
+    }
+    for lookup_index in lookup_list {
+      push_unique_int(lookup_indices, lookup_index)
+    }
+  }
+  let lookup_offsets : Array[Int] = []
+  for lookup_index in lookup_indices {
+    if lookup_index < 0 || lookup_index >= self.lookup_list.offsets.length() {
+      return Err(InvalidFormat)
+    }
+    lookup_offsets.push(self.lookup_list.offsets[lookup_index])
+  }
+  Ok(lookup_offsets)
+}
+
+///|
 /// GSUB table wrapper.
 pub struct GsubTable {
   layout : LayoutTable
@@ -306,6 +402,183 @@ fn parse_lookup_list(
       }
       Ok(LookupList::{ offsets })
     }
+  }
+}
+
+///|
+fn find_script_offset(
+  records : Array[ScriptRecord],
+  tag : @common.Tag,
+) -> Int? {
+  for record in records {
+    if record.tag == tag {
+      return Some(record.offset)
+    }
+  }
+  None
+}
+
+///|
+fn find_lang_sys_offset(
+  records : Array[(@common.Tag, Int)],
+  tag : @common.Tag,
+) -> Int? {
+  for record in records {
+    let (record_tag, offset) = record
+    if record_tag == tag {
+      return Some(offset)
+    }
+  }
+  None
+}
+
+///|
+fn parse_script_table(
+  data : BytesView,
+  offset : Int,
+) -> Result[(Int?, Array[(@common.Tag, Int)]), OtLayoutError] {
+  if offset < 0 || offset + 4 > data.length() {
+    return Err(UnexpectedEof)
+  }
+  let default_offset = read_u16_int(data, offset)
+  let lang_count = read_u16_int(data, offset + 2)
+  match (default_offset, lang_count) {
+    (Err(err), _) => Err(err)
+    (_, Err(err)) => Err(err)
+    (Ok(default_offset), Ok(lang_count)) => {
+      let record_base = offset + 4
+      if record_base < 0 || record_base + lang_count * 6 > data.length() {
+        return Err(UnexpectedEof)
+      }
+      let records : Array[(@common.Tag, Int)] = []
+      for i in 0..<lang_count {
+        let record_offset = record_base + i * 6
+        let tag = match read_tag(data, record_offset) {
+          Err(err) => return Err(err)
+          Ok(value) => value
+        }
+        let lang_offset = read_u16_int(data, record_offset + 4)
+        match lang_offset {
+          Err(err) => return Err(err)
+          Ok(lang_offset) => {
+            if lang_offset == 0 {
+              return Err(InvalidFormat)
+            }
+            let abs_offset = offset + lang_offset
+            if abs_offset < 0 || abs_offset >= data.length() {
+              return Err(UnexpectedEof)
+            }
+            records.push((tag, abs_offset))
+          }
+        }
+      }
+      let default_lang = if default_offset == 0 {
+        None
+      } else {
+        let abs_offset = offset + default_offset
+        if abs_offset < 0 || abs_offset >= data.length() {
+          return Err(UnexpectedEof)
+        }
+        Some(abs_offset)
+      }
+      Ok((default_lang, records))
+    }
+  }
+}
+
+///|
+fn parse_lang_sys_table(
+  data : BytesView,
+  offset : Int,
+) -> Result[(Int?, Array[Int]), OtLayoutError] {
+  if offset < 0 || offset + 6 > data.length() {
+    return Err(UnexpectedEof)
+  }
+  let lookup_order = read_u16_int(data, offset)
+  let req_feature = read_u16_int(data, offset + 2)
+  let feature_count = read_u16_int(data, offset + 4)
+  match (lookup_order, req_feature, feature_count) {
+    (Err(err), _, _) => Err(err)
+    (_, Err(err), _) => Err(err)
+    (_, _, Err(err)) => Err(err)
+    (Ok(_), Ok(req_feature), Ok(feature_count)) => {
+      let list_base = offset + 6
+      if list_base < 0 || list_base + feature_count * 2 > data.length() {
+        return Err(UnexpectedEof)
+      }
+      let indices : Array[Int] = []
+      for i in 0..<feature_count {
+        let value = read_u16_int(data, list_base + i * 2)
+        match value {
+          Err(err) => return Err(err)
+          Ok(value) => indices.push(value)
+        }
+      }
+      let required = if req_feature == 0xffff { None } else { Some(req_feature) }
+      Ok((required, indices))
+    }
+  }
+}
+
+///|
+fn parse_feature_table(
+  data : BytesView,
+  offset : Int,
+) -> Result[Array[Int], OtLayoutError] {
+  if offset < 0 || offset + 4 > data.length() {
+    return Err(UnexpectedEof)
+  }
+  let params_offset = read_u16_int(data, offset)
+  let count = read_u16_int(data, offset + 2)
+  match (params_offset, count) {
+    (Err(err), _) => Err(err)
+    (_, Err(err)) => Err(err)
+    (Ok(_), Ok(count)) => {
+      let list_base = offset + 4
+      if list_base < 0 || list_base + count * 2 > data.length() {
+        return Err(UnexpectedEof)
+      }
+      let indices : Array[Int] = []
+      for i in 0..<count {
+        let value = read_u16_int(data, list_base + i * 2)
+        match value {
+          Err(err) => return Err(err)
+          Ok(value) => indices.push(value)
+        }
+      }
+      Ok(indices)
+    }
+  }
+}
+
+///|
+fn push_unique_int(values : Array[Int], value : Int) -> Unit {
+  for entry in values {
+    if entry == value {
+      return
+    }
+  }
+  values.push(value)
+}
+
+///|
+fn lowercase_tag(tag : @common.Tag) -> @common.Tag {
+  let (b1, b2, b3, b4) = tag.bytes()
+  @common.Tag::from_bytes(
+    ascii_lowercase_byte(b1),
+    ascii_lowercase_byte(b2),
+    ascii_lowercase_byte(b3),
+    ascii_lowercase_byte(b4),
+  )
+}
+
+///|
+fn ascii_lowercase_byte(b : Byte) -> Byte {
+  let v = b.to_uint()
+  if v >= 0x41U && v <= 0x5aU {
+    (v + 0x20U).to_byte()
+  } else {
+    b
   }
 }
 

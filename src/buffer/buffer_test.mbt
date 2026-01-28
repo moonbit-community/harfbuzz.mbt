@@ -151,7 +151,11 @@ fn build_script_list() -> Bytes {
   push_u16(bytes, 1)
   push_tag(bytes, @common.Tag::from_chars('l', 'a', 't', 'n'))
   push_u16(bytes, 8)
+  push_u16(bytes, 4)
   push_u16(bytes, 0)
+  push_u16(bytes, 0)
+  push_u16(bytes, 0)
+  push_u16(bytes, 1)
   push_u16(bytes, 0)
   Bytes::from_array(bytes)
 }

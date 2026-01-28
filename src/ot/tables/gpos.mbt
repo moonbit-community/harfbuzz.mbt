@@ -34,13 +34,21 @@ pub fn GposTable::pair_adjust_deltas(
   self : GposTable,
   glyphs : ArrayView[UInt],
 ) -> Result[Array[ValueRecord], OtLayoutError] {
+  let layout = self.layout
+  self.pair_adjust_deltas_with_lookups(glyphs, layout.lookup_list.offsets[:])
+}
+
+///|
+pub fn GposTable::pair_adjust_deltas_with_lookups(
+  self : GposTable,
+  glyphs : ArrayView[UInt],
+  lookup_offsets : ArrayView[Int],
+) -> Result[Array[ValueRecord], OtLayoutError] {
   let deltas : Array[ValueRecord] = Array::make(
     glyphs.length(),
     value_record_zero(),
   )
-  let layout = self.layout
-  let data = layout.data
-  let lookup_offsets = layout.lookup_list.offsets
+  let data = self.layout.data
   for lookup_offset in lookup_offsets {
     let parsed = parse_lookup(data, lookup_offset)
     match parsed {
