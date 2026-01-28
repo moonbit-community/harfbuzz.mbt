@@ -5,6 +5,12 @@ fn push_u16(bytes : Array[Byte], value : Int) -> Unit {
 }
 
 ///|
+fn push_i16(bytes : Array[Byte], value : Int) -> Unit {
+  let adjusted = if value < 0 { value + 0x10000 } else { value }
+  push_u16(bytes, adjusted)
+}
+
+///|
 fn push_u32(bytes : Array[Byte], value : Int) -> Unit {
   bytes.push(((value >> 24) & 0xff).to_byte())
   bytes.push(((value >> 16) & 0xff).to_byte())
@@ -86,6 +92,26 @@ fn build_hmtx() -> Bytes {
 }
 
 ///|
+fn build_loca_short(offsets : Array[Int]) -> Bytes {
+  let bytes : Array[Byte] = []
+  for offset in offsets {
+    push_u16(bytes, offset / 2)
+  }
+  Bytes::from_array(bytes)
+}
+
+///|
+fn build_glyf_table() -> Bytes {
+  let bytes : Array[Byte] = []
+  push_i16(bytes, 1)
+  push_i16(bytes, 5)
+  push_i16(bytes, -2)
+  push_i16(bytes, 50)
+  push_i16(bytes, 100)
+  Bytes::from_array(bytes)
+}
+
+///|
 fn build_cmap_table(subtable : Bytes) -> Bytes {
   let bytes : Array[Byte] = []
   push_u16(bytes, 0)
@@ -115,11 +141,15 @@ fn build_cmap_format12(start : UInt, end : UInt, start_gid : UInt) -> Bytes {
 
 ///|
 fn build_font_bytes() -> Bytes {
+  let glyf = build_glyf_table()
+  let loca = build_loca_short([0, 0, glyf.length()])
   let tables : Array[(@common.Tag, Bytes)] = [
     (@common.Tag::from_chars('h', 'e', 'a', 'd'), build_head(1000, 0)),
     (@common.Tag::from_chars('m', 'a', 'x', 'p'), build_maxp(2)),
     (@common.Tag::from_chars('h', 'h', 'e', 'a'), build_hhea(2)),
     (@common.Tag::from_chars('h', 'm', 't', 'x'), build_hmtx()),
+    (@common.Tag::from_chars('l', 'o', 'c', 'a'), loca),
+    (@common.Tag::from_chars('g', 'l', 'y', 'f'), glyf),
     (
       @common.Tag::from_chars('c', 'm', 'a', 'p'),
       build_cmap_table(build_cmap_format12(0x41U, 0x41U, 1U)),
@@ -161,4 +191,25 @@ test "font cmap mapping and advances" {
     Ok(value) => value
   }
   inspect(advance, content="300")
+}
+
+///|
+test "font glyph bounds" {
+  let bytes = build_font_bytes()
+  let font = Font::from_bytes(bytes)
+  let bounds0 = match font.glyph_bounds(0U) {
+    Err(err) => fail("bounds error: \{err}")
+    Ok(value) => value
+  }
+  inspect(bounds0, content="None")
+  let bounds1 = match font.glyph_bounds(1U) {
+    Err(err) => fail("bounds error: \{err}")
+    Ok(None) => fail("missing bounds")
+    Ok(Some(value)) => value
+  }
+  inspect(bounds1.contours, content="1")
+  inspect(bounds1.x_min, content="5")
+  inspect(bounds1.y_min, content="-2")
+  inspect(bounds1.x_max, content="50")
+  inspect(bounds1.y_max, content="100")
 }

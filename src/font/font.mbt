@@ -18,6 +18,8 @@ pub struct Font {
   mut hhea : @sfnt.HheaTable?
   mut hmtx : @sfnt.HmtxTable?
   mut cmap : @sfnt.CmapTable?
+  mut loca : @sfnt.LocaTable?
+  mut glyf : @sfnt.GlyfTable?
 } derive(Show, ToJson)
 
 ///|
@@ -36,6 +38,12 @@ let tag_hmtx : @common.Tag = @common.Tag::from_chars('h', 'm', 't', 'x')
 let tag_cmap : @common.Tag = @common.Tag::from_chars('c', 'm', 'a', 'p')
 
 ///|
+let tag_loca : @common.Tag = @common.Tag::from_chars('l', 'o', 'c', 'a')
+
+///|
+let tag_glyf : @common.Tag = @common.Tag::from_chars('g', 'l', 'y', 'f')
+
+///|
 /// Create a font from a face.
 pub fn Font::new(face : @face.Face) -> Font {
   Font::{
@@ -49,6 +57,8 @@ pub fn Font::new(face : @face.Face) -> Font {
     hhea: None,
     hmtx: None,
     cmap: None,
+    loca: None,
+    glyf: None,
   }
 }
 
@@ -213,6 +223,58 @@ fn Font::ensure_cmap(self : Font) -> Result[@sfnt.CmapTable, FontError] {
 }
 
 ///|
+fn Font::ensure_loca(self : Font) -> Result[@sfnt.LocaTable, FontError] {
+  match self.loca {
+    Some(loca) => Ok(loca)
+    None => {
+      let head = match self.ensure_head() {
+        Err(err) => return Err(err)
+        Ok(value) => value
+      }
+      let maxp = match self.ensure_maxp() {
+        Err(err) => return Err(err)
+        Ok(value) => value
+      }
+      match self.table_blob(tag_loca) {
+        Err(err) => Err(err)
+        Ok(blob) =>
+          match
+            @sfnt.LocaTable::parse(
+              blob.as_view(),
+              maxp.num_glyphs,
+              head.index_to_loc_format,
+            ) {
+            Err(err) => Err(Parse(err))
+            Ok(loca) => {
+              self.loca = Some(loca)
+              Ok(loca)
+            }
+          }
+      }
+    }
+  }
+}
+
+///|
+fn Font::ensure_glyf(self : Font) -> Result[@sfnt.GlyfTable, FontError] {
+  match self.glyf {
+    Some(glyf) => Ok(glyf)
+    None =>
+      match self.table_blob(tag_glyf) {
+        Err(err) => Err(err)
+        Ok(blob) =>
+          match @sfnt.GlyfTable::parse(blob) {
+            Err(err) => Err(Parse(err))
+            Ok(glyf) => {
+              self.glyf = Some(glyf)
+              Ok(glyf)
+            }
+          }
+      }
+  }
+}
+
+///|
 /// Map a codepoint to a glyph id.
 pub fn Font::glyph_for_codepoint(
   self : Font,
@@ -243,6 +305,41 @@ pub fn Font::glyph_h_advance(
     return Err(GlyphOutOfRange)
   }
   Ok(hmtx.advances[index])
+}
+
+///|
+/// Return glyph bounds from glyf header (font units).
+pub fn Font::glyph_bounds(
+  self : Font,
+  glyph : UInt,
+) -> Result[@sfnt.GlyphBounds?, FontError] {
+  let maxp = match self.ensure_maxp() {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  let index = glyph.reinterpret_as_int()
+  if index < 0 || index >= maxp.num_glyphs {
+    return Err(GlyphOutOfRange)
+  }
+  let loca = match self.ensure_loca() {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  let glyf = match self.ensure_glyf() {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  let offsets = loca.offsets
+  if index + 1 >= offsets.length() {
+    return Err(GlyphOutOfRange)
+  }
+  let start = offsets[index]
+  let end = offsets[index + 1]
+  let length = end - start
+  match glyf.glyph_bounds(start, length) {
+    Err(err) => Err(Parse(err))
+    Ok(bounds) => Ok(bounds)
+  }
 }
 
 ///|
