@@ -154,17 +154,17 @@ fn build_script_list() -> Bytes {
   push_u16(bytes, 4)
   push_u16(bytes, 0)
   push_u16(bytes, 0)
-  push_u16(bytes, 0)
+  push_u16(bytes, 0xffff)
   push_u16(bytes, 1)
   push_u16(bytes, 0)
   Bytes::from_array(bytes)
 }
 
 ///|
-fn build_feature_list() -> Bytes {
+fn build_feature_list(tag : @common.Tag) -> Bytes {
   let bytes : Array[Byte] = []
   push_u16(bytes, 1)
-  push_tag(bytes, @common.Tag::from_chars('d', 'u', 'm', 'y'))
+  push_tag(bytes, tag)
   push_u16(bytes, 8)
   push_u16(bytes, 0)
   push_u16(bytes, 1)
@@ -184,9 +184,9 @@ fn build_lookup_list(lookup : Bytes) -> Bytes {
 }
 
 ///|
-fn build_layout_table(lookup : Bytes) -> Bytes {
+fn build_layout_table(lookup : Bytes, feature_tag : @common.Tag) -> Bytes {
   let script = build_script_list()
-  let feature = build_feature_list()
+  let feature = build_feature_list(feature_tag)
   let lookup_list = build_lookup_list(lookup)
   let bytes : Array[Byte] = []
   push_u32(bytes, 0x00010000)
@@ -301,8 +301,12 @@ fn build_gpos_single_lookup() -> Bytes {
 }
 
 ///|
-fn build_ot_table(tag : @common.Tag, lookup : Bytes) -> (@common.Tag, Bytes) {
-  (tag, build_layout_table(lookup))
+fn build_ot_table(
+  tag : @common.Tag,
+  lookup : Bytes,
+  feature_tag : @common.Tag,
+) -> (@common.Tag, Bytes) {
+  (tag, build_layout_table(lookup, feature_tag))
 }
 
 ///|
@@ -359,8 +363,16 @@ fn build_font_bytes_ot() -> Bytes {
       @common.Tag::from_chars('c', 'm', 'a', 'p'),
       build_cmap_table(build_cmap_format12(0x41U, 0x42U, 1U)),
     ),
-    build_ot_table(@common.Tag::from_chars('G', 'S', 'U', 'B'), build_gsub_lookup()),
-    build_ot_table(@common.Tag::from_chars('G', 'P', 'O', 'S'), build_gpos_lookup()),
+    build_ot_table(
+      @common.Tag::from_chars('G', 'S', 'U', 'B'),
+      build_gsub_lookup(),
+      @common.Tag::from_chars('l', 'i', 'g', 'a'),
+    ),
+    build_ot_table(
+      @common.Tag::from_chars('G', 'P', 'O', 'S'),
+      build_gpos_lookup(),
+      @common.Tag::from_chars('k', 'e', 'r', 'n'),
+    ),
   ]
   build_sfnt(tables)
 }
@@ -376,10 +388,15 @@ fn build_font_bytes_ot_single() -> Bytes {
       @common.Tag::from_chars('c', 'm', 'a', 'p'),
       build_cmap_table(build_cmap_format12(0x41U, 0x41U, 1U)),
     ),
-    build_ot_table(@common.Tag::from_chars('G', 'S', 'U', 'B'), build_gsub_lookup()),
+    build_ot_table(
+      @common.Tag::from_chars('G', 'S', 'U', 'B'),
+      build_gsub_lookup(),
+      @common.Tag::from_chars('l', 'i', 'g', 'a'),
+    ),
     build_ot_table(
       @common.Tag::from_chars('G', 'P', 'O', 'S'),
       build_gpos_single_lookup(),
+      @common.Tag::from_chars('k', 'e', 'r', 'n'),
     ),
   ]
   build_sfnt(tables)

@@ -1,6 +1,9 @@
 ///|
 test "layout table header and lists" {
-  let bytes = build_layout_table(build_gsub_lookup())
+  let bytes = build_layout_table(
+    build_gsub_lookup(),
+    @common.Tag::from_chars('l', 'i', 'g', 'a'),
+  )
   let layout = match LayoutTable::parse(@blob.Blob::from_bytes(bytes)) {
     Err(err) => fail("parse error: \{err}")
     Ok(value) => value
@@ -15,7 +18,7 @@ test "layout table header and lists" {
   inspect(scripts[0].offset, content="18")
   let features = layout.feature_list().records()
   inspect(features.length(), content="1")
-  inspect(features[0].tag.to_string(), content="dumy")
+  inspect(features[0].tag.to_string(), content="liga")
   inspect(features[0].offset, content="38")
   let lookups = layout.lookup_list().offsets()
   inspect(lookups.length(), content="1")
@@ -27,15 +30,29 @@ test "layout table header and lists" {
     Ok(value) => value
   }
   inspect(selected, content="[48]")
+  let filtered = match layout.select_lookup_offsets_with_features(
+    @common.Tag::from_chars('l', 'a', 't', 'n'),
+    feature_tags=[@common.Tag::from_chars('k', 'e', 'r', 'n')],
+  ) {
+    Err(err) => fail("select error: \{err}")
+    Ok(value) => value
+  }
+  inspect(filtered.is_empty(), content="true")
 }
 
 ///|
 test "gsub/gpos wrappers" {
-  let gsub = match GsubTable::parse(@blob.Blob::from_bytes(build_layout_table(build_gsub_lookup()))) {
+  let gsub = match GsubTable::parse(@blob.Blob::from_bytes(build_layout_table(
+    build_gsub_lookup(),
+    @common.Tag::from_chars('l', 'i', 'g', 'a'),
+  ))) {
     Err(err) => fail("gsub parse error: \{err}")
     Ok(value) => value
   }
-  let gpos = match GposTable::parse(@blob.Blob::from_bytes(build_layout_table(build_gpos_lookup()))) {
+  let gpos = match GposTable::parse(@blob.Blob::from_bytes(build_layout_table(
+    build_gpos_lookup(),
+    @common.Tag::from_chars('k', 'e', 'r', 'n'),
+  ))) {
     Err(err) => fail("gpos parse error: \{err}")
     Ok(value) => value
   }

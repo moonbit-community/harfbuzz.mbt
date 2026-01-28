@@ -92,17 +92,38 @@ pub fn LayoutTable::lookup_list(self : LayoutTable) -> LookupList {
 }
 
 ///|
+/// Select lookup offsets for a script/language pair using a feature allowlist.
+pub fn LayoutTable::select_lookup_offsets_with_features(
+  self : LayoutTable,
+  script_tag : @common.Tag,
+  language_tag? : @common.Tag = @common.tag_none,
+  feature_tags? : Array[@common.Tag] = [],
+) -> Result[Array[Int], OtLayoutError] {
+  select_lookup_offsets_internal(self, script_tag, language_tag, feature_tags)
+}
+
+///|
 /// Select lookup offsets for a script/language pair using the default LangSys.
 pub fn LayoutTable::select_lookup_offsets(
   self : LayoutTable,
   script_tag : @common.Tag,
   language_tag? : @common.Tag = @common.tag_none,
 ) -> Result[Array[Int], OtLayoutError] {
+  self.select_lookup_offsets_with_features(script_tag, language_tag=language_tag)
+}
+
+///|
+fn select_lookup_offsets_internal(
+  layout : LayoutTable,
+  script_tag : @common.Tag,
+  language_tag : @common.Tag,
+  feature_tags : Array[@common.Tag],
+) -> Result[Array[Int], OtLayoutError] {
   let normalized_script = lowercase_tag(script_tag)
-  let script_offset = match find_script_offset(self.script_list.records, normalized_script) {
+  let script_offset = match find_script_offset(layout.script_list.records, normalized_script) {
     Some(offset) => Some(offset)
     None => if normalized_script != script_tag {
-        find_script_offset(self.script_list.records, script_tag)
+        find_script_offset(layout.script_list.records, script_tag)
       } else {
         None
       }
@@ -110,21 +131,21 @@ pub fn LayoutTable::select_lookup_offsets(
   let script_offset = match script_offset {
     Some(offset) => Some(offset)
     None => find_script_offset(
-      self.script_list.records,
+      layout.script_list.records,
       @common.Tag::from_chars('D', 'F', 'L', 'T'),
     )
   }
   let resolved_script_offset = match script_offset {
     Some(offset) => offset
     None =>
-      if self.script_list.records.is_empty() {
+      if layout.script_list.records.is_empty() {
         return Ok([])
       } else {
-        self.script_list.records[0].offset
+        layout.script_list.records[0].offset
       }
   }
   let (default_lang, lang_records) = match parse_script_table(
-    self.data,
+    layout.data,
     resolved_script_offset,
   ) {
     Err(err) => return Err(err)
@@ -149,27 +170,38 @@ pub fn LayoutTable::select_lookup_offsets(
       }
   }
   let (required_feature, feature_indices) = match parse_lang_sys_table(
-    self.data,
+    layout.data,
     final_lang_offset,
   ) {
     Err(err) => return Err(err)
     Ok(value) => value
   }
+  let has_filter = !feature_tags.is_empty()
   let selected_features : Array[Int] = []
   match required_feature {
     None => ()
     Some(feature) => push_unique_int(selected_features, feature)
   }
   for feature in feature_indices {
-    push_unique_int(selected_features, feature)
+    if !has_filter {
+      push_unique_int(selected_features, feature)
+    } else {
+      if feature < 0 || feature >= layout.feature_list.records.length() {
+        return Err(InvalidFormat)
+      }
+      let record = layout.feature_list.records[feature]
+      if tag_in_list(record.tag, feature_tags) {
+        push_unique_int(selected_features, feature)
+      }
+    }
   }
   let lookup_indices : Array[Int] = []
   for feature_index in selected_features {
-    if feature_index < 0 || feature_index >= self.feature_list.records.length() {
+    if feature_index < 0 || feature_index >= layout.feature_list.records.length() {
       return Err(InvalidFormat)
     }
-    let record = self.feature_list.records[feature_index]
-    let lookup_list = match parse_feature_table(self.data, record.offset) {
+    let record = layout.feature_list.records[feature_index]
+    let lookup_list = match parse_feature_table(layout.data, record.offset) {
       Err(err) => return Err(err)
       Ok(value) => value
     }
@@ -179,10 +211,10 @@ pub fn LayoutTable::select_lookup_offsets(
   }
   let lookup_offsets : Array[Int] = []
   for lookup_index in lookup_indices {
-    if lookup_index < 0 || lookup_index >= self.lookup_list.offsets.length() {
+    if lookup_index < 0 || lookup_index >= layout.lookup_list.offsets.length() {
       return Err(InvalidFormat)
     }
-    lookup_offsets.push(self.lookup_list.offsets[lookup_index])
+    lookup_offsets.push(layout.lookup_list.offsets[lookup_index])
   }
   Ok(lookup_offsets)
 }
@@ -559,6 +591,16 @@ fn push_unique_int(values : Array[Int], value : Int) -> Unit {
     }
   }
   values.push(value)
+}
+
+///|
+fn tag_in_list(tag : @common.Tag, tags : Array[@common.Tag]) -> Bool {
+  for entry in tags {
+    if entry == tag {
+      return true
+    }
+  }
+  false
 }
 
 ///|

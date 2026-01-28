@@ -224,11 +224,15 @@ pub fn Buffer::shape_ot(
     Ok(value) => value
   }
   if gsub is Some(gsub) {
+    let gsub_features : Array[@common.Tag] = [
+      @common.Tag::from_chars('l', 'i', 'g', 'a'),
+    ]
     let script_tag = self.script.to_tag()
     let lang_tag = language_to_ot_tag(self.language)
-    let lookup_offsets = match gsub.layout().select_lookup_offsets(
+    let lookup_offsets = match gsub.layout().select_lookup_offsets_with_features(
       script_tag,
       language_tag=lang_tag,
+      feature_tags=gsub_features,
     ) {
       Err(err) => return Err(Layout(err))
       Ok(value) => value
@@ -275,11 +279,15 @@ pub fn Buffer::shape_ot(
     Ok(value) => value
   }
   if gpos is Some(gpos) {
+    let gpos_features : Array[@common.Tag] = [
+      @common.Tag::from_chars('k', 'e', 'r', 'n'),
+    ]
     let script_tag = self.script.to_tag()
     let lang_tag = language_to_ot_tag(self.language)
-    let lookup_offsets = match gpos.layout().select_lookup_offsets(
+    let lookup_offsets = match gpos.layout().select_lookup_offsets_with_features(
       script_tag,
       language_tag=lang_tag,
+      feature_tags=gpos_features,
     ) {
       Err(err) => return Err(Layout(err))
       Ok(value) => value

@@ -36,17 +36,17 @@ fn build_script_list() -> Bytes {
   push_u16(bytes, 4)
   push_u16(bytes, 0)
   push_u16(bytes, 0)
-  push_u16(bytes, 0)
+  push_u16(bytes, 0xffff)
   push_u16(bytes, 1)
   push_u16(bytes, 0)
   Bytes::from_array(bytes)
 }
 
 ///|
-fn build_feature_list() -> Bytes {
+fn build_feature_list(tag : @common.Tag) -> Bytes {
   let bytes : Array[Byte] = []
   push_u16(bytes, 1)
-  push_tag(bytes, @common.Tag::from_chars('d', 'u', 'm', 'y'))
+  push_tag(bytes, tag)
   push_u16(bytes, 8)
   push_u16(bytes, 0)
   push_u16(bytes, 1)
@@ -66,9 +66,9 @@ fn build_lookup_list(lookup : Bytes) -> Bytes {
 }
 
 ///|
-fn build_layout_table(lookup : Bytes) -> Bytes {
+fn build_layout_table(lookup : Bytes, feature_tag : @common.Tag) -> Bytes {
   let script = build_script_list()
-  let feature = build_feature_list()
+  let feature = build_feature_list(feature_tag)
   let lookup_list = build_lookup_list(lookup)
   let bytes : Array[Byte] = []
   push_u32(bytes, 0x00010000)
@@ -301,7 +301,10 @@ fn build_gsub_ligature_lookup() -> Bytes {
 
 ///|
 test "gsub single substitution apply" {
-  let gsub_bytes = build_layout_table(build_gsub_lookup())
+  let gsub_bytes = build_layout_table(
+    build_gsub_lookup(),
+    @common.Tag::from_chars('l', 'i', 'g', 'a'),
+  )
   let gsub = match GsubTable::parse(@blob.Blob::from_bytes(gsub_bytes)) {
     Err(err) => fail("parse error: \{err}")
     Ok(value) => value
@@ -317,7 +320,10 @@ test "gsub single substitution apply" {
 
 ///|
 test "gpos pair adjust deltas" {
-  let gpos_bytes = build_layout_table(build_gpos_lookup())
+  let gpos_bytes = build_layout_table(
+    build_gpos_lookup(),
+    @common.Tag::from_chars('k', 'e', 'r', 'n'),
+  )
   let gpos = match GposTable::parse(@blob.Blob::from_bytes(gpos_bytes)) {
     Err(err) => fail("parse error: \{err}")
     Ok(value) => value
@@ -335,7 +341,10 @@ test "gpos pair adjust deltas" {
 
 ///|
 test "gpos pair adjust format2" {
-  let gpos_bytes = build_layout_table(build_gpos_lookup_format2())
+  let gpos_bytes = build_layout_table(
+    build_gpos_lookup_format2(),
+    @common.Tag::from_chars('k', 'e', 'r', 'n'),
+  )
   let gpos = match GposTable::parse(@blob.Blob::from_bytes(gpos_bytes)) {
     Err(err) => fail("parse error: \{err}")
     Ok(value) => value
@@ -352,7 +361,10 @@ test "gpos pair adjust format2" {
 
 ///|
 test "gpos single adjust format1" {
-  let gpos_bytes = build_layout_table(build_gpos_single_lookup_format1())
+  let gpos_bytes = build_layout_table(
+    build_gpos_single_lookup_format1(),
+    @common.Tag::from_chars('k', 'e', 'r', 'n'),
+  )
   let gpos = match GposTable::parse(@blob.Blob::from_bytes(gpos_bytes)) {
     Err(err) => fail("parse error: \{err}")
     Ok(value) => value
@@ -370,7 +382,10 @@ test "gpos single adjust format1" {
 
 ///|
 test "gpos single adjust format2" {
-  let gpos_bytes = build_layout_table(build_gpos_single_lookup_format2())
+  let gpos_bytes = build_layout_table(
+    build_gpos_single_lookup_format2(),
+    @common.Tag::from_chars('k', 'e', 'r', 'n'),
+  )
   let gpos = match GposTable::parse(@blob.Blob::from_bytes(gpos_bytes)) {
     Err(err) => fail("parse error: \{err}")
     Ok(value) => value
@@ -387,7 +402,10 @@ test "gpos single adjust format2" {
 
 ///|
 test "gsub ligature substitution apply" {
-  let gsub_bytes = build_layout_table(build_gsub_ligature_lookup())
+  let gsub_bytes = build_layout_table(
+    build_gsub_ligature_lookup(),
+    @common.Tag::from_chars('l', 'i', 'g', 'a'),
+  )
   let gsub = match GsubTable::parse(@blob.Blob::from_bytes(gsub_bytes)) {
     Err(err) => fail("parse error: \{err}")
     Ok(value) => value
