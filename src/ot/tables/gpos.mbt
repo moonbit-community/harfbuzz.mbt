@@ -67,6 +67,12 @@ pub fn GposTable::pair_adjust_deltas_with_lookups(
                 Err(err) => return Err(err)
                 Ok(_) => ()
               }
+            } else if format == 2 {
+              let res = apply_pair_format2(data, subtable_offset, glyphs, deltas)
+              match res {
+                Err(err) => return Err(err)
+                Ok(_) => ()
+              }
             } else {
               continue
             }
@@ -92,6 +98,32 @@ fn apply_pair_format1(
     let first = glyphs[i]
     let second = glyphs[i + 1]
     let adjust = pair_adjust_format1(data, offset, first, second)
+    match adjust {
+      Err(err) => return Err(err)
+      Ok(None) => ()
+      Ok(Some(adjust)) => {
+        deltas[i] = add_value_record(deltas[i], adjust.first)
+        deltas[i + 1] = add_value_record(deltas[i + 1], adjust.second)
+      }
+    }
+  }
+  Ok(())
+}
+
+///|
+fn apply_pair_format2(
+  data : BytesView,
+  offset : Int,
+  glyphs : ArrayView[UInt],
+  deltas : Array[ValueRecord],
+) -> Result[Unit, OtLayoutError] {
+  if glyphs.length() < 2 {
+    return Ok(())
+  }
+  for i in 0..<(glyphs.length() - 1) {
+    let first = glyphs[i]
+    let second = glyphs[i + 1]
+    let adjust = pair_adjust_format2(data, offset, first, second)
     match adjust {
       Err(err) => return Err(err)
       Ok(None) => ()
@@ -193,6 +225,105 @@ fn pair_adjust_format1(
                     }
                   }
                   Ok(None)
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+///|
+fn pair_adjust_format2(
+  data : BytesView,
+  offset : Int,
+  first : UInt,
+  second : UInt,
+) -> Result[PairAdjust?, OtLayoutError] {
+  if offset < 0 || offset + 16 > data.length() {
+    return Err(UnexpectedEof)
+  }
+  if first > 0xffffU || second > 0xffffU {
+    return Ok(None)
+  }
+  let coverage_offset = read_u16_int(data, offset + 2)
+  let value_format1 = read_u16_int(data, offset + 4)
+  let value_format2 = read_u16_int(data, offset + 6)
+  let class_def1_offset = read_u16_int(data, offset + 8)
+  let class_def2_offset = read_u16_int(data, offset + 10)
+  let class1_count = read_u16_int(data, offset + 12)
+  let class2_count = read_u16_int(data, offset + 14)
+  match (
+    coverage_offset,
+    value_format1,
+    value_format2,
+    class_def1_offset,
+    class_def2_offset,
+    class1_count,
+    class2_count,
+  ) {
+    (Err(err), _, _, _, _, _, _) => Err(err)
+    (_, Err(err), _, _, _, _, _) => Err(err)
+    (_, _, Err(err), _, _, _, _) => Err(err)
+    (_, _, _, Err(err), _, _, _) => Err(err)
+    (_, _, _, _, Err(err), _, _) => Err(err)
+    (_, _, _, _, _, Err(err), _) => Err(err)
+    (_, _, _, _, _, _, Err(err)) => Err(err)
+    (
+      Ok(coverage_offset),
+      Ok(value_format1),
+      Ok(value_format2),
+      Ok(class_def1_offset),
+      Ok(class_def2_offset),
+      Ok(class1_count),
+      Ok(class2_count),
+    ) => {
+      if coverage_offset == 0 || class_def1_offset == 0 || class_def2_offset == 0 {
+        return Err(InvalidFormat)
+      }
+      if class1_count <= 0 || class2_count <= 0 {
+        return Err(InvalidFormat)
+      }
+      let coverage_base = offset + coverage_offset
+      let coverage = coverage_index(data, coverage_base, first)
+      match coverage {
+        Err(err) => Err(err)
+        Ok(None) => Ok(None)
+        Ok(Some(_)) => {
+          let class1 = class_def_value(data, offset + class_def1_offset, first)
+          let class2 = class_def_value(data, offset + class_def2_offset, second)
+          match (class1, class2) {
+            (Err(err), _) => Err(err)
+            (_, Err(err)) => Err(err)
+            (Ok(class1), Ok(class2)) => {
+              if class1 < 0 || class1 >= class1_count {
+                return Err(InvalidFormat)
+              }
+              if class2 < 0 || class2 >= class2_count {
+                return Err(InvalidFormat)
+              }
+              let record_size =
+                value_record_size(value_format1) + value_record_size(value_format2)
+              let class1_record_size = class2_count * record_size
+              let records_base = offset + 16
+              let total_size = class1_count * class1_record_size
+              if records_base < 0 || records_base + total_size > data.length() {
+                return Err(UnexpectedEof)
+              }
+              let entry_base =
+                records_base + class1 * class1_record_size + class2 * record_size
+              let value1 = read_value_record(data, entry_base, value_format1)
+              match value1 {
+                Err(err) => Err(err)
+                Ok((value1, next_offset)) => {
+                  let value2 = read_value_record(data, next_offset, value_format2)
+                  match value2 {
+                    Err(err) => Err(err)
+                    Ok((value2, _)) =>
+                      Ok(Some(PairAdjust::{ first: value1, second: value2 }))
+                  }
                 }
               }
             }
@@ -310,4 +441,107 @@ fn read_value_record(
     current = current + 2
   }
   Ok((record, current))
+}
+
+///|
+fn class_def_value(
+  data : BytesView,
+  offset : Int,
+  glyph : UInt,
+) -> Result[Int, OtLayoutError] {
+  if glyph > 0xffffU {
+    return Ok(0)
+  }
+  if offset < 0 || offset + 2 > data.length() {
+    return Err(UnexpectedEof)
+  }
+  let format = read_u16_int(data, offset)
+  match format {
+    Err(err) => Err(err)
+    Ok(format) => if format == 1 {
+      class_def_format1(data, offset, glyph)
+    } else if format == 2 {
+      class_def_format2(data, offset, glyph)
+    } else {
+      Err(InvalidFormat)
+    }
+  }
+}
+
+///|
+fn class_def_format1(
+  data : BytesView,
+  offset : Int,
+  glyph : UInt,
+) -> Result[Int, OtLayoutError] {
+  if offset < 0 || offset + 6 > data.length() {
+    return Err(UnexpectedEof)
+  }
+  let start_glyph = read_u16_int(data, offset + 2)
+  let glyph_count = read_u16_int(data, offset + 4)
+  match (start_glyph, glyph_count) {
+    (Err(err), _) => Err(err)
+    (_, Err(err)) => Err(err)
+    (Ok(start_glyph), Ok(glyph_count)) => {
+      if glyph_count <= 0 {
+        return Err(InvalidFormat)
+      }
+      let gid = u16_to_int(glyph)
+      if gid < start_glyph || gid >= start_glyph + glyph_count {
+        return Ok(0)
+      }
+      let index = gid - start_glyph
+      let class_base = offset + 6
+      if class_base < 0 || class_base + glyph_count * 2 > data.length() {
+        return Err(UnexpectedEof)
+      }
+      let value = read_u16_int(data, class_base + index * 2)
+      match value {
+        Err(err) => Err(err)
+        Ok(value) => Ok(value)
+      }
+    }
+  }
+}
+
+///|
+fn class_def_format2(
+  data : BytesView,
+  offset : Int,
+  glyph : UInt,
+) -> Result[Int, OtLayoutError] {
+  if offset < 0 || offset + 4 > data.length() {
+    return Err(UnexpectedEof)
+  }
+  let range_count = read_u16_int(data, offset + 2)
+  match range_count {
+    Err(err) => Err(err)
+    Ok(range_count) => {
+      if range_count < 0 {
+        return Err(InvalidFormat)
+      }
+      let record_base = offset + 4
+      if record_base < 0 || record_base + range_count * 6 > data.length() {
+        return Err(UnexpectedEof)
+      }
+      let gid = u16_to_int(glyph)
+      for i in 0..<range_count {
+        let base = record_base + i * 6
+        let start = read_u16_int(data, base)
+        let end = read_u16_int(data, base + 2)
+        let class_value = read_u16_int(data, base + 4)
+        match (start, end, class_value) {
+          (Err(err), _, _) => return Err(err)
+          (_, Err(err), _) => return Err(err)
+          (_, _, Err(err)) => return Err(err)
+          (Ok(start), Ok(end), Ok(class_value)) => {
+            if gid >= start && gid <= end {
+              return Ok(class_value)
+            }
+          }
+        }
+      }
+      Ok(0)
+    }
+  }
 }

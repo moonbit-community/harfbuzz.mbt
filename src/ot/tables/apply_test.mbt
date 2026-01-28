@@ -154,6 +154,57 @@ fn build_gpos_lookup() -> Bytes {
 }
 
 ///|
+fn build_gpos_subtable_format2() -> Bytes {
+  let bytes : Array[Byte] = []
+  push_u16(bytes, 2)
+  push_u16(bytes, 32)
+  push_u16(bytes, 0x0004)
+  push_u16(bytes, 0x0004)
+  push_u16(bytes, 38)
+  push_u16(bytes, 46)
+  push_u16(bytes, 2)
+  push_u16(bytes, 2)
+  // class1 records (class2Count=2, recordSize=4)
+  push_i16(bytes, 0)
+  push_i16(bytes, 0)
+  push_i16(bytes, 0)
+  push_i16(bytes, 0)
+  push_i16(bytes, 0)
+  push_i16(bytes, 0)
+  push_i16(bytes, 30)
+  push_i16(bytes, -10)
+  // coverage table
+  push_u16(bytes, 1)
+  push_u16(bytes, 1)
+  push_u16(bytes, 3)
+  // classDef1 format1
+  push_u16(bytes, 1)
+  push_u16(bytes, 3)
+  push_u16(bytes, 1)
+  push_u16(bytes, 1)
+  // classDef2 format1
+  push_u16(bytes, 1)
+  push_u16(bytes, 4)
+  push_u16(bytes, 1)
+  push_u16(bytes, 1)
+  Bytes::from_array(bytes)
+}
+
+///|
+fn build_gpos_lookup_format2() -> Bytes {
+  let subtable = build_gpos_subtable_format2()
+  let bytes : Array[Byte] = []
+  push_u16(bytes, 2)
+  push_u16(bytes, 0)
+  push_u16(bytes, 1)
+  push_u16(bytes, 8)
+  for b in subtable {
+    bytes.push(b)
+  }
+  Bytes::from_array(bytes)
+}
+
+///|
 fn build_gsub_ligature_subtable() -> Bytes {
   let bytes : Array[Byte] = []
   push_u16(bytes, 1)
@@ -220,6 +271,23 @@ test "gpos pair adjust deltas" {
   inspect(deltas[0].x_placement, content="5")
   inspect(deltas[0].x_advance, content="-20")
   inspect(deltas[1].x_advance, content="10")
+}
+
+///|
+test "gpos pair adjust format2" {
+  let gpos_bytes = build_layout_table(build_gpos_lookup_format2())
+  let gpos = match GposTable::parse(@blob.Blob::from_bytes(gpos_bytes)) {
+    Err(err) => fail("parse error: \{err}")
+    Ok(value) => value
+  }
+  let glyphs : Array[UInt] = [3U, 4U]
+  let deltas = match gpos.pair_adjust_deltas(glyphs[:]) {
+    Err(err) => fail("apply error: \{err}")
+    Ok(value) => value
+  }
+  inspect(deltas.length(), content="2")
+  inspect(deltas[0].x_advance, content="30")
+  inspect(deltas[1].x_advance, content="-10")
 }
 
 ///|
