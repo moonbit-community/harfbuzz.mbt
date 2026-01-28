@@ -1,4 +1,5 @@
-///|\n/// Apply GSUB single substitution lookups to glyph array.
+///|
+/// Apply GSUB single substitution lookups to glyph array.
 pub fn GsubTable::apply_single(
   self : GsubTable,
   glyphs : Array[UInt],
