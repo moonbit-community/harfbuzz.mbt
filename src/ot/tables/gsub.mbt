@@ -68,6 +68,22 @@ pub fn GsubTable::apply_with_lookups(
           if did_change {
             changed = true
           }
+        } else if lookup_type == 2 {
+          let result = match apply_multiple_subtable_list(
+            data,
+            subtable_offsets,
+            current_glyphs,
+            current_clusters,
+          ) {
+            Err(err) => return Err(err)
+            Ok(value) => value
+          }
+          let (next_glyphs, next_clusters, did_change) = result
+          current_glyphs = next_glyphs
+          current_clusters = next_clusters
+          if did_change {
+            changed = true
+          }
         } else if lookup_type == 4 {
           let result = match apply_ligature_subtable_list(
             data,
@@ -181,6 +197,138 @@ fn apply_ligature_subtable_list(
     }
   }
   Ok((new_glyphs, new_clusters, changed))
+}
+
+///|
+fn apply_multiple_subtable_list(
+  data : BytesView,
+  offsets : Array[Int],
+  glyphs : Array[UInt],
+  clusters : Array[Int],
+) -> Result[(Array[UInt], Array[Int], Bool), OtLayoutError] {
+  if clusters.length() != glyphs.length() {
+    return Err(InvalidFormat)
+  }
+  let new_glyphs : Array[UInt] = []
+  let new_clusters : Array[Int] = []
+  let mut changed = false
+  for i in 0..<glyphs.length() {
+    let glyph = glyphs[i]
+    let sub_result = find_multiple_substitution(data, offsets, glyph)
+    match sub_result {
+      Err(err) => return Err(err)
+      Ok(None) => {
+        new_glyphs.push(glyph)
+        new_clusters.push(clusters[i])
+      }
+      Ok(Some(sequence)) => {
+        if sequence.is_empty() {
+          return Err(InvalidFormat)
+        }
+        for value in sequence {
+          new_glyphs.push(value)
+          new_clusters.push(clusters[i])
+        }
+        if sequence.length() != 1 || sequence[0] != glyph {
+          changed = true
+        }
+      }
+    }
+  }
+  Ok((new_glyphs, new_clusters, changed))
+}
+
+///|
+fn find_multiple_substitution(
+  data : BytesView,
+  offsets : Array[Int],
+  glyph : UInt,
+) -> Result[Array[UInt]?, OtLayoutError] {
+  for offset in offsets {
+    let result = multiple_substitute_format1(data, offset, glyph)
+    match result {
+      Err(err) => return Err(err)
+      Ok(Some(value)) => return Ok(Some(value))
+      Ok(None) => ()
+    }
+  }
+  Ok(None)
+}
+
+///|
+fn multiple_substitute_format1(
+  data : BytesView,
+  offset : Int,
+  glyph : UInt,
+) -> Result[Array[UInt]?, OtLayoutError] {
+  if glyph > 0xffffU {
+    return Ok(None)
+  }
+  if offset < 0 || offset + 6 > data.length() {
+    return Err(UnexpectedEof)
+  }
+  let format = read_u16_int(data, offset)
+  let coverage_offset = read_u16_int(data, offset + 2)
+  let sequence_count = read_u16_int(data, offset + 4)
+  match (format, coverage_offset, sequence_count) {
+    (Err(err), _, _) => Err(err)
+    (_, Err(err), _) => Err(err)
+    (_, _, Err(err)) => Err(err)
+    (Ok(format), Ok(coverage_offset), Ok(sequence_count)) => {
+      if format != 1 {
+        return Err(InvalidFormat)
+      }
+      if coverage_offset == 0 || sequence_count <= 0 {
+        return Err(InvalidFormat)
+      }
+      let coverage_base = offset + coverage_offset
+      let index = coverage_index(data, coverage_base, glyph)
+      match index {
+        Err(err) => Err(err)
+        Ok(None) => Ok(None)
+        Ok(Some(index)) => {
+          if index < 0 || index >= sequence_count {
+            return Err(InvalidFormat)
+          }
+          let sequence_offset = read_u16_int(data, offset + 6 + index * 2)
+          match sequence_offset {
+            Err(err) => Err(err)
+            Ok(sequence_offset) => {
+              if sequence_offset == 0 {
+                return Err(InvalidFormat)
+              }
+              let sequence_base = offset + sequence_offset
+              if sequence_base < 0 || sequence_base + 2 > data.length() {
+                return Err(UnexpectedEof)
+              }
+              let glyph_count = read_u16_int(data, sequence_base)
+              match glyph_count {
+                Err(err) => Err(err)
+                Ok(glyph_count) => {
+                  if glyph_count <= 0 {
+                    return Err(InvalidFormat)
+                  }
+                  let list_base = sequence_base + 2
+                  if list_base < 0 || list_base + glyph_count * 2 > data.length() {
+                    return Err(UnexpectedEof)
+                  }
+                  let sequence : Array[UInt] = []
+                  for i in 0..<glyph_count {
+                    let value = read_u16_int(data, list_base + i * 2)
+                    match value {
+                      Err(err) => return Err(err)
+                      Ok(value) => sequence.push(value.reinterpret_as_uint())
+                    }
+                  }
+                  Ok(Some(sequence))
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
 }
 
 ///|

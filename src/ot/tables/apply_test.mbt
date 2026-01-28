@@ -300,6 +300,38 @@ fn build_gsub_ligature_lookup() -> Bytes {
 }
 
 ///|
+fn build_gsub_multiple_subtable() -> Bytes {
+  let bytes : Array[Byte] = []
+  push_u16(bytes, 1)
+  push_u16(bytes, 8)
+  push_u16(bytes, 1)
+  push_u16(bytes, 14)
+  // coverage table
+  push_u16(bytes, 1)
+  push_u16(bytes, 1)
+  push_u16(bytes, 3)
+  // sequence table
+  push_u16(bytes, 2)
+  push_u16(bytes, 6)
+  push_u16(bytes, 7)
+  Bytes::from_array(bytes)
+}
+
+///|
+fn build_gsub_multiple_lookup() -> Bytes {
+  let subtable = build_gsub_multiple_subtable()
+  let bytes : Array[Byte] = []
+  push_u16(bytes, 2)
+  push_u16(bytes, 0)
+  push_u16(bytes, 1)
+  push_u16(bytes, 8)
+  for b in subtable {
+    bytes.push(b)
+  }
+  Bytes::from_array(bytes)
+}
+
+///|
 test "gsub single substitution apply" {
   let gsub_bytes = build_layout_table(
     build_gsub_lookup(),
@@ -424,4 +456,30 @@ test "gsub ligature substitution apply" {
   inspect(changed, content="true")
   inspect(new_glyphs, content="[6, 5]")
   inspect(new_clusters, content="[0, 2]")
+}
+
+///|
+test "gsub multiple substitution apply" {
+  let gsub_bytes = build_layout_table(
+    build_gsub_multiple_lookup(),
+    @common.Tag::from_chars('l', 'i', 'g', 'a'),
+  )
+  let gsub = match GsubTable::parse(@blob.Blob::from_bytes(gsub_bytes)) {
+    Err(err) => fail("parse error: \{err}")
+    Ok(value) => value
+  }
+  let glyphs : Array[UInt] = [3U, 4U]
+  let clusters : Array[Int] = [0, 1]
+  let result = match gsub.apply_with_lookups(
+    glyphs,
+    clusters,
+    gsub.layout().lookup_list().offsets(),
+  ) {
+    Err(err) => fail("apply error: \{err}")
+    Ok(value) => value
+  }
+  let (new_glyphs, new_clusters, changed) = result
+  inspect(changed, content="true")
+  inspect(new_glyphs, content="[6, 7, 4]")
+  inspect(new_clusters, content="[0, 0, 1]")
 }
