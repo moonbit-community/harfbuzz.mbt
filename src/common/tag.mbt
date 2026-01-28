@@ -2,7 +2,7 @@
 /// Tag identifier (four bytes).
 pub struct Tag {
   value : UInt
-} derive(Eq, Show, ToJson)
+} derive(Eq, Show, ToJson, Hash)
 
 ///|
 /// Construct a tag from four bytes.

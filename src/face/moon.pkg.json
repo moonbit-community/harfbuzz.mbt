@@ -1,0 +1,9 @@
+{
+  "import": [
+    "moonbit-community/harfbuzz/blob",
+    {
+      "path": "moonbit-community/harfbuzz/common",
+      "alias": "common"
+    }
+  ]
+}
