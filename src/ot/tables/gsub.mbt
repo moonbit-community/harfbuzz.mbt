@@ -48,6 +48,7 @@ pub fn GsubTable::apply_with_lookups(
     return Err(InvalidFormat)
   }
   let data = self.layout.data
+  let lookup_list_offsets = self.layout.lookup_list.offsets
   let mut current_glyphs = glyphs
   let mut current_clusters = clusters
   let mut changed = false
@@ -109,6 +110,19 @@ pub fn GsubTable::apply_with_lookups(
           let (next_glyphs, next_clusters, did_change) = result
           current_glyphs = next_glyphs
           current_clusters = next_clusters
+          if did_change {
+            changed = true
+          }
+        } else if lookup_type == 5 {
+          let did_change = match apply_context_subtable_list(
+            data,
+            subtable_offsets,
+            current_glyphs,
+            lookup_list_offsets,
+          ) {
+            Err(err) => return Err(err)
+            Ok(value) => value
+          }
           if did_change {
             changed = true
           }
@@ -224,6 +238,298 @@ fn apply_ligature_subtable_list(
 }
 
 ///|
+fn apply_context_subtable_list(
+  data : BytesView,
+  offsets : Array[Int],
+  glyphs : Array[UInt],
+  lookup_list_offsets : Array[Int],
+) -> Result[Bool, OtLayoutError] {
+  let mut changed = false
+  for offset in offsets {
+    let result = apply_context_subtable(data, offset, glyphs, lookup_list_offsets)
+    match result {
+      Err(err) => return Err(err)
+      Ok(value) => if value { changed = true }
+    }
+  }
+  Ok(changed)
+}
+
+///|
+fn apply_context_subtable(
+  data : BytesView,
+  offset : Int,
+  glyphs : Array[UInt],
+  lookup_list_offsets : Array[Int],
+) -> Result[Bool, OtLayoutError] {
+  if offset < 0 || offset + 6 > data.length() {
+    return Err(UnexpectedEof)
+  }
+  let format = read_u16_int(data, offset)
+  let coverage_offset = read_u16_int(data, offset + 2)
+  let set_count = read_u16_int(data, offset + 4)
+  match (format, coverage_offset, set_count) {
+    (Err(err), _, _) => Err(err)
+    (_, Err(err), _) => Err(err)
+    (_, _, Err(err)) => Err(err)
+    (Ok(format), Ok(coverage_offset), Ok(set_count)) => {
+      if format != 1 {
+        return Err(InvalidFormat)
+      }
+      if coverage_offset == 0 || set_count <= 0 {
+        return Err(InvalidFormat)
+      }
+      let coverage_base = offset + coverage_offset
+      let set_base = offset + 6
+      if set_base < 0 || set_base + set_count * 2 > data.length() {
+        return Err(UnexpectedEof)
+      }
+      let mut changed = false
+      for i in 0..<glyphs.length() {
+        let glyph = glyphs[i]
+        let index = coverage_index(data, coverage_base, glyph)
+        match index {
+          Err(err) => return Err(err)
+          Ok(None) => ()
+          Ok(Some(index)) => {
+            if index < 0 || index >= set_count {
+              return Err(InvalidFormat)
+            }
+            let rule_set_offset = read_u16_int(data, set_base + index * 2)
+            match rule_set_offset {
+              Err(err) => return Err(err)
+              Ok(rule_set_offset) => {
+                if rule_set_offset == 0 {
+                  return Err(InvalidFormat)
+                }
+                let rule_set_base = offset + rule_set_offset
+                if rule_set_base < 0 || rule_set_base + 2 > data.length() {
+                  return Err(UnexpectedEof)
+                }
+                let rule_count = read_u16_int(data, rule_set_base)
+                match rule_count {
+                  Err(err) => return Err(err)
+                  Ok(rule_count) => {
+                    if rule_count <= 0 {
+                      return Err(InvalidFormat)
+                    }
+                    let rule_list_base = rule_set_base + 2
+                    if rule_list_base < 0 ||
+                        rule_list_base + rule_count * 2 > data.length() {
+                      return Err(UnexpectedEof)
+                    }
+                    for r in 0..<rule_count {
+                      let rule_offset = read_u16_int(data, rule_list_base + r * 2)
+                      match rule_offset {
+                        Err(err) => return Err(err)
+                        Ok(rule_offset) => {
+                          if rule_offset == 0 {
+                            return Err(InvalidFormat)
+                          }
+                          let rule_base = rule_set_base + rule_offset
+                          let applied = match apply_context_rule(
+                            data,
+                            rule_base,
+                            glyphs,
+                            i,
+                            lookup_list_offsets,
+                          ) {
+                            Err(err) => return Err(err)
+                            Ok(value) => value
+                          }
+                          if applied {
+                            changed = true
+                            break
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+      Ok(changed)
+    }
+  }
+}
+
+///|
+fn apply_context_rule(
+  data : BytesView,
+  offset : Int,
+  glyphs : Array[UInt],
+  index : Int,
+  lookup_list_offsets : Array[Int],
+) -> Result[Bool, OtLayoutError] {
+  if offset < 0 || offset + 4 > data.length() {
+    return Err(UnexpectedEof)
+  }
+  let glyph_count = read_u16_int(data, offset)
+  let subst_count = read_u16_int(data, offset + 2)
+  match (glyph_count, subst_count) {
+    (Err(err), _) => Err(err)
+    (_, Err(err)) => Err(err)
+    (Ok(glyph_count), Ok(subst_count)) => {
+      if glyph_count <= 0 || subst_count < 0 {
+        return Err(InvalidFormat)
+      }
+      if index + glyph_count > glyphs.length() {
+        return Ok(false)
+      }
+      let input_base = offset + 4
+      if input_base < 0 || input_base + (glyph_count - 1) * 2 > data.length() {
+        return Err(UnexpectedEof)
+      }
+      for i in 0..<(glyph_count - 1) {
+        let expected = read_u16_int(data, input_base + i * 2)
+        match expected {
+          Err(err) => return Err(err)
+          Ok(expected) => {
+            let actual = glyphs[index + 1 + i]
+            if expected != u16_to_int(actual) {
+              return Ok(false)
+            }
+          }
+        }
+      }
+      let record_base = input_base + (glyph_count - 1) * 2
+      if record_base < 0 || record_base + subst_count * 4 > data.length() {
+        return Err(UnexpectedEof)
+      }
+      let mut changed = false
+      for i in 0..<subst_count {
+        let seq_index = read_u16_int(data, record_base + i * 4)
+        let lookup_index = read_u16_int(data, record_base + i * 4 + 2)
+        match (seq_index, lookup_index) {
+          (Err(err), _) => return Err(err)
+          (_, Err(err)) => return Err(err)
+          (Ok(seq_index), Ok(lookup_index)) => {
+            if seq_index < 0 || seq_index >= glyph_count {
+              return Err(InvalidFormat)
+            }
+            if lookup_index < 0 || lookup_index >= lookup_list_offsets.length() {
+              return Err(InvalidFormat)
+            }
+            let target = index + seq_index
+            if target < 0 || target >= glyphs.length() {
+              return Err(InvalidFormat)
+            }
+            let lookup_offset = lookup_list_offsets[lookup_index]
+            let did_change = match apply_lookup_at(
+              data,
+              lookup_offset,
+              glyphs,
+              target,
+            ) {
+              Err(err) => return Err(err)
+              Ok(value) => value
+            }
+            if did_change {
+              changed = true
+            }
+          }
+        }
+      }
+      Ok(changed)
+    }
+  }
+}
+
+///|
+fn apply_lookup_at(
+  data : BytesView,
+  lookup_offset : Int,
+  glyphs : Array[UInt],
+  index : Int,
+) -> Result[Bool, OtLayoutError] {
+  let parsed = parse_lookup(data, lookup_offset)
+  match parsed {
+    Err(err) => Err(err)
+    Ok((lookup_type, subtable_offsets)) => {
+      if lookup_type == 1 {
+        apply_single_at(data, subtable_offsets, glyphs, index)
+      } else if lookup_type == 3 {
+        apply_alternate_at(data, subtable_offsets, glyphs, index)
+      } else {
+        Ok(false)
+      }
+    }
+  }
+}
+
+///|
+fn apply_single_at(
+  data : BytesView,
+  offsets : Array[Int],
+  glyphs : Array[UInt],
+  index : Int,
+) -> Result[Bool, OtLayoutError] {
+  if index < 0 || index >= glyphs.length() {
+    return Err(InvalidFormat)
+  }
+  let mut changed = false
+  let mut glyph = glyphs[index]
+  for offset in offsets {
+    let format = read_u16_int(data, offset)
+    match format {
+      Err(err) => return Err(err)
+      Ok(format) => {
+        let next = if format == 1 {
+          single_substitute_format1(data, offset, glyph)
+        } else if format == 2 {
+          single_substitute_format2(data, offset, glyph)
+        } else {
+          Err(InvalidFormat)
+        }
+        match next {
+          Err(err) => return Err(err)
+          Ok(None) => ()
+          Ok(Some(value)) => {
+            if value != glyph {
+              glyph = value
+              glyphs[index] = value
+              changed = true
+            }
+          }
+        }
+      }
+    }
+  }
+  Ok(changed)
+}
+
+///|
+fn apply_alternate_at(
+  data : BytesView,
+  offsets : Array[Int],
+  glyphs : Array[UInt],
+  index : Int,
+) -> Result[Bool, OtLayoutError] {
+  if index < 0 || index >= glyphs.length() {
+    return Err(InvalidFormat)
+  }
+  let mut changed = false
+  let mut glyph = glyphs[index]
+  for offset in offsets {
+    let next = alternate_substitute_format1(data, offset, glyph)
+    match next {
+      Err(err) => return Err(err)
+      Ok(None) => ()
+      Ok(Some(value)) => {
+        if value != glyph {
+          glyph = value
+          glyphs[index] = value
+          changed = true
+        }
+      }
+    }
+  }
+  Ok(changed)
+}
+
 fn apply_reverse_chain_subtable_list(
   data : BytesView,
   offsets : Array[Int],
@@ -492,6 +798,33 @@ fn apply_alternate_subtable(
   offset : Int,
   glyphs : Array[UInt],
 ) -> Result[Bool, OtLayoutError] {
+  let mut changed = false
+  for i in 0..<glyphs.length() {
+    let glyph = glyphs[i]
+    let next = alternate_substitute_format1(data, offset, glyph)
+    match next {
+      Err(err) => return Err(err)
+      Ok(None) => ()
+      Ok(Some(value)) => {
+        if value != glyph {
+          glyphs[i] = value
+          changed = true
+        }
+      }
+    }
+  }
+  Ok(changed)
+}
+
+///|
+fn alternate_substitute_format1(
+  data : BytesView,
+  offset : Int,
+  glyph : UInt,
+) -> Result[UInt?, OtLayoutError] {
+  if glyph > 0xffffU {
+    return Ok(None)
+  }
   if offset < 0 || offset + 6 > data.length() {
     return Err(UnexpectedEof)
   }
@@ -514,50 +847,40 @@ fn apply_alternate_subtable(
         return Err(UnexpectedEof)
       }
       let coverage_base = offset + coverage_offset
-      let mut changed = false
-      for i in 0..<glyphs.length() {
-        let glyph = glyphs[i]
-        let index = coverage_index(data, coverage_base, glyph)
-        match index {
-          Err(err) => return Err(err)
-          Ok(None) => ()
-          Ok(Some(index)) => {
-            if index < 0 || index >= set_count {
-              return Err(InvalidFormat)
-            }
-            let set_offset = read_u16_int(data, list_base + index * 2)
-            match set_offset {
-              Err(err) => return Err(err)
-              Ok(set_offset) => {
-                if set_offset == 0 {
-                  return Err(InvalidFormat)
-                }
-                let set_base = offset + set_offset
-                if set_base < 0 || set_base + 2 > data.length() {
-                  return Err(UnexpectedEof)
-                }
-                let glyph_count = read_u16_int(data, set_base)
-                match glyph_count {
-                  Err(err) => return Err(err)
-                  Ok(glyph_count) => {
-                    if glyph_count <= 0 {
-                      return Err(InvalidFormat)
-                    }
-                    let alt_base = set_base + 2
-                    if alt_base < 0 || alt_base + glyph_count * 2 > data.length() {
-                      return Err(UnexpectedEof)
-                    }
-                    let first = read_u16_int(data, alt_base)
-                    match first {
-                      Err(err) => return Err(err)
-                      Ok(first) => {
-                        let alt = first.reinterpret_as_uint()
-                        if alt != glyph {
-                          glyphs[i] = alt
-                          changed = true
-                        }
-                      }
-                    }
+      let index = coverage_index(data, coverage_base, glyph)
+      match index {
+        Err(err) => Err(err)
+        Ok(None) => Ok(None)
+        Ok(Some(index)) => {
+          if index < 0 || index >= set_count {
+            return Err(InvalidFormat)
+          }
+          let set_offset = read_u16_int(data, list_base + index * 2)
+          match set_offset {
+            Err(err) => Err(err)
+            Ok(set_offset) => {
+              if set_offset == 0 {
+                return Err(InvalidFormat)
+              }
+              let set_base = offset + set_offset
+              if set_base < 0 || set_base + 2 > data.length() {
+                return Err(UnexpectedEof)
+              }
+              let glyph_count = read_u16_int(data, set_base)
+              match glyph_count {
+                Err(err) => Err(err)
+                Ok(glyph_count) => {
+                  if glyph_count <= 0 {
+                    return Err(InvalidFormat)
+                  }
+                  let alt_base = set_base + 2
+                  if alt_base < 0 || alt_base + glyph_count * 2 > data.length() {
+                    return Err(UnexpectedEof)
+                  }
+                  let first = read_u16_int(data, alt_base)
+                  match first {
+                    Err(err) => Err(err)
+                    Ok(first) => Ok(Some(first.reinterpret_as_uint()))
                   }
                 }
               }
@@ -565,7 +888,6 @@ fn apply_alternate_subtable(
           }
         }
       }
-      Ok(changed)
     }
   }
 }

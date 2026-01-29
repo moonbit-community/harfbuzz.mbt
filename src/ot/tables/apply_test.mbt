@@ -66,10 +66,57 @@ fn build_lookup_list(lookup : Bytes) -> Bytes {
 }
 
 ///|
+fn build_lookup_list_with_lookups(lookups : Array[Bytes]) -> Bytes {
+  let bytes : Array[Byte] = []
+  let count = lookups.length()
+  push_u16(bytes, count)
+  let header_len = 2 + count * 2
+  let mut cursor = header_len
+  for lookup in lookups {
+    push_u16(bytes, cursor)
+    cursor = cursor + lookup.length()
+  }
+  for lookup in lookups {
+    for b in lookup {
+      bytes.push(b)
+    }
+  }
+  Bytes::from_array(bytes)
+}
+
+///|
 fn build_layout_table(lookup : Bytes, feature_tag : @common.Tag) -> Bytes {
   let script = build_script_list()
   let feature = build_feature_list(feature_tag)
   let lookup_list = build_lookup_list(lookup)
+  let bytes : Array[Byte] = []
+  push_u32(bytes, 0x00010000)
+  let script_offset = 10
+  let feature_offset = script_offset + script.length()
+  let lookup_offset = feature_offset + feature.length()
+  push_u16(bytes, script_offset)
+  push_u16(bytes, feature_offset)
+  push_u16(bytes, lookup_offset)
+  for b in script {
+    bytes.push(b)
+  }
+  for b in feature {
+    bytes.push(b)
+  }
+  for b in lookup_list {
+    bytes.push(b)
+  }
+  Bytes::from_array(bytes)
+}
+
+///|
+fn build_layout_table_with_lookups(
+  lookups : Array[Bytes],
+  feature_tag : @common.Tag,
+) -> Bytes {
+  let script = build_script_list()
+  let feature = build_feature_list(feature_tag)
+  let lookup_list = build_lookup_list_with_lookups(lookups)
   let bytes : Array[Byte] = []
   push_u32(bytes, 0x00010000)
   let script_offset = 10
@@ -106,6 +153,20 @@ fn build_gsub_subtable(target : Int, substitute : Int) -> Bytes {
 ///|
 fn build_gsub_lookup() -> Bytes {
   let subtable = build_gsub_subtable(1, 3)
+  let bytes : Array[Byte] = []
+  push_u16(bytes, 1)
+  push_u16(bytes, 0)
+  push_u16(bytes, 1)
+  push_u16(bytes, 8)
+  for b in subtable {
+    bytes.push(b)
+  }
+  Bytes::from_array(bytes)
+}
+
+///|
+fn build_gsub_single_lookup(target : Int, substitute : Int) -> Bytes {
+  let subtable = build_gsub_subtable(target, substitute)
   let bytes : Array[Byte] = []
   push_u16(bytes, 1)
   push_u16(bytes, 0)
@@ -458,6 +519,43 @@ fn build_gsub_reverse_chain_lookup() -> Bytes {
 }
 
 ///|
+fn build_gsub_context_subtable() -> Bytes {
+  let bytes : Array[Byte] = []
+  push_u16(bytes, 1)
+  push_u16(bytes, 8)
+  push_u16(bytes, 1)
+  push_u16(bytes, 14)
+  // coverage table (input glyph 3)
+  push_u16(bytes, 1)
+  push_u16(bytes, 1)
+  push_u16(bytes, 3)
+  // subrule set
+  push_u16(bytes, 1)
+  push_u16(bytes, 4)
+  // subrule: [3, 4] -> apply lookup 1 at index 1
+  push_u16(bytes, 2)
+  push_u16(bytes, 1)
+  push_u16(bytes, 4)
+  push_u16(bytes, 1)
+  push_u16(bytes, 1)
+  Bytes::from_array(bytes)
+}
+
+///|
+fn build_gsub_context_lookup() -> Bytes {
+  let subtable = build_gsub_context_subtable()
+  let bytes : Array[Byte] = []
+  push_u16(bytes, 5)
+  push_u16(bytes, 0)
+  push_u16(bytes, 1)
+  push_u16(bytes, 8)
+  for b in subtable {
+    bytes.push(b)
+  }
+  Bytes::from_array(bytes)
+}
+
+///|
 test "gsub single substitution apply" {
   let gsub_bytes = build_layout_table(
     build_gsub_lookup(),
@@ -699,5 +797,33 @@ test "gsub reverse chain substitution apply" {
   let (new_glyphs, new_clusters, changed) = result
   inspect(changed, content="true")
   inspect(new_glyphs, content="[1, 5, 2]")
+  inspect(new_clusters, content="[0, 1, 2]")
+}
+
+///|
+test "gsub contextual substitution apply" {
+  let context_lookup = build_gsub_context_lookup()
+  let single_lookup = build_gsub_single_lookup(4, 6)
+  let gsub_bytes = build_layout_table_with_lookups(
+    [context_lookup, single_lookup],
+    @common.Tag::from_chars('l', 'i', 'g', 'a'),
+  )
+  let gsub = match GsubTable::parse(@blob.Blob::from_bytes(gsub_bytes)) {
+    Err(err) => fail("parse error: \{err}")
+    Ok(value) => value
+  }
+  let glyphs : Array[UInt] = [3U, 4U, 5U]
+  let clusters : Array[Int] = [0, 1, 2]
+  let result = match gsub.apply_with_lookups(
+    glyphs,
+    clusters,
+    gsub.layout().lookup_list().offsets(),
+  ) {
+    Err(err) => fail("apply error: \{err}")
+    Ok(value) => value
+  }
+  let (new_glyphs, new_clusters, changed) = result
+  inspect(changed, content="true")
+  inspect(new_glyphs, content="[3, 6, 5]")
   inspect(new_clusters, content="[0, 1, 2]")
 }
