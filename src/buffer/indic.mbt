@@ -24,13 +24,23 @@ pub fn Buffer::shape_indic(
   self : Buffer,
   font : @font.Font,
 ) -> Result[Unit, ShapeError] {
-  match self.shape_basic(font) {
-    Err(err) => return Err(err)
-    Ok(_) => ()
-  }
   let gsub = match font.gsub() {
     Err(err) => return Err(Font(err))
     Ok(value) => value
+  }
+  if gsub is Some(gsub) {
+    let script_tag = self.script.to_tag()
+    let dflt_tag = @common.Tag::from_chars('D', 'F', 'L', 'T')
+    let latn_tag = @common.Tag::from_chars('l', 'a', 't', 'n')
+    if !buffer_layout_has_script(gsub.layout(), script_tag) &&
+      (buffer_layout_has_script(gsub.layout(), dflt_tag) ||
+        buffer_layout_has_script(gsub.layout(), latn_tag)) {
+      return self.shape_ot(font)
+    }
+  }
+  match self.shape_basic(font) {
+    Err(err) => return Err(err)
+    Ok(_) => ()
   }
   if gsub is Some(gsub) {
     let gdef = match font.gdef() {
