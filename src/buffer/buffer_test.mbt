@@ -92,7 +92,20 @@ test "buffer normalize combining marks" {
   for info in buffer.infos() {
     cps.push(info.codepoint)
   }
-  inspect(cps, content="[97, 807, 769]")
+  inspect(cps, content="[225, 807]")
+}
+
+///|
+test "buffer normalize compose" {
+  let buffer = Buffer::new()
+  buffer.add_codepoint(0x41U)
+  buffer.add_codepoint(0x0301U)
+  buffer.normalize()
+  let cps : Array[UInt] = []
+  for info in buffer.infos() {
+    cps.push(info.codepoint)
+  }
+  inspect(cps, content="[193]")
 }
 
 ///|

@@ -245,7 +245,7 @@ pub fn Buffer::guess_segment_properties(self : Buffer) -> Unit {
 ///|
 /// Normalize buffer codepoints by reordering combining marks.
 pub fn Buffer::normalize(self : Buffer) -> Unit {
-  let len = self.infos.length()
+  let mut len = self.infos.length()
   if len <= 1 {
     return ()
   }
@@ -285,6 +285,21 @@ pub fn Buffer::normalize(self : Buffer) -> Unit {
     }
     if is_hebrew {
       reorder_marks_hebrew(self, start, end)
+    }
+    let mut i = start + 1
+    while i < end {
+      match @unicode.compose(self.infos[start].codepoint, self.infos[i].codepoint) {
+        None => i = i + 1
+        Some(composed) => {
+          self.merge_clusters(start, i + 1)
+          let base = self.infos[start]
+          self.infos[start] = GlyphInfo::{ codepoint: composed, cluster: base.cluster }
+          ignore(self.infos.remove(i))
+          ignore(self.positions.remove(i))
+          len = len - 1
+          end = end - 1
+        }
+      }
     }
     start = end
   }
