@@ -14,6 +14,11 @@ fn push_u16(bytes : Array[Byte], value : Int) -> Unit {
 }
 
 ///|
+fn push_u8(bytes : Array[Byte], value : Int) -> Unit {
+  bytes.push((value & 0xff).to_byte())
+}
+
+///|
 fn push_i16(bytes : Array[Byte], value : Int) -> Unit {
   let adjusted = if value < 0 { value + 0x10000 } else { value }
   push_u16(bytes, adjusted)
@@ -211,6 +216,34 @@ fn build_kern_table_format2() -> Bytes {
   push_i16(bytes, 0)
   push_i16(bytes, 0)
   push_i16(bytes, -30)
+  Bytes::from_array(bytes)
+}
+
+///|
+fn build_kern_table_format3() -> Bytes {
+  let bytes : Array[Byte] = []
+  push_u16(bytes, 0)
+  push_u16(bytes, 1)
+  push_u16(bytes, 0)
+  push_u16(bytes, 26)
+  push_u16(bytes, 0x0301)
+  push_u16(bytes, 3)
+  push_u8(bytes, 2)
+  push_u8(bytes, 2)
+  push_u8(bytes, 2)
+  push_u8(bytes, 0)
+  push_i16(bytes, 0)
+  push_i16(bytes, -40)
+  push_u8(bytes, 0)
+  push_u8(bytes, 1)
+  push_u8(bytes, 0)
+  push_u8(bytes, 0)
+  push_u8(bytes, 1)
+  push_u8(bytes, 0)
+  push_u8(bytes, 0)
+  push_u8(bytes, 0)
+  push_u8(bytes, 0)
+  push_u8(bytes, 1)
   Bytes::from_array(bytes)
 }
 
@@ -551,6 +584,16 @@ test "kern table format2 parse" {
   }
   inspect(kern.kern_value(1U, 1U), content="Some(-30)")
   inspect(kern.kern_value(2U, 2U), content="Some(0)")
+}
+
+///|
+test "kern table format3 parse" {
+  let kern = match KernTable::parse(build_kern_table_format3()[:]) {
+    Err(err) => fail("parse error: \{err}")
+    Ok(value) => value
+  }
+  inspect(kern.kern_value(1U, 1U), content="Some(-40)")
+  inspect(kern.kern_value(0U, 1U), content="Some(0)")
 }
 
 ///|
