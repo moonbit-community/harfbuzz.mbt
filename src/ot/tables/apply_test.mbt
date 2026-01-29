@@ -210,6 +210,20 @@ fn build_gsub_single_lookup_mark_filter() -> Bytes {
 }
 
 ///|
+fn build_gsub_single_lookup_mark_attach_type() -> Bytes {
+  let subtable = build_gsub_single_subtable_format2_two()
+  let bytes : Array[Byte] = []
+  push_u16(bytes, 1)
+  push_u16(bytes, 0x0100)
+  push_u16(bytes, 1)
+  push_u16(bytes, 8)
+  for b in subtable {
+    bytes.push(b)
+  }
+  Bytes::from_array(bytes)
+}
+
+///|
 fn build_gpos_subtable() -> Bytes {
   let bytes : Array[Byte] = []
   push_u16(bytes, 1)
@@ -1234,14 +1248,20 @@ fn build_gdef_mark_filter_table() -> Bytes {
   push_u16(bytes, 14)
   push_u16(bytes, 0)
   push_u16(bytes, 0)
-  push_u16(bytes, 0)
   push_u16(bytes, 24)
+  push_u16(bytes, 34)
   // glyph class def (glyphs 5..6 -> class 3)
   push_u16(bytes, 1)
   push_u16(bytes, 5)
   push_u16(bytes, 2)
   push_u16(bytes, 3)
   push_u16(bytes, 3)
+  // mark attach class def (glyph 5 -> class 1, glyph 6 -> class 2)
+  push_u16(bytes, 1)
+  push_u16(bytes, 5)
+  push_u16(bytes, 2)
+  push_u16(bytes, 1)
+  push_u16(bytes, 2)
   // mark glyph sets def (format 1, 1 set)
   push_u16(bytes, 1)
   push_u16(bytes, 1)
@@ -1474,6 +1494,53 @@ test "gsub single lookup mark filtering set" {
   let (new_glyphs2, _, changed2) = result2
   inspect(changed2, content="true")
   inspect(new_glyphs2, content="[10]")
+}
+
+///|
+test "gsub single lookup mark attachment type" {
+  let gsub_bytes = build_layout_table(
+    build_gsub_single_lookup_mark_attach_type(),
+    @common.Tag::from_chars('l', 'i', 'g', 'a'),
+  )
+  let gsub = match GsubTable::parse(@blob.Blob::from_bytes(gsub_bytes)) {
+    Err(err) => fail("parse error: \{err}")
+    Ok(value) => value
+  }
+  let gdef = match GdefTable::parse(
+    @blob.Blob::from_bytes(build_gdef_mark_filter_table()),
+  ) {
+    Err(err) => fail("gdef parse error: \{err}")
+    Ok(value) => value
+  }
+  let lookup_offsets = [gsub.layout().lookup_list().offsets()[0]]
+  let glyphs1 : Array[UInt] = [5U]
+  let clusters1 : Array[Int] = [0]
+  let result1 = match gsub.apply_with_lookups(
+    glyphs1,
+    clusters1,
+    lookup_offsets[:],
+    gdef=gdef,
+  ) {
+    Err(err) => fail("apply error: \{err}")
+    Ok(value) => value
+  }
+  let (new_glyphs1, _, changed1) = result1
+  inspect(changed1, content="true")
+  inspect(new_glyphs1, content="[9]")
+  let glyphs2 : Array[UInt] = [6U]
+  let clusters2 : Array[Int] = [0]
+  let result2 = match gsub.apply_with_lookups(
+    glyphs2,
+    clusters2,
+    lookup_offsets[:],
+    gdef=gdef,
+  ) {
+    Err(err) => fail("apply error: \{err}")
+    Ok(value) => value
+  }
+  let (new_glyphs2, _, changed2) = result2
+  inspect(changed2, content="false")
+  inspect(new_glyphs2, content="[6]")
 }
 
 ///|

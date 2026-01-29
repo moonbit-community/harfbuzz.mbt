@@ -25,6 +25,14 @@ fn should_ignore_glyph(
             if (lookup_flag & 0x0008) != 0 {
               return Ok(true)
             }
+            let attach_type = (lookup_flag >> 8) & 0xff
+            if attach_type != 0 {
+              let mark_class = gdef.mark_attach_class(glyph)
+              match mark_class {
+                Err(err) => return Err(err)
+                Ok(mark_class) => if mark_class != attach_type { return Ok(true) }
+              }
+            }
             if (lookup_flag & 0x0010) != 0 {
               match mark_filtering_set {
                 None => ()
