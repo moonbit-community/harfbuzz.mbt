@@ -33,3 +33,11 @@ test "unicode emoji extended pictographic" {
   inspect(is_extended_pictographic(0x1F600U), content="true")
   inspect(is_extended_pictographic(0x41U), content="false")
 }
+
+///|
+test "unicode arabic joining type" {
+  inspect(arabic_joining_type_raw(0x0628U), content="3")
+  inspect(arabic_joining_type_raw(0x0710U), content="4")
+  inspect(arabic_joining_type(0x064BU), content="7")
+  inspect(arabic_joining_type(0x41U), content="0")
+}
