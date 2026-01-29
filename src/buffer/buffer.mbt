@@ -382,6 +382,36 @@ pub fn Buffer::shape_ot(
       })
     }
     self.positions = new_positions
+  } else {
+    let kern = match font.kern() {
+      Err(err) => return Err(Font(err))
+      Ok(value) => value
+    }
+    if kern is Some(kern) {
+      let new_positions : Array[GlyphPosition] = []
+      for pos in self.positions {
+        new_positions.push(pos)
+      }
+      if new_positions.length() >= 2 {
+        for i in 0..<(new_positions.length() - 1) {
+          let left = self.infos[i].codepoint
+          let right = self.infos[i + 1].codepoint
+          match kern.kern_value(left, right) {
+            None => ()
+            Some(value) => {
+              let pos = new_positions[i]
+              new_positions[i] = GlyphPosition::{
+                x_advance: pos.x_advance + value,
+                y_advance: pos.y_advance,
+                x_offset: pos.x_offset,
+                y_offset: pos.y_offset,
+              }
+            }
+          }
+        }
+      }
+      self.positions = new_positions
+    }
   }
   Ok(())
 }

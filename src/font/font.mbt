@@ -21,6 +21,7 @@ pub struct Font {
   mut cmap : @sfnt.CmapTable?
   mut loca : @sfnt.LocaTable?
   mut glyf : @sfnt.GlyfTable?
+  mut kern : @sfnt.KernTable?
   mut gsub : @ot_tables.GsubTable?
   mut gpos : @ot_tables.GposTable?
   mut gdef : @ot_tables.GdefTable?
@@ -48,6 +49,9 @@ let tag_loca : @common.Tag = @common.Tag::from_chars('l', 'o', 'c', 'a')
 let tag_glyf : @common.Tag = @common.Tag::from_chars('g', 'l', 'y', 'f')
 
 ///|
+let tag_kern : @common.Tag = @common.Tag::from_chars('k', 'e', 'r', 'n')
+
+///|
 let tag_gsub : @common.Tag = @common.Tag::from_chars('G', 'S', 'U', 'B')
 
 ///|
@@ -72,6 +76,7 @@ pub fn Font::new(face : @face.Face) -> Font {
     cmap: None,
     loca: None,
     glyf: None,
+    kern: None,
     gsub: None,
     gpos: None,
     gdef: None,
@@ -304,6 +309,26 @@ pub fn Font::gsub(self : Font) -> Result[@ot_tables.GsubTable?, FontError] {
             Ok(gsub) => {
               self.gsub = Some(gsub)
               Ok(Some(gsub))
+            }
+          }
+      }
+  }
+}
+
+///|
+pub fn Font::kern(self : Font) -> Result[@sfnt.KernTable?, FontError] {
+  match self.kern {
+    Some(kern) => Ok(Some(kern))
+    None =>
+      match self.face.reference_table_optional(tag_kern) {
+        Err(err) => Err(FaceTable(err))
+        Ok(None) => Ok(None)
+        Ok(Some(blob)) =>
+          match @sfnt.KernTable::parse(blob.as_view()) {
+            Err(err) => Err(Parse(err))
+            Ok(kern) => {
+              self.kern = Some(kern)
+              Ok(Some(kern))
             }
           }
       }

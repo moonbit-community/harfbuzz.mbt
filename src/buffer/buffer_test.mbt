@@ -338,6 +338,24 @@ fn build_cmap_format12(start : UInt, end : UInt, start_gid : UInt) -> Bytes {
 }
 
 ///|
+fn build_kern_table() -> Bytes {
+  let bytes : Array[Byte] = []
+  push_u16(bytes, 0)
+  push_u16(bytes, 1)
+  push_u16(bytes, 0)
+  push_u16(bytes, 20)
+  push_u16(bytes, 0x0001)
+  push_u16(bytes, 1)
+  push_u16(bytes, 0)
+  push_u16(bytes, 0)
+  push_u16(bytes, 0)
+  push_u16(bytes, 1)
+  push_u16(bytes, 2)
+  push_i16(bytes, -50)
+  Bytes::from_array(bytes)
+}
+
+///|
 fn build_font_bytes() -> Bytes {
   let tables : Array[(@common.Tag, Bytes)] = [
     (@common.Tag::from_chars('h', 'e', 'a', 'd'), build_head(1000, 0)),
@@ -398,6 +416,22 @@ fn build_font_bytes_ot_single() -> Bytes {
       build_gpos_single_lookup(),
       @common.Tag::from_chars('k', 'e', 'r', 'n'),
     ),
+  ]
+  build_sfnt(tables)
+}
+
+///|
+fn build_font_bytes_kern() -> Bytes {
+  let tables : Array[(@common.Tag, Bytes)] = [
+    (@common.Tag::from_chars('h', 'e', 'a', 'd'), build_head(1000, 0)),
+    (@common.Tag::from_chars('m', 'a', 'x', 'p'), build_maxp(4)),
+    (@common.Tag::from_chars('h', 'h', 'e', 'a'), build_hhea(4)),
+    (@common.Tag::from_chars('h', 'm', 't', 'x'), build_hmtx_ot()),
+    (
+      @common.Tag::from_chars('c', 'm', 'a', 'p'),
+      build_cmap_table(build_cmap_format12(0x41U, 0x42U, 1U)),
+    ),
+    (@common.Tag::from_chars('k', 'e', 'r', 'n'), build_kern_table()),
   ]
   build_sfnt(tables)
 }
@@ -473,4 +507,20 @@ test "buffer shape ot single pos" {
   inspect(infos[0].codepoint, content="3")
   inspect(positions[0].x_advance, content="520")
   inspect(positions[0].x_offset, content="6")
+}
+
+///|
+test "buffer shape ot kern fallback" {
+  let font = @font.Font::from_bytes(build_font_bytes_kern())
+  let buffer = Buffer::new()
+  buffer.add_string("AB")
+  let result = buffer.shape_ot(font)
+  match result {
+    Err(err) => fail("shape error: \{err}")
+    Ok(_) => ()
+  }
+  let positions = buffer.positions()
+  inspect(positions[0].x_advance, content="250")
+  inspect(positions[1].x_advance, content="400")
+  inspect(positions[0].x_offset, content="0")
 }

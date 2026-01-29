@@ -8,6 +8,18 @@ fn build_bytes(len : Int) -> Array[Byte] {
 }
 
 ///|
+fn push_u16(bytes : Array[Byte], value : Int) -> Unit {
+  bytes.push(((value >> 8) & 0xff).to_byte())
+  bytes.push((value & 0xff).to_byte())
+}
+
+///|
+fn push_i16(bytes : Array[Byte], value : Int) -> Unit {
+  let adjusted = if value < 0 { value + 0x10000 } else { value }
+  push_u16(bytes, adjusted)
+}
+
+///|
 fn build_cmap_table(
   subtable : Bytes,
   platform_id : Int,
@@ -120,6 +132,24 @@ fn build_cmap_format4() -> Bytes {
 }
 
 ///|
+fn build_kern_table() -> Bytes {
+  let bytes : Array[Byte] = []
+  push_u16(bytes, 0)
+  push_u16(bytes, 1)
+  push_u16(bytes, 0)
+  push_u16(bytes, 20)
+  push_u16(bytes, 0x0001)
+  push_u16(bytes, 1)
+  push_u16(bytes, 0)
+  push_u16(bytes, 0)
+  push_u16(bytes, 0)
+  push_u16(bytes, 1)
+  push_u16(bytes, 2)
+  push_i16(bytes, -50)
+  Bytes::from_array(bytes)
+}
+
+///|
 test "head table parse" {
   let bytes = build_bytes(54)
   bytes[18] = 0x03
@@ -201,4 +231,14 @@ test "cmap format 4" {
     Ok(Some(value)) => value
   }
   inspect(gid, content="5")
+}
+
+///|
+test "kern table parse" {
+  let kern = match KernTable::parse(build_kern_table()[:]) {
+    Err(err) => fail("parse error: \{err}")
+    Ok(value) => value
+  }
+  inspect(kern.kern_value(1U, 2U), content="Some(-50)")
+  inspect(kern.kern_value(2U, 1U), content="None")
 }
