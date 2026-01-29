@@ -389,38 +389,6 @@ fn apply_thai_pua_shaping(
 }
 
 ///|
-fn lowercase_tag(tag : @common.Tag) -> @common.Tag {
-  let (b1, b2, b3, b4) = tag.bytes()
-  @common.Tag::from_bytes(
-    ascii_lowercase_byte(b1),
-    ascii_lowercase_byte(b2),
-    ascii_lowercase_byte(b3),
-    ascii_lowercase_byte(b4),
-  )
-}
-
-///|
-fn ascii_lowercase_byte(b : Byte) -> Byte {
-  let v = b.to_uint()
-  if v >= 0x41U && v <= 0x5AU {
-    (v + 0x20U).to_byte()
-  } else {
-    b
-  }
-}
-
-///|
-fn layout_has_script(layout : @ot_tables.LayoutTable, tag : @common.Tag) -> Bool {
-  let lower = lowercase_tag(tag)
-  for record in layout.script_list().records() {
-    if record.tag == tag || record.tag == lower {
-      return true
-    }
-  }
-  false
-}
-
-///|
 pub fn Buffer::shape_thai(
   self : Buffer,
   font : @font.Font,
@@ -436,7 +404,7 @@ pub fn Buffer::shape_thai(
       None => apply_pua = true
       Some(gsub) => {
         let script_tag = self.script.to_tag()
-        if !layout_has_script(gsub.layout(), script_tag) {
+        if !buffer_layout_has_script(gsub.layout(), script_tag) {
           apply_pua = true
         }
       }
