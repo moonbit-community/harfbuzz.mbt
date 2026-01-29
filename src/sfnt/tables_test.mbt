@@ -188,6 +188,33 @@ fn build_kern_table() -> Bytes {
 }
 
 ///|
+fn build_kern_table_format2() -> Bytes {
+  let bytes : Array[Byte] = []
+  push_u16(bytes, 0)
+  push_u16(bytes, 1)
+  push_u16(bytes, 0)
+  push_u16(bytes, 38)
+  push_u16(bytes, 0x0201)
+  push_u16(bytes, 4)
+  push_u16(bytes, 14)
+  push_u16(bytes, 22)
+  push_u16(bytes, 30)
+  push_u16(bytes, 1)
+  push_u16(bytes, 2)
+  push_u16(bytes, 1)
+  push_u16(bytes, 0)
+  push_u16(bytes, 1)
+  push_u16(bytes, 2)
+  push_u16(bytes, 1)
+  push_u16(bytes, 0)
+  push_i16(bytes, 0)
+  push_i16(bytes, 0)
+  push_i16(bytes, 0)
+  push_i16(bytes, -30)
+  Bytes::from_array(bytes)
+}
+
+///|
 fn build_os2_table_v0() -> Bytes {
   let bytes : Array[Byte] = Array::make(78, b'\x00')
   write_u16_at(bytes, 4, 400)
@@ -514,6 +541,16 @@ test "kern table parse" {
   }
   inspect(kern.kern_value(1U, 2U), content="Some(-50)")
   inspect(kern.kern_value(2U, 1U), content="None")
+}
+
+///|
+test "kern table format2 parse" {
+  let kern = match KernTable::parse(build_kern_table_format2()[:]) {
+    Err(err) => fail("parse error: \{err}")
+    Ok(value) => value
+  }
+  inspect(kern.kern_value(1U, 1U), content="Some(-30)")
+  inspect(kern.kern_value(2U, 2U), content="Some(0)")
 }
 
 ///|
