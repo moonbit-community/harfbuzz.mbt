@@ -63,7 +63,6 @@ pub fn shape(
   shapers? : Array[String] = [],
 ) -> Result[Unit, @buffer.ShapeError] {
   buffer.guess_segment_properties()
-  buffer.normalize()
   let plan = ShapePlan::from_buffer(buffer, shapers~)
   plan.shape(font, buffer)
 }
