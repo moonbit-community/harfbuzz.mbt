@@ -23,6 +23,7 @@ pub struct Font {
   mut glyf : @sfnt.GlyfTable?
   mut os2 : @sfnt.Os2Table?
   mut name : @sfnt.NameTable?
+  mut post : @sfnt.PostTable?
   mut kern : @sfnt.KernTable?
   mut gsub : @ot_tables.GsubTable?
   mut gpos : @ot_tables.GposTable?
@@ -57,6 +58,9 @@ let tag_os2 : @common.Tag = @common.Tag::from_chars('O', 'S', '/', '2')
 let tag_name : @common.Tag = @common.Tag::from_chars('n', 'a', 'm', 'e')
 
 ///|
+let tag_post : @common.Tag = @common.Tag::from_chars('p', 'o', 's', 't')
+
+///|
 let tag_kern : @common.Tag = @common.Tag::from_chars('k', 'e', 'r', 'n')
 
 ///|
@@ -86,6 +90,7 @@ pub fn Font::new(face : @face.Face) -> Font {
     glyf: None,
     os2: None,
     name: None,
+    post: None,
     kern: None,
     gsub: None,
     gpos: None,
@@ -339,6 +344,26 @@ pub fn Font::name(self : Font) -> Result[@sfnt.NameTable?, FontError] {
             Ok(name) => {
               self.name = Some(name)
               Ok(Some(name))
+            }
+          }
+      }
+  }
+}
+
+///|
+pub fn Font::post(self : Font) -> Result[@sfnt.PostTable?, FontError] {
+  match self.post {
+    Some(post) => Ok(Some(post))
+    None =>
+      match self.face.reference_table_optional(tag_post) {
+        Err(err) => Err(FaceTable(err))
+        Ok(None) => Ok(None)
+        Ok(Some(blob)) =>
+          match @sfnt.PostTable::parse(blob.as_view()) {
+            Err(err) => Err(Parse(err))
+            Ok(post) => {
+              self.post = Some(post)
+              Ok(Some(post))
             }
           }
       }

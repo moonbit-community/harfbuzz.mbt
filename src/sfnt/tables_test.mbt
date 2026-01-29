@@ -20,6 +20,14 @@ fn push_i16(bytes : Array[Byte], value : Int) -> Unit {
 }
 
 ///|
+fn push_u32(bytes : Array[Byte], value : Int) -> Unit {
+  bytes.push(((value >> 24) & 0xff).to_byte())
+  bytes.push(((value >> 16) & 0xff).to_byte())
+  bytes.push(((value >> 8) & 0xff).to_byte())
+  bytes.push((value & 0xff).to_byte())
+}
+
+///|
 ///|
 fn write_u16_at(bytes : Array[Byte], offset : Int, value : Int) -> Unit {
   bytes[offset] = ((value >> 8) & 0xff).to_byte()
@@ -224,6 +232,27 @@ fn build_name_table() -> Bytes {
 }
 
 ///|
+fn build_post_table_v2() -> Bytes {
+  let bytes : Array[Byte] = []
+  push_u32(bytes, 0x00020000)
+  push_u32(bytes, 0)
+  push_i16(bytes, -50)
+  push_i16(bytes, 20)
+  push_u32(bytes, 0)
+  push_u32(bytes, 0)
+  push_u32(bytes, 0)
+  push_u32(bytes, 0)
+  push_u32(bytes, 0)
+  push_u16(bytes, 1)
+  push_u16(bytes, 258)
+  bytes.push(3)
+  bytes.push(b'f')
+  bytes.push(b'o')
+  bytes.push(b'o')
+  Bytes::from_array(bytes)
+}
+
+///|
 test "head table parse" {
   let bytes = build_bytes(54)
   bytes[18] = 0x03
@@ -359,4 +388,25 @@ test "name table parse" {
     Some(value) => value
   }
   inspect(record.value, content="b\"\\x00T\\x00e\"")
+}
+
+///|
+test "post table parse v2" {
+  let post = match PostTable::parse(build_post_table_v2()[:]) {
+    Err(err) => fail("parse error: \{err}")
+    Ok(value) => value
+  }
+  inspect(post.version, content="131072")
+  inspect(post.underline_position, content="-50")
+  inspect(post.underline_thickness, content="20")
+  let indices = match post.glyph_name_indices {
+    None => fail("missing name indices")
+    Some(value) => value
+  }
+  let names = match post.custom_names {
+    None => fail("missing custom names")
+    Some(value) => value
+  }
+  inspect(indices, content="[258]")
+  inspect(names, content="[b\"foo\"]")
 }
