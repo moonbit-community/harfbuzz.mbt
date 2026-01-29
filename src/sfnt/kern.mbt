@@ -448,7 +448,7 @@ pub fn KernTable::parse(data : BytesView) -> Result[KernTable, SfntError] {
 }
 
 ///|
-/// Lookup kern value for a glyph pair (horizontal format 0/2 only).
+/// Lookup kern value for a glyph pair (horizontal format 0/2/3 only).
 pub fn KernTable::kern_value(
   self : KernTable,
   left : UInt,
