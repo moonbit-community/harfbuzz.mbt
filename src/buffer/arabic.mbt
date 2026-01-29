@@ -289,10 +289,6 @@ pub fn Buffer::shape_arabic(
   }
   let mut current_glyphs : Array[UInt] = []
   let mut current_clusters : Array[Int] = []
-  for info in self.infos {
-    current_glyphs.push(info.codepoint)
-    current_clusters.push(info.cluster)
-  }
   let mut changed = false
   let mut has_gsub_features = false
   if gsub is Some(gsub) {
@@ -326,6 +322,10 @@ pub fn Buffer::shape_arabic(
     match self.shape_basic(font) {
       Err(err) => return Err(err)
       Ok(_) => ()
+    }
+    for info in self.infos {
+      current_glyphs.push(info.codepoint)
+      current_clusters.push(info.cluster)
     }
     let gdef = match font.gdef() {
       Err(err) => return Err(Font(err))

@@ -6,6 +6,9 @@ pub fn shape(font : @font.Font, buffer : @buffer.Buffer) -> Result[Unit, @buffer
   if buffer.get_script() == @common.script_arabic {
     return buffer.shape_arabic(font)
   }
+  if buffer.get_script() == @common.script_hangul {
+    return buffer.shape_hangul(font)
+  }
   buffer.shape_ot(font)
 }
 
