@@ -76,6 +76,14 @@ pub fn GposTable::position_deltas_with_lookups(
               Ok(_) => ()
             }
           }
+        } else if lookup_type == 4 {
+          for subtable_offset in subtable_offsets {
+            let res = apply_mark_subtable(data, subtable_offset, glyphs, deltas)
+            match res {
+              Err(err) => return Err(err)
+              Ok(_) => ()
+            }
+          }
         } else {
           continue
         }
@@ -195,6 +203,198 @@ fn apply_pair_subtable(
       apply_pair_format2(data, offset, glyphs, deltas)
     } else {
       Ok(())
+    }
+  }
+}
+
+///|
+fn apply_mark_subtable(
+  data : BytesView,
+  offset : Int,
+  glyphs : ArrayView[UInt],
+  deltas : Array[ValueRecord],
+) -> Result[Unit, OtLayoutError] {
+  let format = read_u16_int(data, offset)
+  match format {
+    Err(err) => Err(err)
+    Ok(format) => if format == 1 {
+      apply_mark_to_base_format1(data, offset, glyphs, deltas)
+    } else {
+      Ok(())
+    }
+  }
+}
+
+///|
+fn apply_mark_to_base_format1(
+  data : BytesView,
+  offset : Int,
+  glyphs : ArrayView[UInt],
+  deltas : Array[ValueRecord],
+) -> Result[Unit, OtLayoutError] {
+  if glyphs.length() < 2 {
+    return Ok(())
+  }
+  if offset < 0 || offset + 12 > data.length() {
+    return Err(UnexpectedEof)
+  }
+  let mark_coverage_offset = read_u16_int(data, offset + 2)
+  let base_coverage_offset = read_u16_int(data, offset + 4)
+  let class_count = read_u16_int(data, offset + 6)
+  let mark_array_offset = read_u16_int(data, offset + 8)
+  let base_array_offset = read_u16_int(data, offset + 10)
+  match (
+    mark_coverage_offset,
+    base_coverage_offset,
+    class_count,
+    mark_array_offset,
+    base_array_offset,
+  ) {
+    (Err(err), _, _, _, _) => Err(err)
+    (_, Err(err), _, _, _) => Err(err)
+    (_, _, Err(err), _, _) => Err(err)
+    (_, _, _, Err(err), _) => Err(err)
+    (_, _, _, _, Err(err)) => Err(err)
+    (
+      Ok(mark_coverage_offset),
+      Ok(base_coverage_offset),
+      Ok(class_count),
+      Ok(mark_array_offset),
+      Ok(base_array_offset),
+    ) => {
+      if mark_coverage_offset == 0 || base_coverage_offset == 0 ||
+          mark_array_offset == 0 || base_array_offset == 0 {
+        return Err(InvalidFormat)
+      }
+      if class_count <= 0 {
+        return Err(InvalidFormat)
+      }
+      let mark_coverage_base = offset + mark_coverage_offset
+      let base_coverage_base = offset + base_coverage_offset
+      let mark_array_base = offset + mark_array_offset
+      let base_array_base = offset + base_array_offset
+      if mark_array_base < 0 || mark_array_base + 2 > data.length() {
+        return Err(UnexpectedEof)
+      }
+      if base_array_base < 0 || base_array_base + 2 > data.length() {
+        return Err(UnexpectedEof)
+      }
+      let mark_count = read_u16_int(data, mark_array_base)
+      let base_count = read_u16_int(data, base_array_base)
+      match (mark_count, base_count) {
+        (Err(err), _) => Err(err)
+        (_, Err(err)) => Err(err)
+        (Ok(mark_count), Ok(base_count)) => {
+          if mark_count <= 0 || base_count <= 0 {
+            return Err(InvalidFormat)
+          }
+          let mark_record_base = mark_array_base + 2
+          let mark_record_size = 4
+          if mark_record_base < 0 ||
+              mark_record_base + mark_count * mark_record_size > data.length() {
+            return Err(UnexpectedEof)
+          }
+          let base_record_base = base_array_base + 2
+          let base_record_size = class_count * 2
+          if base_record_base < 0 ||
+              base_record_base + base_count * base_record_size > data.length() {
+            return Err(UnexpectedEof)
+          }
+          for i in 1..<glyphs.length() {
+            let mark_glyph = glyphs[i]
+            let base_glyph = glyphs[i - 1]
+            let mark_index = coverage_index(data, mark_coverage_base, mark_glyph)
+            let base_index = coverage_index(data, base_coverage_base, base_glyph)
+            match (mark_index, base_index) {
+              (Err(err), _) => return Err(err)
+              (_, Err(err)) => return Err(err)
+              (Ok(Some(mark_index)), Ok(Some(base_index))) => {
+                if mark_index < 0 || mark_index >= mark_count {
+                  return Err(InvalidFormat)
+                }
+                if base_index < 0 || base_index >= base_count {
+                  return Err(InvalidFormat)
+                }
+                let mark_record_offset = mark_record_base + mark_index * mark_record_size
+                let mark_class = read_u16_int(data, mark_record_offset)
+                let mark_anchor_offset = read_u16_int(data, mark_record_offset + 2)
+                match (mark_class, mark_anchor_offset) {
+                  (Err(err), _) => return Err(err)
+                  (_, Err(err)) => return Err(err)
+                  (Ok(mark_class), Ok(mark_anchor_offset)) => {
+                    if mark_class < 0 || mark_class >= class_count {
+                      return Err(InvalidFormat)
+                    }
+                    if mark_anchor_offset == 0 {
+                      return Err(InvalidFormat)
+                    }
+                    let base_record_offset =
+                      base_record_base + base_index * base_record_size
+                    let base_anchor_offset = read_u16_int(
+                      data,
+                      base_record_offset + mark_class * 2,
+                    )
+                    match base_anchor_offset {
+                      Err(err) => return Err(err)
+                      Ok(base_anchor_offset) => {
+                        if base_anchor_offset == 0 {
+                          continue
+                        }
+                        let mark_anchor_base = mark_array_base + mark_anchor_offset
+                        let base_anchor_base = base_array_base + base_anchor_offset
+                        let mark_anchor = read_anchor(data, mark_anchor_base)
+                        let base_anchor = read_anchor(data, base_anchor_base)
+                        match (mark_anchor, base_anchor) {
+                          (Err(err), _) => return Err(err)
+                          (_, Err(err)) => return Err(err)
+                          (Ok(mark_anchor), Ok(base_anchor)) => {
+                            let dx = base_anchor.0 - mark_anchor.0
+                            let dy = base_anchor.1 - mark_anchor.1
+                            let delta = ValueRecord::{
+                              x_placement: dx,
+                              y_placement: dy,
+                              x_advance: 0,
+                              y_advance: 0,
+                            }
+                            deltas[i] = add_value_record(deltas[i], delta)
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+              _ => ()
+            }
+          }
+          Ok(())
+        }
+      }
+    }
+  }
+}
+
+///|
+fn read_anchor(
+  data : BytesView,
+  offset : Int,
+) -> Result[(Int, Int), OtLayoutError] {
+  if offset < 0 || offset + 6 > data.length() {
+    return Err(UnexpectedEof)
+  }
+  let format = read_u16_int(data, offset)
+  match format {
+    Err(err) => Err(err)
+    Ok(format) => if format == 1 {
+      let x = read_i16(data, offset + 2)
+      let y = read_i16(data, offset + 4)
+      match (x, y) {
+        (Err(err), _) => Err(err)
+        (_, Err(err)) => Err(err)
+        (Ok(x), Ok(y)) => Ok((x, y))
+      }
+    } else {
+      Err(InvalidFormat)
     }
   }
 }
