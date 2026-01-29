@@ -224,6 +224,34 @@ fn build_gsub_single_lookup_mark_attach_type() -> Bytes {
 }
 
 ///|
+fn build_gsub_single_lookup_ignore_base() -> Bytes {
+  let subtable = build_gsub_subtable(3, 9)
+  let bytes : Array[Byte] = []
+  push_u16(bytes, 1)
+  push_u16(bytes, 0x0002)
+  push_u16(bytes, 1)
+  push_u16(bytes, 8)
+  for b in subtable {
+    bytes.push(b)
+  }
+  Bytes::from_array(bytes)
+}
+
+///|
+fn build_gsub_single_lookup_ignore_ligature() -> Bytes {
+  let subtable = build_gsub_subtable(4, 9)
+  let bytes : Array[Byte] = []
+  push_u16(bytes, 1)
+  push_u16(bytes, 0x0004)
+  push_u16(bytes, 1)
+  push_u16(bytes, 8)
+  for b in subtable {
+    bytes.push(b)
+  }
+  Bytes::from_array(bytes)
+}
+
+///|
 fn build_gpos_subtable() -> Bytes {
   let bytes : Array[Byte] = []
   push_u16(bytes, 1)
@@ -341,11 +369,40 @@ fn build_gpos_single_subtable_format1() -> Bytes {
 }
 
 ///|
+fn build_gpos_single_subtable_format1_mark() -> Bytes {
+  let bytes : Array[Byte] = []
+  push_u16(bytes, 1)
+  push_u16(bytes, 10)
+  push_u16(bytes, 0x0005)
+  push_i16(bytes, 7)
+  push_i16(bytes, 15)
+  // coverage table
+  push_u16(bytes, 1)
+  push_u16(bytes, 1)
+  push_u16(bytes, 5)
+  Bytes::from_array(bytes)
+}
+
+///|
 fn build_gpos_single_lookup_format1() -> Bytes {
   let subtable = build_gpos_single_subtable_format1()
   let bytes : Array[Byte] = []
   push_u16(bytes, 1)
   push_u16(bytes, 0)
+  push_u16(bytes, 1)
+  push_u16(bytes, 8)
+  for b in subtable {
+    bytes.push(b)
+  }
+  Bytes::from_array(bytes)
+}
+
+///|
+fn build_gpos_single_lookup_format1_ignore_marks() -> Bytes {
+  let subtable = build_gpos_single_subtable_format1_mark()
+  let bytes : Array[Byte] = []
+  push_u16(bytes, 1)
+  push_u16(bytes, 0x0008)
   push_u16(bytes, 1)
   push_u16(bytes, 8)
   for b in subtable {
@@ -1496,6 +1553,24 @@ fn build_gdef_mark_filter_table() -> Bytes {
 }
 
 ///|
+fn build_gdef_class_def_table() -> Bytes {
+  let bytes : Array[Byte] = []
+  push_u32(bytes, 0x00010000)
+  push_u16(bytes, 12)
+  push_u16(bytes, 0)
+  push_u16(bytes, 0)
+  push_u16(bytes, 0)
+  // glyph class def (glyphs 3..5 -> class 1,2,3)
+  push_u16(bytes, 1)
+  push_u16(bytes, 3)
+  push_u16(bytes, 3)
+  push_u16(bytes, 1)
+  push_u16(bytes, 2)
+  push_u16(bytes, 3)
+  Bytes::from_array(bytes)
+}
+
+///|
 fn build_gsub_context_lookup() -> Bytes {
   let subtable = build_gsub_context_subtable()
   let bytes : Array[Byte] = []
@@ -1766,6 +1841,72 @@ test "gsub single lookup mark attachment type" {
 }
 
 ///|
+test "gsub lookup ignore base glyphs" {
+  let gsub_bytes = build_layout_table(
+    build_gsub_single_lookup_ignore_base(),
+    @common.Tag::from_chars('l', 'i', 'g', 'a'),
+  )
+  let gsub = match GsubTable::parse(@blob.Blob::from_bytes(gsub_bytes)) {
+    Err(err) => fail("parse error: \{err}")
+    Ok(value) => value
+  }
+  let gdef = match GdefTable::parse(
+    @blob.Blob::from_bytes(build_gdef_class_def_table()),
+  ) {
+    Err(err) => fail("gdef parse error: \{err}")
+    Ok(value) => value
+  }
+  let lookup_offsets = [gsub.layout().lookup_list().offsets()[0]]
+  let glyphs : Array[UInt] = [3U]
+  let clusters : Array[Int] = [0]
+  let result = match gsub.apply_with_lookups(
+    glyphs,
+    clusters,
+    lookup_offsets[:],
+    gdef=gdef,
+  ) {
+    Err(err) => fail("apply error: \{err}")
+    Ok(value) => value
+  }
+  let (new_glyphs, _, changed) = result
+  inspect(changed, content="false")
+  inspect(new_glyphs, content="[3]")
+}
+
+///|
+test "gsub lookup ignore ligature glyphs" {
+  let gsub_bytes = build_layout_table(
+    build_gsub_single_lookup_ignore_ligature(),
+    @common.Tag::from_chars('l', 'i', 'g', 'a'),
+  )
+  let gsub = match GsubTable::parse(@blob.Blob::from_bytes(gsub_bytes)) {
+    Err(err) => fail("parse error: \{err}")
+    Ok(value) => value
+  }
+  let gdef = match GdefTable::parse(
+    @blob.Blob::from_bytes(build_gdef_class_def_table()),
+  ) {
+    Err(err) => fail("gdef parse error: \{err}")
+    Ok(value) => value
+  }
+  let lookup_offsets = [gsub.layout().lookup_list().offsets()[0]]
+  let glyphs : Array[UInt] = [4U]
+  let clusters : Array[Int] = [0]
+  let result = match gsub.apply_with_lookups(
+    glyphs,
+    clusters,
+    lookup_offsets[:],
+    gdef=gdef,
+  ) {
+    Err(err) => fail("apply error: \{err}")
+    Ok(value) => value
+  }
+  let (new_glyphs, _, changed) = result
+  inspect(changed, content="false")
+  inspect(new_glyphs, content="[4]")
+}
+
+///|
 test "gpos pair adjust deltas" {
   let gpos_bytes = build_layout_table(
     build_gpos_lookup(),
@@ -1874,6 +2015,37 @@ test "gpos single adjust format1" {
   inspect(deltas[0].x_placement, content="7")
   inspect(deltas[0].x_advance, content="15")
   inspect(deltas[1].x_advance, content="0")
+}
+
+///|
+test "gpos single lookup ignore marks" {
+  let gpos_bytes = build_layout_table(
+    build_gpos_single_lookup_format1_ignore_marks(),
+    @common.Tag::from_chars('k', 'e', 'r', 'n'),
+  )
+  let gpos = match GposTable::parse(@blob.Blob::from_bytes(gpos_bytes)) {
+    Err(err) => fail("parse error: \{err}")
+    Ok(value) => value
+  }
+  let gdef = match GdefTable::parse(
+    @blob.Blob::from_bytes(build_gdef_mark_filter_table()),
+  ) {
+    Err(err) => fail("gdef parse error: \{err}")
+    Ok(value) => value
+  }
+  let lookup_offsets = [gpos.layout().lookup_list().offsets()[0]]
+  let glyphs : Array[UInt] = [5U]
+  let deltas = match gpos.position_deltas_with_lookups(
+    glyphs[:],
+    lookup_offsets[:],
+    gdef=gdef,
+  ) {
+    Err(err) => fail("apply error: \{err}")
+    Ok(value) => value
+  }
+  inspect(deltas.length(), content="1")
+  inspect(deltas[0].x_placement, content="0")
+  inspect(deltas[0].x_advance, content="0")
 }
 
 ///|
