@@ -11,6 +11,7 @@ Unicode data, variations, color/paint, and subsetting.
 - `face`: face holder + table map (TTC index aware).
 - `font`: metrics (h/v advances), cmap lookup, lazy GSUB/GPOS/GDEF parsing.
 - `buffer`: glyph buffer + `shape_basic` + `shape_ot` (GSUB/GPOS with feature allowlists, vertical advances).
+- `unicode`: UCD-backed general category/combining class/script/mirroring/compose/decompose + Extended_Pictographic.
 - `sfnt`: table directory + `head`, `hhea`, `vhea`, `maxp`, `hmtx`, `vmtx`, `cmap` (format 4/12), `loca`, `glyf`.
 - `ot/tables`: coverage, layout, lookup parsing; GSUB/GPOS apply; GDEF parsing; lookup flag filtering.
   - GSUB: lookup types 1-8 and extension.
@@ -27,7 +28,7 @@ Unicode data, variations, color/paint, and subsetting.
 | `buffer` | Buffer + shaping entrypoint | `hb-buffer.*` | partial (serialize/verify missing) |
 | `sfnt` | SFNT tables (head/hhea/etc.) | `hb-ot-*-table.hh` | partial |
 | `ot/tables` | GSUB/GPOS/GDEF + lookup parsing | `hb-ot-layout-*-table.hh` | partial |
-| `unicode` | UCD + emoji data + unicode funcs | `hb-unicode.*`, `hb-ucd*` | planned |
+| `unicode` | UCD + emoji data + unicode funcs | `hb-unicode.*`, `hb-ucd*` | partial (UCD + Extended_Pictographic; more emoji props pending) |
 | `ot/shape` | OT shaping + normalization | `hb-ot-shape.*`, `hb-ot-shaper-*.cc` | planned |
 | `ot/map` | Feature/lookup mapping | `hb-ot-map.*` | planned |
 | `shape` | Generic shaper registry + plan | `hb-shape.*`, `hb-shape-plan.*`, `hb-shaper.*` | planned |
@@ -67,6 +68,12 @@ Unicode data, variations, color/paint, and subsetting.
 - Reuse HarfBuzz generators where possible (`gen-ucd-table.py`, `gen-emoji-table.py`,
   `gen-tag-table.py`, `gen-*-table.py`).
 - For early phases, embed minimal static tables and replace with generated data later.
+- UCD tables are imported from `refs/harfbuzz/src/hb-ucd-table.hh` via `scripts/gen_ucd_table.py`
+  (regenerates `src/unicode/ucd_data.mbt`).
+- Emoji Extended_Pictographic data is imported from `refs/harfbuzz/src/hb-unicode-emoji-table.hh`
+  via `scripts/gen_emoji_table.py` (regenerates `src/unicode/emoji_data.mbt`).
+- Modified combining class map is imported from `refs/harfbuzz/src/hb-unicode.{hh,cc}` via
+  `scripts/gen_modified_combining_class.py` (regenerates `src/unicode/modified_combining_class.mbt`).
 
 ## Testing Plan
 - Expand unit tests for table parsing and layout application.
