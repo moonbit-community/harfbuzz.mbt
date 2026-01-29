@@ -8,9 +8,9 @@ Unicode data, variations, color/paint, and subsetting.
 ## Current Implementation (as of 2026-01-29)
 - `common`: tags, direction, script/language helpers (expanded list; may not be exhaustive).
 - `blob`: blob data holder + slicing.
-- `face`: face holder + table map.
-- `font`: metrics, cmap lookup, lazy GSUB/GPOS/GDEF parsing.
-- `buffer`: glyph buffer + `shape_basic` + `shape_ot` (GSUB/GPOS with feature allowlists).
+- `face`: face holder + table map (TTC index aware).
+- `font`: metrics (h/v advances), cmap lookup, lazy GSUB/GPOS/GDEF parsing.
+- `buffer`: glyph buffer + `shape_basic` + `shape_ot` (GSUB/GPOS with feature allowlists, vertical advances).
 - `sfnt`: table directory + `head`, `hhea`, `vhea`, `maxp`, `hmtx`, `vmtx`, `cmap` (format 4/12), `loca`, `glyf`.
 - `ot/tables`: coverage, layout, lookup parsing; GSUB/GPOS apply; GDEF parsing; lookup flag filtering.
   - GSUB: lookup types 1-8 and extension.
