@@ -207,6 +207,23 @@ fn build_os2_table_v2() -> Bytes {
 }
 
 ///|
+fn build_name_table() -> Bytes {
+  let bytes : Array[Byte] = []
+  push_u16(bytes, 0)
+  push_u16(bytes, 1)
+  push_u16(bytes, 18)
+  push_u16(bytes, 3)
+  push_u16(bytes, 1)
+  push_u16(bytes, 0x0409)
+  push_u16(bytes, 1)
+  push_u16(bytes, 4)
+  push_u16(bytes, 0)
+  push_u16(bytes, 'T'.to_int())
+  push_u16(bytes, 'e'.to_int())
+  Bytes::from_array(bytes)
+}
+
+///|
 test "head table parse" {
   let bytes = build_bytes(54)
   bytes[18] = 0x03
@@ -328,4 +345,18 @@ test "os2 table parse v2" {
   inspect(os2.cap_height, content="Some(700)")
   inspect(os2.break_char, content="Some(32)")
   inspect(os2.max_context, content="Some(4)")
+}
+
+///|
+test "name table parse" {
+  let name = match NameTable::parse(build_name_table()[:]) {
+    Err(err) => fail("parse error: \{err}")
+    Ok(value) => value
+  }
+  inspect(name.records.length(), content="1")
+  let record = match name.find_name(3, 1, 0x0409, 1) {
+    None => fail("missing name record")
+    Some(value) => value
+  }
+  inspect(record.value, content="b\"\\x00T\\x00e\"")
 }
