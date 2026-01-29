@@ -9,12 +9,34 @@ pub struct Face {
 } derive(Show, ToJson)
 
 ///|
-/// Return the number of faces in a blob (placeholder implementation).
+/// Return the number of faces in a blob.
 pub fn face_count(blob : @blob.Blob) -> Int {
-  if blob.is_empty() {
-    0
+  let data = blob.as_view()
+  if data.length() < 4 {
+    return 0
+  }
+  let tag = @common.Tag::from_bytes(data[0], data[1], data[2], data[3])
+  let ttcf = @common.Tag::from_chars('t', 't', 'c', 'f')
+  if tag == ttcf {
+    if data.length() < 12 {
+      return 0
+    }
+    let b0 = data[8].to_uint()
+    let b1 = data[9].to_uint()
+    let b2 = data[10].to_uint()
+    let b3 = data[11].to_uint()
+    let value = ((b0 << 24) | (b1 << 16) | (b2 << 8) | b3).reinterpret_as_int()
+    if value < 0 { 0 } else { value }
   } else {
-    1
+    let sfnt = @common.Tag::from_bytes(0x00, 0x01, 0x00, 0x00)
+    let otto = @common.Tag::from_chars('O', 'T', 'T', 'O')
+    let true_tag = @common.Tag::from_chars('t', 'r', 'u', 'e')
+    let typ1 = @common.Tag::from_chars('t', 'y', 'p', '1')
+    if tag == sfnt || tag == otto || tag == true_tag || tag == typ1 {
+      1
+    } else {
+      0
+    }
   }
 }
 

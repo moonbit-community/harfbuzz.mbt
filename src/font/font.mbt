@@ -821,7 +821,7 @@ pub fn Font::glyph_bounds(
 }
 
 ///|
-/// Return glyph vertical advance (stub).
+/// Return glyph vertical advance.
 pub fn Font::glyph_v_advance(
   self : Font,
   glyph : UInt,
