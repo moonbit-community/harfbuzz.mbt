@@ -1704,6 +1704,20 @@ fn build_gsub_context_lookup() -> Bytes {
 }
 
 ///|
+fn build_gsub_context_lookup_ignore_marks() -> Bytes {
+  let subtable = build_gsub_context_subtable()
+  let bytes : Array[Byte] = []
+  push_u16(bytes, 5)
+  push_u16(bytes, 0x0008)
+  push_u16(bytes, 1)
+  push_u16(bytes, 8)
+  for b in subtable {
+    bytes.push(b)
+  }
+  Bytes::from_array(bytes)
+}
+
+///|
 fn build_gsub_chain_subtable() -> Bytes {
   let bytes : Array[Byte] = []
   push_u16(bytes, 1)
@@ -3151,6 +3165,41 @@ test "gsub contextual substitution apply" {
   let (new_glyphs, new_clusters, changed) = result
   inspect(changed, content="true")
   inspect(new_glyphs, content="[3, 6, 5]")
+  inspect(new_clusters, content="[0, 1, 2]")
+}
+
+///|
+test "gsub contextual ignore marks" {
+  let context_lookup = build_gsub_context_lookup_ignore_marks()
+  let single_lookup = build_gsub_single_lookup(4, 6)
+  let gsub_bytes = build_layout_table_with_lookups(
+    [context_lookup, single_lookup],
+    @common.Tag::from_chars('l', 'i', 'g', 'a'),
+  )
+  let gsub = match GsubTable::parse(@blob.Blob::from_bytes(gsub_bytes)) {
+    Err(err) => fail("parse error: \{err}")
+    Ok(value) => value
+  }
+  let gdef = match GdefTable::parse(
+    @blob.Blob::from_bytes(build_gdef_mark_filter_table()),
+  ) {
+    Err(err) => fail("gdef parse error: \{err}")
+    Ok(value) => value
+  }
+  let glyphs : Array[UInt] = [3U, 5U, 4U]
+  let clusters : Array[Int] = [0, 1, 2]
+  let result = match gsub.apply_with_lookups(
+    glyphs,
+    clusters,
+    gsub.layout().lookup_list().offsets(),
+    gdef=gdef,
+  ) {
+    Err(err) => fail("apply error: \{err}")
+    Ok(value) => value
+  }
+  let (new_glyphs, new_clusters, changed) = result
+  inspect(changed, content="true")
+  inspect(new_glyphs, content="[3, 5, 6]")
   inspect(new_clusters, content="[0, 1, 2]")
 }
 
