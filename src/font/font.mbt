@@ -26,6 +26,8 @@ pub struct Font {
   mut post : @sfnt.PostTable?
   mut gasp : @sfnt.GaspTable?
   mut meta : @sfnt.MetaTable?
+  mut vorg : @sfnt.VorgTable?
+  mut hdmx : @sfnt.HdmxTable?
   mut kern : @sfnt.KernTable?
   mut gsub : @ot_tables.GsubTable?
   mut gpos : @ot_tables.GposTable?
@@ -69,6 +71,12 @@ let tag_gasp : @common.Tag = @common.Tag::from_chars('g', 'a', 's', 'p')
 let tag_meta : @common.Tag = @common.Tag::from_chars('m', 'e', 't', 'a')
 
 ///|
+let tag_vorg : @common.Tag = @common.Tag::from_chars('V', 'O', 'R', 'G')
+
+///|
+let tag_hdmx : @common.Tag = @common.Tag::from_chars('h', 'd', 'm', 'x')
+
+///|
 let tag_kern : @common.Tag = @common.Tag::from_chars('k', 'e', 'r', 'n')
 
 ///|
@@ -101,6 +109,8 @@ pub fn Font::new(face : @face.Face) -> Font {
     post: None,
     gasp: None,
     meta: None,
+    vorg: None,
+    hdmx: None,
     kern: None,
     gsub: None,
     gpos: None,
@@ -414,6 +424,46 @@ pub fn Font::meta(self : Font) -> Result[@sfnt.MetaTable?, FontError] {
             Ok(meta) => {
               self.meta = Some(meta)
               Ok(Some(meta))
+            }
+          }
+      }
+  }
+}
+
+///|
+pub fn Font::vorg(self : Font) -> Result[@sfnt.VorgTable?, FontError] {
+  match self.vorg {
+    Some(vorg) => Ok(Some(vorg))
+    None =>
+      match self.face.reference_table_optional(tag_vorg) {
+        Err(err) => Err(FaceTable(err))
+        Ok(None) => Ok(None)
+        Ok(Some(blob)) =>
+          match @sfnt.VorgTable::parse(blob.as_view()) {
+            Err(err) => Err(Parse(err))
+            Ok(vorg) => {
+              self.vorg = Some(vorg)
+              Ok(Some(vorg))
+            }
+          }
+      }
+  }
+}
+
+///|
+pub fn Font::hdmx(self : Font) -> Result[@sfnt.HdmxTable?, FontError] {
+  match self.hdmx {
+    Some(hdmx) => Ok(Some(hdmx))
+    None =>
+      match self.face.reference_table_optional(tag_hdmx) {
+        Err(err) => Err(FaceTable(err))
+        Ok(None) => Ok(None)
+        Ok(Some(blob)) =>
+          match @sfnt.HdmxTable::parse(blob.as_view()) {
+            Err(err) => Err(Parse(err))
+            Ok(hdmx) => {
+              self.hdmx = Some(hdmx)
+              Ok(Some(hdmx))
             }
           }
       }

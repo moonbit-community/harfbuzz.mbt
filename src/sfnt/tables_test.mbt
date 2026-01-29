@@ -281,6 +281,35 @@ fn build_meta_table() -> Bytes {
 }
 
 ///|
+fn build_vorg_table() -> Bytes {
+  let bytes : Array[Byte] = []
+  push_u16(bytes, 1)
+  push_u16(bytes, 0)
+  push_i16(bytes, 800)
+  push_u16(bytes, 2)
+  push_u16(bytes, 3)
+  push_i16(bytes, 750)
+  push_u16(bytes, 4)
+  push_i16(bytes, 700)
+  Bytes::from_array(bytes)
+}
+
+///|
+fn build_hdmx_table() -> Bytes {
+  let bytes : Array[Byte] = []
+  push_u16(bytes, 0)
+  push_u16(bytes, 1)
+  push_u32(bytes, 6)
+  bytes.push(12)
+  bytes.push(8)
+  bytes.push(3)
+  bytes.push(4)
+  bytes.push(5)
+  bytes.push(6)
+  Bytes::from_array(bytes)
+}
+
+///|
 test "head table parse" {
   let bytes = build_bytes(54)
   bytes[18] = 0x03
@@ -463,4 +492,29 @@ test "meta table parse" {
     Some(value) => value
   }
   inspect(data, content="b\"foo\"")
+}
+
+///|
+test "vorg table parse" {
+  let vorg = match VorgTable::parse(build_vorg_table()[:]) {
+    Err(err) => fail("parse error: \{err}")
+    Ok(value) => value
+  }
+  inspect(vorg.major_version, content="1")
+  inspect(vorg.default_origin_y, content="800")
+  inspect(vorg.origin_y_for(3), content="750")
+  inspect(vorg.origin_y_for(10), content="800")
+}
+
+///|
+test "hdmx table parse" {
+  let hdmx = match HdmxTable::parse(build_hdmx_table()[:]) {
+    Err(err) => fail("parse error: \{err}")
+    Ok(value) => value
+  }
+  inspect(hdmx.records.length(), content="1")
+  let record = hdmx.records[0]
+  inspect(record.pixel_size, content="12")
+  inspect(record.max_width, content="8")
+  inspect(record.widths, content="[3, 4, 5, 6]")
 }
