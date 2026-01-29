@@ -895,11 +895,88 @@ fn build_gpos_mark_to_mark_subtable_format1() -> Bytes {
 }
 
 ///|
+fn build_gpos_mark_to_mark_subtable_format1_two_marks() -> Bytes {
+  let bytes : Array[Byte] = []
+  push_u16(bytes, 1)
+  push_u16(bytes, 12)
+  push_u16(bytes, 20)
+  push_u16(bytes, 1)
+  push_u16(bytes, 28)
+  push_u16(bytes, 50)
+  // mark1 coverage table (glyphs 5, 6)
+  push_u16(bytes, 1)
+  push_u16(bytes, 2)
+  push_u16(bytes, 5)
+  push_u16(bytes, 6)
+  // mark2 coverage table (glyphs 5, 6)
+  push_u16(bytes, 1)
+  push_u16(bytes, 2)
+  push_u16(bytes, 5)
+  push_u16(bytes, 6)
+  // mark1 array (2 records, anchors at 10 and 16 from mark1 array base)
+  push_u16(bytes, 2)
+  push_u16(bytes, 0)
+  push_u16(bytes, 10)
+  push_u16(bytes, 0)
+  push_u16(bytes, 16)
+  // mark1 anchor 1
+  push_u16(bytes, 1)
+  push_i16(bytes, 3)
+  push_i16(bytes, 4)
+  // mark1 anchor 2
+  push_u16(bytes, 1)
+  push_i16(bytes, 3)
+  push_i16(bytes, 4)
+  // mark2 array (2 records, anchors at 6 and 12 from mark2 array base)
+  push_u16(bytes, 2)
+  push_u16(bytes, 6)
+  push_u16(bytes, 12)
+  // mark2 anchor 1
+  push_u16(bytes, 1)
+  push_i16(bytes, 8)
+  push_i16(bytes, 10)
+  // mark2 anchor 2
+  push_u16(bytes, 1)
+  push_i16(bytes, 8)
+  push_i16(bytes, 10)
+  Bytes::from_array(bytes)
+}
+
+///|
 fn build_gpos_mark_to_mark_lookup_format1() -> Bytes {
   let subtable = build_gpos_mark_to_mark_subtable_format1()
   let bytes : Array[Byte] = []
   push_u16(bytes, 6)
   push_u16(bytes, 0)
+  push_u16(bytes, 1)
+  push_u16(bytes, 8)
+  for b in subtable {
+    bytes.push(b)
+  }
+  Bytes::from_array(bytes)
+}
+
+///|
+fn build_gpos_mark_to_mark_lookup_format1_mark_filter() -> Bytes {
+  let subtable = build_gpos_mark_to_mark_subtable_format1_two_marks()
+  let bytes : Array[Byte] = []
+  push_u16(bytes, 6)
+  push_u16(bytes, 0x0010)
+  push_u16(bytes, 1)
+  push_u16(bytes, 10)
+  push_u16(bytes, 0)
+  for b in subtable {
+    bytes.push(b)
+  }
+  Bytes::from_array(bytes)
+}
+
+///|
+fn build_gpos_mark_to_mark_lookup_format1_mark_attach_type() -> Bytes {
+  let subtable = build_gpos_mark_to_mark_subtable_format1_two_marks()
+  let bytes : Array[Byte] = []
+  push_u16(bytes, 6)
+  push_u16(bytes, 0x0100)
   push_u16(bytes, 1)
   push_u16(bytes, 8)
   for b in subtable {
@@ -947,11 +1024,85 @@ fn build_gpos_mark_to_ligature_subtable_format1() -> Bytes {
 }
 
 ///|
+fn build_gpos_mark_to_ligature_subtable_format1_two_marks() -> Bytes {
+  let bytes : Array[Byte] = []
+  push_u16(bytes, 1)
+  push_u16(bytes, 12)
+  push_u16(bytes, 20)
+  push_u16(bytes, 1)
+  push_u16(bytes, 26)
+  push_u16(bytes, 36)
+  // mark coverage table (glyphs 5, 6)
+  push_u16(bytes, 1)
+  push_u16(bytes, 2)
+  push_u16(bytes, 5)
+  push_u16(bytes, 6)
+  // ligature coverage table
+  push_u16(bytes, 1)
+  push_u16(bytes, 1)
+  push_u16(bytes, 8)
+  // mark array (2 records, anchors at 24 and 30 from mark array base)
+  push_u16(bytes, 2)
+  push_u16(bytes, 0)
+  push_u16(bytes, 24)
+  push_u16(bytes, 0)
+  push_u16(bytes, 30)
+  // ligature array
+  push_u16(bytes, 1)
+  push_u16(bytes, 4)
+  // ligature attach
+  push_u16(bytes, 1)
+  push_u16(bytes, 4)
+  // ligature anchor
+  push_u16(bytes, 1)
+  push_i16(bytes, 12)
+  push_i16(bytes, 15)
+  // mark anchor 1
+  push_u16(bytes, 1)
+  push_i16(bytes, 3)
+  push_i16(bytes, 4)
+  // mark anchor 2
+  push_u16(bytes, 1)
+  push_i16(bytes, 3)
+  push_i16(bytes, 4)
+  Bytes::from_array(bytes)
+}
+
+///|
 fn build_gpos_mark_to_ligature_lookup_format1() -> Bytes {
   let subtable = build_gpos_mark_to_ligature_subtable_format1()
   let bytes : Array[Byte] = []
   push_u16(bytes, 5)
   push_u16(bytes, 0)
+  push_u16(bytes, 1)
+  push_u16(bytes, 8)
+  for b in subtable {
+    bytes.push(b)
+  }
+  Bytes::from_array(bytes)
+}
+
+///|
+fn build_gpos_mark_to_ligature_lookup_format1_mark_filter() -> Bytes {
+  let subtable = build_gpos_mark_to_ligature_subtable_format1_two_marks()
+  let bytes : Array[Byte] = []
+  push_u16(bytes, 5)
+  push_u16(bytes, 0x0010)
+  push_u16(bytes, 1)
+  push_u16(bytes, 10)
+  push_u16(bytes, 0)
+  for b in subtable {
+    bytes.push(b)
+  }
+  Bytes::from_array(bytes)
+}
+
+///|
+fn build_gpos_mark_to_ligature_lookup_format1_mark_attach_type() -> Bytes {
+  let subtable = build_gpos_mark_to_ligature_subtable_format1_two_marks()
+  let bytes : Array[Byte] = []
+  push_u16(bytes, 5)
+  push_u16(bytes, 0x0100)
   push_u16(bytes, 1)
   push_u16(bytes, 8)
   for b in subtable {
@@ -2140,6 +2291,92 @@ test "gpos mark to mark format1" {
 }
 
 ///|
+test "gpos mark to mark mark filtering set" {
+  let gpos_bytes = build_layout_table(
+    build_gpos_mark_to_mark_lookup_format1_mark_filter(),
+    @common.Tag::from_chars('k', 'e', 'r', 'n'),
+  )
+  let gpos = match GposTable::parse(@blob.Blob::from_bytes(gpos_bytes)) {
+    Err(err) => fail("parse error: \{err}")
+    Ok(value) => value
+  }
+  let gdef = match GdefTable::parse(
+    @blob.Blob::from_bytes(build_gdef_mark_filter_table()),
+  ) {
+    Err(err) => fail("parse error: \{err}")
+    Ok(value) => value
+  }
+  let lookup_offsets = [gpos.layout().lookup_list().offsets()[0]]
+  let glyphs1 : Array[UInt] = [6U, 5U]
+  let deltas1 = match gpos.position_deltas_with_lookups(
+    glyphs1[:],
+    lookup_offsets[:],
+    gdef=gdef,
+  ) {
+    Err(err) => fail("apply error: \{err}")
+    Ok(value) => value
+  }
+  inspect(deltas1.length(), content="2")
+  inspect(deltas1[1].x_placement, content="0")
+  inspect(deltas1[1].y_placement, content="0")
+  let glyphs2 : Array[UInt] = [6U, 6U]
+  let deltas2 = match gpos.position_deltas_with_lookups(
+    glyphs2[:],
+    lookup_offsets[:],
+    gdef=gdef,
+  ) {
+    Err(err) => fail("apply error: \{err}")
+    Ok(value) => value
+  }
+  inspect(deltas2.length(), content="2")
+  inspect(deltas2[1].x_placement, content="5")
+  inspect(deltas2[1].y_placement, content="6")
+}
+
+///|
+test "gpos mark to mark mark attachment type" {
+  let gpos_bytes = build_layout_table(
+    build_gpos_mark_to_mark_lookup_format1_mark_attach_type(),
+    @common.Tag::from_chars('k', 'e', 'r', 'n'),
+  )
+  let gpos = match GposTable::parse(@blob.Blob::from_bytes(gpos_bytes)) {
+    Err(err) => fail("parse error: \{err}")
+    Ok(value) => value
+  }
+  let gdef = match GdefTable::parse(
+    @blob.Blob::from_bytes(build_gdef_mark_filter_table()),
+  ) {
+    Err(err) => fail("parse error: \{err}")
+    Ok(value) => value
+  }
+  let lookup_offsets = [gpos.layout().lookup_list().offsets()[0]]
+  let glyphs1 : Array[UInt] = [5U, 5U]
+  let deltas1 = match gpos.position_deltas_with_lookups(
+    glyphs1[:],
+    lookup_offsets[:],
+    gdef=gdef,
+  ) {
+    Err(err) => fail("apply error: \{err}")
+    Ok(value) => value
+  }
+  inspect(deltas1.length(), content="2")
+  inspect(deltas1[1].x_placement, content="5")
+  inspect(deltas1[1].y_placement, content="6")
+  let glyphs2 : Array[UInt] = [5U, 6U]
+  let deltas2 = match gpos.position_deltas_with_lookups(
+    glyphs2[:],
+    lookup_offsets[:],
+    gdef=gdef,
+  ) {
+    Err(err) => fail("apply error: \{err}")
+    Ok(value) => value
+  }
+  inspect(deltas2.length(), content="2")
+  inspect(deltas2[1].x_placement, content="0")
+  inspect(deltas2[1].y_placement, content="0")
+}
+
+///|
 test "gpos mark to ligature format1" {
   let gpos_bytes = build_layout_table(
     build_gpos_mark_to_ligature_lookup_format1(),
@@ -2158,6 +2395,92 @@ test "gpos mark to ligature format1" {
   inspect(deltas[0].x_placement, content="0")
   inspect(deltas[1].x_placement, content="9")
   inspect(deltas[1].y_placement, content="11")
+}
+
+///|
+test "gpos mark to ligature mark filtering set" {
+  let gpos_bytes = build_layout_table(
+    build_gpos_mark_to_ligature_lookup_format1_mark_filter(),
+    @common.Tag::from_chars('k', 'e', 'r', 'n'),
+  )
+  let gpos = match GposTable::parse(@blob.Blob::from_bytes(gpos_bytes)) {
+    Err(err) => fail("parse error: \{err}")
+    Ok(value) => value
+  }
+  let gdef = match GdefTable::parse(
+    @blob.Blob::from_bytes(build_gdef_mark_filter_table()),
+  ) {
+    Err(err) => fail("parse error: \{err}")
+    Ok(value) => value
+  }
+  let lookup_offsets = [gpos.layout().lookup_list().offsets()[0]]
+  let glyphs1 : Array[UInt] = [8U, 5U]
+  let deltas1 = match gpos.position_deltas_with_lookups(
+    glyphs1[:],
+    lookup_offsets[:],
+    gdef=gdef,
+  ) {
+    Err(err) => fail("apply error: \{err}")
+    Ok(value) => value
+  }
+  inspect(deltas1.length(), content="2")
+  inspect(deltas1[1].x_placement, content="0")
+  inspect(deltas1[1].y_placement, content="0")
+  let glyphs2 : Array[UInt] = [8U, 6U]
+  let deltas2 = match gpos.position_deltas_with_lookups(
+    glyphs2[:],
+    lookup_offsets[:],
+    gdef=gdef,
+  ) {
+    Err(err) => fail("apply error: \{err}")
+    Ok(value) => value
+  }
+  inspect(deltas2.length(), content="2")
+  inspect(deltas2[1].x_placement, content="9")
+  inspect(deltas2[1].y_placement, content="11")
+}
+
+///|
+test "gpos mark to ligature mark attachment type" {
+  let gpos_bytes = build_layout_table(
+    build_gpos_mark_to_ligature_lookup_format1_mark_attach_type(),
+    @common.Tag::from_chars('k', 'e', 'r', 'n'),
+  )
+  let gpos = match GposTable::parse(@blob.Blob::from_bytes(gpos_bytes)) {
+    Err(err) => fail("parse error: \{err}")
+    Ok(value) => value
+  }
+  let gdef = match GdefTable::parse(
+    @blob.Blob::from_bytes(build_gdef_mark_filter_table()),
+  ) {
+    Err(err) => fail("parse error: \{err}")
+    Ok(value) => value
+  }
+  let lookup_offsets = [gpos.layout().lookup_list().offsets()[0]]
+  let glyphs1 : Array[UInt] = [8U, 5U]
+  let deltas1 = match gpos.position_deltas_with_lookups(
+    glyphs1[:],
+    lookup_offsets[:],
+    gdef=gdef,
+  ) {
+    Err(err) => fail("apply error: \{err}")
+    Ok(value) => value
+  }
+  inspect(deltas1.length(), content="2")
+  inspect(deltas1[1].x_placement, content="9")
+  inspect(deltas1[1].y_placement, content="11")
+  let glyphs2 : Array[UInt] = [8U, 6U]
+  let deltas2 = match gpos.position_deltas_with_lookups(
+    glyphs2[:],
+    lookup_offsets[:],
+    gdef=gdef,
+  ) {
+    Err(err) => fail("apply error: \{err}")
+    Ok(value) => value
+  }
+  inspect(deltas2.length(), content="2")
+  inspect(deltas2[1].x_placement, content="0")
+  inspect(deltas2[1].y_placement, content="0")
 }
 
 ///|
