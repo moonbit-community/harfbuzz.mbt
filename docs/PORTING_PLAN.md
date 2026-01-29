@@ -1,78 +1,75 @@
-# HarfBuzz → MoonBit Porting Plan
+# HarfBuzz -> MoonBit Porting Plan
 
 ## Goal
-Build a MoonBit-native HarfBuzz-compatible shaping stack. Start with a minimal
-OpenType shaping pipeline, then expand coverage (scripts, tables, shapers,
-subset/variations, platform backends).
+Full HarfBuzz port in MoonBit while excluding platform-specific backends.
+This includes the non-platform shaping stack (OT/AAT/Graphite), table parsing,
+Unicode data, variations, color/paint, and subsetting.
 
-## Current Status
-- `common`: tags/direction/script/language helpers (subset of scripts).
+## Current Implementation (as of 2026-01-29)
+- `common`: tags, direction, script/language helpers (expanded list; may not be exhaustive).
 - `blob`: blob data holder + slicing.
-- `face`: basic face holder + table map.
+- `face`: face holder + table map.
+- `font`: metrics, cmap lookup, lazy GSUB/GPOS/GDEF parsing.
+- `buffer`: glyph buffer + `shape_basic` + `shape_ot` (GSUB/GPOS with feature allowlists).
+- `sfnt`: table directory + `head`, `hhea`, `maxp`, `hmtx`, `cmap` (format 4/12), `loca`, `glyf`.
+- `ot/tables`: coverage, layout, lookup parsing; GSUB/GPOS apply; GDEF parsing; lookup flag filtering.
+  - GSUB: lookup types 1-8 and extension.
+  - GPOS: lookup types 1-8 and extension (single, pair, cursive, mark-to-*, contextual, chaining).
 
-## Package Map (proposed)
+## Package Map (current + planned)
 
-| MoonBit package | Purpose | Upstream reference |
-| --- | --- | --- |
-| `common` | Tags, direction, script/language types, version helpers | `hb-common.h`, `hb-common.cc`, `hb-script-list.h` |
-| `blob` | Binary data holder, sub-blob slicing | `hb-blob.h`, `hb-blob.cc` |
-| `face` | Face object, table access, metadata | `hb-face.h`, `hb-face.cc`, `hb-ot-face.*` |
-| `font` | Font metrics/scale, glyph funcs | `hb-font.h`, `hb-font.cc`, `hb-ot-font.*` |
-| `buffer` | Text buffer, serialization, verify | `hb-buffer.h`, `hb-buffer.cc`, `hb-buffer-serialize.*`, `hb-buffer-verify.cc` |
-| `unicode` | Unicode funcs + UCD data | `hb-unicode.h`, `hb-unicode.cc`, `hb-ucd*`, `hb-unicode-emoji-table*` |
-| `ot/tables` | OpenType table structs/parsers | `hb-ot-*-table.hh`, `hb-ot-*.cc` |
-| `ot/layout` | GSUB/GPOS, GDEF, script/feature selection | `hb-ot-layout.*`, `hb-ot-map.*`, `hb-ot-layout-gsubgpos.hh` |
-| `ot/shape` | Normalization + shaping entry points | `hb-ot-shape.*`, `hb-ot-shape-normalize.*`, `hb-ot-shaper-*.cc` |
-| `aat` | AAT layout tables + shaping | `hb-aat-*` |
-| `subset` | Subsetting pipeline | `hb-subset.*` |
-| `paint` | COLR/paint APIs | `hb-paint.*` |
-| `graphite` | Graphite2 shaper (optional) | `hb-graphite2.*` |
-| `platform/*` | Platform shapers (optional) | `hb-coretext.*`, `hb-directwrite.*`, `hb-uniscribe.*`, `hb-icu.*`, `hb-glib.*`, `hb-ft.*` |
+| MoonBit package | Purpose | Upstream reference | Status |
+| --- | --- | --- | --- |
+| `common` | Tags, script/language, direction | `hb-common.*`, `hb-script-list.h` | done |
+| `blob` | Blob + slicing | `hb-blob.*` | done |
+| `face` | Face + table map | `hb-face.*`, `hb-ot-face.*` | done |
+| `font` | Font metrics + table access | `hb-font.*`, `hb-ot-font.*` | done |
+| `buffer` | Buffer + shaping entrypoint | `hb-buffer.*` | partial (serialize/verify missing) |
+| `sfnt` | SFNT tables (head/hhea/etc.) | `hb-ot-*-table.hh` | partial |
+| `ot/tables` | GSUB/GPOS/GDEF + lookup parsing | `hb-ot-layout-*-table.hh` | partial |
+| `unicode` | UCD + emoji data + unicode funcs | `hb-unicode.*`, `hb-ucd*` | planned |
+| `ot/shape` | OT shaping + normalization | `hb-ot-shape.*`, `hb-ot-shaper-*.cc` | planned |
+| `ot/map` | Feature/lookup mapping | `hb-ot-map.*` | planned |
+| `shape` | Generic shaper registry + plan | `hb-shape.*`, `hb-shape-plan.*`, `hb-shaper.*` | planned |
+| `ot/var` | Variation tables + var store | `hb-ot-var*` | planned |
+| `ot/color` | COLR/CPAL + color utilities | `hb-ot-color.*` | planned |
+| `paint` | Paint API | `hb-paint.*` | planned |
+| `aat` | AAT layout + shaping | `hb-aat-*` | planned |
+| `graphite` | Graphite2 shaper | `hb-graphite2.*` | planned |
+| `subset` | Subsetting pipeline | `hb-subset*` | planned |
+| `draw` | Draw/outline helpers | `hb-draw.*`, `hb-outline.*` | planned |
+| `platform/*` | Platform backends | CoreText/DirectWrite/Uniscribe/etc. | excluded |
 
-## MVP Scope (phase 1)
-Focus on TrueType/OpenType shaping for basic Latin:
-1) **Core data model**: `blob`, `face`, `font`, `buffer`.
-2) **Table parsing**: `head`, `hhea`, `maxp`, `hmtx`, `cmap` (format 4 + 12), `loca`, `glyf`.
-3) **Layout**: GSUB/GPOS (single + ligature + pair positioning minimal set), script/language defaults.
-4) **Shaper**: default OT shaper for left-to-right scripts.
-5) **Output**: glyph IDs + advances/offsets.
+## Remaining Non-Platform Modules (inventory)
 
-Non-goals for phase 1:
-- CFF/CFF2, color, math, AAT, variations, subsetting.
-- Platform backends (CoreText/DirectWrite/Uniscribe).
+- Unicode + UCD data: `hb-unicode.*`, `hb-ucd*`, `hb-unicode-emoji-table*` -> `unicode`.
+- Shaping pipeline: `hb-shape.*`, `hb-shape-plan.*`, `hb-shaper.*`, `hb-shaper-list.hh` -> `shape`.
+- OT shaper + normalization: `hb-ot-shape.*`, `hb-ot-shape-normalize.*`, `hb-ot-shape-fallback.*`,
+  `hb-ot-shaper-*.cc` (arabic/indic/khmer/myanmar/use/hangul/hebrew/thai/syllabic) -> `ot/shape`.
+- OT map/feature selection: `hb-ot-map.*` -> `ot/map`.
+- OT tables not yet parsed: `BASE`, `JSTF`, `MATH`, `OS/2`, `name`, `post`, `meta`, `stat`, `gasp`,
+  `hdmx`, `vorg`, `kern`, `color` tables -> `sfnt`/`ot/tables`/`ot/color`.
+- Variations: `fvar`, `gvar`, `avar`, `cvar`, `hvar`, `mvar`, `varc`, tuple var store -> `ot/var`.
+- CFF/CFF2 support: `hb-ot-cff*`, `hb-cff*` -> planned `sfnt/cff` or `ot/cff` package.
+- Color + paint APIs: `hb-ot-color.*`, `hb-paint.*` -> `ot/color`, `paint`.
+- AAT shaping: `hb-aat-*` -> `aat`.
+- Graphite2 shaper: `hb-graphite2.*` -> `graphite`.
+- Subsetting: `hb-subset*` -> `subset`.
+- Buffer serialization/verify: `hb-buffer-serialize.*`, `hb-buffer-verify.cc` -> `buffer`.
+- Utility data structures and helpers: `hb-set.*`, `hb-map.*`, `hb-serialize.*`, `hb-repacker.*`,
+  `hb-number-parser.*` -> new support package (or fold into existing).
 
-## MVP Milestones
-1) **Buffer + Font types**
-   - Implement `buffer` and `font` packages (glyph buffer, clusters, metrics).
-2) **Table parsing foundation**
-   - `sfnt`/table directory + `head/hhea/maxp/hmtx/cmap` parsers.
-3) **Glyph mapping**
-   - `cmap` → glyph IDs; integrate with buffer.
-4) **GSUB/GPOS minimal**
-   - Single substitution + basic pair positioning.
-5) **Default shaper**
-   - Script/language feature mapping (start with `kern`, `liga`).
-6) **Golden tests**
-   - Compare shaping results for a few known fonts/text cases.
+## Platform-Specific Exclusions
+- OS shapers/backends: `hb-coretext.*`, `hb-directwrite.*`, `hb-uniscribe.*`, `hb-gdi.*`.
+- External integrations/bindings: `hb-ft.*`, `hb-icu.*`, `hb-glib.*`, `hb-gobject.*`, `hb-cairo.*`.
+- WASM API glue: `hb-wasm-*` (treat as optional binding layer).
 
 ## Data & Codegen Strategy
-- Reuse HarfBuzz-generated tables where possible by porting the generator logic
-  (e.g., `gen-ucd-table.py`, `gen-emoji-table.py`, `gen-tag-table.py`).
-- For early MVP, embed minimal static tables (scripts + Unicode categories needed
-  for default shaper).
-
-## Risks / Unknowns
-- Full script list + direction mapping is large and needs codegen.
-- Unicode data tables are sizeable; need a plan for generation or embedding.
-- Performance parity will require careful data structure choices.
-- GSUB/GPOS correctness is hard to validate without broad test coverage.
+- Reuse HarfBuzz generators where possible (`gen-ucd-table.py`, `gen-emoji-table.py`,
+  `gen-tag-table.py`, `gen-*-table.py`).
+- For early phases, embed minimal static tables and replace with generated data later.
 
 ## Testing Plan
-- Add MoonBit unit tests for table parsing and shaping primitives.
-- Establish a small corpus of font fixtures (e.g., Noto Sans Regular) and
-  compare shaping outputs against upstream HarfBuzz for a handful of strings.
-
-## Suggested Next Tasks
-- Expand script list + horizontal direction mapping (full `hb-script-list.h`).
-- Implement `buffer` and `font` packages (core shaping data model).
-- Add `sfnt` table directory parsing + base tables.
+- Expand unit tests for table parsing and layout application.
+- Add shaping snapshots with a font corpus (Latin/Arabic/Indic + mark positioning).
+- Validate parity against upstream HarfBuzz outputs where feasible.
