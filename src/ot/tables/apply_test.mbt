@@ -1978,6 +1978,32 @@ test "gsub single substitution apply" {
 }
 
 ///|
+test "gsub single substitution apply mask" {
+  let gsub_bytes = build_layout_table(
+    build_gsub_lookup(),
+    @common.Tag::from_chars('l', 'i', 'g', 'a'),
+  )
+  let gsub = match GsubTable::parse(@blob.Blob::from_bytes(gsub_bytes)) {
+    Err(err) => fail("parse error: \{err}")
+    Ok(value) => value
+  }
+  let lookup_offsets = gsub.layout().lookup_list().offsets()
+  let glyphs : Array[UInt] = [1U, 1U]
+  let masks : Array[UInt] = [0U, 1U]
+  let changed = match gsub.apply_single_with_lookups(
+    glyphs,
+    lookup_offsets,
+    masks=masks,
+    lookup_mask=1U,
+  ) {
+    Err(err) => fail("apply error: \{err}")
+    Ok(value) => value
+  }
+  inspect(changed, content="true")
+  inspect(glyphs, content="[1, 3]")
+}
+
+///|
 test "gsub single lookup mark filtering set" {
   let gsub_bytes = build_layout_table(
     build_gsub_single_lookup_mark_filter(),

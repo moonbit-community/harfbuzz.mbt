@@ -13,7 +13,12 @@ pub fn GsubTable::apply_single_with_lookups(
   self : GsubTable,
   glyphs : Array[UInt],
   lookup_offsets : ArrayView[Int],
+  masks? : Array[UInt] = [],
+  lookup_mask? : UInt = 0xFFFFFFFFU,
 ) -> Result[Bool, OtLayoutError] {
+  if !masks.is_empty() && masks.length() != glyphs.length() {
+    return Err(InvalidFormat)
+  }
   let data = self.layout.data
   let mut changed = false
   for lookup_offset in lookup_offsets {
@@ -32,6 +37,8 @@ pub fn GsubTable::apply_single_with_lookups(
             lookup_flag,
             mark_filtering_set,
             None,
+            masks,
+            lookup_mask,
           )
           match res {
             Err(err) => return Err(err)
@@ -51,8 +58,13 @@ pub fn GsubTable::apply_with_lookups(
   clusters : Array[Int],
   lookup_offsets : ArrayView[Int],
   gdef? : GdefTable,
+  masks? : Array[UInt] = [],
+  lookup_mask? : UInt = 0xFFFFFFFFU,
 ) -> Result[(Array[UInt], Array[Int], Bool), OtLayoutError] {
   if clusters.length() != glyphs.length() {
+    return Err(InvalidFormat)
+  }
+  if !masks.is_empty() && masks.length() != glyphs.length() {
     return Err(InvalidFormat)
   }
   let data = self.layout.data
@@ -74,6 +86,8 @@ pub fn GsubTable::apply_with_lookups(
             lookup_flag,
             mark_filtering_set,
             gdef,
+            masks,
+            lookup_mask,
           ) {
             Err(err) => return Err(err)
             Ok(value) => value
@@ -82,6 +96,9 @@ pub fn GsubTable::apply_with_lookups(
             changed = true
           }
         } else if lookup_type == 2 {
+          if !masks.is_empty() {
+            continue
+          }
           let result = match apply_multiple_subtable_list(
             data,
             subtable_offsets,
@@ -101,6 +118,9 @@ pub fn GsubTable::apply_with_lookups(
             changed = true
           }
         } else if lookup_type == 3 {
+          if !masks.is_empty() {
+            continue
+          }
           let did_change = match apply_alternate_subtable_list(
             data,
             subtable_offsets,
@@ -116,6 +136,9 @@ pub fn GsubTable::apply_with_lookups(
             changed = true
           }
         } else if lookup_type == 4 {
+          if !masks.is_empty() {
+            continue
+          }
           let result = match apply_ligature_subtable_list(
             data,
             subtable_offsets,
@@ -135,6 +158,9 @@ pub fn GsubTable::apply_with_lookups(
             changed = true
           }
         } else if lookup_type == 5 {
+          if !masks.is_empty() {
+            continue
+          }
           let did_change = match apply_context_subtable_list(
             data,
             subtable_offsets,
@@ -151,6 +177,9 @@ pub fn GsubTable::apply_with_lookups(
             changed = true
           }
         } else if lookup_type == 6 {
+          if !masks.is_empty() {
+            continue
+          }
           let did_change = match apply_chain_subtable_list(
             data,
             subtable_offsets,
@@ -167,6 +196,9 @@ pub fn GsubTable::apply_with_lookups(
             changed = true
           }
         } else if lookup_type == 8 {
+          if !masks.is_empty() {
+            continue
+          }
           let did_change = match apply_reverse_chain_subtable_list(
             data,
             subtable_offsets,
@@ -198,6 +230,8 @@ fn apply_single_subtable(
   lookup_flag : Int,
   mark_filtering_set : Int?,
   gdef : GdefTable?,
+  masks : Array[UInt],
+  lookup_mask : UInt,
 ) -> Result[Bool, OtLayoutError] {
   let format = read_u16_int(data, offset)
   match format {
@@ -205,6 +239,9 @@ fn apply_single_subtable(
     Ok(format) => {
       let mut changed = false
       for i in 0..<glyphs.length() {
+        if !masks.is_empty() && (masks[i] & lookup_mask) == 0U {
+          continue
+        }
         let glyph = glyphs[i]
         let ignored = should_ignore_glyph(
           glyph,
@@ -248,6 +285,8 @@ fn apply_single_subtable_list(
   lookup_flag : Int,
   mark_filtering_set : Int?,
   gdef : GdefTable?,
+  masks : Array[UInt],
+  lookup_mask : UInt,
 ) -> Result[Bool, OtLayoutError] {
   let mut changed = false
   for offset in offsets {
@@ -258,6 +297,8 @@ fn apply_single_subtable_list(
       lookup_flag,
       mark_filtering_set,
       gdef,
+      masks,
+      lookup_mask,
     )
     match result {
       Err(err) => return Err(err)
