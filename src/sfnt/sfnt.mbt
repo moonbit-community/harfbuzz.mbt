@@ -84,20 +84,26 @@ fn read_i16(data : BytesView, offset : Int) -> Result[Int, SfntError] {
 }
 
 ///|
-/// Parse a SFNT directory from a blob.
-pub fn Sfnt::parse(blob : @blob.Blob) -> Result[Sfnt, SfntError] {
+/// Parse a SFNT directory from a blob at a byte offset.
+pub fn Sfnt::parse_at(
+  blob : @blob.Blob,
+  base : Int,
+) -> Result[Sfnt, SfntError] {
+  if base < 0 {
+    return Err(InvalidFormat)
+  }
   let data = blob.as_view()
-  let scaler = read_u32(data, 0)
+  let scaler = read_u32(data, base)
   match scaler {
     Err(err) => Err(err)
     Ok(_) => {
-      let tables = read_u16_int(data, 4)
+      let tables = read_u16_int(data, base + 4)
       match tables {
         Err(err) => Err(err)
         Ok(num_tables) => {
           let count = num_tables
           let records : Array[TableRecord] = []
-          let mut offset = 12
+          let mut offset = base + 12
           for _ in 0..<count {
             let tag = @common.Tag::from_bytes(
               data[offset],
@@ -111,7 +117,11 @@ pub fn Sfnt::parse(blob : @blob.Blob) -> Result[Sfnt, SfntError] {
               (Err(err), _) => return Err(err)
               (_, Err(err)) => return Err(err)
               (Ok(table_offset), Ok(length)) =>
-                records.push(TableRecord::{ tag, offset: table_offset, length })
+                records.push(TableRecord::{
+                  tag,
+                  offset: base + table_offset,
+                  length,
+                })
             }
             offset = offset + 16
           }
@@ -120,6 +130,12 @@ pub fn Sfnt::parse(blob : @blob.Blob) -> Result[Sfnt, SfntError] {
       }
     }
   }
+}
+
+///|
+/// Parse a SFNT directory from a blob.
+pub fn Sfnt::parse(blob : @blob.Blob) -> Result[Sfnt, SfntError] {
+  Sfnt::parse_at(blob, 0)
 }
 
 ///|
