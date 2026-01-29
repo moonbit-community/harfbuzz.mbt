@@ -186,6 +186,21 @@ pub fn Buffer::get_language(self : Buffer) -> @common.Language {
 }
 
 ///|
+/// Fill missing segment properties with defaults.
+pub fn Buffer::guess_segment_properties(self : Buffer) -> Unit {
+  if self.script == @common.script_invalid {
+    self.script = @common.script_common
+  }
+  if !self.direction.is_valid() {
+    let dir = self.script.horizontal_direction()
+    self.direction = if dir.is_valid() { dir } else { @common.direction_ltr }
+  }
+  if !self.language.is_valid() {
+    self.language = @common.Language::from_string("und")
+  }
+}
+
+///|
 fn language_to_ot_tag(lang : @common.Language) -> @common.Tag {
   match lang.to_string() {
     None => @common.tag_none
@@ -255,6 +270,7 @@ pub fn Buffer::shape_ot(
   self : Buffer,
   font : @font.Font,
 ) -> Result[Unit, ShapeError] {
+  self.guess_segment_properties()
   match self.shape_basic(font) {
     Err(err) => return Err(err)
     Ok(_) => ()

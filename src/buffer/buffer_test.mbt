@@ -32,6 +32,15 @@ test "buffer properties" {
 }
 
 ///|
+test "buffer guess segment properties" {
+  let buffer = Buffer::new()
+  buffer.set_script(@common.script_arabic)
+  buffer.guess_segment_properties()
+  inspect(buffer.get_direction().to_string(), content="rtl")
+  inspect(buffer.get_language().to_string(), content="Some(\"und\")")
+}
+
+///|
 fn push_u16(bytes : Array[Byte], value : Int) -> Unit {
   bytes.push(((value >> 8) & 0xff).to_byte())
   bytes.push((value & 0xff).to_byte())
