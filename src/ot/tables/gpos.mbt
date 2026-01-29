@@ -84,6 +84,19 @@ pub fn GposTable::position_deltas_with_lookups(
               Ok(_) => ()
             }
           }
+        } else if lookup_type == 5 {
+          for subtable_offset in subtable_offsets {
+            let res = apply_mark_to_ligature_subtable(
+              data,
+              subtable_offset,
+              glyphs,
+              deltas,
+            )
+            match res {
+              Err(err) => return Err(err)
+              Ok(_) => ()
+            }
+          }
         } else if lookup_type == 6 {
           for subtable_offset in subtable_offsets {
             let res = apply_mark_to_mark_subtable(
@@ -370,6 +383,222 @@ fn apply_mark_to_base_format1(
                               y_advance: 0,
                             }
                             deltas[i] = add_value_record(deltas[i], delta)
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+              _ => ()
+            }
+          }
+          Ok(())
+        }
+      }
+    }
+  }
+}
+
+///|
+fn apply_mark_to_ligature_subtable(
+  data : BytesView,
+  offset : Int,
+  glyphs : ArrayView[UInt],
+  deltas : Array[ValueRecord],
+) -> Result[Unit, OtLayoutError] {
+  let format = read_u16_int(data, offset)
+  match format {
+    Err(err) => Err(err)
+    Ok(format) => if format == 1 {
+      apply_mark_to_ligature_format1(data, offset, glyphs, deltas)
+    } else {
+      Ok(())
+    }
+  }
+}
+
+///|
+fn apply_mark_to_ligature_format1(
+  data : BytesView,
+  offset : Int,
+  glyphs : ArrayView[UInt],
+  deltas : Array[ValueRecord],
+) -> Result[Unit, OtLayoutError] {
+  if glyphs.length() < 2 {
+    return Ok(())
+  }
+  if offset < 0 || offset + 12 > data.length() {
+    return Err(UnexpectedEof)
+  }
+  let mark_coverage_offset = read_u16_int(data, offset + 2)
+  let ligature_coverage_offset = read_u16_int(data, offset + 4)
+  let class_count = read_u16_int(data, offset + 6)
+  let mark_array_offset = read_u16_int(data, offset + 8)
+  let ligature_array_offset = read_u16_int(data, offset + 10)
+  match (
+    mark_coverage_offset,
+    ligature_coverage_offset,
+    class_count,
+    mark_array_offset,
+    ligature_array_offset,
+  ) {
+    (Err(err), _, _, _, _) => Err(err)
+    (_, Err(err), _, _, _) => Err(err)
+    (_, _, Err(err), _, _) => Err(err)
+    (_, _, _, Err(err), _) => Err(err)
+    (_, _, _, _, Err(err)) => Err(err)
+    (
+      Ok(mark_coverage_offset),
+      Ok(ligature_coverage_offset),
+      Ok(class_count),
+      Ok(mark_array_offset),
+      Ok(ligature_array_offset),
+    ) => {
+      if mark_coverage_offset == 0 || ligature_coverage_offset == 0 ||
+          mark_array_offset == 0 || ligature_array_offset == 0 {
+        return Err(InvalidFormat)
+      }
+      if class_count <= 0 {
+        return Err(InvalidFormat)
+      }
+      let mark_coverage_base = offset + mark_coverage_offset
+      let ligature_coverage_base = offset + ligature_coverage_offset
+      let mark_array_base = offset + mark_array_offset
+      let ligature_array_base = offset + ligature_array_offset
+      if mark_array_base < 0 || mark_array_base + 2 > data.length() {
+        return Err(UnexpectedEof)
+      }
+      if ligature_array_base < 0 || ligature_array_base + 2 > data.length() {
+        return Err(UnexpectedEof)
+      }
+      let mark_count = read_u16_int(data, mark_array_base)
+      let ligature_count = read_u16_int(data, ligature_array_base)
+      match (mark_count, ligature_count) {
+        (Err(err), _) => Err(err)
+        (_, Err(err)) => Err(err)
+        (Ok(mark_count), Ok(ligature_count)) => {
+          if mark_count <= 0 || ligature_count <= 0 {
+            return Err(InvalidFormat)
+          }
+          let mark_record_base = mark_array_base + 2
+          let mark_record_size = 4
+          if mark_record_base < 0 ||
+              mark_record_base + mark_count * mark_record_size > data.length() {
+            return Err(UnexpectedEof)
+          }
+          let ligature_offset_base = ligature_array_base + 2
+          if ligature_offset_base < 0 ||
+              ligature_offset_base + ligature_count * 2 > data.length() {
+            return Err(UnexpectedEof)
+          }
+          for i in 1..<glyphs.length() {
+            let mark_glyph = glyphs[i]
+            let ligature_glyph = glyphs[i - 1]
+            let mark_index = coverage_index(data, mark_coverage_base, mark_glyph)
+            let ligature_index = coverage_index(
+              data,
+              ligature_coverage_base,
+              ligature_glyph,
+            )
+            match (mark_index, ligature_index) {
+              (Err(err), _) => return Err(err)
+              (_, Err(err)) => return Err(err)
+              (Ok(Some(mark_index)), Ok(Some(ligature_index))) => {
+                if mark_index < 0 || mark_index >= mark_count {
+                  return Err(InvalidFormat)
+                }
+                if ligature_index < 0 || ligature_index >= ligature_count {
+                  return Err(InvalidFormat)
+                }
+                let mark_record_offset =
+                  mark_record_base + mark_index * mark_record_size
+                let mark_class = read_u16_int(data, mark_record_offset)
+                let mark_anchor_offset = read_u16_int(data, mark_record_offset + 2)
+                match (mark_class, mark_anchor_offset) {
+                  (Err(err), _) => return Err(err)
+                  (_, Err(err)) => return Err(err)
+                  (Ok(mark_class), Ok(mark_anchor_offset)) => {
+                    if mark_class < 0 || mark_class >= class_count {
+                      return Err(InvalidFormat)
+                    }
+                    if mark_anchor_offset == 0 {
+                      return Err(InvalidFormat)
+                    }
+                    let ligature_attach_offset = read_u16_int(
+                      data,
+                      ligature_offset_base + ligature_index * 2,
+                    )
+                    match ligature_attach_offset {
+                      Err(err) => return Err(err)
+                      Ok(ligature_attach_offset) => {
+                        if ligature_attach_offset == 0 {
+                          return Err(InvalidFormat)
+                        }
+                        let ligature_attach_base =
+                          ligature_array_base + ligature_attach_offset
+                        if ligature_attach_base < 0 ||
+                            ligature_attach_base + 2 > data.length() {
+                          return Err(UnexpectedEof)
+                        }
+                        let component_count = read_u16_int(data, ligature_attach_base)
+                        match component_count {
+                          Err(err) => return Err(err)
+                          Ok(component_count) => {
+                            if component_count <= 0 {
+                              return Err(InvalidFormat)
+                            }
+                            let component_index = 0
+                            if component_index < 0 || component_index >= component_count {
+                              return Err(InvalidFormat)
+                            }
+                            let component_record_base = ligature_attach_base + 2
+                            let component_record_size = class_count * 2
+                            let component_total =
+                              component_record_size * component_count
+                            if component_record_base < 0 ||
+                                component_record_base + component_total > data.length() {
+                              return Err(UnexpectedEof)
+                            }
+                            let component_base =
+                              component_record_base +
+                              component_index * component_record_size
+                            let ligature_anchor_offset = read_u16_int(
+                              data,
+                              component_base + mark_class * 2,
+                            )
+                            match ligature_anchor_offset {
+                              Err(err) => return Err(err)
+                              Ok(ligature_anchor_offset) => {
+                                if ligature_anchor_offset == 0 {
+                                  continue
+                                }
+                                let mark_anchor_base =
+                                  mark_array_base + mark_anchor_offset
+                                let ligature_anchor_base =
+                                  ligature_attach_base + ligature_anchor_offset
+                                let mark_anchor = read_anchor(data, mark_anchor_base)
+                                let ligature_anchor = read_anchor(
+                                  data,
+                                  ligature_anchor_base,
+                                )
+                                match (mark_anchor, ligature_anchor) {
+                                  (Err(err), _) => return Err(err)
+                                  (_, Err(err)) => return Err(err)
+                                  (Ok(mark_anchor), Ok(ligature_anchor)) => {
+                                    let dx = ligature_anchor.0 - mark_anchor.0
+                                    let dy = ligature_anchor.1 - mark_anchor.1
+                                    let delta = ValueRecord::{
+                                      x_placement: dx,
+                                      y_placement: dy,
+                                      x_advance: 0,
+                                      y_advance: 0,
+                                    }
+                                    deltas[i] = add_value_record(deltas[i], delta)
+                                  }
+                                }
+                              }
+                            }
                           }
                         }
                       }

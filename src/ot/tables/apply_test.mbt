@@ -424,6 +424,58 @@ fn build_gpos_mark_to_mark_lookup_format1() -> Bytes {
 }
 
 ///|
+fn build_gpos_mark_to_ligature_subtable_format1() -> Bytes {
+  let bytes : Array[Byte] = []
+  push_u16(bytes, 1)
+  push_u16(bytes, 12)
+  push_u16(bytes, 18)
+  push_u16(bytes, 1)
+  push_u16(bytes, 24)
+  push_u16(bytes, 30)
+  // mark coverage table
+  push_u16(bytes, 1)
+  push_u16(bytes, 1)
+  push_u16(bytes, 5)
+  // ligature coverage table
+  push_u16(bytes, 1)
+  push_u16(bytes, 1)
+  push_u16(bytes, 8)
+  // mark array
+  push_u16(bytes, 1)
+  push_u16(bytes, 0)
+  push_u16(bytes, 20)
+  // ligature array
+  push_u16(bytes, 1)
+  push_u16(bytes, 4)
+  // ligature attach
+  push_u16(bytes, 1)
+  push_u16(bytes, 4)
+  // ligature anchor
+  push_u16(bytes, 1)
+  push_i16(bytes, 12)
+  push_i16(bytes, 15)
+  // mark anchor
+  push_u16(bytes, 1)
+  push_i16(bytes, 3)
+  push_i16(bytes, 4)
+  Bytes::from_array(bytes)
+}
+
+///|
+fn build_gpos_mark_to_ligature_lookup_format1() -> Bytes {
+  let subtable = build_gpos_mark_to_ligature_subtable_format1()
+  let bytes : Array[Byte] = []
+  push_u16(bytes, 5)
+  push_u16(bytes, 0)
+  push_u16(bytes, 1)
+  push_u16(bytes, 8)
+  for b in subtable {
+    bytes.push(b)
+  }
+  Bytes::from_array(bytes)
+}
+
+///|
 fn build_gsub_ligature_subtable() -> Bytes {
   let bytes : Array[Byte] = []
   push_u16(bytes, 1)
@@ -836,6 +888,27 @@ test "gpos mark to mark format1" {
   inspect(deltas[0].x_placement, content="0")
   inspect(deltas[1].x_placement, content="5")
   inspect(deltas[1].y_placement, content="6")
+}
+
+///|
+test "gpos mark to ligature format1" {
+  let gpos_bytes = build_layout_table(
+    build_gpos_mark_to_ligature_lookup_format1(),
+    @common.Tag::from_chars('k', 'e', 'r', 'n'),
+  )
+  let gpos = match GposTable::parse(@blob.Blob::from_bytes(gpos_bytes)) {
+    Err(err) => fail("parse error: \{err}")
+    Ok(value) => value
+  }
+  let glyphs : Array[UInt] = [8U, 5U]
+  let deltas = match gpos.position_deltas(glyphs[:]) {
+    Err(err) => fail("apply error: \{err}")
+    Ok(value) => value
+  }
+  inspect(deltas.length(), content="2")
+  inspect(deltas[0].x_placement, content="0")
+  inspect(deltas[1].x_placement, content="9")
+  inspect(deltas[1].y_placement, content="11")
 }
 
 ///|
