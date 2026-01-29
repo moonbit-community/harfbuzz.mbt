@@ -305,6 +305,13 @@ pub fn general_category(u : UInt) -> UInt {
 }
 
 ///|
+/// Return true if the codepoint is in a Unicode mark category.
+pub fn is_mark(u : UInt) -> Bool {
+  let cat = general_category(u)
+  cat == gc_non_spacing_mark || cat == gc_spacing_mark || cat == gc_enclosing_mark
+}
+
+///|
 /// Get Unicode combining class value for a codepoint.
 pub fn combining_class(u : UInt) -> UInt {
   ucd_ccc(u).reinterpret_as_uint()

@@ -3,6 +3,8 @@ test "unicode general category and combining class" {
   inspect(general_category(0x41U), content="9")
   inspect(general_category(0x20U), content="29")
   inspect(combining_class(0x0301U), content="230")
+  inspect(is_mark(0x0301U), content="true")
+  inspect(is_mark(0x41U), content="false")
 }
 
 ///|
