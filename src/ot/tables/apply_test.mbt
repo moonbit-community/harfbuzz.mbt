@@ -1813,6 +1813,34 @@ fn build_gsub_chain_lookup_format2_ignore_marks() -> Bytes {
 }
 
 ///|
+fn build_gsub_chain_lookup_format2_ignore_base() -> Bytes {
+  let subtable = build_gsub_chain_subtable_format2()
+  let bytes : Array[Byte] = []
+  push_u16(bytes, 6)
+  push_u16(bytes, 0x0002)
+  push_u16(bytes, 1)
+  push_u16(bytes, 8)
+  for b in subtable {
+    bytes.push(b)
+  }
+  Bytes::from_array(bytes)
+}
+
+///|
+fn build_gsub_chain_lookup_format2_ignore_ligature() -> Bytes {
+  let subtable = build_gsub_chain_subtable_format2()
+  let bytes : Array[Byte] = []
+  push_u16(bytes, 6)
+  push_u16(bytes, 0x0004)
+  push_u16(bytes, 1)
+  push_u16(bytes, 8)
+  for b in subtable {
+    bytes.push(b)
+  }
+  Bytes::from_array(bytes)
+}
+
+///|
 fn build_gsub_chain_subtable_format3() -> Bytes {
   let bytes : Array[Byte] = []
   push_u16(bytes, 3)
@@ -1866,6 +1894,34 @@ fn build_gsub_chain_lookup_format3_ignore_marks() -> Bytes {
   let bytes : Array[Byte] = []
   push_u16(bytes, 6)
   push_u16(bytes, 0x0008)
+  push_u16(bytes, 1)
+  push_u16(bytes, 8)
+  for b in subtable {
+    bytes.push(b)
+  }
+  Bytes::from_array(bytes)
+}
+
+///|
+fn build_gsub_chain_lookup_format3_ignore_base() -> Bytes {
+  let subtable = build_gsub_chain_subtable_format3()
+  let bytes : Array[Byte] = []
+  push_u16(bytes, 6)
+  push_u16(bytes, 0x0002)
+  push_u16(bytes, 1)
+  push_u16(bytes, 8)
+  for b in subtable {
+    bytes.push(b)
+  }
+  Bytes::from_array(bytes)
+}
+
+///|
+fn build_gsub_chain_lookup_format3_ignore_ligature() -> Bytes {
+  let subtable = build_gsub_chain_subtable_format3()
+  let bytes : Array[Byte] = []
+  push_u16(bytes, 6)
+  push_u16(bytes, 0x0004)
   push_u16(bytes, 1)
   push_u16(bytes, 8)
   for b in subtable {
@@ -3400,6 +3456,76 @@ test "gsub chaining format2 ignore marks" {
 }
 
 ///|
+test "gsub chaining format2 ignore base glyphs" {
+  let chain_lookup = build_gsub_chain_lookup_format2_ignore_base()
+  let single_lookup = build_gsub_single_lookup(4, 6)
+  let gsub_bytes = build_layout_table_with_lookups(
+    [chain_lookup, single_lookup],
+    @common.Tag::from_chars('l', 'i', 'g', 'a'),
+  )
+  let gsub = match GsubTable::parse(@blob.Blob::from_bytes(gsub_bytes)) {
+    Err(err) => fail("parse error: \{err}")
+    Ok(value) => value
+  }
+  let gdef = match GdefTable::parse(
+    @blob.Blob::from_bytes(build_gdef_class_def_table()),
+  ) {
+    Err(err) => fail("gdef parse error: \{err}")
+    Ok(value) => value
+  }
+  let glyphs : Array[UInt] = [1U, 3U, 4U, 2U]
+  let clusters : Array[Int] = [0, 1, 2, 3]
+  let result = match gsub.apply_with_lookups(
+    glyphs,
+    clusters,
+    gsub.layout().lookup_list().offsets(),
+    gdef=gdef,
+  ) {
+    Err(err) => fail("apply error: \{err}")
+    Ok(value) => value
+  }
+  let (new_glyphs, new_clusters, changed) = result
+  inspect(changed, content="true")
+  inspect(new_glyphs, content="[1, 3, 6, 2]")
+  inspect(new_clusters, content="[0, 1, 2, 3]")
+}
+
+///|
+test "gsub chaining format2 ignore ligature glyphs" {
+  let chain_lookup = build_gsub_chain_lookup_format2_ignore_ligature()
+  let single_lookup = build_gsub_single_lookup(4, 6)
+  let gsub_bytes = build_layout_table_with_lookups(
+    [chain_lookup, single_lookup],
+    @common.Tag::from_chars('l', 'i', 'g', 'a'),
+  )
+  let gsub = match GsubTable::parse(@blob.Blob::from_bytes(gsub_bytes)) {
+    Err(err) => fail("parse error: \{err}")
+    Ok(value) => value
+  }
+  let gdef = match GdefTable::parse(
+    @blob.Blob::from_bytes(build_gdef_class_def_table()),
+  ) {
+    Err(err) => fail("gdef parse error: \{err}")
+    Ok(value) => value
+  }
+  let glyphs : Array[UInt] = [1U, 3U, 4U, 2U]
+  let clusters : Array[Int] = [0, 1, 2, 3]
+  let result = match gsub.apply_with_lookups(
+    glyphs,
+    clusters,
+    gsub.layout().lookup_list().offsets(),
+    gdef=gdef,
+  ) {
+    Err(err) => fail("apply error: \{err}")
+    Ok(value) => value
+  }
+  let (new_glyphs, new_clusters, changed) = result
+  inspect(changed, content="true")
+  inspect(new_glyphs, content="[1, 3, 6, 2]")
+  inspect(new_clusters, content="[0, 1, 2, 3]")
+}
+
+///|
 test "gsub contextual substitution format3" {
   let context_lookup = build_gsub_context_lookup_format3()
   let single_lookup = build_gsub_single_lookup(4, 6)
@@ -3539,4 +3665,74 @@ test "gsub chaining format3 ignore marks" {
   inspect(changed, content="true")
   inspect(new_glyphs, content="[1, 3, 5, 6, 2]")
   inspect(new_clusters, content="[0, 1, 2, 3, 4]")
+}
+
+///|
+test "gsub chaining format3 ignore base glyphs" {
+  let chain_lookup = build_gsub_chain_lookup_format3_ignore_base()
+  let single_lookup = build_gsub_single_lookup(4, 6)
+  let gsub_bytes = build_layout_table_with_lookups(
+    [chain_lookup, single_lookup],
+    @common.Tag::from_chars('l', 'i', 'g', 'a'),
+  )
+  let gsub = match GsubTable::parse(@blob.Blob::from_bytes(gsub_bytes)) {
+    Err(err) => fail("parse error: \{err}")
+    Ok(value) => value
+  }
+  let gdef = match GdefTable::parse(
+    @blob.Blob::from_bytes(build_gdef_class_def_table()),
+  ) {
+    Err(err) => fail("gdef parse error: \{err}")
+    Ok(value) => value
+  }
+  let glyphs : Array[UInt] = [1U, 3U, 4U, 2U]
+  let clusters : Array[Int] = [0, 1, 2, 3]
+  let result = match gsub.apply_with_lookups(
+    glyphs,
+    clusters,
+    gsub.layout().lookup_list().offsets(),
+    gdef=gdef,
+  ) {
+    Err(err) => fail("apply error: \{err}")
+    Ok(value) => value
+  }
+  let (new_glyphs, new_clusters, changed) = result
+  inspect(changed, content="true")
+  inspect(new_glyphs, content="[1, 3, 6, 2]")
+  inspect(new_clusters, content="[0, 1, 2, 3]")
+}
+
+///|
+test "gsub chaining format3 ignore ligature glyphs" {
+  let chain_lookup = build_gsub_chain_lookup_format3_ignore_ligature()
+  let single_lookup = build_gsub_single_lookup(4, 6)
+  let gsub_bytes = build_layout_table_with_lookups(
+    [chain_lookup, single_lookup],
+    @common.Tag::from_chars('l', 'i', 'g', 'a'),
+  )
+  let gsub = match GsubTable::parse(@blob.Blob::from_bytes(gsub_bytes)) {
+    Err(err) => fail("parse error: \{err}")
+    Ok(value) => value
+  }
+  let gdef = match GdefTable::parse(
+    @blob.Blob::from_bytes(build_gdef_class_def_table()),
+  ) {
+    Err(err) => fail("gdef parse error: \{err}")
+    Ok(value) => value
+  }
+  let glyphs : Array[UInt] = [1U, 3U, 4U, 2U]
+  let clusters : Array[Int] = [0, 1, 2, 3]
+  let result = match gsub.apply_with_lookups(
+    glyphs,
+    clusters,
+    gsub.layout().lookup_list().offsets(),
+    gdef=gdef,
+  ) {
+    Err(err) => fail("apply error: \{err}")
+    Ok(value) => value
+  }
+  let (new_glyphs, new_clusters, changed) = result
+  inspect(changed, content="true")
+  inspect(new_glyphs, content="[1, 3, 6, 2]")
+  inspect(new_clusters, content="[0, 1, 2, 3]")
 }
