@@ -250,6 +250,7 @@ pub fn Buffer::normalize(self : Buffer) -> Unit {
     return ()
   }
   let is_hebrew = self.script == @common.script_hebrew
+  let is_arabic = self.script == @common.script_arabic
   let mut start = 0
   while start < len {
     let mut end = start + 1
@@ -283,8 +284,13 @@ pub fn Buffer::normalize(self : Buffer) -> Unit {
         i = i + 1
       }
     }
-    if is_hebrew {
-      reorder_marks_hebrew(self, start, end)
+    if end > mark_start {
+      if is_hebrew {
+        reorder_marks_hebrew(self, mark_start, end)
+      }
+      if is_arabic {
+        reorder_marks_arabic(self, mark_start, end)
+      }
     }
     let mut i = start + 1
     while i < end {
@@ -309,6 +315,80 @@ pub fn Buffer::normalize(self : Buffer) -> Unit {
     }
     start = end
   }
+}
+
+///|
+fn reorder_marks_arabic(buffer : Buffer, start : Int, end : Int) -> Unit {
+  let mut i = start
+  let mut cc = 220
+  while cc <= 230 {
+    while i < end {
+      let value = @unicode.modified_combining_class(buffer.infos[i].codepoint).reinterpret_as_int()
+      if value >= cc {
+        break
+      }
+      i = i + 1
+    }
+    if i >= end {
+      break
+    }
+    let current_cc = @unicode.modified_combining_class(buffer.infos[i].codepoint).reinterpret_as_int()
+    if current_cc > cc {
+      cc = cc + 10
+      continue
+    }
+    let mut j = i
+    while j < end {
+      let value = @unicode.modified_combining_class(buffer.infos[j].codepoint).reinterpret_as_int()
+      if value != cc || !is_modifier_combining_mark(buffer.infos[j].codepoint) {
+        break
+      }
+      j = j + 1
+    }
+    if i == j {
+      cc = cc + 10
+      continue
+    }
+    buffer.merge_clusters(start, j)
+    let moved_len = j - i
+    let shift_len = i - start
+    let moved_infos : Array[GlyphInfo] = []
+    let moved_positions : Array[GlyphPosition] = []
+    for k in i..<j {
+      moved_infos.push(buffer.infos[k])
+      moved_positions.push(buffer.positions[k])
+    }
+    let shift_infos : Array[GlyphInfo] = []
+    let shift_positions : Array[GlyphPosition] = []
+    for k in start..<i {
+      shift_infos.push(buffer.infos[k])
+      shift_positions.push(buffer.positions[k])
+    }
+    for idx in 0..<moved_len {
+      buffer.infos[start + idx] = moved_infos[idx]
+      buffer.positions[start + idx] = moved_positions[idx]
+    }
+    for idx in 0..<shift_len {
+      buffer.infos[start + moved_len + idx] = shift_infos[idx]
+      buffer.positions[start + moved_len + idx] = shift_positions[idx]
+    }
+    i = j
+    cc = cc + 10
+  }
+}
+
+///|
+fn is_modifier_combining_mark(u : UInt) -> Bool {
+  let marks : Array[UInt] = [
+    0x0654U, 0x0655U, 0x0658U, 0x06DCU, 0x06E3U, 0x06E7U, 0x06E8U,
+    0x08CAU, 0x08CBU, 0x08CDU, 0x08CEU, 0x08CFU, 0x08D3U, 0x08F3U,
+  ]
+  for mark in marks {
+    if mark == u {
+      return true
+    }
+  }
+  false
 }
 
 ///|

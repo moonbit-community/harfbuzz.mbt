@@ -139,6 +139,21 @@ test "buffer normalize hebrew compose" {
 }
 
 ///|
+test "buffer normalize arabic reorder" {
+  let buffer = Buffer::new()
+  buffer.set_script(@common.script_arabic)
+  buffer.add_codepoint(0x0628U)
+  buffer.add_codepoint(0x0652U)
+  buffer.add_codepoint(0x0655U)
+  buffer.normalize()
+  let cps : Array[UInt] = []
+  for info in buffer.infos() {
+    cps.push(info.codepoint)
+  }
+  inspect(cps, content="[1576, 1621, 1618]")
+}
+
+///|
 fn push_u16(bytes : Array[Byte], value : Int) -> Unit {
   bytes.push(((value >> 8) & 0xff).to_byte())
   bytes.push((value & 0xff).to_byte())
