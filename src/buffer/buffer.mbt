@@ -388,7 +388,7 @@ pub fn Buffer::shape_ot(
       })
     }
     self.positions = new_positions
-  } else {
+  } else if self.direction.is_horizontal() {
     let kern = match font.kern() {
       Err(err) => return Err(Font(err))
       Ok(value) => value

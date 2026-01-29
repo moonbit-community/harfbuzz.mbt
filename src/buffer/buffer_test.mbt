@@ -569,3 +569,18 @@ test "buffer shape ot kern fallback" {
   inspect(positions[1].x_advance, content="400")
   inspect(positions[0].x_offset, content="0")
 }
+
+///|
+test "buffer shape ot skips kern for vertical" {
+  let font = @font.Font::from_bytes(build_font_bytes_kern())
+  let buffer = Buffer::new()
+  buffer.set_direction(@common.direction_ttb)
+  buffer.add_string("AB")
+  let result = buffer.shape_ot(font)
+  match result {
+    Err(err) => fail("shape error: \{err}")
+    Ok(_) => ()
+  }
+  let positions = buffer.positions()
+  inspect(positions[0].x_advance, content="0")
+}
