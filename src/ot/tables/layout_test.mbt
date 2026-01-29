@@ -38,6 +38,22 @@ test "layout table header and lists" {
     Ok(value) => value
   }
   inspect(filtered.is_empty(), content="true")
+  let single = match layout.select_lookup_offsets_for_feature(
+    @common.Tag::from_chars('l', 'a', 't', 'n'),
+    @common.Tag::from_chars('l', 'i', 'g', 'a'),
+  ) {
+    Err(err) => fail("select error: \{err}")
+    Ok(value) => value
+  }
+  inspect(single, content="[48]")
+  let missing = match layout.select_lookup_offsets_for_feature(
+    @common.Tag::from_chars('l', 'a', 't', 'n'),
+    @common.Tag::from_chars('k', 'e', 'r', 'n'),
+  ) {
+    Err(err) => fail("select error: \{err}")
+    Ok(value) => value
+  }
+  inspect(missing.is_empty(), content="true")
 }
 
 ///|

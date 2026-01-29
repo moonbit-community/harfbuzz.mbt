@@ -103,6 +103,24 @@ pub fn LayoutTable::select_lookup_offsets_with_features(
 }
 
 ///|
+/// Select lookup offsets for a single feature tag within a script/language pair.
+pub fn LayoutTable::select_lookup_offsets_for_feature(
+  self : LayoutTable,
+  script_tag : @common.Tag,
+  feature_tag : @common.Tag,
+  language_tag? : @common.Tag = @common.tag_none,
+  include_required? : Bool = true,
+) -> Result[Array[Int], OtLayoutError] {
+  select_lookup_offsets_for_feature_internal(
+    self,
+    script_tag,
+    language_tag,
+    feature_tag,
+    include_required,
+  )
+}
+
+///|
 /// Select lookup offsets for a script/language pair using the default LangSys.
 pub fn LayoutTable::select_lookup_offsets(
   self : LayoutTable,
@@ -119,59 +137,10 @@ fn select_lookup_offsets_internal(
   language_tag : @common.Tag,
   feature_tags : Array[@common.Tag],
 ) -> Result[Array[Int], OtLayoutError] {
-  let normalized_script = lowercase_tag(script_tag)
-  let script_offset = match find_script_offset(layout.script_list.records, normalized_script) {
-    Some(offset) => Some(offset)
-    None => if normalized_script != script_tag {
-        find_script_offset(layout.script_list.records, script_tag)
-      } else {
-        None
-      }
-  }
-  let script_offset = match script_offset {
-    Some(offset) => Some(offset)
-    None => find_script_offset(
-      layout.script_list.records,
-      @common.Tag::from_chars('D', 'F', 'L', 'T'),
-    )
-  }
-  let resolved_script_offset = match script_offset {
-    Some(offset) => offset
-    None =>
-      if layout.script_list.records.is_empty() {
-        return Ok([])
-      } else {
-        layout.script_list.records[0].offset
-      }
-  }
-  let (default_lang, lang_records) = match parse_script_table(
-    layout.data,
-    resolved_script_offset,
-  ) {
-    Err(err) => return Err(err)
-    Ok(value) => value
-  }
-  let lang_offset = if language_tag != @common.tag_none {
-    find_lang_sys_offset(lang_records, language_tag)
-  } else {
-    None
-  }
-  let resolved_lang_offset = match lang_offset {
-    Some(offset) => Some(offset)
-    None => default_lang
-  }
-  let final_lang_offset = match resolved_lang_offset {
-    Some(offset) => offset
-    None =>
-      if lang_records.is_empty() {
-        return Ok([])
-      } else {
-        lang_records[0].1
-      }
-  }
-  let (required_feature, feature_indices) = match parse_lang_sys_table(
-    layout.data,
-    final_lang_offset,
+  let (required_feature, feature_indices) = match resolve_lang_sys_features(
+    layout,
+    script_tag,
+    language_tag,
   ) {
     Err(err) => return Err(err)
     Ok(value) => value
@@ -217,6 +186,121 @@ fn select_lookup_offsets_internal(
     lookup_offsets.push(layout.lookup_list.offsets[lookup_index])
   }
   Ok(lookup_offsets)
+}
+
+///|
+fn select_lookup_offsets_for_feature_internal(
+  layout : LayoutTable,
+  script_tag : @common.Tag,
+  language_tag : @common.Tag,
+  feature_tag : @common.Tag,
+  include_required : Bool,
+) -> Result[Array[Int], OtLayoutError] {
+  let (required_feature, feature_indices) = match resolve_lang_sys_features(
+    layout,
+    script_tag,
+    language_tag,
+  ) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  let selected_features : Array[Int] = []
+  if include_required {
+    match required_feature {
+      None => ()
+      Some(feature) => push_unique_int(selected_features, feature)
+    }
+  }
+  for feature_index in feature_indices {
+    if feature_index < 0 || feature_index >= layout.feature_list.records.length() {
+      return Err(InvalidFormat)
+    }
+    let record = layout.feature_list.records[feature_index]
+    if record.tag == feature_tag {
+      push_unique_int(selected_features, feature_index)
+    }
+  }
+  let lookup_indices : Array[Int] = []
+  for feature_index in selected_features {
+    if feature_index < 0 || feature_index >= layout.feature_list.records.length() {
+      return Err(InvalidFormat)
+    }
+    let record = layout.feature_list.records[feature_index]
+    let lookup_list = match parse_feature_table(layout.data, record.offset) {
+      Err(err) => return Err(err)
+      Ok(value) => value
+    }
+    for lookup_index in lookup_list {
+      push_unique_int(lookup_indices, lookup_index)
+    }
+  }
+  let lookup_offsets : Array[Int] = []
+  for lookup_index in lookup_indices {
+    if lookup_index < 0 || lookup_index >= layout.lookup_list.offsets.length() {
+      return Err(InvalidFormat)
+    }
+    lookup_offsets.push(layout.lookup_list.offsets[lookup_index])
+  }
+  Ok(lookup_offsets)
+}
+
+///|
+fn resolve_lang_sys_features(
+  layout : LayoutTable,
+  script_tag : @common.Tag,
+  language_tag : @common.Tag,
+) -> Result[(Int?, Array[Int]), OtLayoutError] {
+  let normalized_script = lowercase_tag(script_tag)
+  let script_offset = match find_script_offset(layout.script_list.records, normalized_script) {
+    Some(offset) => Some(offset)
+    None => if normalized_script != script_tag {
+        find_script_offset(layout.script_list.records, script_tag)
+      } else {
+        None
+      }
+  }
+  let script_offset = match script_offset {
+    Some(offset) => Some(offset)
+    None => find_script_offset(
+      layout.script_list.records,
+      @common.Tag::from_chars('D', 'F', 'L', 'T'),
+    )
+  }
+  let resolved_script_offset = match script_offset {
+    Some(offset) => offset
+    None =>
+      if layout.script_list.records.is_empty() {
+        return Ok((None, []))
+      } else {
+        layout.script_list.records[0].offset
+      }
+  }
+  let (default_lang, lang_records) = match parse_script_table(
+    layout.data,
+    resolved_script_offset,
+  ) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  let lang_offset = if language_tag != @common.tag_none {
+    find_lang_sys_offset(lang_records, language_tag)
+  } else {
+    None
+  }
+  let resolved_lang_offset = match lang_offset {
+    Some(offset) => Some(offset)
+    None => default_lang
+  }
+  let final_lang_offset = match resolved_lang_offset {
+    Some(offset) => offset
+    None =>
+      if lang_records.is_empty() {
+        return Ok((None, []))
+      } else {
+        lang_records[0].1
+      }
+  }
+  parse_lang_sys_table(layout.data, final_lang_offset)
 }
 
 ///|
