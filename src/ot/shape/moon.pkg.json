@@ -5,6 +5,10 @@
       "alias": "buffer"
     },
     {
+      "path": "moonbit-community/harfbuzz/common",
+      "alias": "common"
+    },
+    {
       "path": "moonbit-community/harfbuzz/font",
       "alias": "font"
     }
