@@ -1,0 +1,138 @@
+///|
+fn should_ignore_glyph(
+  glyph : UInt,
+  lookup_flag : Int,
+  gdef : GdefTable?,
+  mark_filtering_set : Int?,
+) -> Result[Bool, OtLayoutError] {
+  if lookup_flag == 0 {
+    return Ok(false)
+  }
+  match gdef {
+    None => Ok(false)
+    Some(gdef) => {
+      let glyph_class = gdef.glyph_class(glyph)
+      match glyph_class {
+        Err(err) => Err(err)
+        Ok(glyph_class) => {
+          if glyph_class == 1 && (lookup_flag & 0x0002) != 0 {
+            return Ok(true)
+          }
+          if glyph_class == 2 && (lookup_flag & 0x0004) != 0 {
+            return Ok(true)
+          }
+          if glyph_class == 3 {
+            if (lookup_flag & 0x0008) != 0 {
+              return Ok(true)
+            }
+            if (lookup_flag & 0x0010) != 0 {
+              match mark_filtering_set {
+                None => ()
+                Some(set_index) => {
+                  let in_set = gdef.mark_glyph_set_contains(set_index, glyph)
+                  match in_set {
+                    Err(err) => return Err(err)
+                    Ok(false) => return Ok(true)
+                    Ok(true) => ()
+                  }
+                }
+              }
+            }
+          }
+          Ok(false)
+        }
+      }
+    }
+  }
+}
+
+///|
+fn collect_forward_indices(
+  glyphs : ArrayView[UInt],
+  start_index : Int,
+  count : Int,
+  lookup_flag : Int,
+  gdef : GdefTable?,
+  mark_filtering_set : Int?,
+) -> Result[Array[Int]?, OtLayoutError] {
+  if count <= 0 {
+    return Err(InvalidFormat)
+  }
+  if start_index < 0 || start_index >= glyphs.length() {
+    return Ok(None)
+  }
+  let first_ignored = should_ignore_glyph(
+    glyphs[start_index],
+    lookup_flag,
+    gdef,
+    mark_filtering_set,
+  )
+  match first_ignored {
+    Err(err) => Err(err)
+    Ok(true) => Ok(None)
+    Ok(false) => {
+      let indices : Array[Int] = []
+      indices.push(start_index)
+      let mut cursor = start_index + 1
+      while indices.length() < count {
+        if cursor >= glyphs.length() {
+          return Ok(None)
+        }
+        let ignored = should_ignore_glyph(
+          glyphs[cursor],
+          lookup_flag,
+          gdef,
+          mark_filtering_set,
+        )
+        match ignored {
+          Err(err) => return Err(err)
+          Ok(true) => cursor = cursor + 1
+          Ok(false) => {
+            indices.push(cursor)
+            cursor = cursor + 1
+          }
+        }
+      }
+      Ok(Some(indices))
+    }
+  }
+}
+
+///|
+fn collect_backward_indices(
+  glyphs : ArrayView[UInt],
+  start_index : Int,
+  count : Int,
+  lookup_flag : Int,
+  gdef : GdefTable?,
+  mark_filtering_set : Int?,
+) -> Result[Array[Int]?, OtLayoutError] {
+  if count < 0 {
+    return Err(InvalidFormat)
+  }
+  if count == 0 {
+    return Ok(Some([]))
+  }
+  let indices : Array[Int] = []
+  let mut cursor = start_index - 1
+  while indices.length() < count {
+    if cursor < 0 {
+      return Ok(None)
+    }
+    let ignored = should_ignore_glyph(
+      glyphs[cursor],
+      lookup_flag,
+      gdef,
+      mark_filtering_set,
+    )
+    match ignored {
+      Err(err) => return Err(err)
+      Ok(true) => cursor = cursor - 1
+      Ok(false) => {
+        indices.push(cursor)
+        cursor = cursor - 1
+      }
+    }
+  }
+  Ok(Some(indices))
+}

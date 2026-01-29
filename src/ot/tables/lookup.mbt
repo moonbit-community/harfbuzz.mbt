@@ -3,7 +3,7 @@ fn parse_lookup(
   data : BytesView,
   offset : Int,
   extension_lookup_type : Int,
-) -> Result[(Int, Array[Int]), OtLayoutError] {
+) -> Result[(Int, Int, Int?, Array[Int]), OtLayoutError] {
   if offset < 0 || offset + 6 > data.length() {
     return Err(UnexpectedEof)
   }
@@ -59,14 +59,20 @@ fn parse_lookup(
           Some(value) => resolved_type = value
         }
       }
-      if (lookup_flag & 0x0010) != 0 {
-        let mark_offset = offset + header_len
-        if mark_offset + 2 > data.length() {
-          return Err(UnexpectedEof)
+      let mark_filtering_set =
+        if (lookup_flag & 0x0010) != 0 {
+          let mark_offset = offset + header_len
+          if mark_offset + 2 > data.length() {
+            return Err(UnexpectedEof)
+          }
+          match read_u16_int(data, mark_offset) {
+            Err(err) => return Err(err)
+            Ok(value) => Some(value)
+          }
+        } else {
+          None
         }
-        let _ = read_u16_int(data, mark_offset)
-      }
-      Ok((resolved_type, offsets))
+      Ok((resolved_type, lookup_flag, mark_filtering_set, offsets))
     }
   }
 }

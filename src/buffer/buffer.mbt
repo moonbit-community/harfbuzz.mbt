@@ -264,6 +264,10 @@ pub fn Buffer::shape_ot(
     Ok(value) => value
   }
   if gsub is Some(gsub) {
+    let gdef = match font.gdef() {
+      Err(err) => return Err(Font(err))
+      Ok(value) => value
+    }
     let script_tag = self.script.to_tag()
     let lang_tag = language_to_ot_tag(self.language)
     let lookup_offsets = match gsub.layout().select_lookup_offsets_with_features(
@@ -280,13 +284,26 @@ pub fn Buffer::shape_ot(
       glyphs.push(info.codepoint)
       clusters.push(info.cluster)
     }
-    let result = match gsub.apply_with_lookups(
-      glyphs,
-      clusters,
-      lookup_offsets[:],
-    ) {
-      Err(err) => return Err(Layout(err))
-      Ok(value) => value
+    let result = match gdef {
+      None =>
+        match gsub.apply_with_lookups(
+          glyphs,
+          clusters,
+          lookup_offsets[:],
+        ) {
+          Err(err) => return Err(Layout(err))
+          Ok(value) => value
+        }
+      Some(gdef) =>
+        match gsub.apply_with_lookups(
+          glyphs,
+          clusters,
+          lookup_offsets[:],
+          gdef=gdef,
+        ) {
+          Err(err) => return Err(Layout(err))
+          Ok(value) => value
+        }
     }
     let (next_glyphs, next_clusters, changed) = result
     if changed || next_glyphs.length() != self.infos.length() {
@@ -316,6 +333,10 @@ pub fn Buffer::shape_ot(
     Ok(value) => value
   }
   if gpos is Some(gpos) {
+    let gdef = match font.gdef() {
+      Err(err) => return Err(Font(err))
+      Ok(value) => value
+    }
     let script_tag = self.script.to_tag()
     let lang_tag = language_to_ot_tag(self.language)
     let lookup_offsets = match gpos.layout().select_lookup_offsets_with_features(
@@ -330,12 +351,24 @@ pub fn Buffer::shape_ot(
     for info in self.infos {
       glyphs.push(info.codepoint)
     }
-    let deltas = match gpos.position_deltas_with_lookups(
-      glyphs[:],
-      lookup_offsets[:],
-    ) {
-      Err(err) => return Err(Layout(err))
-      Ok(value) => value
+    let deltas = match gdef {
+      None =>
+        match gpos.position_deltas_with_lookups(
+          glyphs[:],
+          lookup_offsets[:],
+        ) {
+          Err(err) => return Err(Layout(err))
+          Ok(value) => value
+        }
+      Some(gdef) =>
+        match gpos.position_deltas_with_lookups(
+          glyphs[:],
+          lookup_offsets[:],
+          gdef=gdef,
+        ) {
+          Err(err) => return Err(Layout(err))
+          Ok(value) => value
+        }
     }
     let new_positions : Array[GlyphPosition] = []
     for i in 0..<self.positions.length() {

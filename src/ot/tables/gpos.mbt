@@ -44,17 +44,19 @@ pub fn GposTable::position_deltas_with_lookups(
   self : GposTable,
   glyphs : ArrayView[UInt],
   lookup_offsets : ArrayView[Int],
+  gdef? : GdefTable,
 ) -> Result[Array[ValueRecord], OtLayoutError] {
   let deltas : Array[ValueRecord] = Array::make(
     glyphs.length(),
     value_record_zero(),
   )
   let data = self.layout.data
+  let gdef = gdef
   for lookup_offset in lookup_offsets {
     let parsed = parse_lookup(data, lookup_offset, 9)
     match parsed {
       Err(err) => return Err(err)
-      Ok((lookup_type, subtable_offsets)) => {
+      Ok((lookup_type, lookup_flag, mark_filtering_set, subtable_offsets)) => {
         if lookup_type == 1 {
           for subtable_offset in subtable_offsets {
             let res = apply_single_pos_subtable(
@@ -101,6 +103,9 @@ pub fn GposTable::position_deltas_with_lookups(
               glyphs,
               deltas,
               lookup_list_offsets,
+              lookup_flag,
+              mark_filtering_set,
+              gdef,
             )
             match res {
               Err(err) => return Err(err)
@@ -116,6 +121,9 @@ pub fn GposTable::position_deltas_with_lookups(
               glyphs,
               deltas,
               lookup_list_offsets,
+              lookup_flag,
+              mark_filtering_set,
+              gdef,
             )
             match res {
               Err(err) => return Err(err)
@@ -182,7 +190,7 @@ pub fn GposTable::pair_adjust_deltas_with_lookups(
     let parsed = parse_lookup(data, lookup_offset, 9)
     match parsed {
       Err(err) => return Err(err)
-      Ok((lookup_type, subtable_offsets)) => {
+      Ok((lookup_type, _, _, subtable_offsets)) => {
         if lookup_type != 2 {
           continue
         }
@@ -278,6 +286,9 @@ fn apply_context_pos_subtable(
   glyphs : ArrayView[UInt],
   deltas : Array[ValueRecord],
   lookup_list_offsets : ArrayView[Int],
+  lookup_flag : Int,
+  mark_filtering_set : Int?,
+  gdef : GdefTable?,
 ) -> Result[Bool, OtLayoutError] {
   if offset < 0 || offset + 2 > data.length() {
     return Err(UnexpectedEof)
@@ -292,6 +303,9 @@ fn apply_context_pos_subtable(
         glyphs,
         deltas,
         lookup_list_offsets,
+        lookup_flag,
+        mark_filtering_set,
+        gdef,
       )
     } else if format == 2 {
       apply_context_pos_subtable_format2(
@@ -300,6 +314,9 @@ fn apply_context_pos_subtable(
         glyphs,
         deltas,
         lookup_list_offsets,
+        lookup_flag,
+        mark_filtering_set,
+        gdef,
       )
     } else if format == 3 {
       apply_context_pos_subtable_format3(
@@ -308,6 +325,9 @@ fn apply_context_pos_subtable(
         glyphs,
         deltas,
         lookup_list_offsets,
+        lookup_flag,
+        mark_filtering_set,
+        gdef,
       )
     } else {
       Err(InvalidFormat)
@@ -322,6 +342,9 @@ fn apply_context_pos_subtable_format1(
   glyphs : ArrayView[UInt],
   deltas : Array[ValueRecord],
   lookup_list_offsets : ArrayView[Int],
+  lookup_flag : Int,
+  mark_filtering_set : Int?,
+  gdef : GdefTable?,
 ) -> Result[Bool, OtLayoutError] {
   if offset < 0 || offset + 6 > data.length() {
     return Err(UnexpectedEof)
@@ -343,6 +366,17 @@ fn apply_context_pos_subtable_format1(
       let mut changed = false
       for i in 0..<glyphs.length() {
         let glyph = glyphs[i]
+        let ignored = should_ignore_glyph(
+          glyph,
+          lookup_flag,
+          gdef,
+          mark_filtering_set,
+        )
+        match ignored {
+          Err(err) => return Err(err)
+          Ok(true) => continue
+          Ok(false) => ()
+        }
         let index = coverage_index(data, coverage_base, glyph)
         match index {
           Err(err) => return Err(err)
@@ -390,6 +424,9 @@ fn apply_context_pos_subtable_format1(
                             deltas,
                             i,
                             lookup_list_offsets,
+                            lookup_flag,
+                            mark_filtering_set,
+                            gdef,
                           ) {
                             Err(err) => return Err(err)
                             Ok(value) => value
@@ -420,6 +457,9 @@ fn apply_context_pos_subtable_format2(
   glyphs : ArrayView[UInt],
   deltas : Array[ValueRecord],
   lookup_list_offsets : ArrayView[Int],
+  lookup_flag : Int,
+  mark_filtering_set : Int?,
+  gdef : GdefTable?,
 ) -> Result[Bool, OtLayoutError] {
   if offset < 0 || offset + 8 > data.length() {
     return Err(UnexpectedEof)
@@ -445,6 +485,17 @@ fn apply_context_pos_subtable_format2(
       let mut changed = false
       for i in 0..<glyphs.length() {
         let glyph = glyphs[i]
+        let ignored = should_ignore_glyph(
+          glyph,
+          lookup_flag,
+          gdef,
+          mark_filtering_set,
+        )
+        match ignored {
+          Err(err) => return Err(err)
+          Ok(true) => continue
+          Ok(false) => ()
+        }
         let covered = coverage_index(data, coverage_base, glyph)
         match covered {
           Err(err) => return Err(err)
@@ -503,6 +554,9 @@ fn apply_context_pos_subtable_format2(
                                 i,
                                 class_def_base,
                                 lookup_list_offsets,
+                                lookup_flag,
+                                mark_filtering_set,
+                                gdef,
                               ) {
                                 Err(err) => return Err(err)
                                 Ok(value) => value
@@ -535,6 +589,9 @@ fn apply_context_pos_subtable_format3(
   glyphs : ArrayView[UInt],
   deltas : Array[ValueRecord],
   lookup_list_offsets : ArrayView[Int],
+  lookup_flag : Int,
+  mark_filtering_set : Int?,
+  gdef : GdefTable?,
 ) -> Result[Bool, OtLayoutError] {
   if offset < 0 || offset + 6 > data.length() {
     return Err(UnexpectedEof)
@@ -556,8 +613,18 @@ fn apply_context_pos_subtable_format3(
       let record_base = coverage_list_base + glyph_count * 2
       let mut changed = false
       for i in 0..<glyphs.length() {
-        if i + glyph_count > glyphs.length() {
-          continue
+        let input_indices = collect_forward_indices(
+          glyphs,
+          i,
+          glyph_count,
+          lookup_flag,
+          gdef,
+          mark_filtering_set,
+        )
+        let indices = match input_indices {
+          Err(err) => return Err(err)
+          Ok(None) => continue
+          Ok(Some(indices)) => indices
         }
         let mut matched = true
         for j in 0..<glyph_count {
@@ -569,7 +636,7 @@ fn apply_context_pos_subtable_format3(
                 return Err(InvalidFormat)
               }
               let cov_base = offset + cov_offset
-              let covered = coverage_index(data, cov_base, glyphs[i + j])
+              let covered = coverage_index(data, cov_base, glyphs[indices[j]])
               match covered {
                 Err(err) => return Err(err)
                 Ok(None) => {
@@ -589,8 +656,9 @@ fn apply_context_pos_subtable_format3(
             glyph_count,
             glyphs,
             deltas,
-            i,
+            indices[0],
             lookup_list_offsets,
+            Some(indices),
           ) {
             Err(err) => return Err(err)
             Ok(value) => value
@@ -614,6 +682,9 @@ fn apply_context_pos_class_rule(
   index : Int,
   class_def_base : Int,
   lookup_list_offsets : ArrayView[Int],
+  lookup_flag : Int,
+  mark_filtering_set : Int?,
+  gdef : GdefTable?,
 ) -> Result[Bool, OtLayoutError] {
   if offset < 0 || offset + 4 > data.length() {
     return Err(UnexpectedEof)
@@ -627,8 +698,18 @@ fn apply_context_pos_class_rule(
       if glyph_count <= 0 || pos_count < 0 {
         return Err(InvalidFormat)
       }
-      if index + glyph_count > glyphs.length() {
-        return Ok(false)
+      let input_indices = collect_forward_indices(
+        glyphs,
+        index,
+        glyph_count,
+        lookup_flag,
+        gdef,
+        mark_filtering_set,
+      )
+      let indices = match input_indices {
+        Err(err) => return Err(err)
+        Ok(None) => return Ok(false)
+        Ok(Some(indices)) => indices
       }
       let class_list_base = offset + 4
       if class_list_base < 0 ||
@@ -643,7 +724,7 @@ fn apply_context_pos_class_rule(
             let actual = class_def_value(
               data,
               class_def_base,
-              glyphs[index + 1 + i],
+              glyphs[indices[i + 1]],
             )
             match actual {
               Err(err) => return Err(err)
@@ -662,6 +743,7 @@ fn apply_context_pos_class_rule(
         deltas,
         index,
         lookup_list_offsets,
+        Some(indices),
       )
     }
   }
@@ -677,9 +759,14 @@ fn apply_pos_lookup_records(
   deltas : Array[ValueRecord],
   index : Int,
   lookup_list_offsets : ArrayView[Int],
+  input_indices : Array[Int]?,
 ) -> Result[Bool, OtLayoutError] {
   if pos_count < 0 {
     return Err(InvalidFormat)
+  }
+  match input_indices {
+    None => ()
+    Some(indices) => if indices.length() < glyph_count { return Err(InvalidFormat) }
   }
   if record_base < 0 || record_base + pos_count * 4 > data.length() {
     return Err(UnexpectedEof)
@@ -698,7 +785,10 @@ fn apply_pos_lookup_records(
         if lookup_index < 0 || lookup_index >= lookup_list_offsets.length() {
           return Err(InvalidFormat)
         }
-        let target = index + seq_index
+        let target = match input_indices {
+          None => index + seq_index
+          Some(indices) => indices[seq_index]
+        }
         if target < 0 || target >= glyphs.length() {
           return Err(InvalidFormat)
         }
@@ -730,6 +820,9 @@ fn apply_context_pos_rule(
   deltas : Array[ValueRecord],
   index : Int,
   lookup_list_offsets : ArrayView[Int],
+  lookup_flag : Int,
+  mark_filtering_set : Int?,
+  gdef : GdefTable?,
 ) -> Result[Bool, OtLayoutError] {
   if offset < 0 || offset + 4 > data.length() {
     return Err(UnexpectedEof)
@@ -743,8 +836,18 @@ fn apply_context_pos_rule(
       if glyph_count <= 0 || pos_count < 0 {
         return Err(InvalidFormat)
       }
-      if index + glyph_count > glyphs.length() {
-        return Ok(false)
+      let input_indices = collect_forward_indices(
+        glyphs,
+        index,
+        glyph_count,
+        lookup_flag,
+        gdef,
+        mark_filtering_set,
+      )
+      let indices = match input_indices {
+        Err(err) => return Err(err)
+        Ok(None) => return Ok(false)
+        Ok(Some(indices)) => indices
       }
       let input_base = offset + 4
       if input_base < 0 || input_base + (glyph_count - 1) * 2 > data.length() {
@@ -755,7 +858,7 @@ fn apply_context_pos_rule(
         match expected {
           Err(err) => return Err(err)
           Ok(expected) => {
-            let actual = glyphs[index + 1 + i]
+            let actual = glyphs[indices[i + 1]]
             if expected != u16_to_int(actual) {
               return Ok(false)
             }
@@ -772,6 +875,7 @@ fn apply_context_pos_rule(
         deltas,
         index,
         lookup_list_offsets,
+        Some(indices),
       )
     }
   }
@@ -784,6 +888,9 @@ fn apply_chain_pos_subtable(
   glyphs : ArrayView[UInt],
   deltas : Array[ValueRecord],
   lookup_list_offsets : ArrayView[Int],
+  lookup_flag : Int,
+  mark_filtering_set : Int?,
+  gdef : GdefTable?,
 ) -> Result[Bool, OtLayoutError] {
   if offset < 0 || offset + 2 > data.length() {
     return Err(UnexpectedEof)
@@ -798,6 +905,9 @@ fn apply_chain_pos_subtable(
         glyphs,
         deltas,
         lookup_list_offsets,
+        lookup_flag,
+        mark_filtering_set,
+        gdef,
       )
     } else if format == 2 {
       apply_chain_pos_subtable_format2(
@@ -806,6 +916,9 @@ fn apply_chain_pos_subtable(
         glyphs,
         deltas,
         lookup_list_offsets,
+        lookup_flag,
+        mark_filtering_set,
+        gdef,
       )
     } else if format == 3 {
       apply_chain_pos_subtable_format3(
@@ -814,6 +927,9 @@ fn apply_chain_pos_subtable(
         glyphs,
         deltas,
         lookup_list_offsets,
+        lookup_flag,
+        mark_filtering_set,
+        gdef,
       )
     } else {
       Err(InvalidFormat)
@@ -828,6 +944,9 @@ fn apply_chain_pos_subtable_format1(
   glyphs : ArrayView[UInt],
   deltas : Array[ValueRecord],
   lookup_list_offsets : ArrayView[Int],
+  lookup_flag : Int,
+  mark_filtering_set : Int?,
+  gdef : GdefTable?,
 ) -> Result[Bool, OtLayoutError] {
   if offset < 0 || offset + 6 > data.length() {
     return Err(UnexpectedEof)
@@ -849,6 +968,17 @@ fn apply_chain_pos_subtable_format1(
       let mut changed = false
       for i in 0..<glyphs.length() {
         let glyph = glyphs[i]
+        let ignored = should_ignore_glyph(
+          glyph,
+          lookup_flag,
+          gdef,
+          mark_filtering_set,
+        )
+        match ignored {
+          Err(err) => return Err(err)
+          Ok(true) => continue
+          Ok(false) => ()
+        }
         let index = coverage_index(data, coverage_base, glyph)
         match index {
           Err(err) => return Err(err)
@@ -896,6 +1026,9 @@ fn apply_chain_pos_subtable_format1(
                             deltas,
                             i,
                             lookup_list_offsets,
+                            lookup_flag,
+                            mark_filtering_set,
+                            gdef,
                           ) {
                             Err(err) => return Err(err)
                             Ok(value) => value
@@ -926,6 +1059,9 @@ fn apply_chain_pos_subtable_format2(
   glyphs : ArrayView[UInt],
   deltas : Array[ValueRecord],
   lookup_list_offsets : ArrayView[Int],
+  lookup_flag : Int,
+  mark_filtering_set : Int?,
+  gdef : GdefTable?,
 ) -> Result[Bool, OtLayoutError] {
   if offset < 0 || offset + 12 > data.length() {
     return Err(UnexpectedEof)
@@ -973,6 +1109,17 @@ fn apply_chain_pos_subtable_format2(
       let mut changed = false
       for i in 0..<glyphs.length() {
         let glyph = glyphs[i]
+        let ignored = should_ignore_glyph(
+          glyph,
+          lookup_flag,
+          gdef,
+          mark_filtering_set,
+        )
+        match ignored {
+          Err(err) => return Err(err)
+          Ok(true) => continue
+          Ok(false) => ()
+        }
         let covered = coverage_index(data, coverage_base, glyph)
         match covered {
           Err(err) => return Err(err)
@@ -1033,6 +1180,9 @@ fn apply_chain_pos_subtable_format2(
                                 input_class_def_base,
                                 lookahead_class_def_base,
                                 lookup_list_offsets,
+                                lookup_flag,
+                                mark_filtering_set,
+                                gdef,
                               ) {
                                 Err(err) => return Err(err)
                                 Ok(value) => value
@@ -1065,6 +1215,9 @@ fn apply_chain_pos_subtable_format3(
   glyphs : ArrayView[UInt],
   deltas : Array[ValueRecord],
   lookup_list_offsets : ArrayView[Int],
+  lookup_flag : Int,
+  mark_filtering_set : Int?,
+  gdef : GdefTable?,
 ) -> Result[Bool, OtLayoutError] {
   if offset < 0 || offset + 4 > data.length() {
     return Err(UnexpectedEof)
@@ -1176,20 +1329,55 @@ fn apply_chain_pos_subtable_format3(
                   let record_base = cursor
                   let mut changed = false
                   for i in 0..<glyphs.length() {
-                    if i + input_count > glyphs.length() {
-                      continue
+                    let input_indices = collect_forward_indices(
+                      glyphs,
+                      i,
+                      input_count,
+                      lookup_flag,
+                      gdef,
+                      mark_filtering_set,
+                    )
+                    let indices = match input_indices {
+                      Err(err) => return Err(err)
+                      Ok(None) => continue
+                      Ok(Some(indices)) => indices
+                    }
+                    let backtrack_indices = collect_backward_indices(
+                      glyphs,
+                      indices[0],
+                      backtrack_bases.length(),
+                      lookup_flag,
+                      gdef,
+                      mark_filtering_set,
+                    )
+                    let backtrack = match backtrack_indices {
+                      Err(err) => return Err(err)
+                      Ok(None) => continue
+                      Ok(Some(values)) => values
+                    }
+                    let lookahead_indices = if lookahead_bases.is_empty() {
+                      Ok(Some([]))
+                    } else {
+                      collect_forward_indices(
+                        glyphs,
+                        indices[input_count - 1] + 1,
+                        lookahead_bases.length(),
+                        lookup_flag,
+                        gdef,
+                        mark_filtering_set,
+                      )
+                    }
+                    let lookahead = match lookahead_indices {
+                      Err(err) => return Err(err)
+                      Ok(None) => continue
+                      Ok(Some(values)) => values
                     }
                     let mut matched = true
                     for j in 0..<backtrack_bases.length() {
-                      let pos = i - 1 - j
-                      if pos < 0 {
-                        matched = false
-                        break
-                      }
                       let covered = coverage_index(
                         data,
                         backtrack_bases[j],
-                        glyphs[pos],
+                        glyphs[backtrack[j]],
                       )
                       match covered {
                         Err(err) => return Err(err)
@@ -1202,11 +1390,10 @@ fn apply_chain_pos_subtable_format3(
                     }
                     if matched {
                       for j in 0..<input_bases.length() {
-                        let pos = i + j
                         let covered = coverage_index(
                           data,
                           input_bases[j],
-                          glyphs[pos],
+                          glyphs[indices[j]],
                         )
                         match covered {
                           Err(err) => return Err(err)
@@ -1220,15 +1407,10 @@ fn apply_chain_pos_subtable_format3(
                     }
                     if matched {
                       for j in 0..<lookahead_bases.length() {
-                        let pos = i + input_count + j
-                        if pos >= glyphs.length() {
-                          matched = false
-                          break
-                        }
                         let covered = coverage_index(
                           data,
                           lookahead_bases[j],
-                          glyphs[pos],
+                          glyphs[lookahead[j]],
                         )
                         match covered {
                           Err(err) => return Err(err)
@@ -1248,8 +1430,9 @@ fn apply_chain_pos_subtable_format3(
                         input_count,
                         glyphs,
                         deltas,
-                        i,
+                        indices[0],
                         lookup_list_offsets,
+                        Some(indices),
                       ) {
                         Err(err) => return Err(err)
                         Ok(value) => value
@@ -1281,6 +1464,9 @@ fn apply_chain_pos_class_rule(
   input_class_def_base : Int,
   lookahead_class_def_base : Int,
   lookup_list_offsets : ArrayView[Int],
+  lookup_flag : Int,
+  mark_filtering_set : Int?,
+  gdef : GdefTable?,
 ) -> Result[Bool, OtLayoutError] {
   if offset < 0 || offset + 2 > data.length() {
     return Err(UnexpectedEof)
@@ -1365,16 +1551,55 @@ fn apply_chain_pos_class_rule(
                   if pos_count < 0 {
                     return Err(InvalidFormat)
                   }
+                  let input_indices = collect_forward_indices(
+                    glyphs,
+                    index,
+                    input_count,
+                    lookup_flag,
+                    gdef,
+                    mark_filtering_set,
+                  )
+                  let indices = match input_indices {
+                    Err(err) => return Err(err)
+                    Ok(None) => return Ok(false)
+                    Ok(Some(indices)) => indices
+                  }
+                  let backtrack_indices = collect_backward_indices(
+                    glyphs,
+                    indices[0],
+                    backtrack.length(),
+                    lookup_flag,
+                    gdef,
+                    mark_filtering_set,
+                  )
+                  let backtrack_indices = match backtrack_indices {
+                    Err(err) => return Err(err)
+                    Ok(None) => return Ok(false)
+                    Ok(Some(values)) => values
+                  }
+                  let lookahead_indices = if lookahead.is_empty() {
+                    Ok(Some([]))
+                  } else {
+                    collect_forward_indices(
+                      glyphs,
+                      indices[input_count - 1] + 1,
+                      lookahead.length(),
+                      lookup_flag,
+                      gdef,
+                      mark_filtering_set,
+                    )
+                  }
+                  let lookahead_indices = match lookahead_indices {
+                    Err(err) => return Err(err)
+                    Ok(None) => return Ok(false)
+                    Ok(Some(values)) => values
+                  }
                   for j in 0..<backtrack.length() {
-                    let pos = index - 1 - j
-                    if pos < 0 {
-                      return Ok(false)
-                    }
                     let expected = backtrack[j]
                     let actual = class_def_value(
                       data,
                       backtrack_class_def_base,
-                      glyphs[pos],
+                      glyphs[backtrack_indices[j]],
                     )
                     match actual {
                       Err(err) => return Err(err)
@@ -1382,12 +1607,11 @@ fn apply_chain_pos_class_rule(
                     }
                   }
                   for j in 0..<input.length() {
-                    let pos = index + 1 + j
                     let expected = input[j]
                     let actual = class_def_value(
                       data,
                       input_class_def_base,
-                      glyphs[pos],
+                      glyphs[indices[j + 1]],
                     )
                     match actual {
                       Err(err) => return Err(err)
@@ -1395,15 +1619,11 @@ fn apply_chain_pos_class_rule(
                     }
                   }
                   for j in 0..<lookahead.length() {
-                    let pos = index + input_count + j
-                    if pos >= glyphs.length() {
-                      return Ok(false)
-                    }
                     let expected = lookahead[j]
                     let actual = class_def_value(
                       data,
                       lookahead_class_def_base,
-                      glyphs[pos],
+                      glyphs[lookahead_indices[j]],
                     )
                     match actual {
                       Err(err) => return Err(err)
@@ -1417,8 +1637,9 @@ fn apply_chain_pos_class_rule(
                     input_count,
                     glyphs,
                     deltas,
-                    index,
+                    indices[0],
                     lookup_list_offsets,
+                    Some(indices),
                   )
                 }
               }
@@ -1438,6 +1659,9 @@ fn apply_chain_pos_rule(
   deltas : Array[ValueRecord],
   index : Int,
   lookup_list_offsets : ArrayView[Int],
+  lookup_flag : Int,
+  mark_filtering_set : Int?,
+  gdef : GdefTable?,
 ) -> Result[Bool, OtLayoutError] {
   if offset < 0 || offset + 2 > data.length() {
     return Err(UnexpectedEof)
@@ -1525,31 +1749,62 @@ fn apply_chain_pos_rule(
                   if cursor < 0 || cursor + pos_count * 4 > data.length() {
                     return Err(UnexpectedEof)
                   }
+                  let input_indices = collect_forward_indices(
+                    glyphs,
+                    index,
+                    input_count,
+                    lookup_flag,
+                    gdef,
+                    mark_filtering_set,
+                  )
+                  let indices = match input_indices {
+                    Err(err) => return Err(err)
+                    Ok(None) => return Ok(false)
+                    Ok(Some(indices)) => indices
+                  }
+                  let backtrack_indices = collect_backward_indices(
+                    glyphs,
+                    indices[0],
+                    backtrack.length(),
+                    lookup_flag,
+                    gdef,
+                    mark_filtering_set,
+                  )
+                  let backtrack_indices = match backtrack_indices {
+                    Err(err) => return Err(err)
+                    Ok(None) => return Ok(false)
+                    Ok(Some(values)) => values
+                  }
+                  let lookahead_indices = if lookahead.is_empty() {
+                    Ok(Some([]))
+                  } else {
+                    collect_forward_indices(
+                      glyphs,
+                      indices[input_count - 1] + 1,
+                      lookahead.length(),
+                      lookup_flag,
+                      gdef,
+                      mark_filtering_set,
+                    )
+                  }
+                  let lookahead_indices = match lookahead_indices {
+                    Err(err) => return Err(err)
+                    Ok(None) => return Ok(false)
+                    Ok(Some(values)) => values
+                  }
                   for j in 0..<backtrack.length() {
-                    let pos = index - 1 - j
-                    if pos < 0 {
-                      return Ok(false)
-                    }
                     let expected = backtrack[j]
-                    if expected != u16_to_int(glyphs[pos]) {
+                    if expected != u16_to_int(glyphs[backtrack_indices[j]]) {
                       return Ok(false)
                     }
                   }
                   for j in 0..<input.length() {
-                    let pos = index + 1 + j
-                    if pos >= glyphs.length() {
-                      return Ok(false)
-                    }
-                    if input[j] != u16_to_int(glyphs[pos]) {
+                    if input[j] != u16_to_int(glyphs[indices[j + 1]]) {
                       return Ok(false)
                     }
                   }
                   for j in 0..<lookahead.length() {
-                    let pos = index + input_count + j
-                    if pos >= glyphs.length() {
-                      return Ok(false)
-                    }
-                    if lookahead[j] != u16_to_int(glyphs[pos]) {
+                    if lookahead[j] != u16_to_int(glyphs[lookahead_indices[j]]) {
                       return Ok(false)
                     }
                   }
@@ -1560,8 +1815,9 @@ fn apply_chain_pos_rule(
                     input_count,
                     glyphs,
                     deltas,
-                    index,
+                    indices[0],
                     lookup_list_offsets,
+                    Some(indices),
                   )
                 }
               }
@@ -1584,7 +1840,7 @@ fn apply_pos_lookup_at(
   let parsed = parse_lookup(data, lookup_offset, 9)
   match parsed {
     Err(err) => Err(err)
-    Ok((lookup_type, subtable_offsets)) => {
+    Ok((lookup_type, _, _, subtable_offsets)) => {
       if lookup_type == 1 {
         apply_single_pos_at(data, subtable_offsets, glyphs, deltas, index)
       } else if lookup_type == 2 {

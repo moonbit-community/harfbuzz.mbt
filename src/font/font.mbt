@@ -23,6 +23,7 @@ pub struct Font {
   mut glyf : @sfnt.GlyfTable?
   mut gsub : @ot_tables.GsubTable?
   mut gpos : @ot_tables.GposTable?
+  mut gdef : @ot_tables.GdefTable?
 } derive(Show, ToJson)
 
 ///|
@@ -53,6 +54,9 @@ let tag_gsub : @common.Tag = @common.Tag::from_chars('G', 'S', 'U', 'B')
 let tag_gpos : @common.Tag = @common.Tag::from_chars('G', 'P', 'O', 'S')
 
 ///|
+let tag_gdef : @common.Tag = @common.Tag::from_chars('G', 'D', 'E', 'F')
+
+///|
 /// Create a font from a face.
 pub fn Font::new(face : @face.Face) -> Font {
   Font::{
@@ -70,6 +74,7 @@ pub fn Font::new(face : @face.Face) -> Font {
     glyf: None,
     gsub: None,
     gpos: None,
+    gdef: None,
   }
 }
 
@@ -319,6 +324,26 @@ pub fn Font::gpos(self : Font) -> Result[@ot_tables.GposTable?, FontError] {
             Ok(gpos) => {
               self.gpos = Some(gpos)
               Ok(Some(gpos))
+            }
+          }
+      }
+  }
+}
+
+///|
+pub fn Font::gdef(self : Font) -> Result[@ot_tables.GdefTable?, FontError] {
+  match self.gdef {
+    Some(gdef) => Ok(Some(gdef))
+    None =>
+      match self.face.reference_table_optional(tag_gdef) {
+        Err(err) => Err(FaceTable(err))
+        Ok(None) => Ok(None)
+        Ok(Some(blob)) =>
+          match @ot_tables.GdefTable::parse(blob) {
+            Err(err) => Err(Layout(err))
+            Ok(gdef) => {
+              self.gdef = Some(gdef)
+              Ok(Some(gdef))
             }
           }
       }
