@@ -69,6 +69,22 @@ test "buffer normalize combining marks" {
 }
 
 ///|
+test "buffer normalize hebrew reorder" {
+  let buffer = Buffer::new()
+  buffer.set_script(@common.script_hebrew)
+  buffer.add_codepoint(0x05D0U)
+  buffer.add_codepoint(0x05B7U)
+  buffer.add_codepoint(0x05B0U)
+  buffer.add_codepoint(0x05BDU)
+  buffer.normalize()
+  let cps : Array[UInt] = []
+  for info in buffer.infos() {
+    cps.push(info.codepoint)
+  }
+  inspect(cps, content="[1488, 1463, 1469, 1456]")
+}
+
+///|
 fn push_u16(bytes : Array[Byte], value : Int) -> Unit {
   bytes.push(((value >> 8) & 0xff).to_byte())
   bytes.push((value & 0xff).to_byte())

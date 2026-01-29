@@ -226,6 +226,7 @@ pub fn Buffer::normalize(self : Buffer) -> Unit {
   if len <= 1 {
     return ()
   }
+  let is_hebrew = self.script == @common.script_hebrew
   let mut start = 0
   while start < len {
     let mut end = start + 1
@@ -256,7 +257,31 @@ pub fn Buffer::normalize(self : Buffer) -> Unit {
         i = i + 1
       }
     }
+    if is_hebrew {
+      reorder_marks_hebrew(self, start, end)
+    }
     start = end
+  }
+}
+
+///|
+fn reorder_marks_hebrew(buffer : Buffer, start : Int, end : Int) -> Unit {
+  if end - start < 3 {
+    return ()
+  }
+  for i in (start + 2)..<end {
+    let c0 = @unicode.modified_combining_class(buffer.infos[i - 2].codepoint).reinterpret_as_int()
+    let c1 = @unicode.modified_combining_class(buffer.infos[i - 1].codepoint).reinterpret_as_int()
+    let c2 = @unicode.modified_combining_class(buffer.infos[i].codepoint).reinterpret_as_int()
+    if (c0 == 20 || c0 == 21) &&
+      (c1 == 22 || c1 == 23) &&
+      (c2 == 25 || c2 == 220) {
+      buffer.merge_clusters(i - 1, i + 1)
+      let tmp = buffer.infos[i - 1]
+      buffer.infos[i - 1] = buffer.infos[i]
+      buffer.infos[i] = tmp
+      break
+    }
   }
 }
 
