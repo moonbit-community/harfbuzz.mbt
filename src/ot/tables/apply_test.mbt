@@ -1939,6 +1939,29 @@ test "gpos mark to base format1" {
 }
 
 ///|
+test "gpos mark to base skips intervening marks" {
+  let gpos_bytes = build_layout_table(
+    build_gpos_mark_to_base_lookup_format1(),
+    @common.Tag::from_chars('k', 'e', 'r', 'n'),
+  )
+  let gpos = match GposTable::parse(@blob.Blob::from_bytes(gpos_bytes)) {
+    Err(err) => fail("parse error: \{err}")
+    Ok(value) => value
+  }
+  let glyphs : Array[UInt] = [3U, 5U, 5U]
+  let deltas = match gpos.position_deltas(glyphs[:]) {
+    Err(err) => fail("apply error: \{err}")
+    Ok(value) => value
+  }
+  inspect(deltas.length(), content="3")
+  inspect(deltas[0].x_placement, content="0")
+  inspect(deltas[1].x_placement, content="5")
+  inspect(deltas[1].y_placement, content="15")
+  inspect(deltas[2].x_placement, content="5")
+  inspect(deltas[2].y_placement, content="15")
+}
+
+///|
 test "gpos mark to mark format1" {
   let gpos_bytes = build_layout_table(
     build_gpos_mark_to_mark_lookup_format1(),

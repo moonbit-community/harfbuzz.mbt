@@ -107,7 +107,15 @@ pub fn GposTable::position_deltas_with_lookups(
           }
         } else if lookup_type == 4 {
           for subtable_offset in subtable_offsets {
-            let res = apply_mark_subtable(data, subtable_offset, glyphs, deltas)
+            let res = apply_mark_subtable(
+              data,
+              subtable_offset,
+              glyphs,
+              deltas,
+              lookup_flag,
+              mark_filtering_set,
+              gdef,
+            )
             match res {
               Err(err) => return Err(err)
               Ok(_) => ()
@@ -156,6 +164,9 @@ pub fn GposTable::position_deltas_with_lookups(
               subtable_offset,
               glyphs,
               deltas,
+              lookup_flag,
+              mark_filtering_set,
+              gdef,
             )
             match res {
               Err(err) => return Err(err)
@@ -169,6 +180,9 @@ pub fn GposTable::position_deltas_with_lookups(
               subtable_offset,
               glyphs,
               deltas,
+              lookup_flag,
+              mark_filtering_set,
+              gdef,
             )
             match res {
               Err(err) => return Err(err)
@@ -1966,11 +1980,38 @@ fn apply_pos_lookup_at(
           gdef,
         )
       } else if lookup_type == 4 {
-        apply_mark_to_base_at(data, subtable_offsets, glyphs, deltas, index)
+        apply_mark_to_base_at(
+          data,
+          subtable_offsets,
+          glyphs,
+          deltas,
+          index,
+          lookup_flag,
+          mark_filtering_set,
+          gdef,
+        )
       } else if lookup_type == 5 {
-        apply_mark_to_ligature_at(data, subtable_offsets, glyphs, deltas, index)
+        apply_mark_to_ligature_at(
+          data,
+          subtable_offsets,
+          glyphs,
+          deltas,
+          index,
+          lookup_flag,
+          mark_filtering_set,
+          gdef,
+        )
       } else if lookup_type == 6 {
-        apply_mark_to_mark_at(data, subtable_offsets, glyphs, deltas, index)
+        apply_mark_to_mark_at(
+          data,
+          subtable_offsets,
+          glyphs,
+          deltas,
+          index,
+          lookup_flag,
+          mark_filtering_set,
+          gdef,
+        )
       } else {
         Ok(false)
       }
@@ -2261,17 +2302,69 @@ fn apply_cursive_at(
 }
 
 ///|
+fn find_prev_coverage_index(
+  data : BytesView,
+  coverage_base : Int,
+  glyphs : ArrayView[UInt],
+  start_index : Int,
+  lookup_flag : Int,
+  mark_filtering_set : Int?,
+  gdef : GdefTable?,
+) -> Result[Int?, OtLayoutError] {
+  if start_index <= 0 {
+    return Ok(None)
+  }
+  let mut cursor = start_index - 1
+  while cursor >= 0 {
+    let ignored = should_ignore_glyph(
+      glyphs[cursor],
+      lookup_flag,
+      gdef,
+      mark_filtering_set,
+    )
+    match ignored {
+      Err(err) => return Err(err)
+      Ok(true) => cursor = cursor - 1
+      Ok(false) => {
+        let coverage = coverage_index(data, coverage_base, glyphs[cursor])
+        match coverage {
+          Err(err) => return Err(err)
+          Ok(Some(index)) => return Ok(Some(index))
+          Ok(None) => cursor = cursor - 1
+        }
+      }
+    }
+  }
+  Ok(None)
+}
+
+///|
 fn apply_mark_to_base_at(
   data : BytesView,
   offsets : Array[Int],
   glyphs : ArrayView[UInt],
   deltas : Array[ValueRecord],
   index : Int,
+  lookup_flag : Int,
+  mark_filtering_set : Int?,
+  gdef : GdefTable?,
 ) -> Result[Bool, OtLayoutError] {
   if index <= 0 || index >= glyphs.length() {
     return Ok(false)
   }
+  let ignored = should_ignore_glyph(
+    glyphs[index],
+    lookup_flag,
+    gdef,
+    mark_filtering_set,
+  )
+  match ignored {
+    Err(err) => return Err(err)
+    Ok(true) => return Ok(false)
+    Ok(false) => ()
+  }
   let mut changed = false
+  let mark_glyph = glyphs[index]
   for offset in offsets {
     let format = read_u16_int(data, offset)
     match format {
@@ -2342,22 +2435,28 @@ fn apply_mark_to_base_at(
                     base_record_base + base_count * base_record_size > data.length() {
                   return Err(UnexpectedEof)
                 }
-                let mark_glyph = glyphs[index]
-                let base_glyph = glyphs[index - 1]
                 let mark_index = coverage_index(
                   data,
                   mark_coverage_base,
                   mark_glyph,
                 )
-                let base_index = coverage_index(
-                  data,
-                  base_coverage_base,
-                  base_glyph,
-                )
-                match (mark_index, base_index) {
-                  (Err(err), _) => return Err(err)
-                  (_, Err(err)) => return Err(err)
-                  (Ok(Some(mark_index)), Ok(Some(base_index))) => {
+                match mark_index {
+                  Err(err) => return Err(err)
+                  Ok(Some(mark_index)) => {
+                    let base_index = find_prev_coverage_index(
+                      data,
+                      base_coverage_base,
+                      glyphs,
+                      index,
+                      lookup_flag,
+                      mark_filtering_set,
+                      gdef,
+                    )
+                    let base_index = match base_index {
+                      Err(err) => return Err(err)
+                      Ok(None) => continue
+                      Ok(Some(base_index)) => base_index
+                    }
                     if mark_index < 0 || mark_index >= mark_count {
                       return Err(InvalidFormat)
                     }
@@ -2420,7 +2519,7 @@ fn apply_mark_to_base_at(
                       }
                     }
                   }
-                  _ => ()
+                  Ok(None) => ()
                 }
               }
             }
@@ -2441,11 +2540,26 @@ fn apply_mark_to_ligature_at(
   glyphs : ArrayView[UInt],
   deltas : Array[ValueRecord],
   index : Int,
+  lookup_flag : Int,
+  mark_filtering_set : Int?,
+  gdef : GdefTable?,
 ) -> Result[Bool, OtLayoutError] {
   if index <= 0 || index >= glyphs.length() {
     return Ok(false)
   }
+  let ignored = should_ignore_glyph(
+    glyphs[index],
+    lookup_flag,
+    gdef,
+    mark_filtering_set,
+  )
+  match ignored {
+    Err(err) => return Err(err)
+    Ok(true) => return Ok(false)
+    Ok(false) => ()
+  }
   let mut changed = false
+  let mark_glyph = glyphs[index]
   for offset in offsets {
     let format = read_u16_int(data, offset)
     match format {
@@ -2515,22 +2629,28 @@ fn apply_mark_to_ligature_at(
                     ligature_offset_base + ligature_count * 2 > data.length() {
                   return Err(UnexpectedEof)
                 }
-                let mark_glyph = glyphs[index]
-                let ligature_glyph = glyphs[index - 1]
                 let mark_index = coverage_index(
                   data,
                   mark_coverage_base,
                   mark_glyph,
                 )
-                let ligature_index = coverage_index(
-                  data,
-                  ligature_coverage_base,
-                  ligature_glyph,
-                )
-                match (mark_index, ligature_index) {
-                  (Err(err), _) => return Err(err)
-                  (_, Err(err)) => return Err(err)
-                  (Ok(Some(mark_index)), Ok(Some(ligature_index))) => {
+                match mark_index {
+                  Err(err) => return Err(err)
+                  Ok(Some(mark_index)) => {
+                    let ligature_index = find_prev_coverage_index(
+                      data,
+                      ligature_coverage_base,
+                      glyphs,
+                      index,
+                      lookup_flag,
+                      mark_filtering_set,
+                      gdef,
+                    )
+                    let ligature_index = match ligature_index {
+                      Err(err) => return Err(err)
+                      Ok(None) => continue
+                      Ok(Some(ligature_index)) => ligature_index
+                    }
                     if mark_index < 0 || mark_index >= mark_count {
                       return Err(InvalidFormat)
                     }
@@ -2647,7 +2767,7 @@ fn apply_mark_to_ligature_at(
                       }
                     }
                   }
-                  _ => ()
+                  Ok(None) => ()
                 }
               }
             }
@@ -2803,12 +2923,23 @@ fn apply_mark_subtable(
   offset : Int,
   glyphs : ArrayView[UInt],
   deltas : Array[ValueRecord],
+  lookup_flag : Int,
+  mark_filtering_set : Int?,
+  gdef : GdefTable?,
 ) -> Result[Unit, OtLayoutError] {
   let format = read_u16_int(data, offset)
   match format {
     Err(err) => Err(err)
     Ok(format) => if format == 1 {
-      apply_mark_to_base_format1(data, offset, glyphs, deltas)
+      apply_mark_to_base_format1(
+        data,
+        offset,
+        glyphs,
+        deltas,
+        lookup_flag,
+        mark_filtering_set,
+        gdef,
+      )
     } else {
       Ok(())
     }
@@ -2821,6 +2952,9 @@ fn apply_mark_to_base_format1(
   offset : Int,
   glyphs : ArrayView[UInt],
   deltas : Array[ValueRecord],
+  lookup_flag : Int,
+  mark_filtering_set : Int?,
+  gdef : GdefTable?,
 ) -> Result[Unit, OtLayoutError] {
   if glyphs.length() < 2 {
     return Ok(())
@@ -2892,13 +3026,35 @@ fn apply_mark_to_base_format1(
           }
           for i in 1..<glyphs.length() {
             let mark_glyph = glyphs[i]
-            let base_glyph = glyphs[i - 1]
+            let ignored = should_ignore_glyph(
+              mark_glyph,
+              lookup_flag,
+              gdef,
+              mark_filtering_set,
+            )
+            match ignored {
+              Err(err) => return Err(err)
+              Ok(true) => continue
+              Ok(false) => ()
+            }
             let mark_index = coverage_index(data, mark_coverage_base, mark_glyph)
-            let base_index = coverage_index(data, base_coverage_base, base_glyph)
-            match (mark_index, base_index) {
-              (Err(err), _) => return Err(err)
-              (_, Err(err)) => return Err(err)
-              (Ok(Some(mark_index)), Ok(Some(base_index))) => {
+            match mark_index {
+              Err(err) => return Err(err)
+              Ok(Some(mark_index)) => {
+                let base_index = find_prev_coverage_index(
+                  data,
+                  base_coverage_base,
+                  glyphs,
+                  i,
+                  lookup_flag,
+                  mark_filtering_set,
+                  gdef,
+                )
+                let base_index = match base_index {
+                  Err(err) => return Err(err)
+                  Ok(None) => continue
+                  Ok(Some(base_index)) => base_index
+                }
                 if mark_index < 0 || mark_index >= mark_count {
                   return Err(InvalidFormat)
                 }
@@ -2954,7 +3110,7 @@ fn apply_mark_to_base_format1(
                   }
                 }
               }
-              _ => ()
+              Ok(None) => ()
             }
           }
           Ok(())
@@ -2970,12 +3126,23 @@ fn apply_mark_to_ligature_subtable(
   offset : Int,
   glyphs : ArrayView[UInt],
   deltas : Array[ValueRecord],
+  lookup_flag : Int,
+  mark_filtering_set : Int?,
+  gdef : GdefTable?,
 ) -> Result[Unit, OtLayoutError] {
   let format = read_u16_int(data, offset)
   match format {
     Err(err) => Err(err)
     Ok(format) => if format == 1 {
-      apply_mark_to_ligature_format1(data, offset, glyphs, deltas)
+      apply_mark_to_ligature_format1(
+        data,
+        offset,
+        glyphs,
+        deltas,
+        lookup_flag,
+        mark_filtering_set,
+        gdef,
+      )
     } else {
       Ok(())
     }
@@ -2988,6 +3155,9 @@ fn apply_mark_to_ligature_format1(
   offset : Int,
   glyphs : ArrayView[UInt],
   deltas : Array[ValueRecord],
+  lookup_flag : Int,
+  mark_filtering_set : Int?,
+  gdef : GdefTable?,
 ) -> Result[Unit, OtLayoutError] {
   if glyphs.length() < 2 {
     return Ok(())
@@ -3058,17 +3228,35 @@ fn apply_mark_to_ligature_format1(
           }
           for i in 1..<glyphs.length() {
             let mark_glyph = glyphs[i]
-            let ligature_glyph = glyphs[i - 1]
-            let mark_index = coverage_index(data, mark_coverage_base, mark_glyph)
-            let ligature_index = coverage_index(
-              data,
-              ligature_coverage_base,
-              ligature_glyph,
+            let ignored = should_ignore_glyph(
+              mark_glyph,
+              lookup_flag,
+              gdef,
+              mark_filtering_set,
             )
-            match (mark_index, ligature_index) {
-              (Err(err), _) => return Err(err)
-              (_, Err(err)) => return Err(err)
-              (Ok(Some(mark_index)), Ok(Some(ligature_index))) => {
+            match ignored {
+              Err(err) => return Err(err)
+              Ok(true) => continue
+              Ok(false) => ()
+            }
+            let mark_index = coverage_index(data, mark_coverage_base, mark_glyph)
+            match mark_index {
+              Err(err) => return Err(err)
+              Ok(Some(mark_index)) => {
+                let ligature_index = find_prev_coverage_index(
+                  data,
+                  ligature_coverage_base,
+                  glyphs,
+                  i,
+                  lookup_flag,
+                  mark_filtering_set,
+                  gdef,
+                )
+                let ligature_index = match ligature_index {
+                  Err(err) => return Err(err)
+                  Ok(None) => continue
+                  Ok(Some(ligature_index)) => ligature_index
+                }
                 if mark_index < 0 || mark_index >= mark_count {
                   return Err(InvalidFormat)
                 }
@@ -3170,7 +3358,7 @@ fn apply_mark_to_ligature_format1(
                   }
                 }
               }
-              _ => ()
+              Ok(None) => ()
             }
           }
           Ok(())
@@ -3187,9 +3375,23 @@ fn apply_mark_to_mark_at(
   glyphs : ArrayView[UInt],
   deltas : Array[ValueRecord],
   index : Int,
+  lookup_flag : Int,
+  mark_filtering_set : Int?,
+  gdef : GdefTable?,
 ) -> Result[Bool, OtLayoutError] {
   if index <= 0 || index >= glyphs.length() {
     return Ok(false)
+  }
+  let ignored = should_ignore_glyph(
+    glyphs[index],
+    lookup_flag,
+    gdef,
+    mark_filtering_set,
+  )
+  match ignored {
+    Err(err) => return Err(err)
+    Ok(true) => return Ok(false)
+    Ok(false) => ()
   }
   let mut changed = false
   for offset in offsets {
@@ -3263,21 +3465,28 @@ fn apply_mark_to_mark_at(
                   return Err(UnexpectedEof)
                 }
                 let mark1_glyph = glyphs[index]
-                let mark2_glyph = glyphs[index - 1]
                 let mark1_index = coverage_index(
                   data,
                   mark1_coverage_base,
                   mark1_glyph,
                 )
-                let mark2_index = coverage_index(
-                  data,
-                  mark2_coverage_base,
-                  mark2_glyph,
-                )
-                match (mark1_index, mark2_index) {
-                  (Err(err), _) => return Err(err)
-                  (_, Err(err)) => return Err(err)
-                  (Ok(Some(mark1_index)), Ok(Some(mark2_index))) => {
+                match mark1_index {
+                  Err(err) => return Err(err)
+                  Ok(Some(mark1_index)) => {
+                    let mark2_index = find_prev_coverage_index(
+                      data,
+                      mark2_coverage_base,
+                      glyphs,
+                      index,
+                      lookup_flag,
+                      mark_filtering_set,
+                      gdef,
+                    )
+                    let mark2_index = match mark2_index {
+                      Err(err) => return Err(err)
+                      Ok(None) => continue
+                      Ok(Some(mark2_index)) => mark2_index
+                    }
                     if mark1_index < 0 || mark1_index >= mark1_count {
                       return Err(InvalidFormat)
                     }
@@ -3337,7 +3546,10 @@ fn apply_mark_to_mark_at(
                                   x_advance: 0,
                                   y_advance: 0,
                                 }
-                                deltas[index] = add_value_record(deltas[index], delta)
+                                deltas[index] = add_value_record(
+                                  deltas[index],
+                                  delta,
+                                )
                                 changed = true
                               }
                             }
@@ -3346,7 +3558,7 @@ fn apply_mark_to_mark_at(
                       }
                     }
                   }
-                  _ => ()
+                  Ok(None) => ()
                 }
               }
             }
@@ -3366,12 +3578,23 @@ fn apply_mark_to_mark_subtable(
   offset : Int,
   glyphs : ArrayView[UInt],
   deltas : Array[ValueRecord],
+  lookup_flag : Int,
+  mark_filtering_set : Int?,
+  gdef : GdefTable?,
 ) -> Result[Unit, OtLayoutError] {
   let format = read_u16_int(data, offset)
   match format {
     Err(err) => Err(err)
     Ok(format) => if format == 1 {
-      apply_mark_to_mark_format1(data, offset, glyphs, deltas)
+      apply_mark_to_mark_format1(
+        data,
+        offset,
+        glyphs,
+        deltas,
+        lookup_flag,
+        mark_filtering_set,
+        gdef,
+      )
     } else {
       Ok(())
     }
@@ -3384,6 +3607,9 @@ fn apply_mark_to_mark_format1(
   offset : Int,
   glyphs : ArrayView[UInt],
   deltas : Array[ValueRecord],
+  lookup_flag : Int,
+  mark_filtering_set : Int?,
+  gdef : GdefTable?,
 ) -> Result[Unit, OtLayoutError] {
   if glyphs.length() < 2 {
     return Ok(())
@@ -3455,21 +3681,39 @@ fn apply_mark_to_mark_format1(
           }
           for i in 1..<glyphs.length() {
             let mark1_glyph = glyphs[i]
-            let mark2_glyph = glyphs[i - 1]
+            let ignored = should_ignore_glyph(
+              mark1_glyph,
+              lookup_flag,
+              gdef,
+              mark_filtering_set,
+            )
+            match ignored {
+              Err(err) => return Err(err)
+              Ok(true) => continue
+              Ok(false) => ()
+            }
             let mark1_index = coverage_index(
               data,
               mark1_coverage_base,
               mark1_glyph,
             )
-            let mark2_index = coverage_index(
-              data,
-              mark2_coverage_base,
-              mark2_glyph,
-            )
-            match (mark1_index, mark2_index) {
-              (Err(err), _) => return Err(err)
-              (_, Err(err)) => return Err(err)
-              (Ok(Some(mark1_index)), Ok(Some(mark2_index))) => {
+            match mark1_index {
+              Err(err) => return Err(err)
+              Ok(Some(mark1_index)) => {
+                let mark2_index = find_prev_coverage_index(
+                  data,
+                  mark2_coverage_base,
+                  glyphs,
+                  i,
+                  lookup_flag,
+                  mark_filtering_set,
+                  gdef,
+                )
+                let mark2_index = match mark2_index {
+                  Err(err) => return Err(err)
+                  Ok(None) => continue
+                  Ok(Some(mark2_index)) => mark2_index
+                }
                 if mark1_index < 0 || mark1_index >= mark1_count {
                   return Err(InvalidFormat)
                 }
@@ -3531,7 +3775,7 @@ fn apply_mark_to_mark_format1(
                   }
                 }
               }
-              _ => ()
+              Ok(None) => ()
             }
           }
           Ok(())
