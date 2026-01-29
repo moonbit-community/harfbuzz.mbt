@@ -19,6 +19,9 @@ pub fn shape(font : @font.Font, buffer : @buffer.Buffer) -> Result[Unit, @buffer
   if is_indic_script(script) {
     return buffer.shape_indic(font)
   }
+  if is_use_script(script) {
+    return buffer.shape_use(font)
+  }
   if script == @common.script_hangul {
     return buffer.shape_hangul(font)
   }
@@ -36,6 +39,12 @@ fn is_indic_script(script : @common.Script) -> Bool {
     script == @common.script_telugu ||
     script == @common.script_kannada ||
     script == @common.script_malayalam
+}
+
+///|
+fn is_use_script(script : @common.Script) -> Bool {
+  script == @common.script_sinhala ||
+    script == @common.script_tibetan
 }
 
 ///|
