@@ -111,6 +111,29 @@ pub fn Buffer::positions(self : Buffer) -> ArrayView[GlyphPosition] {
 }
 
 ///|
+/// Replace glyph infos and positions. Returns false if lengths mismatch.
+pub fn Buffer::replace_glyphs(
+  self : Buffer,
+  infos : Array[GlyphInfo],
+  positions? : Array[GlyphPosition] = [],
+) -> Bool {
+  let mut next_positions = positions
+  if next_positions.is_empty() {
+    let filled : Array[GlyphPosition] = []
+    for _ in 0..<infos.length() {
+      filled.push(GlyphPosition::{ x_advance: 0, y_advance: 0, x_offset: 0, y_offset: 0 })
+    }
+    next_positions = filled
+  }
+  if infos.length() != next_positions.length() {
+    return false
+  }
+  self.infos = infos
+  self.positions = next_positions
+  true
+}
+
+///|
 /// Merge clusters in the range [start, end).
 pub fn Buffer::merge_clusters(self : Buffer, start : Int, end : Int) -> Unit {
   if start < 0 || end > self.infos.length() || start >= end {
@@ -243,6 +266,7 @@ pub fn Buffer::normalize(self : Buffer) -> Unit {
       while i < end {
         let current = self.infos[i]
         let current_cc = @unicode.modified_combining_class(current.codepoint).reinterpret_as_int()
+        let current_pos = self.positions[i]
         let mut j = i
         while j > mark_start {
           let prev = self.infos[j - 1]
@@ -251,9 +275,11 @@ pub fn Buffer::normalize(self : Buffer) -> Unit {
             break
           }
           self.infos[j] = prev
+          self.positions[j] = self.positions[j - 1]
           j = j - 1
         }
         self.infos[j] = current
+        self.positions[j] = current_pos
         i = i + 1
       }
     }
@@ -280,6 +306,9 @@ fn reorder_marks_hebrew(buffer : Buffer, start : Int, end : Int) -> Unit {
       let tmp = buffer.infos[i - 1]
       buffer.infos[i - 1] = buffer.infos[i]
       buffer.infos[i] = tmp
+      let tmp_pos = buffer.positions[i - 1]
+      buffer.positions[i - 1] = buffer.positions[i]
+      buffer.positions[i] = tmp_pos
       break
     }
   }

@@ -46,6 +46,33 @@ test "buffer merge clusters" {
 }
 
 ///|
+test "buffer replace glyphs" {
+  let buffer = Buffer::new()
+  buffer.add_codepoint(0x41U, cluster=2)
+  let infos0 : Array[GlyphInfo] = []
+  let positions0 : Array[GlyphPosition] = []
+  for info in buffer.infos() {
+    infos0.push(info)
+  }
+  for pos in buffer.positions() {
+    positions0.push(pos)
+  }
+  inspect(buffer.replace_glyphs(infos0), content="true")
+  inspect(buffer.len(), content="1")
+  let infos1 : Array[GlyphInfo] = []
+  for info in buffer.infos() {
+    infos1.push(info)
+    infos1.push(info)
+  }
+  let positions1 : Array[GlyphPosition] = []
+  for pos in positions0 {
+    positions1.push(pos)
+  }
+  inspect(buffer.replace_glyphs(infos1, positions=positions1), content="false")
+  inspect(buffer.len(), content="1")
+}
+
+///|
 test "buffer guess segment properties" {
   let buffer = Buffer::new()
   buffer.set_script(@common.script_arabic)
