@@ -3,10 +3,11 @@
 pub fn shape(font : @font.Font, buffer : @buffer.Buffer) -> Result[Unit, @buffer.ShapeError] {
   buffer.guess_segment_properties()
   buffer.normalize()
-  if buffer.get_script() == @common.script_arabic {
+  let script = buffer.get_script()
+  if script == @common.script_arabic || script == @common.script_mongolian {
     return buffer.shape_arabic(font)
   }
-  if buffer.get_script() == @common.script_hangul {
+  if script == @common.script_hangul {
     return buffer.shape_hangul(font)
   }
   buffer.shape_ot(font)

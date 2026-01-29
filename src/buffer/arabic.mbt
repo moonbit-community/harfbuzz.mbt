@@ -129,6 +129,29 @@ fn arabic_joining_actions(buffer : Buffer) -> Array[Int] {
 }
 
 ///|
+fn is_mongolian_variation_selector(u : UInt) -> Bool {
+  (u >= 0x180BU && u <= 0x180DU) || u == 0x180FU
+}
+
+///|
+fn apply_mongolian_variation_selectors(
+  actions : Array[Int],
+  infos : Array[GlyphInfo],
+) -> Unit {
+  if actions.length() != infos.length() {
+    return ()
+  }
+  if infos.length() <= 1 {
+    return ()
+  }
+  for i in 1..<infos.length() {
+    if is_mongolian_variation_selector(infos[i].codepoint) {
+      actions[i] = actions[i - 1]
+    }
+  }
+}
+
+///|
 fn build_action_mask(actions : Array[Int], target : Int) -> Array[UInt] {
   let masks : Array[UInt] = Array::make(actions.length(), 0U)
   for i in 0..<actions.length() {
@@ -276,6 +299,9 @@ pub fn Buffer::shape_arabic(
   font : @font.Font,
 ) -> Result[Unit, ShapeError] {
   let actions = arabic_joining_actions(self)
+  if self.script == @common.script_mongolian {
+    apply_mongolian_variation_selectors(actions, self.infos)
+  }
   let gsub = match font.gsub() {
     Err(err) => return Err(Font(err))
     Ok(value) => value
