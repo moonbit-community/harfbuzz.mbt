@@ -17,7 +17,7 @@ pub fn GsubTable::apply_single_with_lookups(
   let data = self.layout.data
   let mut changed = false
   for lookup_offset in lookup_offsets {
-    let parsed = parse_lookup(data, lookup_offset)
+    let parsed = parse_lookup(data, lookup_offset, 7)
     match parsed {
       Err(err) => return Err(err)
       Ok((lookup_type, subtable_offsets)) => {
@@ -53,7 +53,7 @@ pub fn GsubTable::apply_with_lookups(
   let mut current_clusters = clusters
   let mut changed = false
   for lookup_offset in lookup_offsets {
-    let parsed = parse_lookup(data, lookup_offset)
+    let parsed = parse_lookup(data, lookup_offset, 7)
     match parsed {
       Err(err) => return Err(err)
       Ok((lookup_type, subtable_offsets)) => {
@@ -458,7 +458,7 @@ fn apply_lookup_at(
   glyphs : Array[UInt],
   index : Int,
 ) -> Result[Bool, OtLayoutError] {
-  let parsed = parse_lookup(data, lookup_offset)
+  let parsed = parse_lookup(data, lookup_offset, 7)
   match parsed {
     Err(err) => Err(err)
     Ok((lookup_type, subtable_offsets)) => {

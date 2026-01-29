@@ -2,6 +2,7 @@
 fn parse_lookup(
   data : BytesView,
   offset : Int,
+  extension_lookup_type : Int,
 ) -> Result[(Int, Array[Int]), OtLayoutError] {
   if offset < 0 || offset + 6 > data.length() {
     return Err(UnexpectedEof)
@@ -20,7 +21,7 @@ fn parse_lookup(
       }
       let offsets : Array[Int] = []
       let mut resolved_type = lookup_type
-      let mut extension_type : Int? = None
+      let mut extension_subtable_type : Int? = None
       let base = offset + 6
       for i in 0..<subtable_count {
         let sub_offset = read_u16_int(data, base + i * 2)
@@ -34,13 +35,13 @@ fn parse_lookup(
             if abs_offset < 0 || abs_offset >= data.length() {
               return Err(UnexpectedEof)
             }
-            if lookup_type == 7 || lookup_type == 9 {
+            if lookup_type == extension_lookup_type {
               let ext = parse_extension_subtable(data, abs_offset)
               match ext {
                 Err(err) => return Err(err)
                 Ok((ext_type, ext_offset)) => {
-                  match extension_type {
-                    None => extension_type = Some(ext_type)
+                  match extension_subtable_type {
+                    None => extension_subtable_type = Some(ext_type)
                     Some(prev) => if prev != ext_type { return Err(InvalidFormat) }
                   }
                   offsets.push(ext_offset)
@@ -52,8 +53,8 @@ fn parse_lookup(
           }
         }
       }
-      if lookup_type == 7 || lookup_type == 9 {
-        match extension_type {
+      if lookup_type == extension_lookup_type {
+        match extension_subtable_type {
           None => return Err(InvalidFormat)
           Some(value) => resolved_type = value
         }
