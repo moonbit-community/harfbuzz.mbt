@@ -338,6 +338,20 @@ fn build_gpos_pair_lookup_ignore_ligature() -> Bytes {
 }
 
 ///|
+fn build_gpos_pair_lookup_ignore_base() -> Bytes {
+  let subtable = build_gpos_pair_subtable_format1(3, 2)
+  let bytes : Array[Byte] = []
+  push_u16(bytes, 2)
+  push_u16(bytes, 0x0002)
+  push_u16(bytes, 1)
+  push_u16(bytes, 8)
+  for b in subtable {
+    bytes.push(b)
+  }
+  Bytes::from_array(bytes)
+}
+
+///|
 fn build_gpos_lookup_mark_filter() -> Bytes {
   let subtable = build_gpos_subtable()
   let bytes : Array[Byte] = []
@@ -684,6 +698,20 @@ fn build_gpos_context_lookup() -> Bytes {
   let bytes : Array[Byte] = []
   push_u16(bytes, 7)
   push_u16(bytes, 0)
+  push_u16(bytes, 1)
+  push_u16(bytes, 8)
+  for b in subtable {
+    bytes.push(b)
+  }
+  Bytes::from_array(bytes)
+}
+
+///|
+fn build_gpos_context_lookup_ignore_base() -> Bytes {
+  let subtable = build_gpos_context_subtable()
+  let bytes : Array[Byte] = []
+  push_u16(bytes, 7)
+  push_u16(bytes, 0x0002)
   push_u16(bytes, 1)
   push_u16(bytes, 8)
   for b in subtable {
@@ -2083,6 +2111,38 @@ test "gpos pair lookup ignore ligatures" {
 }
 
 ///|
+test "gpos pair lookup ignore base glyphs" {
+  let gpos_bytes = build_layout_table(
+    build_gpos_pair_lookup_ignore_base(),
+    @common.Tag::from_chars('k', 'e', 'r', 'n'),
+  )
+  let gpos = match GposTable::parse(@blob.Blob::from_bytes(gpos_bytes)) {
+    Err(err) => fail("parse error: \{err}")
+    Ok(value) => value
+  }
+  let gdef = match GdefTable::parse(
+    @blob.Blob::from_bytes(build_gdef_class_def_table()),
+  ) {
+    Err(err) => fail("gdef parse error: \{err}")
+    Ok(value) => value
+  }
+  let lookup_offsets = [gpos.layout().lookup_list().offsets()[0]]
+  let glyphs : Array[UInt] = [3U, 2U]
+  let deltas = match gpos.position_deltas_with_lookups(
+    glyphs[:],
+    lookup_offsets[:],
+    gdef=gdef,
+  ) {
+    Err(err) => fail("apply error: \{err}")
+    Ok(value) => value
+  }
+  inspect(deltas.length(), content="2")
+  inspect(deltas[0].x_placement, content="0")
+  inspect(deltas[0].x_advance, content="0")
+  inspect(deltas[1].x_advance, content="0")
+}
+
+///|
 test "gpos pair lookup mark filtering set" {
   let gpos_bytes = build_layout_table(
     build_gpos_lookup_mark_filter(),
@@ -2301,6 +2361,38 @@ test "gpos context format1" {
   inspect(deltas.length(), content="2")
   inspect(deltas[0].x_placement, content="7")
   inspect(deltas[0].x_advance, content="15")
+  inspect(deltas[1].x_advance, content="0")
+}
+
+///|
+test "gpos context ignore base glyphs" {
+  let gpos_bytes = build_layout_table_with_lookups(
+    [build_gpos_context_lookup_ignore_base(), build_gpos_single_lookup_format1()],
+    @common.Tag::from_chars('k', 'e', 'r', 'n'),
+  )
+  let gpos = match GposTable::parse(@blob.Blob::from_bytes(gpos_bytes)) {
+    Err(err) => fail("parse error: \{err}")
+    Ok(value) => value
+  }
+  let gdef = match GdefTable::parse(
+    @blob.Blob::from_bytes(build_gdef_class_def_table()),
+  ) {
+    Err(err) => fail("gdef parse error: \{err}")
+    Ok(value) => value
+  }
+  let lookup_offsets = [gpos.layout().lookup_list().offsets()[0]]
+  let glyphs : Array[UInt] = [3U, 4U]
+  let deltas = match gpos.position_deltas_with_lookups(
+    glyphs[:],
+    lookup_offsets[:],
+    gdef=gdef,
+  ) {
+    Err(err) => fail("apply error: \{err}")
+    Ok(value) => value
+  }
+  inspect(deltas.length(), content="2")
+  inspect(deltas[0].x_placement, content="0")
+  inspect(deltas[0].x_advance, content="0")
   inspect(deltas[1].x_advance, content="0")
 }
 
