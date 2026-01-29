@@ -375,6 +375,55 @@ fn build_gpos_mark_to_base_lookup_format1() -> Bytes {
 }
 
 ///|
+fn build_gpos_mark_to_mark_subtable_format1() -> Bytes {
+  let bytes : Array[Byte] = []
+  push_u16(bytes, 1)
+  push_u16(bytes, 12)
+  push_u16(bytes, 18)
+  push_u16(bytes, 1)
+  push_u16(bytes, 24)
+  push_u16(bytes, 36)
+  // mark1 coverage table
+  push_u16(bytes, 1)
+  push_u16(bytes, 1)
+  push_u16(bytes, 5)
+  // mark2 coverage table
+  push_u16(bytes, 1)
+  push_u16(bytes, 1)
+  push_u16(bytes, 7)
+  // mark1 array
+  push_u16(bytes, 1)
+  push_u16(bytes, 0)
+  push_u16(bytes, 6)
+  // mark1 anchor
+  push_u16(bytes, 1)
+  push_i16(bytes, 3)
+  push_i16(bytes, 4)
+  // mark2 array
+  push_u16(bytes, 1)
+  push_u16(bytes, 4)
+  // mark2 anchor
+  push_u16(bytes, 1)
+  push_i16(bytes, 8)
+  push_i16(bytes, 10)
+  Bytes::from_array(bytes)
+}
+
+///|
+fn build_gpos_mark_to_mark_lookup_format1() -> Bytes {
+  let subtable = build_gpos_mark_to_mark_subtable_format1()
+  let bytes : Array[Byte] = []
+  push_u16(bytes, 6)
+  push_u16(bytes, 0)
+  push_u16(bytes, 1)
+  push_u16(bytes, 8)
+  for b in subtable {
+    bytes.push(b)
+  }
+  Bytes::from_array(bytes)
+}
+
+///|
 fn build_gsub_ligature_subtable() -> Bytes {
   let bytes : Array[Byte] = []
   push_u16(bytes, 1)
@@ -766,6 +815,27 @@ test "gpos mark to base format1" {
   inspect(deltas[0].x_placement, content="0")
   inspect(deltas[1].x_placement, content="5")
   inspect(deltas[1].y_placement, content="15")
+}
+
+///|
+test "gpos mark to mark format1" {
+  let gpos_bytes = build_layout_table(
+    build_gpos_mark_to_mark_lookup_format1(),
+    @common.Tag::from_chars('k', 'e', 'r', 'n'),
+  )
+  let gpos = match GposTable::parse(@blob.Blob::from_bytes(gpos_bytes)) {
+    Err(err) => fail("parse error: \{err}")
+    Ok(value) => value
+  }
+  let glyphs : Array[UInt] = [7U, 5U]
+  let deltas = match gpos.position_deltas(glyphs[:]) {
+    Err(err) => fail("apply error: \{err}")
+    Ok(value) => value
+  }
+  inspect(deltas.length(), content="2")
+  inspect(deltas[0].x_placement, content="0")
+  inspect(deltas[1].x_placement, content="5")
+  inspect(deltas[1].y_placement, content="6")
 }
 
 ///|
