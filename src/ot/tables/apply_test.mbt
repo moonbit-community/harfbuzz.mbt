@@ -404,6 +404,43 @@ fn build_gpos_context_lookup() -> Bytes {
 }
 
 ///|
+fn build_gpos_context_mark_to_base_subtable() -> Bytes {
+  let bytes : Array[Byte] = []
+  push_u16(bytes, 1)
+  push_u16(bytes, 8)
+  push_u16(bytes, 1)
+  push_u16(bytes, 14)
+  // coverage table (input glyph 3)
+  push_u16(bytes, 1)
+  push_u16(bytes, 1)
+  push_u16(bytes, 3)
+  // rule set
+  push_u16(bytes, 1)
+  push_u16(bytes, 4)
+  // rule: [3, 5] -> apply lookup 1 at index 1
+  push_u16(bytes, 2)
+  push_u16(bytes, 1)
+  push_u16(bytes, 5)
+  push_u16(bytes, 1)
+  push_u16(bytes, 1)
+  Bytes::from_array(bytes)
+}
+
+///|
+fn build_gpos_context_mark_to_base_lookup() -> Bytes {
+  let subtable = build_gpos_context_mark_to_base_subtable()
+  let bytes : Array[Byte] = []
+  push_u16(bytes, 7)
+  push_u16(bytes, 0)
+  push_u16(bytes, 1)
+  push_u16(bytes, 8)
+  for b in subtable {
+    bytes.push(b)
+  }
+  Bytes::from_array(bytes)
+}
+
+///|
 fn build_gpos_chain_subtable() -> Bytes {
   let bytes : Array[Byte] = []
   push_u16(bytes, 1)
@@ -1020,6 +1057,31 @@ test "gpos context format1" {
   inspect(deltas[0].x_placement, content="7")
   inspect(deltas[0].x_advance, content="15")
   inspect(deltas[1].x_advance, content="0")
+}
+
+///|
+test "gpos context mark to base format1" {
+  let gpos_bytes = build_layout_table_with_lookups(
+    [build_gpos_context_mark_to_base_lookup(), build_gpos_mark_to_base_lookup_format1()],
+    @common.Tag::from_chars('k', 'e', 'r', 'n'),
+  )
+  let gpos = match GposTable::parse(@blob.Blob::from_bytes(gpos_bytes)) {
+    Err(err) => fail("parse error: \{err}")
+    Ok(value) => value
+  }
+  let lookup_offsets = [gpos.layout().lookup_list().offsets()[0]]
+  let glyphs : Array[UInt] = [3U, 5U]
+  let deltas = match gpos.position_deltas_with_lookups(
+    glyphs[:],
+    lookup_offsets[:],
+  ) {
+    Err(err) => fail("apply error: \{err}")
+    Ok(value) => value
+  }
+  inspect(deltas.length(), content="2")
+  inspect(deltas[0].x_placement, content="0")
+  inspect(deltas[1].x_placement, content="5")
+  inspect(deltas[1].y_placement, content="15")
 }
 
 ///|
