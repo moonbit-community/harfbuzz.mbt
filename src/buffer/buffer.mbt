@@ -231,7 +231,14 @@ pub fn Buffer::get_language(self : Buffer) -> @common.Language {
 /// Fill missing segment properties with defaults.
 pub fn Buffer::guess_segment_properties(self : Buffer) -> Unit {
   if self.script == @common.script_invalid {
-    self.script = @common.script_common
+    let first_codepoint = match self.infos {
+      [] => None
+      [first, ..] => Some(first.codepoint)
+    }
+    match first_codepoint {
+      None => self.script = @common.script_common
+      Some(value) => self.script = @unicode.script(value)
+    }
   }
   if !self.direction.is_valid() {
     let dir = self.script.horizontal_direction()

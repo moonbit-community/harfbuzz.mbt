@@ -82,6 +82,15 @@ test "buffer guess segment properties" {
 }
 
 ///|
+test "buffer guess segment properties script detection" {
+  let buffer = Buffer::new()
+  buffer.add_codepoint(0x05D0U)
+  buffer.guess_segment_properties()
+  inspect(buffer.get_script().to_tag().to_string(), content="Hebr")
+  inspect(buffer.get_direction().to_string(), content="rtl")
+}
+
+///|
 test "buffer normalize combining marks" {
   let buffer = Buffer::new()
   buffer.add_codepoint(0x61U)
