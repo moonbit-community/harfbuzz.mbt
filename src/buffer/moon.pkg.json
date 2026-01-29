@@ -15,6 +15,10 @@
     {
       "path": "moonbit-community/harfbuzz/ot/map",
       "alias": "ot_map"
+    },
+    {
+      "path": "moonbit-community/harfbuzz/unicode",
+      "alias": "unicode"
     }
   ]
 }

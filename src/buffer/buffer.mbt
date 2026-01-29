@@ -201,6 +201,47 @@ pub fn Buffer::guess_segment_properties(self : Buffer) -> Unit {
 }
 
 ///|
+/// Normalize buffer codepoints by reordering combining marks.
+pub fn Buffer::normalize(self : Buffer) -> Unit {
+  let len = self.infos.length()
+  if len <= 1 {
+    return ()
+  }
+  let mut start = 0
+  while start < len {
+    let mut end = start + 1
+    while end < len {
+      let cc = @unicode.combining_class(self.infos[end].codepoint)
+      if cc == 0U {
+        break
+      }
+      end = end + 1
+    }
+    let mark_start = start + 1
+    if end - mark_start > 1 {
+      let mut i = mark_start + 1
+      while i < end {
+        let current = self.infos[i]
+        let current_cc = @unicode.modified_combining_class(current.codepoint).reinterpret_as_int()
+        let mut j = i
+        while j > mark_start {
+          let prev = self.infos[j - 1]
+          let prev_cc = @unicode.modified_combining_class(prev.codepoint).reinterpret_as_int()
+          if prev_cc <= current_cc {
+            break
+          }
+          self.infos[j] = prev
+          j = j - 1
+        }
+        self.infos[j] = current
+        i = i + 1
+      }
+    }
+    start = end
+  }
+}
+
+///|
 fn language_to_ot_tag(lang : @common.Language) -> @common.Tag {
   match lang.to_string() {
     None => @common.tag_none

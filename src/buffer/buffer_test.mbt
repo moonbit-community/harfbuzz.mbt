@@ -41,6 +41,20 @@ test "buffer guess segment properties" {
 }
 
 ///|
+test "buffer normalize combining marks" {
+  let buffer = Buffer::new()
+  buffer.add_codepoint(0x61U)
+  buffer.add_codepoint(0x0301U)
+  buffer.add_codepoint(0x0327U)
+  buffer.normalize()
+  let cps : Array[UInt] = []
+  for info in buffer.infos() {
+    cps.push(info.codepoint)
+  }
+  inspect(cps, content="[97, 807, 769]")
+}
+
+///|
 fn push_u16(bytes : Array[Byte], value : Int) -> Unit {
   bytes.push(((value >> 8) & 0xff).to_byte())
   bytes.push((value & 0xff).to_byte())
