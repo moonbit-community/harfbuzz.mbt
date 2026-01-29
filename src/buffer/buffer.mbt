@@ -274,19 +274,26 @@ pub fn Buffer::shape_ot(
     Err(err) => return Err(Font(err))
     Ok(value) => value
   }
+  let gpos = match font.gpos() {
+    Err(err) => return Err(Font(err))
+    Ok(value) => value
+  }
+  let script_tag = self.script.to_tag()
+  let lang_tag = language_to_ot_tag(self.language)
+  let map = match @ot_map.OtMap::new(
+    gsub,
+    gpos,
+    script_tag,
+    language_tag=lang_tag,
+    gsub_features=self.gsub_features,
+    gpos_features=self.gpos_features,
+  ) {
+    Err(err) => return Err(Layout(err))
+    Ok(value) => value
+  }
   if gsub is Some(gsub) {
     let gdef = match font.gdef() {
       Err(err) => return Err(Font(err))
-      Ok(value) => value
-    }
-    let script_tag = self.script.to_tag()
-    let lang_tag = language_to_ot_tag(self.language)
-    let lookup_offsets = match gsub.layout().select_lookup_offsets_with_features(
-      script_tag,
-      language_tag=lang_tag,
-      feature_tags=self.gsub_features,
-    ) {
-      Err(err) => return Err(Layout(err))
       Ok(value) => value
     }
     let glyphs : Array[UInt] = []
@@ -300,7 +307,7 @@ pub fn Buffer::shape_ot(
         match gsub.apply_with_lookups(
           glyphs,
           clusters,
-          lookup_offsets[:],
+          map.gsub_lookups(),
         ) {
           Err(err) => return Err(Layout(err))
           Ok(value) => value
@@ -309,7 +316,7 @@ pub fn Buffer::shape_ot(
         match gsub.apply_with_lookups(
           glyphs,
           clusters,
-          lookup_offsets[:],
+          map.gsub_lookups(),
           gdef=gdef,
         ) {
           Err(err) => return Err(Layout(err))
@@ -334,23 +341,9 @@ pub fn Buffer::shape_ot(
       self.positions = new_positions
     }
   }
-  let gpos = match font.gpos() {
-    Err(err) => return Err(Font(err))
-    Ok(value) => value
-  }
   if gpos is Some(gpos) {
     let gdef = match font.gdef() {
       Err(err) => return Err(Font(err))
-      Ok(value) => value
-    }
-    let script_tag = self.script.to_tag()
-    let lang_tag = language_to_ot_tag(self.language)
-    let lookup_offsets = match gpos.layout().select_lookup_offsets_with_features(
-      script_tag,
-      language_tag=lang_tag,
-      feature_tags=self.gpos_features,
-    ) {
-      Err(err) => return Err(Layout(err))
       Ok(value) => value
     }
     let glyphs : Array[UInt] = []
@@ -361,7 +354,7 @@ pub fn Buffer::shape_ot(
       None =>
         match gpos.position_deltas_with_lookups(
           glyphs[:],
-          lookup_offsets[:],
+          map.gpos_lookups(),
         ) {
           Err(err) => return Err(Layout(err))
           Ok(value) => value
@@ -369,7 +362,7 @@ pub fn Buffer::shape_ot(
       Some(gdef) =>
         match gpos.position_deltas_with_lookups(
           glyphs[:],
-          lookup_offsets[:],
+          map.gpos_lookups(),
           gdef=gdef,
         ) {
           Err(err) => return Err(Layout(err))

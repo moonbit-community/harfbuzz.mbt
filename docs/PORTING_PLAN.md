@@ -29,9 +29,9 @@ Unicode data, variations, color/paint, and subsetting.
 | `sfnt` | SFNT tables (head/hhea/etc.) | `hb-ot-*-table.hh` | partial |
 | `ot/tables` | GSUB/GPOS/GDEF + lookup parsing | `hb-ot-layout-*-table.hh` | partial |
 | `unicode` | UCD + emoji data + unicode funcs | `hb-unicode.*`, `hb-ucd*` | partial (UCD + Extended_Pictographic; more emoji props pending) |
-| `ot/shape` | OT shaping + normalization | `hb-ot-shape.*`, `hb-ot-shaper-*.cc` | planned |
-| `ot/map` | Feature/lookup mapping | `hb-ot-map.*` | planned |
-| `shape` | Generic shaper registry + plan | `hb-shape.*`, `hb-shape-plan.*`, `hb-shaper.*` | planned |
+| `ot/shape` | OT shaping + normalization | `hb-ot-shape.*`, `hb-ot-shaper-*.cc` | partial (wrapper; normalization/shapers pending) |
+| `ot/map` | Feature/lookup mapping | `hb-ot-map.*` | partial (lookup selection only) |
+| `shape` | Generic shaper registry + plan | `hb-shape.*`, `hb-shape-plan.*`, `hb-shaper.*` | partial (plan + registry scaffold) |
 | `ot/var` | Variation tables + var store | `hb-ot-var*` | planned |
 | `ot/color` | COLR/CPAL + color utilities | `hb-ot-color.*` | planned |
 | `paint` | Paint API | `hb-paint.*` | planned |

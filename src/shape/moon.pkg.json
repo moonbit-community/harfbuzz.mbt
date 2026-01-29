@@ -1,0 +1,20 @@
+{
+  "import": [
+    {
+      "path": "moonbit-community/harfbuzz/common",
+      "alias": "common"
+    },
+    {
+      "path": "moonbit-community/harfbuzz/buffer",
+      "alias": "buffer"
+    },
+    {
+      "path": "moonbit-community/harfbuzz/font",
+      "alias": "font"
+    },
+    {
+      "path": "moonbit-community/harfbuzz/ot/shape",
+      "alias": "ot_shape"
+    }
+  ]
+}

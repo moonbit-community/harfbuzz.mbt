@@ -5,16 +5,8 @@
       "alias": "common"
     },
     {
-      "path": "moonbit-community/harfbuzz/font",
-      "alias": "font"
-    },
-    {
       "path": "moonbit-community/harfbuzz/ot/tables",
       "alias": "ot_tables"
-    },
-    {
-      "path": "moonbit-community/harfbuzz/ot/map",
-      "alias": "ot_map"
     }
   ]
 }
