@@ -750,3 +750,18 @@ test "buffer shape myanmar fallback" {
   let infos = buffer.infos()
   inspect(infos[0].codepoint, content="1")
 }
+
+///|
+test "buffer shape indic fallback" {
+  let font = @font.Font::from_bytes(build_font_bytes())
+  let buffer = Buffer::new()
+  buffer.set_script(@common.script_devanagari)
+  buffer.add_string("A")
+  let result = buffer.shape_indic(font)
+  match result {
+    Err(err) => fail("shape error: \{err}")
+    Ok(_) => ()
+  }
+  let infos = buffer.infos()
+  inspect(infos[0].codepoint, content="1")
+}

@@ -16,10 +16,26 @@ pub fn shape(font : @font.Font, buffer : @buffer.Buffer) -> Result[Unit, @buffer
   if script == @common.script_myanmar {
     return buffer.shape_myanmar(font)
   }
+  if is_indic_script(script) {
+    return buffer.shape_indic(font)
+  }
   if script == @common.script_hangul {
     return buffer.shape_hangul(font)
   }
   buffer.shape_ot(font)
+}
+
+///|
+fn is_indic_script(script : @common.Script) -> Bool {
+  script == @common.script_devanagari ||
+    script == @common.script_bengali ||
+    script == @common.script_gurmukhi ||
+    script == @common.script_gujarati ||
+    script == @common.script_oriya ||
+    script == @common.script_tamil ||
+    script == @common.script_telugu ||
+    script == @common.script_kannada ||
+    script == @common.script_malayalam
 }
 
 ///|
