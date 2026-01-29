@@ -112,6 +112,18 @@ pub fn GsubTable::apply_with_lookups(
           if did_change {
             changed = true
           }
+        } else if lookup_type == 8 {
+          let did_change = match apply_reverse_chain_subtable_list(
+            data,
+            subtable_offsets,
+            current_glyphs,
+          ) {
+            Err(err) => return Err(err)
+            Ok(value) => value
+          }
+          if did_change {
+            changed = true
+          }
         } else {
           continue
         }
@@ -209,6 +221,213 @@ fn apply_ligature_subtable_list(
     }
   }
   Ok((new_glyphs, new_clusters, changed))
+}
+
+///|
+fn apply_reverse_chain_subtable_list(
+  data : BytesView,
+  offsets : Array[Int],
+  glyphs : Array[UInt],
+) -> Result[Bool, OtLayoutError] {
+  let mut changed = false
+  for offset in offsets {
+    let result = apply_reverse_chain_subtable(data, offset, glyphs)
+    match result {
+      Err(err) => return Err(err)
+      Ok(value) => if value { changed = true }
+    }
+  }
+  Ok(changed)
+}
+
+///|
+fn apply_reverse_chain_subtable(
+  data : BytesView,
+  offset : Int,
+  glyphs : Array[UInt],
+) -> Result[Bool, OtLayoutError] {
+  if glyphs.is_empty() {
+    return Ok(false)
+  }
+  if offset < 0 || offset + 10 > data.length() {
+    return Err(UnexpectedEof)
+  }
+  let format = read_u16_int(data, offset)
+  let coverage_offset = read_u16_int(data, offset + 2)
+  let backtrack_count = read_u16_int(data, offset + 4)
+  match (format, coverage_offset, backtrack_count) {
+    (Err(err), _, _) => Err(err)
+    (_, Err(err), _) => Err(err)
+    (_, _, Err(err)) => Err(err)
+    (Ok(format), Ok(coverage_offset), Ok(backtrack_count)) => {
+      if format != 1 {
+        return Err(InvalidFormat)
+      }
+      if coverage_offset == 0 || backtrack_count < 0 {
+        return Err(InvalidFormat)
+      }
+      let mut cursor = offset + 6
+      let backtrack_bases : Array[Int] = []
+      if cursor < 0 || cursor + backtrack_count * 2 > data.length() {
+        return Err(UnexpectedEof)
+      }
+      for _ in 0..<backtrack_count {
+        let sub_offset = read_u16_int(data, cursor)
+        cursor = cursor + 2
+        match sub_offset {
+          Err(err) => return Err(err)
+          Ok(sub_offset) => {
+            if sub_offset == 0 {
+              return Err(InvalidFormat)
+            }
+            let base = offset + sub_offset
+            if base < 0 || base >= data.length() {
+              return Err(UnexpectedEof)
+            }
+            backtrack_bases.push(base)
+          }
+        }
+      }
+      if cursor < 0 || cursor + 2 > data.length() {
+        return Err(UnexpectedEof)
+      }
+      let lookahead_count = read_u16_int(data, cursor)
+      match lookahead_count {
+        Err(err) => return Err(err)
+        Ok(lookahead_count) => {
+          cursor = cursor + 2
+          if lookahead_count < 0 {
+            return Err(InvalidFormat)
+          }
+          if cursor < 0 || cursor + lookahead_count * 2 > data.length() {
+            return Err(UnexpectedEof)
+          }
+          let lookahead_bases : Array[Int] = []
+          for _ in 0..<lookahead_count {
+            let sub_offset = read_u16_int(data, cursor)
+            cursor = cursor + 2
+            match sub_offset {
+              Err(err) => return Err(err)
+              Ok(sub_offset) => {
+                if sub_offset == 0 {
+                  return Err(InvalidFormat)
+                }
+                let base = offset + sub_offset
+                if base < 0 || base >= data.length() {
+                  return Err(UnexpectedEof)
+                }
+                lookahead_bases.push(base)
+              }
+            }
+          }
+          if cursor < 0 || cursor + 2 > data.length() {
+            return Err(UnexpectedEof)
+          }
+          let glyph_count = read_u16_int(data, cursor)
+          match glyph_count {
+            Err(err) => Err(err)
+            Ok(glyph_count) => {
+              cursor = cursor + 2
+              if glyph_count <= 0 {
+                return Err(InvalidFormat)
+              }
+              if cursor < 0 || cursor + glyph_count * 2 > data.length() {
+                return Err(UnexpectedEof)
+              }
+              let substitutes : Array[UInt] = []
+              for _ in 0..<glyph_count {
+                let value = read_u16_int(data, cursor)
+                cursor = cursor + 2
+                match value {
+                  Err(err) => return Err(err)
+                  Ok(value) => substitutes.push(value.reinterpret_as_uint())
+                }
+              }
+              let coverage_base = offset + coverage_offset
+              let original : Array[UInt] = []
+              for value in glyphs {
+                original.push(value)
+              }
+              let mut changed = false
+              let mut i = glyphs.length() - 1
+              while i >= 0 {
+                let glyph = original[i]
+                let index = coverage_index(data, coverage_base, glyph)
+                match index {
+                  Err(err) => return Err(err)
+                  Ok(None) => ()
+                  Ok(Some(index)) => {
+                    if index < 0 || index >= glyph_count {
+                      return Err(InvalidFormat)
+                    }
+                    let mut match_ok = true
+                    if backtrack_count > 0 {
+                      for j in 0..<backtrack_count {
+                        let pos = i - 1 - j
+                        if pos < 0 {
+                          match_ok = false
+                          break
+                        }
+                        let back_glyph = original[pos]
+                        let covered = coverage_index(
+                          data,
+                          backtrack_bases[j],
+                          back_glyph,
+                        )
+                        match covered {
+                          Err(err) => return Err(err)
+                          Ok(None) => {
+                            match_ok = false
+                            break
+                          }
+                          Ok(Some(_)) => ()
+                        }
+                      }
+                    }
+                    if match_ok && lookahead_count > 0 {
+                      for j in 0..<lookahead_count {
+                        let pos = i + 1 + j
+                        if pos >= original.length() {
+                          match_ok = false
+                          break
+                        }
+                        let look_glyph = original[pos]
+                        let covered = coverage_index(
+                          data,
+                          lookahead_bases[j],
+                          look_glyph,
+                        )
+                        match covered {
+                          Err(err) => return Err(err)
+                          Ok(None) => {
+                            match_ok = false
+                            break
+                          }
+                          Ok(Some(_)) => ()
+                        }
+                      }
+                    }
+                    if match_ok {
+                      let sub = substitutes[index]
+                      if sub != glyphs[i] {
+                        glyphs[i] = sub
+                        changed = true
+                      }
+                    }
+                  }
+                }
+                if i == 0 {
+                  break
+                }
+                i = i - 1
+              }
+              Ok(changed)
+            }
+          }
+        }
+      }
+    }
+  }
 }
 
 ///|

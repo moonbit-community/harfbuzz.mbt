@@ -418,6 +418,46 @@ fn build_gpos_extension_lookup() -> Bytes {
 }
 
 ///|
+fn build_gsub_reverse_chain_subtable() -> Bytes {
+  let bytes : Array[Byte] = []
+  push_u16(bytes, 1)
+  push_u16(bytes, 16)
+  push_u16(bytes, 1)
+  push_u16(bytes, 22)
+  push_u16(bytes, 1)
+  push_u16(bytes, 28)
+  push_u16(bytes, 1)
+  push_u16(bytes, 5)
+  // coverage table (input glyph 3)
+  push_u16(bytes, 1)
+  push_u16(bytes, 1)
+  push_u16(bytes, 3)
+  // backtrack coverage (glyph 1)
+  push_u16(bytes, 1)
+  push_u16(bytes, 1)
+  push_u16(bytes, 1)
+  // lookahead coverage (glyph 2)
+  push_u16(bytes, 1)
+  push_u16(bytes, 1)
+  push_u16(bytes, 2)
+  Bytes::from_array(bytes)
+}
+
+///|
+fn build_gsub_reverse_chain_lookup() -> Bytes {
+  let subtable = build_gsub_reverse_chain_subtable()
+  let bytes : Array[Byte] = []
+  push_u16(bytes, 8)
+  push_u16(bytes, 0)
+  push_u16(bytes, 1)
+  push_u16(bytes, 8)
+  for b in subtable {
+    bytes.push(b)
+  }
+  Bytes::from_array(bytes)
+}
+
+///|
 test "gsub single substitution apply" {
   let gsub_bytes = build_layout_table(
     build_gsub_lookup(),
@@ -634,4 +674,30 @@ test "gpos extension lookup apply" {
   inspect(deltas[0].x_placement, content="5")
   inspect(deltas[0].x_advance, content="-20")
   inspect(deltas[1].x_advance, content="10")
+}
+
+///|
+test "gsub reverse chain substitution apply" {
+  let gsub_bytes = build_layout_table(
+    build_gsub_reverse_chain_lookup(),
+    @common.Tag::from_chars('l', 'i', 'g', 'a'),
+  )
+  let gsub = match GsubTable::parse(@blob.Blob::from_bytes(gsub_bytes)) {
+    Err(err) => fail("parse error: \{err}")
+    Ok(value) => value
+  }
+  let glyphs : Array[UInt] = [1U, 3U, 2U]
+  let clusters : Array[Int] = [0, 1, 2]
+  let result = match gsub.apply_with_lookups(
+    glyphs,
+    clusters,
+    gsub.layout().lookup_list().offsets(),
+  ) {
+    Err(err) => fail("apply error: \{err}")
+    Ok(value) => value
+  }
+  let (new_glyphs, new_clusters, changed) = result
+  inspect(changed, content="true")
+  inspect(new_glyphs, content="[1, 5, 2]")
+  inspect(new_clusters, content="[0, 1, 2]")
 }
