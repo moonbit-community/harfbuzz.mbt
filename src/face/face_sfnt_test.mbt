@@ -99,3 +99,23 @@ test "face references ttc tables by index" {
   inspect(table0.to_bytes(), content="b\"\\x0a\"")
   inspect(table1.to_bytes(), content="b\"\\x0b\\x0c\"")
 }
+
+///|
+test "face set_index resets cached tables" {
+  let tag = @common.Tag::from_chars('n', 'a', 'm', 'e')
+  let font0 = build_sfnt_with_table(tag, [0x01])
+  let font1 = build_sfnt_with_table(tag, [0x02])
+  let ttc = build_ttc([font0, font1])
+  let face = Face::from_bytes(ttc, index=0)
+  let table0 = match face.reference_table(tag) {
+    Err(err) => fail("missing table: \{err}")
+    Ok(value) => value
+  }
+  face.set_index(1)
+  let table1 = match face.reference_table(tag) {
+    Err(err) => fail("missing table: \{err}")
+    Ok(value) => value
+  }
+  inspect(table0.to_bytes(), content="b\"\\x01\"")
+  inspect(table1.to_bytes(), content="b\"\\x02\"")
+}

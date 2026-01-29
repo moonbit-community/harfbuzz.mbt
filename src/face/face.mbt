@@ -5,7 +5,7 @@ pub struct Face {
   mut index : Int
   mut upem : Int
   mut glyph_count : Int
-  tables : Map[@common.Tag, @blob.Blob]
+  mut tables : Map[@common.Tag, @blob.Blob]
 } derive(Show, ToJson)
 
 ///|
@@ -61,7 +61,12 @@ pub fn Face::reference_blob(self : Face) -> @blob.Blob {
 ///|
 /// Update the face index.
 pub fn Face::set_index(self : Face, index : Int) -> Unit {
-  self.index = index
+  if self.index != index {
+    self.index = index
+    self.tables = Map::new()
+    self.upem = 0
+    self.glyph_count = 0
+  }
 }
 
 ///|

@@ -839,5 +839,5 @@ pub fn Font::glyph_v_advance(
   if index < 0 || index >= vmtx.advances.length() {
     return Err(GlyphOutOfRange)
   }
-  Ok(scale_value(vmtx.advances[index], self.scale_y, head.units_per_em))
+  Ok(-scale_value(vmtx.advances[index], self.scale_y, head.units_per_em))
 }

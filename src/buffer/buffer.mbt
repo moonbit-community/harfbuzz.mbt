@@ -39,7 +39,7 @@ pub fn Buffer::new() -> Buffer {
     infos: [],
     positions: [],
     direction: @common.direction_invalid,
-    script: @common.script_unknown,
+    script: @common.script_invalid,
     language: @common.language_invalid,
     gsub_features: default_gsub_features(),
     gpos_features: default_gpos_features(),
@@ -247,17 +247,12 @@ pub fn Buffer::shape_basic(
       Ok(None) => 0U
       Ok(Some(value)) => value
     }
-    let advance = match font.glyph_h_advance(glyph) {
-      Err(err) => return Err(Font(err))
+    let pos = match default_position(self, font, glyph) {
+      Err(err) => return Err(err)
       Ok(value) => value
     }
     new_infos.push(GlyphInfo::{ codepoint: glyph, cluster: info.cluster })
-    new_positions.push(GlyphPosition::{
-      x_advance: advance,
-      y_advance: 0,
-      x_offset: 0,
-      y_offset: 0,
-    })
+    new_positions.push(pos)
   }
   self.infos = new_infos
   self.positions = new_positions
@@ -328,17 +323,12 @@ pub fn Buffer::shape_ot(
       for i in 0..<next_glyphs.length() {
         let glyph = next_glyphs[i]
         let cluster = next_clusters[i]
-        let advance = match font.glyph_h_advance(glyph) {
-          Err(err) => return Err(Font(err))
+        let pos = match default_position(self, font, glyph) {
+          Err(err) => return Err(err)
           Ok(value) => value
         }
         new_infos.push(GlyphInfo::{ codepoint: glyph, cluster })
-        new_positions.push(GlyphPosition::{
-          x_advance: advance,
-          y_advance: 0,
-          x_offset: 0,
-          y_offset: 0,
-        })
+        new_positions.push(pos)
       }
       self.infos = new_infos
       self.positions = new_positions
@@ -430,4 +420,35 @@ pub fn Buffer::shape_ot(
     }
   }
   Ok(())
+}
+
+///|
+fn default_position(
+  buffer : Buffer,
+  font : @font.Font,
+  glyph : UInt,
+) -> Result[GlyphPosition, ShapeError] {
+  if buffer.direction.is_vertical() {
+    let advance = match font.glyph_v_advance(glyph) {
+      Err(err) => return Err(Font(err))
+      Ok(value) => value
+    }
+    Ok(GlyphPosition::{
+      x_advance: 0,
+      y_advance: advance,
+      x_offset: 0,
+      y_offset: 0,
+    })
+  } else {
+    let advance = match font.glyph_h_advance(glyph) {
+      Err(err) => return Err(Font(err))
+      Ok(value) => value
+    }
+    Ok(GlyphPosition::{
+      x_advance: advance,
+      y_advance: 0,
+      x_offset: 0,
+      y_offset: 0,
+    })
+  }
 }

@@ -122,11 +122,29 @@ fn build_hhea(number_of_hmetrics : Int) -> Bytes {
 }
 
 ///|
+fn build_vhea(number_of_vmetrics : Int) -> Bytes {
+  let bytes : Array[Byte] = Array::make(36, b'\x00')
+  bytes[34] = ((number_of_vmetrics >> 8) & 0xff).to_byte()
+  bytes[35] = (number_of_vmetrics & 0xff).to_byte()
+  Bytes::from_array(bytes)
+}
+
+///|
 fn build_hmtx() -> Bytes {
   let bytes : Array[Byte] = []
   push_u16(bytes, 200)
   push_u16(bytes, 0)
   push_u16(bytes, 300)
+  push_u16(bytes, 0)
+  Bytes::from_array(bytes)
+}
+
+///|
+fn build_vmtx() -> Bytes {
+  let bytes : Array[Byte] = []
+  push_u16(bytes, 700)
+  push_u16(bytes, 0)
+  push_u16(bytes, 800)
   push_u16(bytes, 0)
   Bytes::from_array(bytes)
 }
@@ -370,7 +388,9 @@ fn build_font_bytes() -> Bytes {
     (@common.Tag::from_chars('h', 'e', 'a', 'd'), build_head(1000, 0)),
     (@common.Tag::from_chars('m', 'a', 'x', 'p'), build_maxp(2)),
     (@common.Tag::from_chars('h', 'h', 'e', 'a'), build_hhea(2)),
+    (@common.Tag::from_chars('v', 'h', 'e', 'a'), build_vhea(2)),
     (@common.Tag::from_chars('h', 'm', 't', 'x'), build_hmtx()),
+    (@common.Tag::from_chars('v', 'm', 't', 'x'), build_vmtx()),
     (
       @common.Tag::from_chars('c', 'm', 'a', 'p'),
       build_cmap_table(build_cmap_format12(0x41U, 0x41U, 1U)),
@@ -459,6 +479,22 @@ test "buffer shape basic" {
   let positions = buffer.positions()
   inspect(infos[0].codepoint, content="1")
   inspect(positions[0].x_advance, content="300")
+}
+
+///|
+test "buffer shape basic vertical advances" {
+  let font = @font.Font::from_bytes(build_font_bytes())
+  let buffer = Buffer::new()
+  buffer.set_direction(@common.direction_ttb)
+  buffer.add_string("A")
+  let result = buffer.shape_basic(font)
+  match result {
+    Err(err) => fail("shape error: \{err}")
+    Ok(_) => ()
+  }
+  let positions = buffer.positions()
+  inspect(positions[0].x_advance, content="0")
+  inspect(positions[0].y_advance, content="-800")
 }
 
 ///|

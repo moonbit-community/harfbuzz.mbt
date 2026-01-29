@@ -223,7 +223,7 @@ test "font vmtx advances" {
     Err(err) => fail("advance error: \{err}")
     Ok(value) => value
   }
-  inspect(advance, content="800")
+  inspect(advance, content="-800")
 }
 
 ///|
