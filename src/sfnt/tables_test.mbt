@@ -341,6 +341,88 @@ fn build_stat_table() -> Bytes {
 }
 
 ///|
+fn build_base_table() -> Bytes {
+  let bytes : Array[Byte] = []
+  push_u32(bytes, 0x00010000)
+  push_u16(bytes, 8)
+  push_u16(bytes, 0)
+  push_u16(bytes, 4)
+  push_u16(bytes, 10)
+  push_u16(bytes, 1)
+  push_tag(bytes, @common.Tag::from_chars('r', 'o', 'm', 'n'))
+  push_u16(bytes, 1)
+  push_tag(bytes, @common.Tag::from_chars('l', 'a', 't', 'n'))
+  push_u16(bytes, 8)
+  push_u16(bytes, 6)
+  push_u16(bytes, 0)
+  push_u16(bytes, 0)
+  push_u16(bytes, 0)
+  push_u16(bytes, 1)
+  push_u16(bytes, 6)
+  push_u16(bytes, 1)
+  push_i16(bytes, 100)
+  Bytes::from_array(bytes)
+}
+
+///|
+fn build_jstf_table() -> Bytes {
+  let bytes : Array[Byte] = []
+  push_u32(bytes, 0x00010000)
+  push_u16(bytes, 1)
+  push_tag(bytes, @common.Tag::from_chars('l', 'a', 't', 'n'))
+  push_u16(bytes, 12)
+  push_u16(bytes, 6)
+  push_u16(bytes, 10)
+  push_u16(bytes, 0)
+  push_u16(bytes, 1)
+  push_u16(bytes, 3)
+  push_u16(bytes, 1)
+  push_u16(bytes, 4)
+  for _ in 0..<10 {
+    push_u16(bytes, 0)
+  }
+  Bytes::from_array(bytes)
+}
+
+///|
+fn build_math_table() -> Bytes {
+  let bytes : Array[Byte] = []
+  push_u32(bytes, 0x00010000)
+  push_u16(bytes, 10)
+  push_u16(bytes, 224)
+  push_u16(bytes, 248)
+  let constants : Array[Byte] = Array::make(214, b'\x00')
+  write_i16_at(constants, 0, 80)
+  write_i16_at(constants, 2, 60)
+  write_u16_at(constants, 4, 500)
+  write_u16_at(constants, 6, 700)
+  write_i16_at(constants, 8, 12)
+  write_u16_at(constants, 10, 0)
+  write_i16_at(constants, 212, 45)
+  for b in constants {
+    bytes.push(b)
+  }
+  push_u16(bytes, 8)
+  push_u16(bytes, 16)
+  push_u16(bytes, 0)
+  push_u16(bytes, 0)
+  push_u16(bytes, 0)
+  push_u16(bytes, 1)
+  push_i16(bytes, 10)
+  push_u16(bytes, 0)
+  push_u16(bytes, 0)
+  push_u16(bytes, 1)
+  push_i16(bytes, 20)
+  push_u16(bytes, 0)
+  push_u16(bytes, 3)
+  push_u16(bytes, 0)
+  push_u16(bytes, 0)
+  push_u16(bytes, 0)
+  push_u16(bytes, 0)
+  Bytes::from_array(bytes)
+}
+
+///|
 test "head table parse" {
   let bytes = build_bytes(54)
   bytes[18] = 0x03
@@ -569,4 +651,99 @@ test "stat table parse" {
     }
     _ => fail("unexpected axis value format")
   }
+}
+
+///|
+test "base table parse" {
+  let base = match BaseTable::parse(build_base_table()[:]) {
+    Err(err) => fail("parse error: \{err}")
+    Ok(value) => value
+  }
+  inspect(base.major_version, content="1")
+  let axis = match base.h_axis {
+    None => fail("missing hAxis")
+    Some(value) => value
+  }
+  let tags = match axis.base_tags {
+    None => fail("missing base tag list")
+    Some(value) => value
+  }
+  inspect(tags.tags.length(), content="1")
+  inspect(tags.tags[0].to_string(), content="romn")
+  let scripts = match axis.base_scripts {
+    None => fail("missing base script list")
+    Some(value) => value
+  }
+  inspect(scripts.records.length(), content="1")
+  inspect(scripts.records[0].tag.to_string(), content="latn")
+  let script = match scripts.records[0].base_script {
+    None => fail("missing base script")
+    Some(value) => value
+  }
+  let values = match script.base_values {
+    None => fail("missing base values")
+    Some(value) => value
+  }
+  inspect(values.base_coords.length(), content="1")
+  match values.base_coords[0] {
+    None => fail("missing base coord")
+    Some(Format1(value)) => inspect(value, content="100")
+    _ => fail("unexpected base coord")
+  }
+}
+
+///|
+test "jstf table parse" {
+  let jstf = match JstfTable::parse(build_jstf_table()[:]) {
+    Err(err) => fail("parse error: \{err}")
+    Ok(value) => value
+  }
+  inspect(jstf.major_version, content="1")
+  inspect(jstf.scripts.length(), content="1")
+  inspect(jstf.scripts[0].tag.to_string(), content="latn")
+  let script = match jstf.scripts[0].script {
+    None => fail("missing script")
+    Some(value) => value
+  }
+  inspect(script.extender_glyphs, content="[3]")
+  let lang_sys = match script.default_lang_sys {
+    None => fail("missing default lang sys")
+    Some(value) => value
+  }
+  inspect(lang_sys.priorities.length(), content="1")
+}
+
+///|
+test "math table parse" {
+  let math = match MathTable::parse(build_math_table()[:]) {
+    Err(err) => fail("parse error: \{err}")
+    Ok(value) => value
+  }
+  inspect(math.major_version, content="1")
+  let constants = match math.constants {
+    None => fail("missing constants")
+    Some(value) => value
+  }
+  inspect(constants.percent_scale_down, content="[80, 60]")
+  inspect(constants.min_height, content="[500, 700]")
+  inspect(constants.radical_degree_bottom_raise_percent, content="45")
+  let info = match math.glyph_info {
+    None => fail("missing glyph info")
+    Some(value) => value
+  }
+  let italics = match info.italics_correction {
+    None => fail("missing italics correction")
+    Some(value) => value
+  }
+  inspect(italics.records.length(), content="1")
+  let top = match info.top_accent_attachment {
+    None => fail("missing top accent attachment")
+    Some(value) => value
+  }
+  inspect(top.records.length(), content="1")
+  let variants = match math.variants {
+    None => fail("missing variants")
+    Some(value) => value
+  }
+  inspect(variants.min_connector_overlap, content="3")
 }

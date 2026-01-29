@@ -47,8 +47,7 @@ Unicode data, variations, color/paint, and subsetting.
 - OT shaper + normalization: `hb-ot-shape.*`, `hb-ot-shape-normalize.*`, `hb-ot-shape-fallback.*`,
   `hb-ot-shaper-*.cc` (arabic/indic/khmer/myanmar/use/hangul/hebrew/thai/syllabic) -> `ot/shape`.
 - OT map/feature selection: `hb-ot-map.*` -> `ot/map`.
-- OT tables not yet parsed: `BASE`, `JSTF`, `MATH`, `OS/2`, `name`, `post`, `meta`, `stat`, `gasp`,
-  `hdmx`, `vorg`, `kern`, `color` tables -> `sfnt`/`ot/tables`/`ot/color`.
+- OT tables not yet parsed: `color` tables (COLR/CPAL/etc.) -> `ot/color`.
 - Variations: `fvar`, `gvar`, `avar`, `cvar`, `hvar`, `mvar`, `varc`, tuple var store -> `ot/var`.
 - CFF/CFF2 support: `hb-ot-cff*`, `hb-cff*` -> planned `sfnt/cff` or `ot/cff` package.
 - Color + paint APIs: `hb-ot-color.*`, `hb-paint.*` -> `ot/color`, `paint`.

@@ -29,6 +29,9 @@ pub struct Font {
   mut vorg : @sfnt.VorgTable?
   mut hdmx : @sfnt.HdmxTable?
   mut stat : @sfnt.StatTable?
+  mut base : @sfnt.BaseTable?
+  mut jstf : @sfnt.JstfTable?
+  mut math : @sfnt.MathTable?
   mut kern : @sfnt.KernTable?
   mut gsub : @ot_tables.GsubTable?
   mut gpos : @ot_tables.GposTable?
@@ -84,6 +87,15 @@ let tag_stat : @common.Tag = @common.Tag::from_chars('S', 'T', 'A', 'T')
 let tag_kern : @common.Tag = @common.Tag::from_chars('k', 'e', 'r', 'n')
 
 ///|
+let tag_base : @common.Tag = @common.Tag::from_chars('B', 'A', 'S', 'E')
+
+///|
+let tag_jstf : @common.Tag = @common.Tag::from_chars('J', 'S', 'T', 'F')
+
+///|
+let tag_math : @common.Tag = @common.Tag::from_chars('M', 'A', 'T', 'H')
+
+///|
 let tag_gsub : @common.Tag = @common.Tag::from_chars('G', 'S', 'U', 'B')
 
 ///|
@@ -116,6 +128,9 @@ pub fn Font::new(face : @face.Face) -> Font {
     vorg: None,
     hdmx: None,
     stat: None,
+    base: None,
+    jstf: None,
+    math: None,
     kern: None,
     gsub: None,
     gpos: None,
@@ -489,6 +504,66 @@ pub fn Font::stat(self : Font) -> Result[@sfnt.StatTable?, FontError] {
             Ok(stat) => {
               self.stat = Some(stat)
               Ok(Some(stat))
+            }
+          }
+      }
+  }
+}
+
+///|
+pub fn Font::base(self : Font) -> Result[@sfnt.BaseTable?, FontError] {
+  match self.base {
+    Some(base) => Ok(Some(base))
+    None =>
+      match self.face.reference_table_optional(tag_base) {
+        Err(err) => Err(FaceTable(err))
+        Ok(None) => Ok(None)
+        Ok(Some(blob)) =>
+          match @sfnt.BaseTable::parse(blob.as_view()) {
+            Err(err) => Err(Parse(err))
+            Ok(base) => {
+              self.base = Some(base)
+              Ok(Some(base))
+            }
+          }
+      }
+  }
+}
+
+///|
+pub fn Font::jstf(self : Font) -> Result[@sfnt.JstfTable?, FontError] {
+  match self.jstf {
+    Some(jstf) => Ok(Some(jstf))
+    None =>
+      match self.face.reference_table_optional(tag_jstf) {
+        Err(err) => Err(FaceTable(err))
+        Ok(None) => Ok(None)
+        Ok(Some(blob)) =>
+          match @sfnt.JstfTable::parse(blob.as_view()) {
+            Err(err) => Err(Parse(err))
+            Ok(jstf) => {
+              self.jstf = Some(jstf)
+              Ok(Some(jstf))
+            }
+          }
+      }
+  }
+}
+
+///|
+pub fn Font::math(self : Font) -> Result[@sfnt.MathTable?, FontError] {
+  match self.math {
+    Some(math) => Ok(Some(math))
+    None =>
+      match self.face.reference_table_optional(tag_math) {
+        Err(err) => Err(FaceTable(err))
+        Ok(None) => Ok(None)
+        Ok(Some(blob)) =>
+          match @sfnt.MathTable::parse(blob.as_view()) {
+            Err(err) => Err(Parse(err))
+            Ok(math) => {
+              self.math = Some(math)
+              Ok(Some(math))
             }
           }
       }
