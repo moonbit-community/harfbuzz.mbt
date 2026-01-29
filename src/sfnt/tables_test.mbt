@@ -253,6 +253,34 @@ fn build_post_table_v2() -> Bytes {
 }
 
 ///|
+fn build_gasp_table() -> Bytes {
+  let bytes : Array[Byte] = []
+  push_u16(bytes, 1)
+  push_u16(bytes, 2)
+  push_u16(bytes, 8)
+  push_u16(bytes, 1)
+  push_u16(bytes, 16)
+  push_u16(bytes, 3)
+  Bytes::from_array(bytes)
+}
+
+///|
+fn build_meta_table() -> Bytes {
+  let bytes : Array[Byte] = []
+  push_u32(bytes, 0x00010000)
+  push_u32(bytes, 0)
+  push_u32(bytes, 16)
+  push_u32(bytes, 1)
+  push_u32(bytes, 0x64657363)
+  push_u32(bytes, 28)
+  push_u32(bytes, 3)
+  bytes.push(b'f')
+  bytes.push(b'o')
+  bytes.push(b'o')
+  Bytes::from_array(bytes)
+}
+
+///|
 test "head table parse" {
   let bytes = build_bytes(54)
   bytes[18] = 0x03
@@ -409,4 +437,30 @@ test "post table parse v2" {
   }
   inspect(indices, content="[258]")
   inspect(names, content="[b\"foo\"]")
+}
+
+///|
+test "gasp table parse" {
+  let gasp = match GaspTable::parse(build_gasp_table()[:]) {
+    Err(err) => fail("parse error: \{err}")
+    Ok(value) => value
+  }
+  inspect(gasp.version, content="1")
+  inspect(gasp.behavior_for_ppem(7), content="Some(1)")
+  inspect(gasp.behavior_for_ppem(16), content="Some(3)")
+  inspect(gasp.behavior_for_ppem(20), content="None")
+}
+
+///|
+test "meta table parse" {
+  let meta = match MetaTable::parse(build_meta_table()[:]) {
+    Err(err) => fail("parse error: \{err}")
+    Ok(value) => value
+  }
+  inspect(meta.records.length(), content="1")
+  let data = match meta.find(@common.Tag::from_chars('d', 'e', 's', 'c')) {
+    None => fail("missing meta record")
+    Some(value) => value
+  }
+  inspect(data, content="b\"foo\"")
 }

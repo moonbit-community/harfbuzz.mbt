@@ -24,6 +24,8 @@ pub struct Font {
   mut os2 : @sfnt.Os2Table?
   mut name : @sfnt.NameTable?
   mut post : @sfnt.PostTable?
+  mut gasp : @sfnt.GaspTable?
+  mut meta : @sfnt.MetaTable?
   mut kern : @sfnt.KernTable?
   mut gsub : @ot_tables.GsubTable?
   mut gpos : @ot_tables.GposTable?
@@ -61,6 +63,12 @@ let tag_name : @common.Tag = @common.Tag::from_chars('n', 'a', 'm', 'e')
 let tag_post : @common.Tag = @common.Tag::from_chars('p', 'o', 's', 't')
 
 ///|
+let tag_gasp : @common.Tag = @common.Tag::from_chars('g', 'a', 's', 'p')
+
+///|
+let tag_meta : @common.Tag = @common.Tag::from_chars('m', 'e', 't', 'a')
+
+///|
 let tag_kern : @common.Tag = @common.Tag::from_chars('k', 'e', 'r', 'n')
 
 ///|
@@ -91,6 +99,8 @@ pub fn Font::new(face : @face.Face) -> Font {
     os2: None,
     name: None,
     post: None,
+    gasp: None,
+    meta: None,
     kern: None,
     gsub: None,
     gpos: None,
@@ -364,6 +374,46 @@ pub fn Font::post(self : Font) -> Result[@sfnt.PostTable?, FontError] {
             Ok(post) => {
               self.post = Some(post)
               Ok(Some(post))
+            }
+          }
+      }
+  }
+}
+
+///|
+pub fn Font::gasp(self : Font) -> Result[@sfnt.GaspTable?, FontError] {
+  match self.gasp {
+    Some(gasp) => Ok(Some(gasp))
+    None =>
+      match self.face.reference_table_optional(tag_gasp) {
+        Err(err) => Err(FaceTable(err))
+        Ok(None) => Ok(None)
+        Ok(Some(blob)) =>
+          match @sfnt.GaspTable::parse(blob.as_view()) {
+            Err(err) => Err(Parse(err))
+            Ok(gasp) => {
+              self.gasp = Some(gasp)
+              Ok(Some(gasp))
+            }
+          }
+      }
+  }
+}
+
+///|
+pub fn Font::meta(self : Font) -> Result[@sfnt.MetaTable?, FontError] {
+  match self.meta {
+    Some(meta) => Ok(Some(meta))
+    None =>
+      match self.face.reference_table_optional(tag_meta) {
+        Err(err) => Err(FaceTable(err))
+        Ok(None) => Ok(None)
+        Ok(Some(blob)) =>
+          match @sfnt.MetaTable::parse(blob.as_view()) {
+            Err(err) => Err(Parse(err))
+            Ok(meta) => {
+              self.meta = Some(meta)
+              Ok(Some(meta))
             }
           }
       }
