@@ -171,6 +171,9 @@ pub fn GsubTable::apply_with_lookups(
             data,
             subtable_offsets,
             current_glyphs,
+            lookup_flag,
+            mark_filtering_set,
+            gdef,
           ) {
             Err(err) => return Err(err)
             Ok(value) => value
@@ -2069,10 +2072,20 @@ fn apply_reverse_chain_subtable_list(
   data : BytesView,
   offsets : Array[Int],
   glyphs : Array[UInt],
+  lookup_flag : Int,
+  mark_filtering_set : Int?,
+  gdef : GdefTable?,
 ) -> Result[Bool, OtLayoutError] {
   let mut changed = false
   for offset in offsets {
-    let result = apply_reverse_chain_subtable(data, offset, glyphs)
+    let result = apply_reverse_chain_subtable(
+      data,
+      offset,
+      glyphs,
+      lookup_flag,
+      mark_filtering_set,
+      gdef,
+    )
     match result {
       Err(err) => return Err(err)
       Ok(value) => if value { changed = true }
@@ -2086,6 +2099,9 @@ fn apply_reverse_chain_subtable(
   data : BytesView,
   offset : Int,
   glyphs : Array[UInt],
+  lookup_flag : Int,
+  mark_filtering_set : Int?,
+  gdef : GdefTable?,
 ) -> Result[Bool, OtLayoutError] {
   if glyphs.is_empty() {
     return Ok(false)
@@ -2192,7 +2208,27 @@ fn apply_reverse_chain_subtable(
               let mut changed = false
               let mut i = glyphs.length() - 1
               while i >= 0 {
-                let glyph = original[i]
+                let input_indices = collect_forward_indices(
+                  original[:],
+                  i,
+                  1,
+                  lookup_flag,
+                  gdef,
+                  mark_filtering_set,
+                )
+                let indices = match input_indices {
+                  Err(err) => return Err(err)
+                  Ok(None) => {
+                    if i == 0 {
+                      break
+                    }
+                    i = i - 1
+                    continue
+                  }
+                  Ok(Some(indices)) => indices
+                }
+                let input_index = indices[0]
+                let glyph = original[input_index]
                 let index = coverage_index(data, coverage_base, glyph)
                 match index {
                   Err(err) => return Err(err)
@@ -2203,55 +2239,81 @@ fn apply_reverse_chain_subtable(
                     }
                     let mut match_ok = true
                     if backtrack_count > 0 {
-                      for j in 0..<backtrack_count {
-                        let pos = i - 1 - j
-                        if pos < 0 {
+                      let backtrack_indices = collect_backward_indices(
+                        original[:],
+                        input_index,
+                        backtrack_count,
+                        lookup_flag,
+                        gdef,
+                        mark_filtering_set,
+                      )
+                      let backtrack = match backtrack_indices {
+                        Err(err) => return Err(err)
+                        Ok(None) => {
                           match_ok = false
-                          break
+                          []
                         }
-                        let back_glyph = original[pos]
-                        let covered = coverage_index(
-                          data,
-                          backtrack_bases[j],
-                          back_glyph,
-                        )
-                        match covered {
-                          Err(err) => return Err(err)
-                          Ok(None) => {
-                            match_ok = false
-                            break
+                        Ok(Some(values)) => values
+                      }
+                      if match_ok {
+                        for j in 0..<backtrack_count {
+                          let back_glyph = original[backtrack[j]]
+                          let covered = coverage_index(
+                            data,
+                            backtrack_bases[j],
+                            back_glyph,
+                          )
+                          match covered {
+                            Err(err) => return Err(err)
+                            Ok(None) => {
+                              match_ok = false
+                              break
+                            }
+                            Ok(Some(_)) => ()
                           }
-                          Ok(Some(_)) => ()
                         }
                       }
                     }
                     if match_ok && lookahead_count > 0 {
-                      for j in 0..<lookahead_count {
-                        let pos = i + 1 + j
-                        if pos >= original.length() {
+                      let lookahead_indices = collect_forward_indices(
+                        original[:],
+                        input_index + 1,
+                        lookahead_count,
+                        lookup_flag,
+                        gdef,
+                        mark_filtering_set,
+                      )
+                      let lookahead = match lookahead_indices {
+                        Err(err) => return Err(err)
+                        Ok(None) => {
                           match_ok = false
-                          break
+                          []
                         }
-                        let look_glyph = original[pos]
-                        let covered = coverage_index(
-                          data,
-                          lookahead_bases[j],
-                          look_glyph,
-                        )
-                        match covered {
-                          Err(err) => return Err(err)
-                          Ok(None) => {
-                            match_ok = false
-                            break
+                        Ok(Some(values)) => values
+                      }
+                      if match_ok {
+                        for j in 0..<lookahead_count {
+                          let look_glyph = original[lookahead[j]]
+                          let covered = coverage_index(
+                            data,
+                            lookahead_bases[j],
+                            look_glyph,
+                          )
+                          match covered {
+                            Err(err) => return Err(err)
+                            Ok(None) => {
+                              match_ok = false
+                              break
+                            }
+                            Ok(Some(_)) => ()
                           }
-                          Ok(Some(_)) => ()
                         }
                       }
                     }
                     if match_ok {
                       let sub = substitutes[index]
-                      if sub != glyphs[i] {
-                        glyphs[i] = sub
+                      if sub != glyphs[input_index] {
+                        glyphs[input_index] = sub
                         changed = true
                       }
                     }

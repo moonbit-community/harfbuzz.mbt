@@ -1069,6 +1069,21 @@ fn build_gsub_reverse_chain_lookup() -> Bytes {
 }
 
 ///|
+fn build_gsub_reverse_chain_lookup_mark_filter() -> Bytes {
+  let subtable = build_gsub_reverse_chain_subtable()
+  let bytes : Array[Byte] = []
+  push_u16(bytes, 8)
+  push_u16(bytes, 0x0010)
+  push_u16(bytes, 1)
+  push_u16(bytes, 10)
+  push_u16(bytes, 0)
+  for b in subtable {
+    bytes.push(b)
+  }
+  Bytes::from_array(bytes)
+}
+
+///|
 fn build_gsub_context_subtable() -> Bytes {
   let bytes : Array[Byte] = []
   push_u16(bytes, 1)
@@ -2040,6 +2055,55 @@ test "gsub reverse chain substitution apply" {
   inspect(changed, content="true")
   inspect(new_glyphs, content="[1, 5, 2]")
   inspect(new_clusters, content="[0, 1, 2]")
+}
+
+///|
+test "gsub reverse chain lookup mark filtering set" {
+  let gsub_bytes = build_layout_table(
+    build_gsub_reverse_chain_lookup_mark_filter(),
+    @common.Tag::from_chars('l', 'i', 'g', 'a'),
+  )
+  let gsub = match GsubTable::parse(@blob.Blob::from_bytes(gsub_bytes)) {
+    Err(err) => fail("parse error: \{err}")
+    Ok(value) => value
+  }
+  let gdef = match GdefTable::parse(
+    @blob.Blob::from_bytes(build_gdef_mark_filter_table()),
+  ) {
+    Err(err) => fail("gdef parse error: \{err}")
+    Ok(value) => value
+  }
+  let lookup_offsets = [gsub.layout().lookup_list().offsets()[0]]
+  let glyphs1 : Array[UInt] = [1U, 5U, 3U, 2U]
+  let clusters1 : Array[Int] = [0, 1, 2, 3]
+  let result1 = match gsub.apply_with_lookups(
+    glyphs1,
+    clusters1,
+    lookup_offsets[:],
+    gdef=gdef,
+  ) {
+    Err(err) => fail("apply error: \{err}")
+    Ok(value) => value
+  }
+  let (new_glyphs1, new_clusters1, changed1) = result1
+  inspect(changed1, content="true")
+  inspect(new_glyphs1, content="[1, 5, 5, 2]")
+  inspect(new_clusters1, content="[0, 1, 2, 3]")
+  let glyphs2 : Array[UInt] = [1U, 6U, 3U, 2U]
+  let clusters2 : Array[Int] = [0, 1, 2, 3]
+  let result2 = match gsub.apply_with_lookups(
+    glyphs2,
+    clusters2,
+    lookup_offsets[:],
+    gdef=gdef,
+  ) {
+    Err(err) => fail("apply error: \{err}")
+    Ok(value) => value
+  }
+  let (new_glyphs2, new_clusters2, changed2) = result2
+  inspect(changed2, content="false")
+  inspect(new_glyphs2, content="[1, 6, 3, 2]")
+  inspect(new_clusters2, content="[0, 1, 2, 3]")
 }
 
 ///|
