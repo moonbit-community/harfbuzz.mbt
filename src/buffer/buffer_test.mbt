@@ -735,3 +735,18 @@ test "buffer shape ot skips kern for vertical" {
   let positions = buffer.positions()
   inspect(positions[0].x_advance, content="0")
 }
+
+///|
+test "buffer shape myanmar fallback" {
+  let font = @font.Font::from_bytes(build_font_bytes())
+  let buffer = Buffer::new()
+  buffer.set_script(@common.script_myanmar)
+  buffer.add_string("A")
+  let result = buffer.shape_myanmar(font)
+  match result {
+    Err(err) => fail("shape error: \{err}")
+    Ok(_) => ()
+  }
+  let infos = buffer.infos()
+  inspect(infos[0].codepoint, content="1")
+}

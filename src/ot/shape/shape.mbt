@@ -13,6 +13,9 @@ pub fn shape(font : @font.Font, buffer : @buffer.Buffer) -> Result[Unit, @buffer
   if script == @common.script_khmer {
     return buffer.shape_khmer(font)
   }
+  if script == @common.script_myanmar {
+    return buffer.shape_myanmar(font)
+  }
   if script == @common.script_hangul {
     return buffer.shape_hangul(font)
   }
