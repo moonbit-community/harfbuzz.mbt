@@ -32,6 +32,20 @@ test "buffer properties" {
 }
 
 ///|
+test "buffer merge clusters" {
+  let buffer = Buffer::new()
+  buffer.add_codepoint(0x61U, cluster=5)
+  buffer.add_codepoint(0x62U, cluster=3)
+  buffer.add_codepoint(0x63U, cluster=7)
+  buffer.merge_clusters(0, 3)
+  let clusters : Array[Int] = []
+  for info in buffer.infos() {
+    clusters.push(info.cluster)
+  }
+  inspect(clusters, content="[3, 3, 3]")
+}
+
+///|
 test "buffer guess segment properties" {
   let buffer = Buffer::new()
   buffer.set_script(@common.script_arabic)

@@ -111,6 +111,25 @@ pub fn Buffer::positions(self : Buffer) -> ArrayView[GlyphPosition] {
 }
 
 ///|
+/// Merge clusters in the range [start, end).
+pub fn Buffer::merge_clusters(self : Buffer, start : Int, end : Int) -> Unit {
+  if start < 0 || end > self.infos.length() || start >= end {
+    return ()
+  }
+  let mut min_cluster = self.infos[start].cluster
+  for i in (start + 1)..<end {
+    let value = self.infos[i].cluster
+    if value < min_cluster {
+      min_cluster = value
+    }
+  }
+  for i in start..<end {
+    let info = self.infos[i]
+    self.infos[i] = GlyphInfo::{ codepoint: info.codepoint, cluster: min_cluster }
+  }
+}
+
+///|
 /// Set direction.
 pub fn Buffer::set_direction(
   self : Buffer,
