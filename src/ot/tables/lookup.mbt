@@ -19,6 +19,8 @@ fn parse_lookup(
         return Err(UnexpectedEof)
       }
       let offsets : Array[Int] = []
+      let mut resolved_type = lookup_type
+      let mut extension_type : Int? = None
       let base = offset + 6
       for i in 0..<subtable_count {
         let sub_offset = read_u16_int(data, base + i * 2)
@@ -32,8 +34,28 @@ fn parse_lookup(
             if abs_offset < 0 || abs_offset >= data.length() {
               return Err(UnexpectedEof)
             }
-            offsets.push(abs_offset)
+            if lookup_type == 7 || lookup_type == 9 {
+              let ext = parse_extension_subtable(data, abs_offset)
+              match ext {
+                Err(err) => return Err(err)
+                Ok((ext_type, ext_offset)) => {
+                  match extension_type {
+                    None => extension_type = Some(ext_type)
+                    Some(prev) => if prev != ext_type { return Err(InvalidFormat) }
+                  }
+                  offsets.push(ext_offset)
+                }
+              }
+            } else {
+              offsets.push(abs_offset)
+            }
           }
+        }
+      }
+      if lookup_type == 7 || lookup_type == 9 {
+        match extension_type {
+          None => return Err(InvalidFormat)
+          Some(value) => resolved_type = value
         }
       }
       if (lookup_flag & 0x0010) != 0 {
@@ -43,7 +65,38 @@ fn parse_lookup(
         }
         let _ = read_u16_int(data, mark_offset)
       }
-      Ok((lookup_type, offsets))
+      Ok((resolved_type, offsets))
+    }
+  }
+}
+
+///|
+fn parse_extension_subtable(
+  data : BytesView,
+  offset : Int,
+) -> Result[(Int, Int), OtLayoutError] {
+  if offset < 0 || offset + 8 > data.length() {
+    return Err(UnexpectedEof)
+  }
+  let format = read_u16_int(data, offset)
+  let lookup_type = read_u16_int(data, offset + 2)
+  let extension_offset = read_u32_int(data, offset + 4)
+  match (format, lookup_type, extension_offset) {
+    (Err(err), _, _) => Err(err)
+    (_, Err(err), _) => Err(err)
+    (_, _, Err(err)) => Err(err)
+    (Ok(format), Ok(lookup_type), Ok(extension_offset)) => {
+      if format != 1 {
+        return Err(InvalidFormat)
+      }
+      if extension_offset <= 0 {
+        return Err(InvalidFormat)
+      }
+      let abs_offset = offset + extension_offset
+      if abs_offset < 0 || abs_offset >= data.length() {
+        return Err(UnexpectedEof)
+      }
+      Ok((lookup_type, abs_offset))
     }
   }
 }
