@@ -20,6 +20,27 @@ fn push_i16(bytes : Array[Byte], value : Int) -> Unit {
 }
 
 ///|
+///|
+fn write_u16_at(bytes : Array[Byte], offset : Int, value : Int) -> Unit {
+  bytes[offset] = ((value >> 8) & 0xff).to_byte()
+  bytes[offset + 1] = (value & 0xff).to_byte()
+}
+
+///|
+fn write_i16_at(bytes : Array[Byte], offset : Int, value : Int) -> Unit {
+  let adjusted = if value < 0 { value + 0x10000 } else { value }
+  write_u16_at(bytes, offset, adjusted)
+}
+
+///|
+fn write_u32_at(bytes : Array[Byte], offset : Int, value : Int) -> Unit {
+  bytes[offset] = ((value >> 24) & 0xff).to_byte()
+  bytes[offset + 1] = ((value >> 16) & 0xff).to_byte()
+  bytes[offset + 2] = ((value >> 8) & 0xff).to_byte()
+  bytes[offset + 3] = (value & 0xff).to_byte()
+}
+
+///|
 fn build_cmap_table(
   subtable : Bytes,
   platform_id : Int,
@@ -150,6 +171,42 @@ fn build_kern_table() -> Bytes {
 }
 
 ///|
+fn build_os2_table_v0() -> Bytes {
+  let bytes : Array[Byte] = Array::make(78, b'\x00')
+  write_u16_at(bytes, 4, 400)
+  write_u16_at(bytes, 6, 5)
+  write_u16_at(bytes, 8, 0)
+  write_i16_at(bytes, 68, 800)
+  write_i16_at(bytes, 70, -200)
+  write_i16_at(bytes, 72, 100)
+  write_u16_at(bytes, 74, 900)
+  write_u16_at(bytes, 76, 200)
+  Bytes::from_array(bytes)
+}
+
+///|
+fn build_os2_table_v2() -> Bytes {
+  let bytes : Array[Byte] = Array::make(96, b'\x00')
+  write_u16_at(bytes, 0, 2)
+  write_u16_at(bytes, 4, 500)
+  write_u16_at(bytes, 6, 7)
+  write_u16_at(bytes, 8, 1)
+  write_i16_at(bytes, 68, 700)
+  write_i16_at(bytes, 70, -150)
+  write_i16_at(bytes, 72, 50)
+  write_u16_at(bytes, 74, 800)
+  write_u16_at(bytes, 76, 180)
+  write_u32_at(bytes, 78, 1)
+  write_u32_at(bytes, 82, 2)
+  write_i16_at(bytes, 86, 500)
+  write_i16_at(bytes, 88, 700)
+  write_u16_at(bytes, 90, 0)
+  write_u16_at(bytes, 92, 32)
+  write_u16_at(bytes, 94, 4)
+  Bytes::from_array(bytes)
+}
+
+///|
 test "head table parse" {
   let bytes = build_bytes(54)
   bytes[18] = 0x03
@@ -241,4 +298,34 @@ test "kern table parse" {
   }
   inspect(kern.kern_value(1U, 2U), content="Some(-50)")
   inspect(kern.kern_value(2U, 1U), content="None")
+}
+
+///|
+test "os2 table parse v0" {
+  let os2 = match Os2Table::parse(build_os2_table_v0()[:]) {
+    Err(err) => fail("parse error: \{err}")
+    Ok(value) => value
+  }
+  inspect(os2.version, content="0")
+  inspect(os2.weight_class, content="400")
+  inspect(os2.width_class, content="5")
+  inspect(os2.typo_ascender, content="800")
+  inspect(os2.typo_descender, content="-200")
+  inspect(os2.win_ascent, content="900")
+  inspect(os2.win_descent, content="200")
+}
+
+///|
+test "os2 table parse v2" {
+  let os2 = match Os2Table::parse(build_os2_table_v2()[:]) {
+    Err(err) => fail("parse error: \{err}")
+    Ok(value) => value
+  }
+  inspect(os2.version, content="2")
+  inspect(os2.code_page_range_1, content="Some(1)")
+  inspect(os2.code_page_range_2, content="Some(2)")
+  inspect(os2.x_height, content="Some(500)")
+  inspect(os2.cap_height, content="Some(700)")
+  inspect(os2.break_char, content="Some(32)")
+  inspect(os2.max_context, content="Some(4)")
 }
