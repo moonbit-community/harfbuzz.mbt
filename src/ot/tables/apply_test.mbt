@@ -274,11 +274,61 @@ fn build_gpos_subtable() -> Bytes {
 }
 
 ///|
+fn build_gpos_pair_subtable_format1(first : Int, second : Int) -> Bytes {
+  let bytes : Array[Byte] = []
+  push_u16(bytes, 1)
+  push_u16(bytes, 12)
+  push_u16(bytes, 0x0005)
+  push_u16(bytes, 0x0004)
+  push_u16(bytes, 1)
+  push_u16(bytes, 18)
+  // coverage table
+  push_u16(bytes, 1)
+  push_u16(bytes, 1)
+  push_u16(bytes, first)
+  // pair set table
+  push_u16(bytes, 1)
+  push_u16(bytes, second)
+  push_i16(bytes, 5)
+  push_i16(bytes, -20)
+  push_i16(bytes, 10)
+  Bytes::from_array(bytes)
+}
+
+///|
 fn build_gpos_lookup() -> Bytes {
   let subtable = build_gpos_subtable()
   let bytes : Array[Byte] = []
   push_u16(bytes, 2)
   push_u16(bytes, 0)
+  push_u16(bytes, 1)
+  push_u16(bytes, 8)
+  for b in subtable {
+    bytes.push(b)
+  }
+  Bytes::from_array(bytes)
+}
+
+///|
+fn build_gpos_pair_lookup_ignore_marks() -> Bytes {
+  let subtable = build_gpos_pair_subtable_format1(5, 2)
+  let bytes : Array[Byte] = []
+  push_u16(bytes, 2)
+  push_u16(bytes, 0x0008)
+  push_u16(bytes, 1)
+  push_u16(bytes, 8)
+  for b in subtable {
+    bytes.push(b)
+  }
+  Bytes::from_array(bytes)
+}
+
+///|
+fn build_gpos_pair_lookup_ignore_ligature() -> Bytes {
+  let subtable = build_gpos_pair_subtable_format1(4, 2)
+  let bytes : Array[Byte] = []
+  push_u16(bytes, 2)
+  push_u16(bytes, 0x0004)
   push_u16(bytes, 1)
   push_u16(bytes, 8)
   for b in subtable {
@@ -470,11 +520,52 @@ fn build_gpos_cursive_subtable_format1() -> Bytes {
 }
 
 ///|
+fn build_gpos_cursive_subtable_format1_mark() -> Bytes {
+  let bytes : Array[Byte] = []
+  push_u16(bytes, 1)
+  push_u16(bytes, 14)
+  push_u16(bytes, 2)
+  // entry/exit records
+  push_u16(bytes, 0)
+  push_u16(bytes, 22)
+  push_u16(bytes, 28)
+  push_u16(bytes, 0)
+  // coverage table
+  push_u16(bytes, 1)
+  push_u16(bytes, 2)
+  push_u16(bytes, 5)
+  push_u16(bytes, 10)
+  // exit anchor (glyph 5)
+  push_u16(bytes, 1)
+  push_i16(bytes, 20)
+  push_i16(bytes, 5)
+  // entry anchor (glyph 10)
+  push_u16(bytes, 1)
+  push_i16(bytes, 7)
+  push_i16(bytes, 2)
+  Bytes::from_array(bytes)
+}
+
+///|
 fn build_gpos_cursive_lookup_format1() -> Bytes {
   let subtable = build_gpos_cursive_subtable_format1()
   let bytes : Array[Byte] = []
   push_u16(bytes, 3)
   push_u16(bytes, 0)
+  push_u16(bytes, 1)
+  push_u16(bytes, 8)
+  for b in subtable {
+    bytes.push(b)
+  }
+  Bytes::from_array(bytes)
+}
+
+///|
+fn build_gpos_cursive_lookup_format1_ignore_marks() -> Bytes {
+  let subtable = build_gpos_cursive_subtable_format1_mark()
+  let bytes : Array[Byte] = []
+  push_u16(bytes, 3)
+  push_u16(bytes, 0x0008)
   push_u16(bytes, 1)
   push_u16(bytes, 8)
   for b in subtable {
@@ -1928,6 +2019,70 @@ test "gpos pair adjust deltas" {
 }
 
 ///|
+test "gpos pair lookup ignore marks" {
+  let gpos_bytes = build_layout_table(
+    build_gpos_pair_lookup_ignore_marks(),
+    @common.Tag::from_chars('k', 'e', 'r', 'n'),
+  )
+  let gpos = match GposTable::parse(@blob.Blob::from_bytes(gpos_bytes)) {
+    Err(err) => fail("parse error: \{err}")
+    Ok(value) => value
+  }
+  let gdef = match GdefTable::parse(
+    @blob.Blob::from_bytes(build_gdef_class_def_table()),
+  ) {
+    Err(err) => fail("gdef parse error: \{err}")
+    Ok(value) => value
+  }
+  let lookup_offsets = [gpos.layout().lookup_list().offsets()[0]]
+  let glyphs : Array[UInt] = [5U, 2U]
+  let deltas = match gpos.position_deltas_with_lookups(
+    glyphs[:],
+    lookup_offsets[:],
+    gdef=gdef,
+  ) {
+    Err(err) => fail("apply error: \{err}")
+    Ok(value) => value
+  }
+  inspect(deltas.length(), content="2")
+  inspect(deltas[0].x_placement, content="0")
+  inspect(deltas[0].x_advance, content="0")
+  inspect(deltas[1].x_advance, content="0")
+}
+
+///|
+test "gpos pair lookup ignore ligatures" {
+  let gpos_bytes = build_layout_table(
+    build_gpos_pair_lookup_ignore_ligature(),
+    @common.Tag::from_chars('k', 'e', 'r', 'n'),
+  )
+  let gpos = match GposTable::parse(@blob.Blob::from_bytes(gpos_bytes)) {
+    Err(err) => fail("parse error: \{err}")
+    Ok(value) => value
+  }
+  let gdef = match GdefTable::parse(
+    @blob.Blob::from_bytes(build_gdef_class_def_table()),
+  ) {
+    Err(err) => fail("gdef parse error: \{err}")
+    Ok(value) => value
+  }
+  let lookup_offsets = [gpos.layout().lookup_list().offsets()[0]]
+  let glyphs : Array[UInt] = [4U, 2U]
+  let deltas = match gpos.position_deltas_with_lookups(
+    glyphs[:],
+    lookup_offsets[:],
+    gdef=gdef,
+  ) {
+    Err(err) => fail("apply error: \{err}")
+    Ok(value) => value
+  }
+  inspect(deltas.length(), content="2")
+  inspect(deltas[0].x_placement, content="0")
+  inspect(deltas[0].x_advance, content="0")
+  inspect(deltas[1].x_advance, content="0")
+}
+
+///|
 test "gpos pair lookup mark filtering set" {
   let gpos_bytes = build_layout_table(
     build_gpos_lookup_mark_filter(),
@@ -2091,6 +2246,37 @@ test "gpos cursive format1" {
   inspect(deltas[0].x_placement, content="0")
   inspect(deltas[1].x_placement, content="13")
   inspect(deltas[1].y_placement, content="3")
+}
+
+///|
+test "gpos cursive lookup ignore marks" {
+  let gpos_bytes = build_layout_table(
+    build_gpos_cursive_lookup_format1_ignore_marks(),
+    @common.Tag::from_chars('k', 'e', 'r', 'n'),
+  )
+  let gpos = match GposTable::parse(@blob.Blob::from_bytes(gpos_bytes)) {
+    Err(err) => fail("parse error: \{err}")
+    Ok(value) => value
+  }
+  let gdef = match GdefTable::parse(
+    @blob.Blob::from_bytes(build_gdef_class_def_table()),
+  ) {
+    Err(err) => fail("gdef parse error: \{err}")
+    Ok(value) => value
+  }
+  let lookup_offsets = [gpos.layout().lookup_list().offsets()[0]]
+  let glyphs : Array[UInt] = [5U, 10U]
+  let deltas = match gpos.position_deltas_with_lookups(
+    glyphs[:],
+    lookup_offsets[:],
+    gdef=gdef,
+  ) {
+    Err(err) => fail("apply error: \{err}")
+    Ok(value) => value
+  }
+  inspect(deltas.length(), content="2")
+  inspect(deltas[0].x_placement, content="0")
+  inspect(deltas[1].x_placement, content="0")
 }
 
 ///|
