@@ -64,6 +64,9 @@ pub fn GposTable::position_deltas_with_lookups(
               subtable_offset,
               glyphs,
               deltas,
+              lookup_flag,
+              mark_filtering_set,
+              gdef,
             )
             match res {
               Err(err) => return Err(err)
@@ -72,7 +75,15 @@ pub fn GposTable::position_deltas_with_lookups(
           }
         } else if lookup_type == 2 {
           for subtable_offset in subtable_offsets {
-            let res = apply_pair_subtable(data, subtable_offset, glyphs, deltas)
+            let res = apply_pair_subtable(
+              data,
+              subtable_offset,
+              glyphs,
+              deltas,
+              lookup_flag,
+              mark_filtering_set,
+              gdef,
+            )
             match res {
               Err(err) => return Err(err)
               Ok(_) => ()
@@ -80,7 +91,15 @@ pub fn GposTable::position_deltas_with_lookups(
           }
         } else if lookup_type == 3 {
           for subtable_offset in subtable_offsets {
-            let res = apply_cursive_subtable(data, subtable_offset, glyphs, deltas)
+            let res = apply_cursive_subtable(
+              data,
+              subtable_offset,
+              glyphs,
+              deltas,
+              lookup_flag,
+              mark_filtering_set,
+              gdef,
+            )
             match res {
               Err(err) => return Err(err)
               Ok(_) => ()
@@ -180,22 +199,32 @@ pub fn GposTable::pair_adjust_deltas_with_lookups(
   self : GposTable,
   glyphs : ArrayView[UInt],
   lookup_offsets : ArrayView[Int],
+  gdef? : GdefTable,
 ) -> Result[Array[ValueRecord], OtLayoutError] {
   let deltas : Array[ValueRecord] = Array::make(
     glyphs.length(),
     value_record_zero(),
   )
   let data = self.layout.data
+  let gdef = gdef
   for lookup_offset in lookup_offsets {
     let parsed = parse_lookup(data, lookup_offset, 9)
     match parsed {
       Err(err) => return Err(err)
-      Ok((lookup_type, _, _, subtable_offsets)) => {
+      Ok((lookup_type, lookup_flag, mark_filtering_set, subtable_offsets)) => {
         if lookup_type != 2 {
           continue
         }
         for subtable_offset in subtable_offsets {
-          let res = apply_pair_subtable(data, subtable_offset, glyphs, deltas)
+          let res = apply_pair_subtable(
+            data,
+            subtable_offset,
+            glyphs,
+            deltas,
+            lookup_flag,
+            mark_filtering_set,
+            gdef,
+          )
           match res {
             Err(err) => return Err(err)
             Ok(_) => ()
@@ -213,20 +242,36 @@ fn apply_pair_format1(
   offset : Int,
   glyphs : ArrayView[UInt],
   deltas : Array[ValueRecord],
+  lookup_flag : Int,
+  mark_filtering_set : Int?,
+  gdef : GdefTable?,
 ) -> Result[Unit, OtLayoutError] {
   if glyphs.length() < 2 {
     return Ok(())
   }
   for i in 0..<(glyphs.length() - 1) {
-    let first = glyphs[i]
-    let second = glyphs[i + 1]
+    let input_indices = collect_forward_indices(
+      glyphs,
+      i,
+      2,
+      lookup_flag,
+      gdef,
+      mark_filtering_set,
+    )
+    let indices = match input_indices {
+      Err(err) => return Err(err)
+      Ok(None) => continue
+      Ok(Some(indices)) => indices
+    }
+    let first = glyphs[indices[0]]
+    let second = glyphs[indices[1]]
     let adjust = pair_adjust_format1(data, offset, first, second)
     match adjust {
       Err(err) => return Err(err)
       Ok(None) => ()
       Ok(Some(adjust)) => {
-        deltas[i] = add_value_record(deltas[i], adjust.first)
-        deltas[i + 1] = add_value_record(deltas[i + 1], adjust.second)
+        deltas[indices[0]] = add_value_record(deltas[indices[0]], adjust.first)
+        deltas[indices[1]] = add_value_record(deltas[indices[1]], adjust.second)
       }
     }
   }
@@ -239,20 +284,36 @@ fn apply_pair_format2(
   offset : Int,
   glyphs : ArrayView[UInt],
   deltas : Array[ValueRecord],
+  lookup_flag : Int,
+  mark_filtering_set : Int?,
+  gdef : GdefTable?,
 ) -> Result[Unit, OtLayoutError] {
   if glyphs.length() < 2 {
     return Ok(())
   }
   for i in 0..<(glyphs.length() - 1) {
-    let first = glyphs[i]
-    let second = glyphs[i + 1]
+    let input_indices = collect_forward_indices(
+      glyphs,
+      i,
+      2,
+      lookup_flag,
+      gdef,
+      mark_filtering_set,
+    )
+    let indices = match input_indices {
+      Err(err) => return Err(err)
+      Ok(None) => continue
+      Ok(Some(indices)) => indices
+    }
+    let first = glyphs[indices[0]]
+    let second = glyphs[indices[1]]
     let adjust = pair_adjust_format2(data, offset, first, second)
     match adjust {
       Err(err) => return Err(err)
       Ok(None) => ()
       Ok(Some(adjust)) => {
-        deltas[i] = add_value_record(deltas[i], adjust.first)
-        deltas[i + 1] = add_value_record(deltas[i + 1], adjust.second)
+        deltas[indices[0]] = add_value_record(deltas[indices[0]], adjust.first)
+        deltas[indices[1]] = add_value_record(deltas[indices[1]], adjust.second)
       }
     }
   }
@@ -265,14 +326,33 @@ fn apply_pair_subtable(
   offset : Int,
   glyphs : ArrayView[UInt],
   deltas : Array[ValueRecord],
+  lookup_flag : Int,
+  mark_filtering_set : Int?,
+  gdef : GdefTable?,
 ) -> Result[Unit, OtLayoutError] {
   let format = read_u16_int(data, offset)
   match format {
     Err(err) => Err(err)
     Ok(format) => if format == 1 {
-      apply_pair_format1(data, offset, glyphs, deltas)
+      apply_pair_format1(
+        data,
+        offset,
+        glyphs,
+        deltas,
+        lookup_flag,
+        mark_filtering_set,
+        gdef,
+      )
     } else if format == 2 {
-      apply_pair_format2(data, offset, glyphs, deltas)
+      apply_pair_format2(
+        data,
+        offset,
+        glyphs,
+        deltas,
+        lookup_flag,
+        mark_filtering_set,
+        gdef,
+      )
     } else {
       Ok(())
     }
@@ -659,6 +739,7 @@ fn apply_context_pos_subtable_format3(
             indices[0],
             lookup_list_offsets,
             Some(indices),
+            gdef,
           ) {
             Err(err) => return Err(err)
             Ok(value) => value
@@ -744,6 +825,7 @@ fn apply_context_pos_class_rule(
         index,
         lookup_list_offsets,
         Some(indices),
+        gdef,
       )
     }
   }
@@ -760,6 +842,7 @@ fn apply_pos_lookup_records(
   index : Int,
   lookup_list_offsets : ArrayView[Int],
   input_indices : Array[Int]?,
+  gdef : GdefTable?,
 ) -> Result[Bool, OtLayoutError] {
   if pos_count < 0 {
     return Err(InvalidFormat)
@@ -799,6 +882,7 @@ fn apply_pos_lookup_records(
           glyphs,
           deltas,
           target,
+          gdef,
         ) {
           Err(err) => return Err(err)
           Ok(value) => value
@@ -876,6 +960,7 @@ fn apply_context_pos_rule(
         index,
         lookup_list_offsets,
         Some(indices),
+        gdef,
       )
     }
   }
@@ -1433,6 +1518,7 @@ fn apply_chain_pos_subtable_format3(
                         indices[0],
                         lookup_list_offsets,
                         Some(indices),
+                        gdef,
                       ) {
                         Err(err) => return Err(err)
                         Ok(value) => value
@@ -1640,6 +1726,7 @@ fn apply_chain_pos_class_rule(
                     indices[0],
                     lookup_list_offsets,
                     Some(indices),
+                    gdef,
                   )
                 }
               }
@@ -1818,6 +1905,7 @@ fn apply_chain_pos_rule(
                     indices[0],
                     lookup_list_offsets,
                     Some(indices),
+                    gdef,
                   )
                 }
               }
@@ -1836,17 +1924,47 @@ fn apply_pos_lookup_at(
   glyphs : ArrayView[UInt],
   deltas : Array[ValueRecord],
   index : Int,
+  gdef : GdefTable?,
 ) -> Result[Bool, OtLayoutError] {
   let parsed = parse_lookup(data, lookup_offset, 9)
   match parsed {
     Err(err) => Err(err)
-    Ok((lookup_type, _, _, subtable_offsets)) => {
+    Ok((lookup_type, lookup_flag, mark_filtering_set, subtable_offsets)) => {
+      let ignored = should_ignore_glyph(
+        glyphs[index],
+        lookup_flag,
+        gdef,
+        mark_filtering_set,
+      )
+      match ignored {
+        Err(err) => return Err(err)
+        Ok(true) => return Ok(false)
+        Ok(false) => ()
+      }
       if lookup_type == 1 {
         apply_single_pos_at(data, subtable_offsets, glyphs, deltas, index)
       } else if lookup_type == 2 {
-        apply_pair_pos_at(data, subtable_offsets, glyphs, deltas, index)
+        apply_pair_pos_at(
+          data,
+          subtable_offsets,
+          glyphs,
+          deltas,
+          index,
+          lookup_flag,
+          mark_filtering_set,
+          gdef,
+        )
       } else if lookup_type == 3 {
-        apply_cursive_at(data, subtable_offsets, glyphs, deltas, index)
+        apply_cursive_at(
+          data,
+          subtable_offsets,
+          glyphs,
+          deltas,
+          index,
+          lookup_flag,
+          mark_filtering_set,
+          gdef,
+        )
       } else if lookup_type == 4 {
         apply_mark_to_base_at(data, subtable_offsets, glyphs, deltas, index)
       } else if lookup_type == 5 {
@@ -1968,15 +2086,28 @@ fn apply_pair_pos_at(
   glyphs : ArrayView[UInt],
   deltas : Array[ValueRecord],
   index : Int,
+  lookup_flag : Int,
+  mark_filtering_set : Int?,
+  gdef : GdefTable?,
 ) -> Result[Bool, OtLayoutError] {
   if index < 0 || index >= glyphs.length() {
     return Err(InvalidFormat)
   }
-  if index + 1 >= glyphs.length() {
-    return Ok(false)
+  let input_indices = collect_forward_indices(
+    glyphs,
+    index,
+    2,
+    lookup_flag,
+    gdef,
+    mark_filtering_set,
+  )
+  let indices = match input_indices {
+    Err(err) => return Err(err)
+    Ok(None) => return Ok(false)
+    Ok(Some(indices)) => indices
   }
-  let first = glyphs[index]
-  let second = glyphs[index + 1]
+  let first = glyphs[indices[0]]
+  let second = glyphs[indices[1]]
   let mut changed = false
   for offset in offsets {
     let format = read_u16_int(data, offset)
@@ -1994,8 +2125,14 @@ fn apply_pair_pos_at(
           Err(err) => return Err(err)
           Ok(None) => ()
           Ok(Some(adjust)) => {
-            deltas[index] = add_value_record(deltas[index], adjust.first)
-            deltas[index + 1] = add_value_record(deltas[index + 1], adjust.second)
+            deltas[indices[0]] = add_value_record(
+              deltas[indices[0]],
+              adjust.first,
+            )
+            deltas[indices[1]] = add_value_record(
+              deltas[indices[1]],
+              adjust.second,
+            )
             changed = true
           }
         }
@@ -2012,11 +2149,27 @@ fn apply_cursive_at(
   glyphs : ArrayView[UInt],
   deltas : Array[ValueRecord],
   index : Int,
+  lookup_flag : Int,
+  mark_filtering_set : Int?,
+  gdef : GdefTable?,
 ) -> Result[Bool, OtLayoutError] {
-  if index < 0 || index + 1 >= glyphs.length() {
+  if index < 0 || index >= glyphs.length() {
     return Ok(false)
   }
   let mut changed = false
+  let input_indices = collect_forward_indices(
+    glyphs,
+    index,
+    2,
+    lookup_flag,
+    gdef,
+    mark_filtering_set,
+  )
+  let indices = match input_indices {
+    Err(err) => return Err(err)
+    Ok(None) => return Ok(false)
+    Ok(Some(indices)) => indices
+  }
   for offset in offsets {
     let format = read_u16_int(data, offset)
     match format {
@@ -2041,8 +2194,8 @@ fn apply_cursive_at(
                 record_base + entry_exit_count * record_size > data.length() {
               return Err(UnexpectedEof)
             }
-            let current = glyphs[index]
-            let next = glyphs[index + 1]
+            let current = glyphs[indices[0]]
+            let next = glyphs[indices[1]]
             let current_index = coverage_index(data, coverage_base, current)
             let next_index = coverage_index(data, coverage_base, next)
             match (current_index, next_index) {
@@ -2085,8 +2238,8 @@ fn apply_cursive_at(
                           x_advance: 0,
                           y_advance: 0,
                         }
-                        deltas[index + 1] = add_value_record(
-                          deltas[index + 1],
+                        deltas[indices[1]] = add_value_record(
+                          deltas[indices[1]],
                           delta,
                         )
                         changed = true
@@ -2514,12 +2667,23 @@ fn apply_cursive_subtable(
   offset : Int,
   glyphs : ArrayView[UInt],
   deltas : Array[ValueRecord],
+  lookup_flag : Int,
+  mark_filtering_set : Int?,
+  gdef : GdefTable?,
 ) -> Result[Unit, OtLayoutError] {
   let format = read_u16_int(data, offset)
   match format {
     Err(err) => Err(err)
     Ok(format) => if format == 1 {
-      apply_cursive_format1(data, offset, glyphs, deltas)
+      apply_cursive_format1(
+        data,
+        offset,
+        glyphs,
+        deltas,
+        lookup_flag,
+        mark_filtering_set,
+        gdef,
+      )
     } else {
       Ok(())
     }
@@ -2532,6 +2696,9 @@ fn apply_cursive_format1(
   offset : Int,
   glyphs : ArrayView[UInt],
   deltas : Array[ValueRecord],
+  lookup_flag : Int,
+  mark_filtering_set : Int?,
+  gdef : GdefTable?,
 ) -> Result[Unit, OtLayoutError] {
   if glyphs.length() < 2 {
     return Ok(())
@@ -2559,8 +2726,21 @@ fn apply_cursive_format1(
         return Err(UnexpectedEof)
       }
       for i in 0..<(glyphs.length() - 1) {
-        let current = glyphs[i]
-        let next = glyphs[i + 1]
+        let input_indices = collect_forward_indices(
+          glyphs,
+          i,
+          2,
+          lookup_flag,
+          gdef,
+          mark_filtering_set,
+        )
+        let indices = match input_indices {
+          Err(err) => return Err(err)
+          Ok(None) => continue
+          Ok(Some(indices)) => indices
+        }
+        let current = glyphs[indices[0]]
+        let next = glyphs[indices[1]]
         let current_index = coverage_index(data, coverage_base, current)
         let next_index = coverage_index(data, coverage_base, next)
         match (current_index, next_index) {
@@ -2600,7 +2780,10 @@ fn apply_cursive_format1(
                       x_advance: 0,
                       y_advance: 0,
                     }
-                    deltas[i + 1] = add_value_record(deltas[i + 1], delta)
+                    deltas[indices[1]] = add_value_record(
+                      deltas[indices[1]],
+                      delta,
+                    )
                   }
                 }
               }
@@ -3389,14 +3572,33 @@ fn apply_single_pos_subtable(
   offset : Int,
   glyphs : ArrayView[UInt],
   deltas : Array[ValueRecord],
+  lookup_flag : Int,
+  mark_filtering_set : Int?,
+  gdef : GdefTable?,
 ) -> Result[Unit, OtLayoutError] {
   let format = read_u16_int(data, offset)
   match format {
     Err(err) => Err(err)
     Ok(format) => if format == 1 {
-      apply_single_pos_format1(data, offset, glyphs, deltas)
+      apply_single_pos_format1(
+        data,
+        offset,
+        glyphs,
+        deltas,
+        lookup_flag,
+        mark_filtering_set,
+        gdef,
+      )
     } else if format == 2 {
-      apply_single_pos_format2(data, offset, glyphs, deltas)
+      apply_single_pos_format2(
+        data,
+        offset,
+        glyphs,
+        deltas,
+        lookup_flag,
+        mark_filtering_set,
+        gdef,
+      )
     } else {
       Ok(())
     }
@@ -3409,6 +3611,9 @@ fn apply_single_pos_format1(
   offset : Int,
   glyphs : ArrayView[UInt],
   deltas : Array[ValueRecord],
+  lookup_flag : Int,
+  mark_filtering_set : Int?,
+  gdef : GdefTable?,
 ) -> Result[Unit, OtLayoutError] {
   if offset < 0 || offset + 6 > data.length() {
     return Err(UnexpectedEof)
@@ -3431,6 +3636,17 @@ fn apply_single_pos_format1(
         Ok((value, _)) => {
           for i in 0..<glyphs.length() {
             let glyph = glyphs[i]
+            let ignored = should_ignore_glyph(
+              glyph,
+              lookup_flag,
+              gdef,
+              mark_filtering_set,
+            )
+            match ignored {
+              Err(err) => return Err(err)
+              Ok(true) => continue
+              Ok(false) => ()
+            }
             let covered = coverage_index(data, coverage_base, glyph)
             match covered {
               Err(err) => return Err(err)
@@ -3452,6 +3668,9 @@ fn apply_single_pos_format2(
   offset : Int,
   glyphs : ArrayView[UInt],
   deltas : Array[ValueRecord],
+  lookup_flag : Int,
+  mark_filtering_set : Int?,
+  gdef : GdefTable?,
 ) -> Result[Unit, OtLayoutError] {
   if offset < 0 || offset + 8 > data.length() {
     return Err(UnexpectedEof)
@@ -3476,6 +3695,17 @@ fn apply_single_pos_format2(
       }
       for i in 0..<glyphs.length() {
         let glyph = glyphs[i]
+        let ignored = should_ignore_glyph(
+          glyph,
+          lookup_flag,
+          gdef,
+          mark_filtering_set,
+        )
+        match ignored {
+          Err(err) => return Err(err)
+          Ok(true) => continue
+          Ok(false) => ()
+        }
         let index = coverage_index(data, coverage_base, glyph)
         match index {
           Err(err) => return Err(err)

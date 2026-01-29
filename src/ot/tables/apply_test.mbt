@@ -179,6 +179,37 @@ fn build_gsub_single_lookup(target : Int, substitute : Int) -> Bytes {
 }
 
 ///|
+fn build_gsub_single_subtable_format2_two() -> Bytes {
+  let bytes : Array[Byte] = []
+  push_u16(bytes, 2)
+  push_u16(bytes, 10)
+  push_u16(bytes, 2)
+  push_u16(bytes, 9)
+  push_u16(bytes, 10)
+  // coverage table (glyphs 5, 6)
+  push_u16(bytes, 1)
+  push_u16(bytes, 2)
+  push_u16(bytes, 5)
+  push_u16(bytes, 6)
+  Bytes::from_array(bytes)
+}
+
+///|
+fn build_gsub_single_lookup_mark_filter() -> Bytes {
+  let subtable = build_gsub_single_subtable_format2_two()
+  let bytes : Array[Byte] = []
+  push_u16(bytes, 1)
+  push_u16(bytes, 0x0010)
+  push_u16(bytes, 1)
+  push_u16(bytes, 10)
+  push_u16(bytes, 0)
+  for b in subtable {
+    bytes.push(b)
+  }
+  Bytes::from_array(bytes)
+}
+
+///|
 fn build_gpos_subtable() -> Bytes {
   let bytes : Array[Byte] = []
   push_u16(bytes, 1)
@@ -208,6 +239,21 @@ fn build_gpos_lookup() -> Bytes {
   push_u16(bytes, 0)
   push_u16(bytes, 1)
   push_u16(bytes, 8)
+  for b in subtable {
+    bytes.push(b)
+  }
+  Bytes::from_array(bytes)
+}
+
+///|
+fn build_gpos_lookup_mark_filter() -> Bytes {
+  let subtable = build_gpos_subtable()
+  let bytes : Array[Byte] = []
+  push_u16(bytes, 2)
+  push_u16(bytes, 0x0010)
+  push_u16(bytes, 1)
+  push_u16(bytes, 10)
+  push_u16(bytes, 0)
   for b in subtable {
     bytes.push(b)
   }
@@ -1369,6 +1415,53 @@ test "gsub single substitution apply" {
 }
 
 ///|
+test "gsub single lookup mark filtering set" {
+  let gsub_bytes = build_layout_table(
+    build_gsub_single_lookup_mark_filter(),
+    @common.Tag::from_chars('l', 'i', 'g', 'a'),
+  )
+  let gsub = match GsubTable::parse(@blob.Blob::from_bytes(gsub_bytes)) {
+    Err(err) => fail("parse error: \{err}")
+    Ok(value) => value
+  }
+  let gdef = match GdefTable::parse(
+    @blob.Blob::from_bytes(build_gdef_mark_filter_table()),
+  ) {
+    Err(err) => fail("gdef parse error: \{err}")
+    Ok(value) => value
+  }
+  let lookup_offsets = [gsub.layout().lookup_list().offsets()[0]]
+  let glyphs1 : Array[UInt] = [5U]
+  let clusters1 : Array[Int] = [0]
+  let result1 = match gsub.apply_with_lookups(
+    glyphs1,
+    clusters1,
+    lookup_offsets[:],
+    gdef=gdef,
+  ) {
+    Err(err) => fail("apply error: \{err}")
+    Ok(value) => value
+  }
+  let (new_glyphs1, _, changed1) = result1
+  inspect(changed1, content="false")
+  inspect(new_glyphs1, content="[5]")
+  let glyphs2 : Array[UInt] = [6U]
+  let clusters2 : Array[Int] = [0]
+  let result2 = match gsub.apply_with_lookups(
+    glyphs2,
+    clusters2,
+    lookup_offsets[:],
+    gdef=gdef,
+  ) {
+    Err(err) => fail("apply error: \{err}")
+    Ok(value) => value
+  }
+  let (new_glyphs2, _, changed2) = result2
+  inspect(changed2, content="true")
+  inspect(new_glyphs2, content="[10]")
+}
+
+///|
 test "gpos pair adjust deltas" {
   let gpos_bytes = build_layout_table(
     build_gpos_lookup(),
@@ -1387,6 +1480,51 @@ test "gpos pair adjust deltas" {
   inspect(deltas[0].x_placement, content="5")
   inspect(deltas[0].x_advance, content="-20")
   inspect(deltas[1].x_advance, content="10")
+}
+
+///|
+test "gpos pair lookup mark filtering set" {
+  let gpos_bytes = build_layout_table(
+    build_gpos_lookup_mark_filter(),
+    @common.Tag::from_chars('k', 'e', 'r', 'n'),
+  )
+  let gpos = match GposTable::parse(@blob.Blob::from_bytes(gpos_bytes)) {
+    Err(err) => fail("parse error: \{err}")
+    Ok(value) => value
+  }
+  let gdef = match GdefTable::parse(
+    @blob.Blob::from_bytes(build_gdef_mark_filter_table()),
+  ) {
+    Err(err) => fail("gdef parse error: \{err}")
+    Ok(value) => value
+  }
+  let lookup_offsets = [gpos.layout().lookup_list().offsets()[0]]
+  let glyphs1 : Array[UInt] = [3U, 5U, 2U]
+  let deltas1 = match gpos.position_deltas_with_lookups(
+    glyphs1[:],
+    lookup_offsets[:],
+    gdef=gdef,
+  ) {
+    Err(err) => fail("apply error: \{err}")
+    Ok(value) => value
+  }
+  inspect(deltas1.length(), content="3")
+  inspect(deltas1[0].x_placement, content="5")
+  inspect(deltas1[0].x_advance, content="-20")
+  inspect(deltas1[2].x_advance, content="10")
+  let glyphs2 : Array[UInt] = [3U, 6U, 2U]
+  let deltas2 = match gpos.position_deltas_with_lookups(
+    glyphs2[:],
+    lookup_offsets[:],
+    gdef=gdef,
+  ) {
+    Err(err) => fail("apply error: \{err}")
+    Ok(value) => value
+  }
+  inspect(deltas2.length(), content="3")
+  inspect(deltas2[0].x_placement, content="0")
+  inspect(deltas2[0].x_advance, content="0")
+  inspect(deltas2[2].x_advance, content="0")
 }
 
 ///|

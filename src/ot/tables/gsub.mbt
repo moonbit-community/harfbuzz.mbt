@@ -20,12 +20,19 @@ pub fn GsubTable::apply_single_with_lookups(
     let parsed = parse_lookup(data, lookup_offset, 7)
     match parsed {
       Err(err) => return Err(err)
-      Ok((lookup_type, _, _, subtable_offsets)) => {
+      Ok((lookup_type, lookup_flag, mark_filtering_set, subtable_offsets)) => {
         if lookup_type != 1 {
           continue
         }
         for subtable_offset in subtable_offsets {
-          let res = apply_single_subtable(data, subtable_offset, glyphs)
+          let res = apply_single_subtable(
+            data,
+            subtable_offset,
+            glyphs,
+            lookup_flag,
+            mark_filtering_set,
+            None,
+          )
           match res {
             Err(err) => return Err(err)
             Ok(did_change) => if did_change { changed = true }
@@ -64,6 +71,9 @@ pub fn GsubTable::apply_with_lookups(
             data,
             subtable_offsets,
             current_glyphs,
+            lookup_flag,
+            mark_filtering_set,
+            gdef,
           ) {
             Err(err) => return Err(err)
             Ok(value) => value
@@ -77,6 +87,9 @@ pub fn GsubTable::apply_with_lookups(
             subtable_offsets,
             current_glyphs,
             current_clusters,
+            lookup_flag,
+            mark_filtering_set,
+            gdef,
           ) {
             Err(err) => return Err(err)
             Ok(value) => value
@@ -92,6 +105,9 @@ pub fn GsubTable::apply_with_lookups(
             data,
             subtable_offsets,
             current_glyphs,
+            lookup_flag,
+            mark_filtering_set,
+            gdef,
           ) {
             Err(err) => return Err(err)
             Ok(value) => value
@@ -105,6 +121,9 @@ pub fn GsubTable::apply_with_lookups(
             subtable_offsets,
             current_glyphs,
             current_clusters,
+            lookup_flag,
+            mark_filtering_set,
+            gdef,
           ) {
             Err(err) => return Err(err)
             Ok(value) => value
@@ -173,6 +192,9 @@ fn apply_single_subtable(
   data : BytesView,
   offset : Int,
   glyphs : Array[UInt],
+  lookup_flag : Int,
+  mark_filtering_set : Int?,
+  gdef : GdefTable?,
 ) -> Result[Bool, OtLayoutError] {
   let format = read_u16_int(data, offset)
   match format {
@@ -181,6 +203,17 @@ fn apply_single_subtable(
       let mut changed = false
       for i in 0..<glyphs.length() {
         let glyph = glyphs[i]
+        let ignored = should_ignore_glyph(
+          glyph,
+          lookup_flag,
+          gdef,
+          mark_filtering_set,
+        )
+        match ignored {
+          Err(err) => return Err(err)
+          Ok(true) => continue
+          Ok(false) => ()
+        }
         let next = if format == 1 {
           single_substitute_format1(data, offset, glyph)
         } else if format == 2 {
@@ -209,10 +242,20 @@ fn apply_single_subtable_list(
   data : BytesView,
   offsets : Array[Int],
   glyphs : Array[UInt],
+  lookup_flag : Int,
+  mark_filtering_set : Int?,
+  gdef : GdefTable?,
 ) -> Result[Bool, OtLayoutError] {
   let mut changed = false
   for offset in offsets {
-    let result = apply_single_subtable(data, offset, glyphs)
+    let result = apply_single_subtable(
+      data,
+      offset,
+      glyphs,
+      lookup_flag,
+      mark_filtering_set,
+      gdef,
+    )
     match result {
       Err(err) => return Err(err)
       Ok(value) => if value { changed = true }
@@ -227,14 +270,47 @@ fn apply_ligature_subtable_list(
   offsets : Array[Int],
   glyphs : Array[UInt],
   clusters : Array[Int],
+  lookup_flag : Int,
+  mark_filtering_set : Int?,
+  gdef : GdefTable?,
 ) -> Result[(Array[UInt], Array[Int], Bool), OtLayoutError] {
   let new_glyphs : Array[UInt] = []
   let new_clusters : Array[Int] = []
+  let skip = Array::make(glyphs.length(), false)
   let mut changed = false
-  let mut i = 0
   let len = glyphs.length()
+  let mut i = 0
   while i < len {
-    let match_result = find_ligature_match(data, offsets, glyphs, i)
+    if skip[i] {
+      i = i + 1
+      continue
+    }
+    let glyph = glyphs[i]
+    let ignored = should_ignore_glyph(
+      glyph,
+      lookup_flag,
+      gdef,
+      mark_filtering_set,
+    )
+    match ignored {
+      Err(err) => return Err(err)
+      Ok(true) => {
+        new_glyphs.push(glyph)
+        new_clusters.push(clusters[i])
+        i = i + 1
+        continue
+      }
+      Ok(false) => ()
+    }
+    let match_result = find_ligature_match(
+      data,
+      offsets,
+      glyphs,
+      i,
+      lookup_flag,
+      mark_filtering_set,
+      gdef,
+    )
     match match_result {
       Err(err) => return Err(err)
       Ok(None) => {
@@ -242,16 +318,24 @@ fn apply_ligature_subtable_list(
         new_clusters.push(clusters[i])
         i = i + 1
       }
-      Ok(Some((lig_glyph, comp_count))) => {
-        if comp_count < 2 {
+      Ok(Some((lig_glyph, indices))) => {
+        if indices.length() < 2 {
           return Err(InvalidFormat)
         }
         new_glyphs.push(lig_glyph)
-        new_clusters.push(clusters[i])
-        if comp_count > 1 || lig_glyph != glyphs[i] {
+        new_clusters.push(clusters[indices[0]])
+        if lig_glyph != glyphs[indices[0]] {
           changed = true
         }
-        i = i + comp_count
+        for j in 1..<indices.length() {
+          let idx = indices[j]
+          if idx < 0 || idx >= skip.length() {
+            return Err(InvalidFormat)
+          }
+          skip[idx] = true
+        }
+        changed = true
+        i = i + 1
       }
     }
   }
@@ -657,6 +741,7 @@ fn apply_context_subtable_format3(
             i,
             lookup_list_offsets,
             Some(indices),
+            gdef,
           ) {
             Err(err) => return Err(err)
             Ok(value) => value
@@ -740,6 +825,7 @@ fn apply_context_class_rule(
         index,
         lookup_list_offsets,
         Some(indices),
+        gdef,
       )
     }
   }
@@ -755,6 +841,7 @@ fn apply_subst_lookup_records(
   index : Int,
   lookup_list_offsets : Array[Int],
   input_indices : Array[Int]?,
+  gdef : GdefTable?,
 ) -> Result[Bool, OtLayoutError] {
   if subst_count < 0 {
     return Err(InvalidFormat)
@@ -793,6 +880,7 @@ fn apply_subst_lookup_records(
           lookup_offset,
           glyphs,
           target,
+          gdef,
         ) {
           Err(err) => return Err(err)
           Ok(value) => value
@@ -868,6 +956,7 @@ fn apply_context_rule(
         index,
         lookup_list_offsets,
         Some(indices),
+        gdef,
       )
     }
   }
@@ -879,15 +968,32 @@ fn apply_lookup_at(
   lookup_offset : Int,
   glyphs : Array[UInt],
   index : Int,
+  gdef : GdefTable?,
 ) -> Result[Bool, OtLayoutError] {
   let parsed = parse_lookup(data, lookup_offset, 7)
   match parsed {
     Err(err) => Err(err)
-    Ok((lookup_type, _, _, subtable_offsets)) => {
+    Ok((lookup_type, lookup_flag, mark_filtering_set, subtable_offsets)) => {
       if lookup_type == 1 {
-        apply_single_at(data, subtable_offsets, glyphs, index)
+        apply_single_at(
+          data,
+          subtable_offsets,
+          glyphs,
+          index,
+          lookup_flag,
+          mark_filtering_set,
+          gdef,
+        )
       } else if lookup_type == 3 {
-        apply_alternate_at(data, subtable_offsets, glyphs, index)
+        apply_alternate_at(
+          data,
+          subtable_offsets,
+          glyphs,
+          index,
+          lookup_flag,
+          mark_filtering_set,
+          gdef,
+        )
       } else {
         Ok(false)
       }
@@ -1466,6 +1572,7 @@ fn apply_chain_subtable_format3(
                         indices[0],
                         lookup_list_offsets,
                         Some(indices),
+                        gdef,
                       ) {
                         Err(err) => return Err(err)
                         Ok(value) => value
@@ -1671,6 +1778,7 @@ fn apply_chain_class_rule(
                     indices[0],
                     lookup_list_offsets,
                     Some(indices),
+                    gdef,
                   )
                 }
               }
@@ -1847,6 +1955,7 @@ fn apply_chain_rule(
                     indices[0],
                     lookup_list_offsets,
                     Some(indices),
+                    gdef,
                   )
                 }
               }
@@ -1864,9 +1973,23 @@ fn apply_single_at(
   offsets : Array[Int],
   glyphs : Array[UInt],
   index : Int,
+  lookup_flag : Int,
+  mark_filtering_set : Int?,
+  gdef : GdefTable?,
 ) -> Result[Bool, OtLayoutError] {
   if index < 0 || index >= glyphs.length() {
     return Err(InvalidFormat)
+  }
+  let ignored = should_ignore_glyph(
+    glyphs[index],
+    lookup_flag,
+    gdef,
+    mark_filtering_set,
+  )
+  match ignored {
+    Err(err) => return Err(err)
+    Ok(true) => return Ok(false)
+    Ok(false) => ()
   }
   let mut changed = false
   let mut glyph = glyphs[index]
@@ -1905,9 +2028,23 @@ fn apply_alternate_at(
   offsets : Array[Int],
   glyphs : Array[UInt],
   index : Int,
+  lookup_flag : Int,
+  mark_filtering_set : Int?,
+  gdef : GdefTable?,
 ) -> Result[Bool, OtLayoutError] {
   if index < 0 || index >= glyphs.length() {
     return Err(InvalidFormat)
+  }
+  let ignored = should_ignore_glyph(
+    glyphs[index],
+    lookup_flag,
+    gdef,
+    mark_filtering_set,
+  )
+  match ignored {
+    Err(err) => return Err(err)
+    Ok(true) => return Ok(false)
+    Ok(false) => ()
   }
   let mut changed = false
   let mut glyph = glyphs[index]
@@ -2140,6 +2277,9 @@ fn apply_multiple_subtable_list(
   offsets : Array[Int],
   glyphs : Array[UInt],
   clusters : Array[Int],
+  lookup_flag : Int,
+  mark_filtering_set : Int?,
+  gdef : GdefTable?,
 ) -> Result[(Array[UInt], Array[Int], Bool), OtLayoutError] {
   if clusters.length() != glyphs.length() {
     return Err(InvalidFormat)
@@ -2149,6 +2289,21 @@ fn apply_multiple_subtable_list(
   let mut changed = false
   for i in 0..<glyphs.length() {
     let glyph = glyphs[i]
+    let ignored = should_ignore_glyph(
+      glyph,
+      lookup_flag,
+      gdef,
+      mark_filtering_set,
+    )
+    match ignored {
+      Err(err) => return Err(err)
+      Ok(true) => {
+        new_glyphs.push(glyph)
+        new_clusters.push(clusters[i])
+        continue
+      }
+      Ok(false) => ()
+    }
     let sub_result = find_multiple_substitution(data, offsets, glyph)
     match sub_result {
       Err(err) => return Err(err)
@@ -2178,10 +2333,20 @@ fn apply_alternate_subtable_list(
   data : BytesView,
   offsets : Array[Int],
   glyphs : Array[UInt],
+  lookup_flag : Int,
+  mark_filtering_set : Int?,
+  gdef : GdefTable?,
 ) -> Result[Bool, OtLayoutError] {
   let mut changed = false
   for offset in offsets {
-    let result = apply_alternate_subtable(data, offset, glyphs)
+    let result = apply_alternate_subtable(
+      data,
+      offset,
+      glyphs,
+      lookup_flag,
+      mark_filtering_set,
+      gdef,
+    )
     match result {
       Err(err) => return Err(err)
       Ok(value) => if value { changed = true }
@@ -2195,10 +2360,24 @@ fn apply_alternate_subtable(
   data : BytesView,
   offset : Int,
   glyphs : Array[UInt],
+  lookup_flag : Int,
+  mark_filtering_set : Int?,
+  gdef : GdefTable?,
 ) -> Result[Bool, OtLayoutError] {
   let mut changed = false
   for i in 0..<glyphs.length() {
     let glyph = glyphs[i]
+    let ignored = should_ignore_glyph(
+      glyph,
+      lookup_flag,
+      gdef,
+      mark_filtering_set,
+    )
+    match ignored {
+      Err(err) => return Err(err)
+      Ok(true) => continue
+      Ok(false) => ()
+    }
     let next = alternate_substitute_format1(data, offset, glyph)
     match next {
       Err(err) => return Err(err)
@@ -2389,9 +2568,20 @@ fn find_ligature_match(
   offsets : Array[Int],
   glyphs : Array[UInt],
   index : Int,
-) -> Result[(UInt, Int)?, OtLayoutError] {
+  lookup_flag : Int,
+  mark_filtering_set : Int?,
+  gdef : GdefTable?,
+) -> Result[(UInt, Array[Int])?, OtLayoutError] {
   for offset in offsets {
-    let result = ligature_match_subtable(data, offset, glyphs, index)
+    let result = ligature_match_subtable(
+      data,
+      offset,
+      glyphs,
+      index,
+      lookup_flag,
+      mark_filtering_set,
+      gdef,
+    )
     match result {
       Err(err) => return Err(err)
       Ok(Some(value)) => return Ok(Some(value))
@@ -2407,11 +2597,25 @@ fn ligature_match_subtable(
   offset : Int,
   glyphs : Array[UInt],
   index : Int,
-) -> Result[(UInt, Int)?, OtLayoutError] {
+  lookup_flag : Int,
+  mark_filtering_set : Int?,
+  gdef : GdefTable?,
+) -> Result[(UInt, Array[Int])?, OtLayoutError] {
   if index < 0 || index >= glyphs.length() {
     return Ok(None)
   }
   let first = glyphs[index]
+  let ignored = should_ignore_glyph(
+    first,
+    lookup_flag,
+    gdef,
+    mark_filtering_set,
+  )
+  match ignored {
+    Err(err) => return Err(err)
+    Ok(true) => return Ok(None)
+    Ok(false) => ()
+  }
   if first > 0xffffU {
     return Ok(None)
   }
@@ -2481,13 +2685,23 @@ fn ligature_match_subtable(
                             if comp_count < 2 {
                               return Err(InvalidFormat)
                             }
-                            if index + comp_count - 1 >= glyphs.length() {
-                              continue
-                            }
                             let comp_base = lig_base + 4
                             let comp_len = (comp_count - 1) * 2
                             if comp_base < 0 || comp_base + comp_len > data.length() {
                               return Err(UnexpectedEof)
+                            }
+                            let input_indices = collect_forward_indices(
+                              glyphs[:],
+                              index,
+                              comp_count,
+                              lookup_flag,
+                              gdef,
+                              mark_filtering_set,
+                            )
+                            let indices = match input_indices {
+                              Err(err) => return Err(err)
+                              Ok(None) => continue
+                              Ok(Some(indices)) => indices
                             }
                             let mut matches = true
                             for j in 0..<(comp_count - 1) {
@@ -2495,7 +2709,7 @@ fn ligature_match_subtable(
                               match component {
                                 Err(err) => return Err(err)
                                 Ok(component) => {
-                                  let glyph = glyphs[index + 1 + j]
+                                  let glyph = glyphs[indices[j + 1]]
                                   if glyph > 0xffffU {
                                     matches = false
                                   } else if u16_to_int(glyph) != component {
@@ -2509,7 +2723,7 @@ fn ligature_match_subtable(
                             }
                             if matches {
                               return Ok(
-                                Some((lig_glyph.reinterpret_as_uint(), comp_count)),
+                                Some((lig_glyph.reinterpret_as_uint(), indices)),
                               )
                             }
                           }
