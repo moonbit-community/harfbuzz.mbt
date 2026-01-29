@@ -41,3 +41,11 @@ test "unicode arabic joining type" {
   inspect(arabic_joining_type(0x064BU), content="7")
   inspect(arabic_joining_type(0x41U), content="0")
 }
+
+///|
+test "unicode arabic shaping form" {
+  inspect(arabic_shaping_form(0x0628U, 0), content="Some(65169)")
+  inspect(arabic_shaping_form(0x0628U, 3), content="Some(65167)")
+  inspect(arabic_shaping_form(0x0628U, 9), content="None")
+  inspect(arabic_shaping_form(0x41U, 0), content="None")
+}

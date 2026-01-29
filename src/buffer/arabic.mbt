@@ -140,6 +140,47 @@ fn build_action_mask(actions : Array[Int], target : Int) -> Array[UInt] {
 }
 
 ///|
+fn arabic_action_column(action : Int) -> Int? {
+  if action == arabic_action_init {
+    return Some(0)
+  }
+  if action == arabic_action_medi {
+    return Some(1)
+  }
+  if action == arabic_action_fina || action == arabic_action_fin2 || action == arabic_action_fin3 {
+    return Some(2)
+  }
+  if action == arabic_action_isol {
+    return Some(3)
+  }
+  None
+}
+
+///|
+fn apply_arabic_fallback(buffer : Buffer, actions : Array[Int]) -> Unit {
+  if actions.length() != buffer.infos.length() {
+    return ()
+  }
+  for i in 0..<actions.length() {
+    let action = actions[i]
+    let column = arabic_action_column(action)
+    match column {
+      None => ()
+      Some(column) => {
+        let codepoint = buffer.infos[i].codepoint
+        match @unicode.arabic_shaping_form(codepoint, column) {
+          None => ()
+          Some(value) => {
+            let info = buffer.infos[i]
+            buffer.infos[i] = GlyphInfo::{ codepoint: value, cluster: info.cluster }
+          }
+        }
+      }
+    }
+  }
+}
+
+///|
 fn apply_gpos(font : @font.Font, buffer : Buffer) -> Result[Unit, ShapeError] {
   let gpos = match font.gpos() {
     Err(err) => return Err(Font(err))
@@ -235,16 +276,16 @@ pub fn Buffer::shape_arabic(
   font : @font.Font,
 ) -> Result[Unit, ShapeError] {
   let actions = arabic_joining_actions(self)
-  match self.shape_basic(font) {
-    Err(err) => return Err(err)
-    Ok(_) => ()
-  }
-  if actions.is_empty() {
-    return apply_gpos(font, self)
-  }
   let gsub = match font.gsub() {
     Err(err) => return Err(Font(err))
     Ok(value) => value
+  }
+  if actions.is_empty() {
+    match self.shape_basic(font) {
+      Err(err) => return Err(err)
+      Ok(_) => ()
+    }
+    return apply_gpos(font, self)
   }
   let mut current_glyphs : Array[UInt] = []
   let mut current_clusters : Array[Int] = []
@@ -253,7 +294,39 @@ pub fn Buffer::shape_arabic(
     current_clusters.push(info.cluster)
   }
   let mut changed = false
+  let mut has_gsub_features = false
   if gsub is Some(gsub) {
+    let script_tag = self.script.to_tag()
+    let lang_tag = language_to_ot_tag(self.language)
+    for feature_tag in arabic_feature_tags {
+      let lookup_offsets = match gsub.layout().select_lookup_offsets_for_feature(
+        script_tag,
+        feature_tag,
+        language_tag=lang_tag,
+        include_required=false,
+      ) {
+        Err(err) => return Err(Layout(err))
+        Ok(value) => value
+      }
+      if !lookup_offsets.is_empty() {
+        has_gsub_features = true
+        break
+      }
+    }
+  }
+  if !has_gsub_features {
+    apply_arabic_fallback(self, actions)
+    match self.shape_basic(font) {
+      Err(err) => return Err(err)
+      Ok(_) => ()
+    }
+    return apply_gpos(font, self)
+  }
+  if gsub is Some(gsub) {
+    match self.shape_basic(font) {
+      Err(err) => return Err(err)
+      Ok(_) => ()
+    }
     let gdef = match font.gdef() {
       Err(err) => return Err(Font(err))
       Ok(value) => value
