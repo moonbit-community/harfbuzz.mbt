@@ -155,8 +155,10 @@ fn apply_gpos(font : @font.Font, buffer : Buffer) -> Result[Unit, ShapeError] {
       glyphs.push(info.codepoint)
     }
     let script_tag = buffer.script.to_tag()
+    let lang_tag = language_to_ot_tag(buffer.language)
     let lookup_offsets = match gpos.layout().select_lookup_offsets_with_features(
       script_tag,
+      language_tag=lang_tag,
       feature_tags=buffer.gpos_features,
     ) {
       Err(err) => return Err(Layout(err))
@@ -257,11 +259,13 @@ pub fn Buffer::shape_arabic(
       Ok(value) => value
     }
     let script_tag = self.script.to_tag()
+    let lang_tag = language_to_ot_tag(self.language)
     for feature_index in 0..<arabic_feature_tags.length() {
       let feature_tag = arabic_feature_tags[feature_index]
       let lookup_offsets = match gsub.layout().select_lookup_offsets_for_feature(
         script_tag,
         feature_tag,
+        language_tag=lang_tag,
         include_required=false,
       ) {
         Err(err) => return Err(Layout(err))
