@@ -11,7 +11,7 @@ Unicode data, variations, color/paint, and subsetting.
 - `face`: face holder + table map.
 - `font`: metrics, cmap lookup, lazy GSUB/GPOS/GDEF parsing.
 - `buffer`: glyph buffer + `shape_basic` + `shape_ot` (GSUB/GPOS with feature allowlists).
-- `sfnt`: table directory + `head`, `hhea`, `maxp`, `hmtx`, `cmap` (format 4/12), `loca`, `glyf`.
+- `sfnt`: table directory + `head`, `hhea`, `vhea`, `maxp`, `hmtx`, `vmtx`, `cmap` (format 4/12), `loca`, `glyf`.
 - `ot/tables`: coverage, layout, lookup parsing; GSUB/GPOS apply; GDEF parsing; lookup flag filtering.
   - GSUB: lookup types 1-8 and extension.
   - GPOS: lookup types 1-8 and extension (single, pair, cursive, mark-to-*, contextual, chaining).

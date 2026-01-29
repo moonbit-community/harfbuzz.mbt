@@ -248,6 +248,22 @@ fn build_kern_table_format3() -> Bytes {
 }
 
 ///|
+fn build_vhea_table() -> Bytes {
+  let bytes : Array[Byte] = Array::make(36, b'\x00')
+  bytes[34] = 0x00
+  bytes[35] = 0x02
+  Bytes::from_array(bytes)
+}
+
+///|
+fn build_vmtx_table() -> Bytes {
+  let bytes : Array[Byte] = [
+    0x02, 0xbc, 0x00, 0x05, 0x03, 0x20, 0x00, 0x06, 0x00, 0x07,
+  ]
+  Bytes::from_array(bytes)
+}
+
+///|
 fn build_os2_table_v0() -> Bytes {
   let bytes : Array[Byte] = Array::make(78, b'\x00')
   write_u16_at(bytes, 4, 400)
@@ -532,6 +548,25 @@ test "hmtx table parse" {
   }
   inspect(hmtx.advances, content="[200, 300, 300]")
   inspect(hmtx.lsbs, content="[10, 20, 30]")
+}
+
+///|
+test "vhea table parse" {
+  let vhea = match VheaTable::parse(build_vhea_table()[:]) {
+    Err(err) => fail("parse error: \{err}")
+    Ok(value) => value
+  }
+  inspect(vhea.number_of_vmetrics, content="2")
+}
+
+///|
+test "vmtx table parse" {
+  let vmtx = match VmtxTable::parse(build_vmtx_table()[:], 3, 2) {
+    Err(err) => fail("parse error: \{err}")
+    Ok(value) => value
+  }
+  inspect(vmtx.advances, content="[700, 800, 800]")
+  inspect(vmtx.tsbs, content="[5, 6, 7]")
 }
 
 ///|

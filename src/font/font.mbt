@@ -18,6 +18,8 @@ pub struct Font {
   mut maxp : @sfnt.MaxpTable?
   mut hhea : @sfnt.HheaTable?
   mut hmtx : @sfnt.HmtxTable?
+  mut vhea : @sfnt.VheaTable?
+  mut vmtx : @sfnt.VmtxTable?
   mut cmap : @sfnt.CmapTable?
   mut loca : @sfnt.LocaTable?
   mut glyf : @sfnt.GlyfTable?
@@ -49,6 +51,12 @@ let tag_hhea : @common.Tag = @common.Tag::from_chars('h', 'h', 'e', 'a')
 
 ///|
 let tag_hmtx : @common.Tag = @common.Tag::from_chars('h', 'm', 't', 'x')
+
+///|
+let tag_vhea : @common.Tag = @common.Tag::from_chars('v', 'h', 'e', 'a')
+
+///|
+let tag_vmtx : @common.Tag = @common.Tag::from_chars('v', 'm', 't', 'x')
 
 ///|
 let tag_cmap : @common.Tag = @common.Tag::from_chars('c', 'm', 'a', 'p')
@@ -117,6 +125,8 @@ pub fn Font::new(face : @face.Face) -> Font {
     maxp: None,
     hhea: None,
     hmtx: None,
+    vhea: None,
+    vmtx: None,
     cmap: None,
     loca: None,
     glyf: None,
@@ -200,11 +210,25 @@ fn Font::ensure_head(self : Font) -> Result[@sfnt.HeadTable, FontError] {
             Ok(head) => {
               self.head = Some(head)
               self.face.set_upem(head.units_per_em)
+              if self.scale_x == 0 {
+                self.scale_x = head.units_per_em
+              }
+              if self.scale_y == 0 {
+                self.scale_y = head.units_per_em
+              }
               Ok(head)
             }
           }
       }
   }
+}
+
+///|
+fn scale_value(value : Int, scale : Int, upem : Int) -> Int {
+  if upem == 0 {
+    return value
+  }
+  (value * scale) / upem
 }
 
 ///|
@@ -279,6 +303,26 @@ fn Font::ensure_hmtx(self : Font) -> Result[@sfnt.HmtxTable, FontError] {
   }
 }
 
+///|
+fn Font::ensure_vhea(self : Font) -> Result[@sfnt.VheaTable, FontError] {
+  match self.vhea {
+    Some(vhea) => Ok(vhea)
+    None =>
+      match self.table_blob(tag_vhea) {
+        Err(err) => Err(err)
+        Ok(blob) =>
+          match @sfnt.VheaTable::parse(blob.as_view()) {
+            Err(err) => Err(Parse(err))
+            Ok(vhea) => {
+              self.vhea = Some(vhea)
+              Ok(vhea)
+            }
+          }
+      }
+  }
+}
+
+///|
 ///|
 fn Font::ensure_cmap(self : Font) -> Result[@sfnt.CmapTable, FontError] {
   match self.cmap {
@@ -511,6 +555,60 @@ pub fn Font::stat(self : Font) -> Result[@sfnt.StatTable?, FontError] {
 }
 
 ///|
+pub fn Font::vhea(self : Font) -> Result[@sfnt.VheaTable?, FontError] {
+  match self.vhea {
+    Some(vhea) => Ok(Some(vhea))
+    None =>
+      match self.face.reference_table_optional(tag_vhea) {
+        Err(err) => Err(FaceTable(err))
+        Ok(None) => Ok(None)
+        Ok(Some(blob)) =>
+          match @sfnt.VheaTable::parse(blob.as_view()) {
+            Err(err) => Err(Parse(err))
+            Ok(vhea) => {
+              self.vhea = Some(vhea)
+              Ok(Some(vhea))
+            }
+          }
+      }
+  }
+}
+
+///|
+pub fn Font::vmtx(self : Font) -> Result[@sfnt.VmtxTable?, FontError] {
+  match self.vmtx {
+    Some(vmtx) => Ok(Some(vmtx))
+    None =>
+      match self.face.reference_table_optional(tag_vmtx) {
+        Err(err) => Err(FaceTable(err))
+        Ok(None) => Ok(None)
+        Ok(Some(blob)) => {
+          let maxp = match self.ensure_maxp() {
+            Err(err) => return Err(err)
+            Ok(value) => value
+          }
+          let vhea = match self.ensure_vhea() {
+            Err(err) => return Err(err)
+            Ok(value) => value
+          }
+          match
+            @sfnt.VmtxTable::parse(
+              blob.as_view(),
+              maxp.num_glyphs,
+              vhea.number_of_vmetrics,
+            ) {
+            Err(err) => Err(Parse(err))
+            Ok(vmtx) => {
+              self.vmtx = Some(vmtx)
+              Ok(Some(vmtx))
+            }
+          }
+        }
+      }
+  }
+}
+
+///|
 pub fn Font::base(self : Font) -> Result[@sfnt.BaseTable?, FontError] {
   match self.base {
     Some(base) => Ok(Some(base))
@@ -672,6 +770,10 @@ pub fn Font::glyph_h_advance(
   self : Font,
   glyph : UInt,
 ) -> Result[Int, FontError] {
+  let head = match self.ensure_head() {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
   let hmtx = match self.ensure_hmtx() {
     Err(err) => return Err(err)
     Ok(value) => value
@@ -680,7 +782,7 @@ pub fn Font::glyph_h_advance(
   if index < 0 || index >= hmtx.advances.length() {
     return Err(GlyphOutOfRange)
   }
-  Ok(hmtx.advances[index])
+  Ok(scale_value(hmtx.advances[index], self.scale_x, head.units_per_em))
 }
 
 ///|
@@ -721,8 +823,21 @@ pub fn Font::glyph_bounds(
 ///|
 /// Return glyph vertical advance (stub).
 pub fn Font::glyph_v_advance(
-  _self : Font,
-  _glyph : UInt,
+  self : Font,
+  glyph : UInt,
 ) -> Result[Int, FontError] {
-  Ok(0)
+  let head = match self.ensure_head() {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  let vmtx = match self.vmtx() {
+    Err(err) => return Err(err)
+    Ok(None) => return Ok(0)
+    Ok(Some(value)) => value
+  }
+  let index = glyph.reinterpret_as_int()
+  if index < 0 || index >= vmtx.advances.length() {
+    return Err(GlyphOutOfRange)
+  }
+  Ok(scale_value(vmtx.advances[index], self.scale_y, head.units_per_em))
 }

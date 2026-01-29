@@ -80,6 +80,14 @@ fn build_hhea(number_of_hmetrics : Int) -> Bytes {
 }
 
 ///|
+fn build_vhea(number_of_vmetrics : Int) -> Bytes {
+  let bytes : Array[Byte] = Array::make(36, b'\x00')
+  bytes[34] = ((number_of_vmetrics >> 8) & 0xff).to_byte()
+  bytes[35] = (number_of_vmetrics & 0xff).to_byte()
+  Bytes::from_array(bytes)
+}
+
+///|
 fn build_hmtx() -> Bytes {
   let bytes : Array[Byte] = []
   // glyph 0 advance 200, lsb 0
@@ -87,6 +95,18 @@ fn build_hmtx() -> Bytes {
   push_u16(bytes, 0)
   // glyph 1 advance 300, lsb 0
   push_u16(bytes, 300)
+  push_u16(bytes, 0)
+  Bytes::from_array(bytes)
+}
+
+///|
+fn build_vmtx() -> Bytes {
+  let bytes : Array[Byte] = []
+  // glyph 0 advance 700, tsb 0
+  push_u16(bytes, 700)
+  push_u16(bytes, 0)
+  // glyph 1 advance 800, tsb 0
+  push_u16(bytes, 800)
   push_u16(bytes, 0)
   Bytes::from_array(bytes)
 }
@@ -148,6 +168,8 @@ fn build_font_bytes() -> Bytes {
     (@common.Tag::from_chars('m', 'a', 'x', 'p'), build_maxp(2)),
     (@common.Tag::from_chars('h', 'h', 'e', 'a'), build_hhea(2)),
     (@common.Tag::from_chars('h', 'm', 't', 'x'), build_hmtx()),
+    (@common.Tag::from_chars('v', 'h', 'e', 'a'), build_vhea(2)),
+    (@common.Tag::from_chars('v', 'm', 't', 'x'), build_vmtx()),
     (@common.Tag::from_chars('l', 'o', 'c', 'a'), loca),
     (@common.Tag::from_chars('g', 'l', 'y', 'f'), glyf),
     (
@@ -191,6 +213,37 @@ test "font cmap mapping and advances" {
     Ok(value) => value
   }
   inspect(advance, content="300")
+}
+
+///|
+test "font vmtx advances" {
+  let bytes = build_font_bytes()
+  let font = Font::from_bytes(bytes)
+  let advance = match font.glyph_v_advance(1U) {
+    Err(err) => fail("advance error: \{err}")
+    Ok(value) => value
+  }
+  inspect(advance, content="800")
+}
+
+///|
+test "font scale applies to advances" {
+  let bytes = build_font_bytes()
+  let font = Font::from_bytes(bytes)
+  font.set_scale(2000, 2000)
+  let advance = match font.glyph_h_advance(1U) {
+    Err(err) => fail("advance error: \{err}")
+    Ok(value) => value
+  }
+  inspect(advance, content="600")
+}
+
+///|
+test "font scale defaults to upem" {
+  let bytes = build_font_bytes()
+  let font = Font::from_bytes(bytes)
+  let _ = font.glyph_h_advance(1U)
+  inspect(font.get_scale(), content="(1000, 1000)")
 }
 
 ///|
