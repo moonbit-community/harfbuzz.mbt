@@ -288,7 +288,13 @@ pub fn Buffer::normalize(self : Buffer) -> Unit {
     }
     let mut i = start + 1
     while i < end {
-      match @unicode.compose(self.infos[start].codepoint, self.infos[i].codepoint) {
+      let base = self.infos[start].codepoint
+      let mark = self.infos[i].codepoint
+      let composed = match @unicode.compose(base, mark) {
+        None => if is_hebrew { compose_hebrew(base, mark) } else { None }
+        Some(value) => Some(value)
+      }
+      match composed {
         None => i = i + 1
         Some(composed) => {
           self.merge_clusters(start, i + 1)
@@ -302,6 +308,63 @@ pub fn Buffer::normalize(self : Buffer) -> Unit {
       }
     }
     start = end
+  }
+}
+
+///|
+fn compose_hebrew(a : UInt, b : UInt) -> UInt? {
+  let dagesh_forms : Array[UInt] = [
+    0xFB30U, 0xFB31U, 0xFB32U, 0xFB33U, 0xFB34U, 0xFB35U, 0xFB36U, 0U,
+    0xFB38U, 0xFB39U, 0xFB3AU, 0xFB3BU, 0xFB3CU, 0U, 0xFB3EU, 0U,
+    0xFB40U, 0xFB41U, 0U, 0xFB43U, 0xFB44U, 0U, 0xFB46U, 0xFB47U,
+    0xFB48U, 0xFB49U, 0xFB4AU,
+  ]
+  match b {
+    0x05B4U => if a == 0x05D9U { Some(0xFB1DU) } else { None }
+    0x05B7U =>
+      if a == 0x05F2U {
+        Some(0xFB1FU)
+      } else if a == 0x05D0U {
+        Some(0xFB2EU)
+      } else {
+        None
+      }
+    0x05B8U => if a == 0x05D0U { Some(0xFB2FU) } else { None }
+    0x05B9U => if a == 0x05D5U { Some(0xFB4BU) } else { None }
+    0x05BCU => if a >= 0x05D0U && a <= 0x05EAU {
+        let form = dagesh_forms[(a - 0x05D0U).reinterpret_as_int()]
+        if form == 0U { None } else { Some(form) }
+      } else if a == 0xFB2AU {
+        Some(0xFB2CU)
+      } else if a == 0xFB2BU {
+        Some(0xFB2DU)
+      } else {
+        None
+      }
+    0x05BFU => if a == 0x05D1U {
+        Some(0xFB4CU)
+      } else if a == 0x05DBU {
+        Some(0xFB4DU)
+      } else if a == 0x05E4U {
+        Some(0xFB4EU)
+      } else {
+        None
+      }
+    0x05C1U => if a == 0x05E9U {
+        Some(0xFB2AU)
+      } else if a == 0xFB49U {
+        Some(0xFB2CU)
+      } else {
+        None
+      }
+    0x05C2U => if a == 0x05E9U {
+        Some(0xFB2BU)
+      } else if a == 0xFB49U {
+        Some(0xFB2DU)
+      } else {
+        None
+      }
+    _ => None
   }
 }
 

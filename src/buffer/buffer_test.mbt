@@ -121,7 +121,21 @@ test "buffer normalize hebrew reorder" {
   for info in buffer.infos() {
     cps.push(info.codepoint)
   }
-  inspect(cps, content="[1488, 1463, 1469, 1456]")
+  inspect(cps, content="[64302, 1469, 1456]")
+}
+
+///|
+test "buffer normalize hebrew compose" {
+  let buffer = Buffer::new()
+  buffer.set_script(@common.script_hebrew)
+  buffer.add_codepoint(0x05D0U)
+  buffer.add_codepoint(0x05BCU)
+  buffer.normalize()
+  let cps : Array[UInt] = []
+  for info in buffer.infos() {
+    cps.push(info.codepoint)
+  }
+  inspect(cps, content="[64304]")
 }
 
 ///|
