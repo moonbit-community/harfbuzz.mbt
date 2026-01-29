@@ -126,6 +126,19 @@ pub fn GsubTable::apply_with_lookups(
           if did_change {
             changed = true
           }
+        } else if lookup_type == 6 {
+          let did_change = match apply_chain_subtable_list(
+            data,
+            subtable_offsets,
+            current_glyphs,
+            lookup_list_offsets,
+          ) {
+            Err(err) => return Err(err)
+            Ok(value) => value
+          }
+          if did_change {
+            changed = true
+          }
         } else if lookup_type == 8 {
           let did_change = match apply_reverse_chain_subtable_list(
             data,
@@ -455,6 +468,290 @@ fn apply_lookup_at(
         apply_alternate_at(data, subtable_offsets, glyphs, index)
       } else {
         Ok(false)
+      }
+    }
+  }
+}
+
+///|
+fn apply_chain_subtable_list(
+  data : BytesView,
+  offsets : Array[Int],
+  glyphs : Array[UInt],
+  lookup_list_offsets : Array[Int],
+) -> Result[Bool, OtLayoutError] {
+  let mut changed = false
+  for offset in offsets {
+    let result = apply_chain_subtable(data, offset, glyphs, lookup_list_offsets)
+    match result {
+      Err(err) => return Err(err)
+      Ok(value) => if value { changed = true }
+    }
+  }
+  Ok(changed)
+}
+
+///|
+fn apply_chain_subtable(
+  data : BytesView,
+  offset : Int,
+  glyphs : Array[UInt],
+  lookup_list_offsets : Array[Int],
+) -> Result[Bool, OtLayoutError] {
+  if offset < 0 || offset + 6 > data.length() {
+    return Err(UnexpectedEof)
+  }
+  let format = read_u16_int(data, offset)
+  let coverage_offset = read_u16_int(data, offset + 2)
+  let set_count = read_u16_int(data, offset + 4)
+  match (format, coverage_offset, set_count) {
+    (Err(err), _, _) => Err(err)
+    (_, Err(err), _) => Err(err)
+    (_, _, Err(err)) => Err(err)
+    (Ok(format), Ok(coverage_offset), Ok(set_count)) => {
+      if format != 1 {
+        return Err(InvalidFormat)
+      }
+      if coverage_offset == 0 || set_count <= 0 {
+        return Err(InvalidFormat)
+      }
+      let coverage_base = offset + coverage_offset
+      let set_base = offset + 6
+      if set_base < 0 || set_base + set_count * 2 > data.length() {
+        return Err(UnexpectedEof)
+      }
+      let mut changed = false
+      for i in 0..<glyphs.length() {
+        let glyph = glyphs[i]
+        let index = coverage_index(data, coverage_base, glyph)
+        match index {
+          Err(err) => return Err(err)
+          Ok(None) => ()
+          Ok(Some(index)) => {
+            if index < 0 || index >= set_count {
+              return Err(InvalidFormat)
+            }
+            let rule_set_offset = read_u16_int(data, set_base + index * 2)
+            match rule_set_offset {
+              Err(err) => return Err(err)
+              Ok(rule_set_offset) => {
+                if rule_set_offset == 0 {
+                  return Err(InvalidFormat)
+                }
+                let rule_set_base = offset + rule_set_offset
+                if rule_set_base < 0 || rule_set_base + 2 > data.length() {
+                  return Err(UnexpectedEof)
+                }
+                let rule_count = read_u16_int(data, rule_set_base)
+                match rule_count {
+                  Err(err) => return Err(err)
+                  Ok(rule_count) => {
+                    if rule_count <= 0 {
+                      return Err(InvalidFormat)
+                    }
+                    let rule_list_base = rule_set_base + 2
+                    if rule_list_base < 0 ||
+                        rule_list_base + rule_count * 2 > data.length() {
+                      return Err(UnexpectedEof)
+                    }
+                    for r in 0..<rule_count {
+                      let rule_offset = read_u16_int(data, rule_list_base + r * 2)
+                      match rule_offset {
+                        Err(err) => return Err(err)
+                        Ok(rule_offset) => {
+                          if rule_offset == 0 {
+                            return Err(InvalidFormat)
+                          }
+                          let rule_base = rule_set_base + rule_offset
+                          let applied = match apply_chain_rule(
+                            data,
+                            rule_base,
+                            glyphs,
+                            i,
+                            lookup_list_offsets,
+                          ) {
+                            Err(err) => return Err(err)
+                            Ok(value) => value
+                          }
+                          if applied {
+                            changed = true
+                            break
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+      Ok(changed)
+    }
+  }
+}
+
+///|
+fn apply_chain_rule(
+  data : BytesView,
+  offset : Int,
+  glyphs : Array[UInt],
+  index : Int,
+  lookup_list_offsets : Array[Int],
+) -> Result[Bool, OtLayoutError] {
+  if offset < 0 || offset + 2 > data.length() {
+    return Err(UnexpectedEof)
+  }
+  let backtrack_count = read_u16_int(data, offset)
+  match backtrack_count {
+    Err(err) => Err(err)
+    Ok(backtrack_count) => {
+      if backtrack_count < 0 {
+        return Err(InvalidFormat)
+      }
+      let mut cursor = offset + 2
+      if cursor < 0 || cursor + backtrack_count * 2 > data.length() {
+        return Err(UnexpectedEof)
+      }
+      let backtrack : Array[Int] = []
+      for _ in 0..<backtrack_count {
+        let value = read_u16_int(data, cursor)
+        cursor = cursor + 2
+        match value {
+          Err(err) => return Err(err)
+          Ok(value) => backtrack.push(value)
+        }
+      }
+      if cursor < 0 || cursor + 2 > data.length() {
+        return Err(UnexpectedEof)
+      }
+      let input_count = read_u16_int(data, cursor)
+      match input_count {
+        Err(err) => Err(err)
+        Ok(input_count) => {
+          cursor = cursor + 2
+          if input_count <= 0 {
+            return Err(InvalidFormat)
+          }
+          if index + input_count > glyphs.length() {
+            return Ok(false)
+          }
+          if cursor < 0 || cursor + (input_count - 1) * 2 > data.length() {
+            return Err(UnexpectedEof)
+          }
+          let input : Array[Int] = []
+          for _ in 0..<(input_count - 1) {
+            let value = read_u16_int(data, cursor)
+            cursor = cursor + 2
+            match value {
+              Err(err) => return Err(err)
+              Ok(value) => input.push(value)
+            }
+          }
+          if cursor < 0 || cursor + 2 > data.length() {
+            return Err(UnexpectedEof)
+          }
+          let lookahead_count = read_u16_int(data, cursor)
+          match lookahead_count {
+            Err(err) => Err(err)
+            Ok(lookahead_count) => {
+              cursor = cursor + 2
+              if lookahead_count < 0 {
+                return Err(InvalidFormat)
+              }
+              if cursor < 0 || cursor + lookahead_count * 2 > data.length() {
+                return Err(UnexpectedEof)
+              }
+              let lookahead : Array[Int] = []
+              for _ in 0..<lookahead_count {
+                let value = read_u16_int(data, cursor)
+                cursor = cursor + 2
+                match value {
+                  Err(err) => return Err(err)
+                  Ok(value) => lookahead.push(value)
+                }
+              }
+              if cursor < 0 || cursor + 2 > data.length() {
+                return Err(UnexpectedEof)
+              }
+              let subst_count = read_u16_int(data, cursor)
+              match subst_count {
+                Err(err) => Err(err)
+                Ok(subst_count) => {
+                  cursor = cursor + 2
+                  if subst_count < 0 {
+                    return Err(InvalidFormat)
+                  }
+                  if cursor < 0 || cursor + subst_count * 4 > data.length() {
+                    return Err(UnexpectedEof)
+                  }
+                  for j in 0..<backtrack.length() {
+                    let pos = index - 1 - j
+                    if pos < 0 {
+                      return Ok(false)
+                    }
+                    let expected = backtrack[j]
+                    if expected != u16_to_int(glyphs[pos]) {
+                      return Ok(false)
+                    }
+                  }
+                  for j in 0..<input.length() {
+                    let pos = index + 1 + j
+                    if pos >= glyphs.length() {
+                      return Ok(false)
+                    }
+                    if input[j] != u16_to_int(glyphs[pos]) {
+                      return Ok(false)
+                    }
+                  }
+                  for j in 0..<lookahead.length() {
+                    let pos = index + input_count + j
+                    if pos >= glyphs.length() {
+                      return Ok(false)
+                    }
+                    if lookahead[j] != u16_to_int(glyphs[pos]) {
+                      return Ok(false)
+                    }
+                  }
+                  let mut changed = false
+                  for i in 0..<subst_count {
+                    let seq_index = read_u16_int(data, cursor + i * 4)
+                    let lookup_index = read_u16_int(data, cursor + i * 4 + 2)
+                    match (seq_index, lookup_index) {
+                      (Err(err), _) => return Err(err)
+                      (_, Err(err)) => return Err(err)
+                      (Ok(seq_index), Ok(lookup_index)) => {
+                        if seq_index < 0 || seq_index >= input_count {
+                          return Err(InvalidFormat)
+                        }
+                        if lookup_index < 0 ||
+                            lookup_index >= lookup_list_offsets.length() {
+                          return Err(InvalidFormat)
+                        }
+                        let target = index + seq_index
+                        let lookup_offset = lookup_list_offsets[lookup_index]
+                        let did_change = match apply_lookup_at(
+                          data,
+                          lookup_offset,
+                          glyphs,
+                          target,
+                        ) {
+                          Err(err) => return Err(err)
+                          Ok(value) => value
+                        }
+                        if did_change {
+                          changed = true
+                        }
+                      }
+                    }
+                  }
+                  Ok(changed)
+                }
+              }
+            }
+          }
+        }
       }
     }
   }
