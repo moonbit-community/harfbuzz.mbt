@@ -28,6 +28,7 @@ pub struct Font {
   mut meta : @sfnt.MetaTable?
   mut vorg : @sfnt.VorgTable?
   mut hdmx : @sfnt.HdmxTable?
+  mut stat : @sfnt.StatTable?
   mut kern : @sfnt.KernTable?
   mut gsub : @ot_tables.GsubTable?
   mut gpos : @ot_tables.GposTable?
@@ -77,6 +78,9 @@ let tag_vorg : @common.Tag = @common.Tag::from_chars('V', 'O', 'R', 'G')
 let tag_hdmx : @common.Tag = @common.Tag::from_chars('h', 'd', 'm', 'x')
 
 ///|
+let tag_stat : @common.Tag = @common.Tag::from_chars('S', 'T', 'A', 'T')
+
+///|
 let tag_kern : @common.Tag = @common.Tag::from_chars('k', 'e', 'r', 'n')
 
 ///|
@@ -111,6 +115,7 @@ pub fn Font::new(face : @face.Face) -> Font {
     meta: None,
     vorg: None,
     hdmx: None,
+    stat: None,
     kern: None,
     gsub: None,
     gpos: None,
@@ -464,6 +469,26 @@ pub fn Font::hdmx(self : Font) -> Result[@sfnt.HdmxTable?, FontError] {
             Ok(hdmx) => {
               self.hdmx = Some(hdmx)
               Ok(Some(hdmx))
+            }
+          }
+      }
+  }
+}
+
+///|
+pub fn Font::stat(self : Font) -> Result[@sfnt.StatTable?, FontError] {
+  match self.stat {
+    Some(stat) => Ok(Some(stat))
+    None =>
+      match self.face.reference_table_optional(tag_stat) {
+        Err(err) => Err(FaceTable(err))
+        Ok(None) => Ok(None)
+        Ok(Some(blob)) =>
+          match @sfnt.StatTable::parse(blob.as_view()) {
+            Err(err) => Err(Parse(err))
+            Ok(stat) => {
+              self.stat = Some(stat)
+              Ok(Some(stat))
             }
           }
       }

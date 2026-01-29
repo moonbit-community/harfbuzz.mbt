@@ -28,6 +28,15 @@ fn push_u32(bytes : Array[Byte], value : Int) -> Unit {
 }
 
 ///|
+fn push_tag(bytes : Array[Byte], tag : @common.Tag) -> Unit {
+  let (b1, b2, b3, b4) = tag.bytes()
+  bytes.push(b1)
+  bytes.push(b2)
+  bytes.push(b3)
+  bytes.push(b4)
+}
+
+///|
 ///|
 fn write_u16_at(bytes : Array[Byte], offset : Int, value : Int) -> Unit {
   bytes[offset] = ((value >> 8) & 0xff).to_byte()
@@ -310,6 +319,28 @@ fn build_hdmx_table() -> Bytes {
 }
 
 ///|
+fn build_stat_table() -> Bytes {
+  let bytes : Array[Byte] = []
+  push_u32(bytes, 0x00010001)
+  push_u16(bytes, 8)
+  push_u16(bytes, 1)
+  push_u32(bytes, 20)
+  push_u16(bytes, 1)
+  push_u32(bytes, 28)
+  push_u16(bytes, 2)
+  push_tag(bytes, @common.Tag::from_chars('w', 'g', 'h', 't'))
+  push_u16(bytes, 1)
+  push_u16(bytes, 0)
+  push_u16(bytes, 2)
+  push_u16(bytes, 1)
+  push_u16(bytes, 0)
+  push_u16(bytes, 0)
+  push_u16(bytes, 3)
+  push_u32(bytes, 0x00010000)
+  Bytes::from_array(bytes)
+}
+
+///|
 test "head table parse" {
   let bytes = build_bytes(54)
   bytes[18] = 0x03
@@ -517,4 +548,25 @@ test "hdmx table parse" {
   inspect(record.pixel_size, content="12")
   inspect(record.max_width, content="8")
   inspect(record.widths, content="[3, 4, 5, 6]")
+}
+
+///|
+test "stat table parse" {
+  let stat = match StatTable::parse(build_stat_table()[:]) {
+    Err(err) => fail("parse error: \{err}")
+    Ok(value) => value
+  }
+  inspect(stat.design_axes.length(), content="1")
+  inspect(stat.design_axes[0].tag.to_string(), content="wght")
+  inspect(stat.elided_fallback_name_id, content="2")
+  inspect(stat.axis_values.length(), content="1")
+  match stat.axis_values[0] {
+    Format1(axis_index, flags, value_name_id, value) => {
+      inspect(axis_index, content="0")
+      inspect(flags, content="0")
+      inspect(value_name_id, content="3")
+      inspect(value, content="65536")
+    }
+    _ => fail("unexpected axis value format")
+  }
 }
