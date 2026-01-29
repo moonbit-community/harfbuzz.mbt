@@ -326,6 +326,47 @@ fn build_gpos_single_lookup_format2() -> Bytes {
 }
 
 ///|
+fn build_gpos_cursive_subtable_format1() -> Bytes {
+  let bytes : Array[Byte] = []
+  push_u16(bytes, 1)
+  push_u16(bytes, 14)
+  push_u16(bytes, 2)
+  // entry/exit records
+  push_u16(bytes, 0)
+  push_u16(bytes, 22)
+  push_u16(bytes, 28)
+  push_u16(bytes, 0)
+  // coverage table
+  push_u16(bytes, 1)
+  push_u16(bytes, 2)
+  push_u16(bytes, 9)
+  push_u16(bytes, 10)
+  // exit anchor (glyph 9)
+  push_u16(bytes, 1)
+  push_i16(bytes, 20)
+  push_i16(bytes, 5)
+  // entry anchor (glyph 10)
+  push_u16(bytes, 1)
+  push_i16(bytes, 7)
+  push_i16(bytes, 2)
+  Bytes::from_array(bytes)
+}
+
+///|
+fn build_gpos_cursive_lookup_format1() -> Bytes {
+  let subtable = build_gpos_cursive_subtable_format1()
+  let bytes : Array[Byte] = []
+  push_u16(bytes, 3)
+  push_u16(bytes, 0)
+  push_u16(bytes, 1)
+  push_u16(bytes, 8)
+  for b in subtable {
+    bytes.push(b)
+  }
+  Bytes::from_array(bytes)
+}
+
+///|
 fn build_gpos_mark_to_base_subtable_format1() -> Bytes {
   let bytes : Array[Byte] = []
   push_u16(bytes, 1)
@@ -846,6 +887,27 @@ test "gpos single adjust format2" {
   inspect(deltas.length(), content="2")
   inspect(deltas[0].x_advance, content="10")
   inspect(deltas[1].x_advance, content="-5")
+}
+
+///|
+test "gpos cursive format1" {
+  let gpos_bytes = build_layout_table(
+    build_gpos_cursive_lookup_format1(),
+    @common.Tag::from_chars('k', 'e', 'r', 'n'),
+  )
+  let gpos = match GposTable::parse(@blob.Blob::from_bytes(gpos_bytes)) {
+    Err(err) => fail("parse error: \{err}")
+    Ok(value) => value
+  }
+  let glyphs : Array[UInt] = [9U, 10U]
+  let deltas = match gpos.position_deltas(glyphs[:]) {
+    Err(err) => fail("apply error: \{err}")
+    Ok(value) => value
+  }
+  inspect(deltas.length(), content="2")
+  inspect(deltas[0].x_placement, content="0")
+  inspect(deltas[1].x_placement, content="13")
+  inspect(deltas[1].y_placement, content="3")
 }
 
 ///|

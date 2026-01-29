@@ -76,6 +76,14 @@ pub fn GposTable::position_deltas_with_lookups(
               Ok(_) => ()
             }
           }
+        } else if lookup_type == 3 {
+          for subtable_offset in subtable_offsets {
+            let res = apply_cursive_subtable(data, subtable_offset, glyphs, deltas)
+            match res {
+              Err(err) => return Err(err)
+              Ok(_) => ()
+            }
+          }
         } else if lookup_type == 4 {
           for subtable_offset in subtable_offsets {
             let res = apply_mark_subtable(data, subtable_offset, glyphs, deltas)
@@ -228,6 +236,112 @@ fn apply_pair_subtable(
     } else if format == 2 {
       apply_pair_format2(data, offset, glyphs, deltas)
     } else {
+      Ok(())
+    }
+  }
+}
+
+///|
+fn apply_cursive_subtable(
+  data : BytesView,
+  offset : Int,
+  glyphs : ArrayView[UInt],
+  deltas : Array[ValueRecord],
+) -> Result[Unit, OtLayoutError] {
+  let format = read_u16_int(data, offset)
+  match format {
+    Err(err) => Err(err)
+    Ok(format) => if format == 1 {
+      apply_cursive_format1(data, offset, glyphs, deltas)
+    } else {
+      Ok(())
+    }
+  }
+}
+
+///|
+fn apply_cursive_format1(
+  data : BytesView,
+  offset : Int,
+  glyphs : ArrayView[UInt],
+  deltas : Array[ValueRecord],
+) -> Result[Unit, OtLayoutError] {
+  if glyphs.length() < 2 {
+    return Ok(())
+  }
+  if offset < 0 || offset + 6 > data.length() {
+    return Err(UnexpectedEof)
+  }
+  let coverage_offset = read_u16_int(data, offset + 2)
+  let entry_exit_count = read_u16_int(data, offset + 4)
+  match (coverage_offset, entry_exit_count) {
+    (Err(err), _) => Err(err)
+    (_, Err(err)) => Err(err)
+    (Ok(coverage_offset), Ok(entry_exit_count)) => {
+      if entry_exit_count <= 0 {
+        return Err(InvalidFormat)
+      }
+      if coverage_offset == 0 {
+        return Err(InvalidFormat)
+      }
+      let coverage_base = offset + coverage_offset
+      let record_base = offset + 6
+      let record_size = 4
+      if record_base < 0 ||
+          record_base + entry_exit_count * record_size > data.length() {
+        return Err(UnexpectedEof)
+      }
+      for i in 0..<(glyphs.length() - 1) {
+        let current = glyphs[i]
+        let next = glyphs[i + 1]
+        let current_index = coverage_index(data, coverage_base, current)
+        let next_index = coverage_index(data, coverage_base, next)
+        match (current_index, next_index) {
+          (Err(err), _) => return Err(err)
+          (_, Err(err)) => return Err(err)
+          (Ok(Some(current_index)), Ok(Some(next_index))) => {
+            if current_index < 0 || current_index >= entry_exit_count {
+              return Err(InvalidFormat)
+            }
+            if next_index < 0 || next_index >= entry_exit_count {
+              return Err(InvalidFormat)
+            }
+            let current_record_base = record_base + current_index * record_size
+            let next_record_base = record_base + next_index * record_size
+            let current_exit_offset = read_u16_int(data, current_record_base + 2)
+            let next_entry_offset = read_u16_int(data, next_record_base)
+            match (current_exit_offset, next_entry_offset) {
+              (Err(err), _) => return Err(err)
+              (_, Err(err)) => return Err(err)
+              (Ok(current_exit_offset), Ok(next_entry_offset)) => {
+                if current_exit_offset == 0 || next_entry_offset == 0 {
+                  continue
+                }
+                let current_exit_base = offset + current_exit_offset
+                let next_entry_base = offset + next_entry_offset
+                let current_exit = read_anchor(data, current_exit_base)
+                let next_entry = read_anchor(data, next_entry_base)
+                match (current_exit, next_entry) {
+                  (Err(err), _) => return Err(err)
+                  (_, Err(err)) => return Err(err)
+                  (Ok(current_exit), Ok(next_entry)) => {
+                    let dx = current_exit.0 - next_entry.0
+                    let dy = current_exit.1 - next_entry.1
+                    let delta = ValueRecord::{
+                      x_placement: dx,
+                      y_placement: dy,
+                      x_advance: 0,
+                      y_advance: 0,
+                    }
+                    deltas[i + 1] = add_value_record(deltas[i + 1], delta)
+                  }
+                }
+              }
+            }
+          }
+          _ => ()
+        }
+      }
       Ok(())
     }
   }
