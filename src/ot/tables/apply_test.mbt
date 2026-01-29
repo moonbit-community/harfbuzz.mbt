@@ -390,6 +390,87 @@ fn build_gpos_context_subtable() -> Bytes {
 }
 
 ///|
+fn build_gpos_context_subtable_format2() -> Bytes {
+  let bytes : Array[Byte] = []
+  push_u16(bytes, 2)
+  push_u16(bytes, 26)
+  push_u16(bytes, 32)
+  push_u16(bytes, 2)
+  push_u16(bytes, 0)
+  push_u16(bytes, 12)
+  // class rule set
+  push_u16(bytes, 1)
+  push_u16(bytes, 4)
+  // class rule: [class1, class1] -> apply lookup 1 at index 0
+  push_u16(bytes, 2)
+  push_u16(bytes, 1)
+  push_u16(bytes, 1)
+  push_u16(bytes, 0)
+  push_u16(bytes, 1)
+  // coverage table (input glyph 3)
+  push_u16(bytes, 1)
+  push_u16(bytes, 1)
+  push_u16(bytes, 3)
+  // class def (glyphs 3..4 -> class 1)
+  push_u16(bytes, 1)
+  push_u16(bytes, 3)
+  push_u16(bytes, 2)
+  push_u16(bytes, 1)
+  push_u16(bytes, 1)
+  Bytes::from_array(bytes)
+}
+
+///|
+fn build_gpos_context_lookup_format2() -> Bytes {
+  let subtable = build_gpos_context_subtable_format2()
+  let bytes : Array[Byte] = []
+  push_u16(bytes, 7)
+  push_u16(bytes, 0)
+  push_u16(bytes, 1)
+  push_u16(bytes, 8)
+  for b in subtable {
+    bytes.push(b)
+  }
+  Bytes::from_array(bytes)
+}
+
+///|
+fn build_gpos_context_subtable_format3() -> Bytes {
+  let bytes : Array[Byte] = []
+  push_u16(bytes, 3)
+  push_u16(bytes, 2)
+  push_u16(bytes, 1)
+  push_u16(bytes, 14)
+  push_u16(bytes, 20)
+  // pos lookup record (seq index 0, lookup index 1)
+  push_u16(bytes, 0)
+  push_u16(bytes, 1)
+  // coverage table 1 (glyph 3)
+  push_u16(bytes, 1)
+  push_u16(bytes, 1)
+  push_u16(bytes, 3)
+  // coverage table 2 (glyph 4)
+  push_u16(bytes, 1)
+  push_u16(bytes, 1)
+  push_u16(bytes, 4)
+  Bytes::from_array(bytes)
+}
+
+///|
+fn build_gpos_context_lookup_format3() -> Bytes {
+  let subtable = build_gpos_context_subtable_format3()
+  let bytes : Array[Byte] = []
+  push_u16(bytes, 7)
+  push_u16(bytes, 0)
+  push_u16(bytes, 1)
+  push_u16(bytes, 8)
+  for b in subtable {
+    bytes.push(b)
+  }
+  Bytes::from_array(bytes)
+}
+
+///|
 fn build_gpos_context_lookup() -> Bytes {
   let subtable = build_gpos_context_subtable()
   let bytes : Array[Byte] = []
@@ -465,6 +546,107 @@ fn build_gpos_chain_subtable() -> Bytes {
   push_u16(bytes, 1)
   push_u16(bytes, 1)
   push_u16(bytes, 3)
+  Bytes::from_array(bytes)
+}
+
+///|
+fn build_gpos_chain_subtable_format2() -> Bytes {
+  let bytes : Array[Byte] = []
+  push_u16(bytes, 2)
+  push_u16(bytes, 38)
+  push_u16(bytes, 44)
+  push_u16(bytes, 44)
+  push_u16(bytes, 44)
+  push_u16(bytes, 2)
+  push_u16(bytes, 0)
+  push_u16(bytes, 16)
+  // chain class rule set
+  push_u16(bytes, 1)
+  push_u16(bytes, 4)
+  // chain class rule: backtrack class 1, input class 1, lookahead class 1
+  push_u16(bytes, 1)
+  push_u16(bytes, 1)
+  push_u16(bytes, 2)
+  push_u16(bytes, 1)
+  push_u16(bytes, 1)
+  push_u16(bytes, 1)
+  push_u16(bytes, 1)
+  push_u16(bytes, 0)
+  push_u16(bytes, 1)
+  // coverage table (input glyph 3)
+  push_u16(bytes, 1)
+  push_u16(bytes, 1)
+  push_u16(bytes, 3)
+  // class def (glyphs 1..4 -> class 1)
+  push_u16(bytes, 1)
+  push_u16(bytes, 1)
+  push_u16(bytes, 4)
+  push_u16(bytes, 1)
+  push_u16(bytes, 1)
+  push_u16(bytes, 1)
+  push_u16(bytes, 1)
+  Bytes::from_array(bytes)
+}
+
+///|
+fn build_gpos_chain_lookup_format2() -> Bytes {
+  let subtable = build_gpos_chain_subtable_format2()
+  let bytes : Array[Byte] = []
+  push_u16(bytes, 8)
+  push_u16(bytes, 0)
+  push_u16(bytes, 1)
+  push_u16(bytes, 8)
+  for b in subtable {
+    bytes.push(b)
+  }
+  Bytes::from_array(bytes)
+}
+
+///|
+fn build_gpos_chain_subtable_format3() -> Bytes {
+  let bytes : Array[Byte] = []
+  push_u16(bytes, 3)
+  push_u16(bytes, 1)
+  push_u16(bytes, 22)
+  push_u16(bytes, 2)
+  push_u16(bytes, 28)
+  push_u16(bytes, 34)
+  push_u16(bytes, 1)
+  push_u16(bytes, 40)
+  push_u16(bytes, 1)
+  // pos lookup record (seq index 0, lookup index 1)
+  push_u16(bytes, 0)
+  push_u16(bytes, 1)
+  // backtrack coverage (glyph 1)
+  push_u16(bytes, 1)
+  push_u16(bytes, 1)
+  push_u16(bytes, 1)
+  // input coverage 1 (glyph 3)
+  push_u16(bytes, 1)
+  push_u16(bytes, 1)
+  push_u16(bytes, 3)
+  // input coverage 2 (glyph 4)
+  push_u16(bytes, 1)
+  push_u16(bytes, 1)
+  push_u16(bytes, 4)
+  // lookahead coverage (glyph 2)
+  push_u16(bytes, 1)
+  push_u16(bytes, 1)
+  push_u16(bytes, 2)
+  Bytes::from_array(bytes)
+}
+
+///|
+fn build_gpos_chain_lookup_format3() -> Bytes {
+  let subtable = build_gpos_chain_subtable_format3()
+  let bytes : Array[Byte] = []
+  push_u16(bytes, 8)
+  push_u16(bytes, 0)
+  push_u16(bytes, 1)
+  push_u16(bytes, 8)
+  for b in subtable {
+    bytes.push(b)
+  }
   Bytes::from_array(bytes)
 }
 
@@ -1286,6 +1468,106 @@ test "gpos chain format1" {
     Ok(value) => value
   }
   inspect(deltas.length(), content="5")
+  inspect(deltas[1].x_placement, content="7")
+  inspect(deltas[1].x_advance, content="15")
+  inspect(deltas[2].x_advance, content="0")
+}
+
+///|
+test "gpos context format2" {
+  let gpos_bytes = build_layout_table_with_lookups(
+    [build_gpos_context_lookup_format2(), build_gpos_single_lookup_format1()],
+    @common.Tag::from_chars('k', 'e', 'r', 'n'),
+  )
+  let gpos = match GposTable::parse(@blob.Blob::from_bytes(gpos_bytes)) {
+    Err(err) => fail("parse error: \{err}")
+    Ok(value) => value
+  }
+  let lookup_offsets = [gpos.layout().lookup_list().offsets()[0]]
+  let glyphs : Array[UInt] = [3U, 4U]
+  let deltas = match gpos.position_deltas_with_lookups(
+    glyphs[:],
+    lookup_offsets[:],
+  ) {
+    Err(err) => fail("apply error: \{err}")
+    Ok(value) => value
+  }
+  inspect(deltas.length(), content="2")
+  inspect(deltas[0].x_placement, content="7")
+  inspect(deltas[0].x_advance, content="15")
+  inspect(deltas[1].x_advance, content="0")
+}
+
+///|
+test "gpos context format3" {
+  let gpos_bytes = build_layout_table_with_lookups(
+    [build_gpos_context_lookup_format3(), build_gpos_single_lookup_format1()],
+    @common.Tag::from_chars('k', 'e', 'r', 'n'),
+  )
+  let gpos = match GposTable::parse(@blob.Blob::from_bytes(gpos_bytes)) {
+    Err(err) => fail("parse error: \{err}")
+    Ok(value) => value
+  }
+  let lookup_offsets = [gpos.layout().lookup_list().offsets()[0]]
+  let glyphs : Array[UInt] = [3U, 4U]
+  let deltas = match gpos.position_deltas_with_lookups(
+    glyphs[:],
+    lookup_offsets[:],
+  ) {
+    Err(err) => fail("apply error: \{err}")
+    Ok(value) => value
+  }
+  inspect(deltas.length(), content="2")
+  inspect(deltas[0].x_placement, content="7")
+  inspect(deltas[0].x_advance, content="15")
+  inspect(deltas[1].x_advance, content="0")
+}
+
+///|
+test "gpos chain format2" {
+  let gpos_bytes = build_layout_table_with_lookups(
+    [build_gpos_chain_lookup_format2(), build_gpos_single_lookup_format1()],
+    @common.Tag::from_chars('k', 'e', 'r', 'n'),
+  )
+  let gpos = match GposTable::parse(@blob.Blob::from_bytes(gpos_bytes)) {
+    Err(err) => fail("parse error: \{err}")
+    Ok(value) => value
+  }
+  let lookup_offsets = [gpos.layout().lookup_list().offsets()[0]]
+  let glyphs : Array[UInt] = [1U, 3U, 4U, 2U]
+  let deltas = match gpos.position_deltas_with_lookups(
+    glyphs[:],
+    lookup_offsets[:],
+  ) {
+    Err(err) => fail("apply error: \{err}")
+    Ok(value) => value
+  }
+  inspect(deltas.length(), content="4")
+  inspect(deltas[1].x_placement, content="7")
+  inspect(deltas[1].x_advance, content="15")
+  inspect(deltas[2].x_advance, content="0")
+}
+
+///|
+test "gpos chain format3" {
+  let gpos_bytes = build_layout_table_with_lookups(
+    [build_gpos_chain_lookup_format3(), build_gpos_single_lookup_format1()],
+    @common.Tag::from_chars('k', 'e', 'r', 'n'),
+  )
+  let gpos = match GposTable::parse(@blob.Blob::from_bytes(gpos_bytes)) {
+    Err(err) => fail("parse error: \{err}")
+    Ok(value) => value
+  }
+  let lookup_offsets = [gpos.layout().lookup_list().offsets()[0]]
+  let glyphs : Array[UInt] = [1U, 3U, 4U, 2U]
+  let deltas = match gpos.position_deltas_with_lookups(
+    glyphs[:],
+    lookup_offsets[:],
+  ) {
+    Err(err) => fail("apply error: \{err}")
+    Ok(value) => value
+  }
+  inspect(deltas.length(), content="4")
   inspect(deltas[1].x_placement, content="7")
   inspect(deltas[1].x_advance, content="15")
   inspect(deltas[2].x_advance, content="0")
