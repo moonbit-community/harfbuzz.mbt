@@ -16,6 +16,9 @@ pub fn shape(font : @font.Font, buffer : @buffer.Buffer) -> Result[Unit, @buffer
   if script == @common.script_myanmar {
     return buffer.shape_myanmar(font)
   }
+  if script == @common.script_hebrew {
+    return buffer.shape_hebrew(font)
+  }
   if is_indic_script(script) {
     return buffer.shape_indic(font)
   }

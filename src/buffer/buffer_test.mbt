@@ -780,3 +780,23 @@ test "buffer shape use fallback" {
   let infos = buffer.infos()
   inspect(infos[0].codepoint, content="1")
 }
+
+///|
+test "buffer shape hebrew skips gpos without hebr" {
+  let font = @font.Font::from_bytes(build_font_bytes_ot())
+  let buffer = Buffer::new()
+  buffer.set_script(@common.script_hebrew)
+  buffer.add_string("AB")
+  let result = buffer.shape_hebrew(font)
+  match result {
+    Err(err) => fail("shape error: \{err}")
+    Ok(_) => ()
+  }
+  let infos = buffer.infos()
+  let positions = buffer.positions()
+  inspect(infos[0].codepoint, content="3")
+  inspect(infos[1].codepoint, content="2")
+  inspect(positions[0].x_advance, content="500")
+  inspect(positions[1].x_advance, content="400")
+  inspect(positions[0].x_offset, content="0")
+}
