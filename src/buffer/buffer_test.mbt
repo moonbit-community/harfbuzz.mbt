@@ -163,6 +163,35 @@ test "buffer normalize arabic reorder" {
 }
 
 ///|
+test "buffer normalize hangul compose" {
+  let buffer = Buffer::new()
+  buffer.set_script(@common.script_hangul)
+  buffer.add_codepoint(0x1100U)
+  buffer.add_codepoint(0x1161U)
+  buffer.add_codepoint(0x11A8U)
+  buffer.normalize()
+  let cps : Array[UInt] = []
+  for info in buffer.infos() {
+    cps.push(info.codepoint)
+  }
+  inspect(cps, content="[44033]")
+}
+
+///|
+test "buffer normalize hangul tone mark" {
+  let buffer = Buffer::new()
+  buffer.set_script(@common.script_hangul)
+  buffer.add_codepoint(0xAC00U)
+  buffer.add_codepoint(0x302EU)
+  buffer.normalize()
+  let cps : Array[UInt] = []
+  for info in buffer.infos() {
+    cps.push(info.codepoint)
+  }
+  inspect(cps, content="[12334, 44032]")
+}
+
+///|
 fn push_u16(bytes : Array[Byte], value : Int) -> Unit {
   bytes.push(((value >> 8) & 0xff).to_byte())
   bytes.push((value & 0xff).to_byte())

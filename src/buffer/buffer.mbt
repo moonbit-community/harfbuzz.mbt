@@ -258,6 +258,7 @@ pub fn Buffer::normalize(self : Buffer) -> Unit {
   }
   let is_hebrew = self.script == @common.script_hebrew
   let is_arabic = self.script == @common.script_arabic
+  let is_hangul = self.script == @common.script_hangul
   let mut start = 0
   while start < len {
     let mut end = start + 1
@@ -322,6 +323,9 @@ pub fn Buffer::normalize(self : Buffer) -> Unit {
     }
     start = end
   }
+  if is_hangul {
+    normalize_hangul(self)
+  }
 }
 
 ///|
@@ -382,6 +386,107 @@ fn reorder_marks_arabic(buffer : Buffer, start : Int, end : Int) -> Unit {
     i = j
     cc = cc + 10
   }
+}
+
+///|
+fn normalize_hangul(buffer : Buffer) -> Unit {
+  let mut i = 0
+  let mut len = buffer.infos.length()
+  while i + 1 < len {
+    let a = buffer.infos[i].codepoint
+    let b = buffer.infos[i + 1].codepoint
+    let composed = if is_hangul_l(a) && is_hangul_v(b) {
+      @unicode.compose(a, b)
+    } else if is_hangul_lv(a) && is_hangul_t(b) {
+      @unicode.compose(a, b)
+    } else {
+      None
+    }
+    match composed {
+      None => i = i + 1
+      Some(value) => {
+        buffer.merge_clusters(i, i + 2)
+        let base = buffer.infos[i]
+        buffer.infos[i] = GlyphInfo::{ codepoint: value, cluster: base.cluster }
+        ignore(buffer.infos.remove(i + 1))
+        ignore(buffer.positions.remove(i + 1))
+        len = len - 1
+        if i + 1 < len {
+          let next = buffer.infos[i + 1].codepoint
+          if is_hangul_t(next) && is_hangul_lv(value) {
+            match @unicode.compose(value, next) {
+              None => ()
+              Some(composed) => {
+                buffer.merge_clusters(i, i + 2)
+                let base = buffer.infos[i]
+                buffer.infos[i] = GlyphInfo::{ codepoint: composed, cluster: base.cluster }
+                ignore(buffer.infos.remove(i + 1))
+                ignore(buffer.positions.remove(i + 1))
+                len = len - 1
+              }
+            }
+          }
+        }
+        i = i + 1
+      }
+    }
+  }
+  reorder_hangul_tone_marks(buffer)
+}
+
+///|
+fn reorder_hangul_tone_marks(buffer : Buffer) -> Unit {
+  let mut i = 1
+  while i < buffer.infos.length() {
+    let current = buffer.infos[i].codepoint
+    if is_hangul_tone(current) &&
+      is_hangul_syllable(buffer.infos[i - 1].codepoint) {
+      buffer.merge_clusters(i - 1, i + 1)
+      let info = buffer.infos[i]
+      let pos = buffer.positions[i]
+      buffer.infos[i] = buffer.infos[i - 1]
+      buffer.positions[i] = buffer.positions[i - 1]
+      buffer.infos[i - 1] = info
+      buffer.positions[i - 1] = pos
+      if i > 1 {
+        i = i - 1
+      } else {
+        i = i + 1
+      }
+    } else {
+      i = i + 1
+    }
+  }
+}
+
+///|
+fn is_hangul_l(u : UInt) -> Bool {
+  u >= 0x1100U && u <= 0x1112U
+}
+
+///|
+fn is_hangul_v(u : UInt) -> Bool {
+  u >= 0x1161U && u <= 0x1175U
+}
+
+///|
+fn is_hangul_t(u : UInt) -> Bool {
+  u >= 0x11A8U && u <= 0x11C2U
+}
+
+///|
+fn is_hangul_lv(u : UInt) -> Bool {
+  u >= 0xAC00U && u <= 0xD7A3U
+}
+
+///|
+fn is_hangul_tone(u : UInt) -> Bool {
+  u == 0x302EU || u == 0x302FU
+}
+
+///|
+fn is_hangul_syllable(u : UInt) -> Bool {
+  is_hangul_lv(u) || is_hangul_l(u) || is_hangul_v(u) || is_hangul_t(u)
 }
 
 ///|
