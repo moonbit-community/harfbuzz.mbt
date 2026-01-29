@@ -849,6 +849,87 @@ fn build_gsub_context_subtable() -> Bytes {
 }
 
 ///|
+fn build_gsub_context_subtable_format2() -> Bytes {
+  let bytes : Array[Byte] = []
+  push_u16(bytes, 2)
+  push_u16(bytes, 26)
+  push_u16(bytes, 32)
+  push_u16(bytes, 2)
+  push_u16(bytes, 0)
+  push_u16(bytes, 12)
+  // class rule set
+  push_u16(bytes, 1)
+  push_u16(bytes, 4)
+  // class rule: [class1, class1] -> apply lookup 1 at index 1
+  push_u16(bytes, 2)
+  push_u16(bytes, 1)
+  push_u16(bytes, 1)
+  push_u16(bytes, 1)
+  push_u16(bytes, 1)
+  // coverage table (input glyph 3)
+  push_u16(bytes, 1)
+  push_u16(bytes, 1)
+  push_u16(bytes, 3)
+  // class def (glyphs 3..4 -> class 1)
+  push_u16(bytes, 1)
+  push_u16(bytes, 3)
+  push_u16(bytes, 2)
+  push_u16(bytes, 1)
+  push_u16(bytes, 1)
+  Bytes::from_array(bytes)
+}
+
+///|
+fn build_gsub_context_lookup_format2() -> Bytes {
+  let subtable = build_gsub_context_subtable_format2()
+  let bytes : Array[Byte] = []
+  push_u16(bytes, 5)
+  push_u16(bytes, 0)
+  push_u16(bytes, 1)
+  push_u16(bytes, 8)
+  for b in subtable {
+    bytes.push(b)
+  }
+  Bytes::from_array(bytes)
+}
+
+///|
+fn build_gsub_context_subtable_format3() -> Bytes {
+  let bytes : Array[Byte] = []
+  push_u16(bytes, 3)
+  push_u16(bytes, 2)
+  push_u16(bytes, 1)
+  push_u16(bytes, 14)
+  push_u16(bytes, 20)
+  // subst lookup record (seq index 1, lookup index 1)
+  push_u16(bytes, 1)
+  push_u16(bytes, 1)
+  // coverage table 1 (glyph 3)
+  push_u16(bytes, 1)
+  push_u16(bytes, 1)
+  push_u16(bytes, 3)
+  // coverage table 2 (glyph 4)
+  push_u16(bytes, 1)
+  push_u16(bytes, 1)
+  push_u16(bytes, 4)
+  Bytes::from_array(bytes)
+}
+
+///|
+fn build_gsub_context_lookup_format3() -> Bytes {
+  let subtable = build_gsub_context_subtable_format3()
+  let bytes : Array[Byte] = []
+  push_u16(bytes, 5)
+  push_u16(bytes, 0)
+  push_u16(bytes, 1)
+  push_u16(bytes, 8)
+  for b in subtable {
+    bytes.push(b)
+  }
+  Bytes::from_array(bytes)
+}
+
+///|
 fn build_gsub_context_lookup() -> Bytes {
   let subtable = build_gsub_context_subtable()
   let bytes : Array[Byte] = []
@@ -887,6 +968,107 @@ fn build_gsub_chain_subtable() -> Bytes {
   push_u16(bytes, 1)
   push_u16(bytes, 1)
   push_u16(bytes, 3)
+  Bytes::from_array(bytes)
+}
+
+///|
+fn build_gsub_chain_subtable_format2() -> Bytes {
+  let bytes : Array[Byte] = []
+  push_u16(bytes, 2)
+  push_u16(bytes, 38)
+  push_u16(bytes, 44)
+  push_u16(bytes, 44)
+  push_u16(bytes, 44)
+  push_u16(bytes, 2)
+  push_u16(bytes, 0)
+  push_u16(bytes, 16)
+  // chain class rule set
+  push_u16(bytes, 1)
+  push_u16(bytes, 4)
+  // chain class rule: backtrack class 1, input class 1, lookahead class 1
+  push_u16(bytes, 1)
+  push_u16(bytes, 1)
+  push_u16(bytes, 2)
+  push_u16(bytes, 1)
+  push_u16(bytes, 1)
+  push_u16(bytes, 1)
+  push_u16(bytes, 1)
+  push_u16(bytes, 1)
+  push_u16(bytes, 1)
+  // coverage table (input glyph 3)
+  push_u16(bytes, 1)
+  push_u16(bytes, 1)
+  push_u16(bytes, 3)
+  // class def (glyphs 1..4 -> class 1)
+  push_u16(bytes, 1)
+  push_u16(bytes, 1)
+  push_u16(bytes, 4)
+  push_u16(bytes, 1)
+  push_u16(bytes, 1)
+  push_u16(bytes, 1)
+  push_u16(bytes, 1)
+  Bytes::from_array(bytes)
+}
+
+///|
+fn build_gsub_chain_lookup_format2() -> Bytes {
+  let subtable = build_gsub_chain_subtable_format2()
+  let bytes : Array[Byte] = []
+  push_u16(bytes, 6)
+  push_u16(bytes, 0)
+  push_u16(bytes, 1)
+  push_u16(bytes, 8)
+  for b in subtable {
+    bytes.push(b)
+  }
+  Bytes::from_array(bytes)
+}
+
+///|
+fn build_gsub_chain_subtable_format3() -> Bytes {
+  let bytes : Array[Byte] = []
+  push_u16(bytes, 3)
+  push_u16(bytes, 1)
+  push_u16(bytes, 22)
+  push_u16(bytes, 2)
+  push_u16(bytes, 28)
+  push_u16(bytes, 34)
+  push_u16(bytes, 1)
+  push_u16(bytes, 40)
+  push_u16(bytes, 1)
+  // subst lookup record (seq index 1, lookup index 1)
+  push_u16(bytes, 1)
+  push_u16(bytes, 1)
+  // backtrack coverage (glyph 1)
+  push_u16(bytes, 1)
+  push_u16(bytes, 1)
+  push_u16(bytes, 1)
+  // input coverage 1 (glyph 3)
+  push_u16(bytes, 1)
+  push_u16(bytes, 1)
+  push_u16(bytes, 3)
+  // input coverage 2 (glyph 4)
+  push_u16(bytes, 1)
+  push_u16(bytes, 1)
+  push_u16(bytes, 4)
+  // lookahead coverage (glyph 2)
+  push_u16(bytes, 1)
+  push_u16(bytes, 1)
+  push_u16(bytes, 2)
+  Bytes::from_array(bytes)
+}
+
+///|
+fn build_gsub_chain_lookup_format3() -> Bytes {
+  let subtable = build_gsub_chain_subtable_format3()
+  let bytes : Array[Byte] = []
+  push_u16(bytes, 6)
+  push_u16(bytes, 0)
+  push_u16(bytes, 1)
+  push_u16(bytes, 8)
+  for b in subtable {
+    bytes.push(b)
+  }
   Bytes::from_array(bytes)
 }
 
@@ -1370,4 +1552,116 @@ test "gsub chaining substitution apply" {
   inspect(changed, content="true")
   inspect(new_glyphs, content="[1, 3, 6, 5, 2]")
   inspect(new_clusters, content="[0, 1, 2, 3, 4]")
+}
+
+///|
+test "gsub contextual substitution format2" {
+  let context_lookup = build_gsub_context_lookup_format2()
+  let single_lookup = build_gsub_single_lookup(4, 6)
+  let gsub_bytes = build_layout_table_with_lookups(
+    [context_lookup, single_lookup],
+    @common.Tag::from_chars('l', 'i', 'g', 'a'),
+  )
+  let gsub = match GsubTable::parse(@blob.Blob::from_bytes(gsub_bytes)) {
+    Err(err) => fail("parse error: \{err}")
+    Ok(value) => value
+  }
+  let glyphs : Array[UInt] = [3U, 4U, 5U]
+  let clusters : Array[Int] = [0, 1, 2]
+  let result = match gsub.apply_with_lookups(
+    glyphs,
+    clusters,
+    gsub.layout().lookup_list().offsets(),
+  ) {
+    Err(err) => fail("apply error: \{err}")
+    Ok(value) => value
+  }
+  let (new_glyphs, new_clusters, changed) = result
+  inspect(changed, content="true")
+  inspect(new_glyphs, content="[3, 6, 5]")
+  inspect(new_clusters, content="[0, 1, 2]")
+}
+
+///|
+test "gsub chaining substitution format2" {
+  let chain_lookup = build_gsub_chain_lookup_format2()
+  let single_lookup = build_gsub_single_lookup(4, 6)
+  let gsub_bytes = build_layout_table_with_lookups(
+    [chain_lookup, single_lookup],
+    @common.Tag::from_chars('l', 'i', 'g', 'a'),
+  )
+  let gsub = match GsubTable::parse(@blob.Blob::from_bytes(gsub_bytes)) {
+    Err(err) => fail("parse error: \{err}")
+    Ok(value) => value
+  }
+  let glyphs : Array[UInt] = [1U, 3U, 4U, 2U]
+  let clusters : Array[Int] = [0, 1, 2, 3]
+  let result = match gsub.apply_with_lookups(
+    glyphs,
+    clusters,
+    gsub.layout().lookup_list().offsets(),
+  ) {
+    Err(err) => fail("apply error: \{err}")
+    Ok(value) => value
+  }
+  let (new_glyphs, new_clusters, changed) = result
+  inspect(changed, content="true")
+  inspect(new_glyphs, content="[1, 3, 6, 2]")
+  inspect(new_clusters, content="[0, 1, 2, 3]")
+}
+
+///|
+test "gsub contextual substitution format3" {
+  let context_lookup = build_gsub_context_lookup_format3()
+  let single_lookup = build_gsub_single_lookup(4, 6)
+  let gsub_bytes = build_layout_table_with_lookups(
+    [context_lookup, single_lookup],
+    @common.Tag::from_chars('l', 'i', 'g', 'a'),
+  )
+  let gsub = match GsubTable::parse(@blob.Blob::from_bytes(gsub_bytes)) {
+    Err(err) => fail("parse error: \{err}")
+    Ok(value) => value
+  }
+  let glyphs : Array[UInt] = [3U, 4U, 5U]
+  let clusters : Array[Int] = [0, 1, 2]
+  let result = match gsub.apply_with_lookups(
+    glyphs,
+    clusters,
+    gsub.layout().lookup_list().offsets(),
+  ) {
+    Err(err) => fail("apply error: \{err}")
+    Ok(value) => value
+  }
+  let (new_glyphs, new_clusters, changed) = result
+  inspect(changed, content="true")
+  inspect(new_glyphs, content="[3, 6, 5]")
+  inspect(new_clusters, content="[0, 1, 2]")
+}
+
+///|
+test "gsub chaining substitution format3" {
+  let chain_lookup = build_gsub_chain_lookup_format3()
+  let single_lookup = build_gsub_single_lookup(4, 6)
+  let gsub_bytes = build_layout_table_with_lookups(
+    [chain_lookup, single_lookup],
+    @common.Tag::from_chars('l', 'i', 'g', 'a'),
+  )
+  let gsub = match GsubTable::parse(@blob.Blob::from_bytes(gsub_bytes)) {
+    Err(err) => fail("parse error: \{err}")
+    Ok(value) => value
+  }
+  let glyphs : Array[UInt] = [1U, 3U, 4U, 2U]
+  let clusters : Array[Int] = [0, 1, 2, 3]
+  let result = match gsub.apply_with_lookups(
+    glyphs,
+    clusters,
+    gsub.layout().lookup_list().offsets(),
+  ) {
+    Err(err) => fail("apply error: \{err}")
+    Ok(value) => value
+  }
+  let (new_glyphs, new_clusters, changed) = result
+  inspect(changed, content="true")
+  inspect(new_glyphs, content="[1, 3, 6, 2]")
+  inspect(new_clusters, content="[0, 1, 2, 3]")
 }
