@@ -339,6 +339,21 @@ fn build_script_list() -> Bytes {
 }
 
 ///|
+fn build_script_list_for(tag : @common.Tag) -> Bytes {
+  let bytes : Array[Byte] = []
+  push_u16(bytes, 1)
+  push_tag(bytes, tag)
+  push_u16(bytes, 8)
+  push_u16(bytes, 4)
+  push_u16(bytes, 0)
+  push_u16(bytes, 0)
+  push_u16(bytes, 0xffff)
+  push_u16(bytes, 1)
+  push_u16(bytes, 0)
+  Bytes::from_array(bytes)
+}
+
+///|
 fn build_feature_list(tag : @common.Tag) -> Bytes {
   let bytes : Array[Byte] = []
   push_u16(bytes, 1)
@@ -364,6 +379,35 @@ fn build_lookup_list(lookup : Bytes) -> Bytes {
 ///|
 fn build_layout_table(lookup : Bytes, feature_tag : @common.Tag) -> Bytes {
   let script = build_script_list()
+  let feature = build_feature_list(feature_tag)
+  let lookup_list = build_lookup_list(lookup)
+  let bytes : Array[Byte] = []
+  push_u32(bytes, 0x00010000)
+  let script_offset = 10
+  let feature_offset = script_offset + script.length()
+  let lookup_offset = feature_offset + feature.length()
+  push_u16(bytes, script_offset)
+  push_u16(bytes, feature_offset)
+  push_u16(bytes, lookup_offset)
+  for b in script {
+    bytes.push(b)
+  }
+  for b in feature {
+    bytes.push(b)
+  }
+  for b in lookup_list {
+    bytes.push(b)
+  }
+  Bytes::from_array(bytes)
+}
+
+///|
+fn build_layout_table_with_script(
+  lookup : Bytes,
+  feature_tag : @common.Tag,
+  script_tag : @common.Tag,
+) -> Bytes {
+  let script = build_script_list_for(script_tag)
   let feature = build_feature_list(feature_tag)
   let lookup_list = build_lookup_list(lookup)
   let bytes : Array[Byte] = []
@@ -488,6 +532,16 @@ fn build_ot_table(
 }
 
 ///|
+fn build_ot_table_with_script(
+  tag : @common.Tag,
+  lookup : Bytes,
+  feature_tag : @common.Tag,
+  script_tag : @common.Tag,
+) -> (@common.Tag, Bytes) {
+  (tag, build_layout_table_with_script(lookup, feature_tag, script_tag))
+}
+
+///|
 fn build_cmap_table(subtable : Bytes) -> Bytes {
   let bytes : Array[Byte] = []
   push_u16(bytes, 0)
@@ -595,6 +649,32 @@ fn build_font_bytes_ot_single() -> Bytes {
       @common.Tag::from_chars('G', 'P', 'O', 'S'),
       build_gpos_single_lookup(),
       @common.Tag::from_chars('k', 'e', 'r', 'n'),
+    ),
+  ]
+  build_sfnt(tables)
+}
+
+///|
+fn build_font_bytes_ot_single_hebr() -> Bytes {
+  let tables : Array[(@common.Tag, Bytes)] = [
+    (@common.Tag::from_chars('h', 'e', 'a', 'd'), build_head(1000, 0)),
+    (@common.Tag::from_chars('m', 'a', 'x', 'p'), build_maxp(4)),
+    (@common.Tag::from_chars('h', 'h', 'e', 'a'), build_hhea(4)),
+    (@common.Tag::from_chars('h', 'm', 't', 'x'), build_hmtx_ot()),
+    (
+      @common.Tag::from_chars('c', 'm', 'a', 'p'),
+      build_cmap_table(build_cmap_format12(0x41U, 0x41U, 1U)),
+    ),
+    build_ot_table(
+      @common.Tag::from_chars('G', 'S', 'U', 'B'),
+      build_gsub_lookup(),
+      @common.Tag::from_chars('l', 'i', 'g', 'a'),
+    ),
+    build_ot_table_with_script(
+      @common.Tag::from_chars('G', 'P', 'O', 'S'),
+      build_gpos_single_lookup(),
+      @common.Tag::from_chars('k', 'e', 'r', 'n'),
+      @common.Tag::from_chars('h', 'e', 'b', 'r'),
     ),
   ]
   build_sfnt(tables)
@@ -799,4 +879,22 @@ test "buffer shape hebrew skips gpos without hebr" {
   inspect(positions[0].x_advance, content="500")
   inspect(positions[1].x_advance, content="400")
   inspect(positions[0].x_offset, content="0")
+}
+
+///|
+test "buffer shape hebrew applies hebr gpos" {
+  let font = @font.Font::from_bytes(build_font_bytes_ot_single_hebr())
+  let buffer = Buffer::new()
+  buffer.set_script(@common.script_hebrew)
+  buffer.add_string("A")
+  let result = buffer.shape_hebrew(font)
+  match result {
+    Err(err) => fail("shape error: \{err}")
+    Ok(_) => ()
+  }
+  let infos = buffer.infos()
+  let positions = buffer.positions()
+  inspect(infos[0].codepoint, content="3")
+  inspect(positions[0].x_advance, content="520")
+  inspect(positions[0].x_offset, content="6")
 }
