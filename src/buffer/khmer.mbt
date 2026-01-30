@@ -19,6 +19,7 @@ pub fn Buffer::shape_khmer(
   self : Buffer,
   font : @font.Font,
 ) -> Result[Unit, ShapeError] {
+  ignore(insert_dotted_circle_for_broken_syllables(self))
   match self.shape_basic(font) {
     Err(err) => return Err(err)
     Ok(_) => ()
