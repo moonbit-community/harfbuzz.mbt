@@ -20,7 +20,25 @@ let indic_feature_tags : Array[@common.Tag] = [
 ]
 
 ///|
+let indic_cat_c : Int = 1
+
+///|
+let indic_cat_cs : Int = 18
+
+///|
+let indic_cat_ra : Int = 15
+
+///|
 let indic_cat_cm : Int = 16
+
+///|
+let indic_cat_v : Int = 2
+
+///|
+let indic_cat_placeholder : Int = 10
+
+///|
+let indic_cat_dotted_circle : Int = 11
 
 ///|
 let indic_cat_h : Int = 4
@@ -47,10 +65,32 @@ let indic_cat_sm : Int = 8
 let indic_pos_start : Int = 0
 
 ///|
+let indic_pos_pre_c : Int = 3
+
+///|
+let indic_pos_base_c : Int = 4
+
+///|
+let indic_pos_below_c : Int = 8
+
+///|
+let indic_pos_post_c : Int = 11
+
+///|
 let indic_pos_smvd : Int = 13
 
 ///|
 let indic_pos_end : Int = 14
+
+fn is_consonant_indic(category : Int) -> Bool {
+  category == indic_cat_c ||
+  category == indic_cat_cs ||
+  category == indic_cat_ra ||
+  category == indic_cat_cm ||
+  category == indic_cat_v ||
+  category == indic_cat_placeholder ||
+  category == indic_cat_dotted_circle
+}
 
 fn is_joiner_or_mark_indic(category : Int) -> Bool {
   category == indic_cat_zwj ||
@@ -129,6 +169,35 @@ fn reorder_indic_syllables(
       j = j + 1
     }
     buffer.merge_clusters(i, j)
+    let mut base = j
+    let mut seen_below = false
+    let mut k = j
+    while k > i {
+      k = k - 1
+      if is_consonant_indic(current_categories[k]) {
+        if current_positions[k] != indic_pos_below_c &&
+          (current_positions[k] != indic_pos_post_c || seen_below) {
+          base = k
+          break
+        }
+        if current_positions[k] == indic_pos_below_c {
+          seen_below = true
+        }
+        base = k
+      } else if k > i &&
+        current_categories[k] == indic_cat_zwj &&
+        current_categories[k - 1] == indic_cat_h {
+        break
+      }
+    }
+    for k in i..<base {
+      if current_positions[k] > indic_pos_pre_c {
+        current_positions[k] = indic_pos_pre_c
+      }
+    }
+    if base < j {
+      current_positions[base] = indic_pos_base_c
+    }
     let mut last_pos = indic_pos_start
     for k in i..<j {
       if is_joiner_or_mark_indic(current_categories[k]) {
