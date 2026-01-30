@@ -492,13 +492,14 @@ fn build_use_feature_masks(
 pub fn Buffer::shape_use(
   self : Buffer,
   font : @font.Font,
+  script_tag? : @common.Tag = self.script.to_tag(),
 ) -> Result[Unit, ShapeError] {
   let gsub = match font.gsub() {
     Err(err) => return Err(Font(err))
     Ok(value) => value
   }
+  let script_tag = script_tag
   if gsub is Some(gsub) {
-    let script_tag = self.script.to_tag()
     let dflt_tag = @common.Tag::from_chars('D', 'F', 'L', 'T')
     let latn_tag = @common.Tag::from_chars('l', 'a', 't', 'n')
     if !buffer_layout_has_script(gsub.layout(), script_tag) &&
@@ -536,7 +537,6 @@ pub fn Buffer::shape_use(
   let mut rphf_lookups : Array[Int] = []
   let mut pref_lookups : Array[Int] = []
   if gsub is Some(gsub) {
-    let script_tag = self.script.to_tag()
     let lang_tag = language_to_ot_tag(self.language)
     rphf_lookups = match gsub.layout().select_lookup_offsets_for_feature(
       script_tag,
@@ -605,6 +605,7 @@ pub fn Buffer::shape_use(
       use_feature_tags,
       syllables_after,
       glyph_masks=glyph_masks,
+      script_tag=script_tag,
     ) {
       Err(err) => return Err(err)
       Ok(_) => ()

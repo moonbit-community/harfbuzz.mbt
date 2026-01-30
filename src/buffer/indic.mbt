@@ -634,7 +634,7 @@ pub fn Buffer::shape_indic(
     let dflt_tag = @common.Tag::from_chars('D', 'F', 'L', 'T')
     let latn_tag = @common.Tag::from_chars('l', 'a', 't', 'n')
     if buffer_layout_has_script(gsub.layout(), alt_script_tag3) {
-      return self.shape_use(font)
+      return self.shape_use(font, script_tag=alt_script_tag3)
     }
     let has_script = buffer_layout_has_script(gsub.layout(), script_tag) ||
       buffer_layout_has_script(gsub.layout(), alt_script_tag)
