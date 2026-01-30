@@ -119,6 +119,11 @@ fn indic_script_tag_2(script_tag : @common.Tag) -> @common.Tag {
   @common.Tag::from_bytes(b1, b2, b3, b'2')
 }
 
+fn indic_script_tag_3(script_tag : @common.Tag) -> @common.Tag {
+  let (b1, b2, b3, _) = script_tag.bytes()
+  @common.Tag::from_bytes(b1, b2, b3, b'3')
+}
+
 fn indic_has_consonant_after(
   categories : Array[Int],
   start : Int,
@@ -620,6 +625,7 @@ pub fn Buffer::shape_indic(
     Ok(value) => value
   }
   let script_tag = self.script.to_tag()
+  let alt_script_tag3 = indic_script_tag_3(script_tag)
   let alt_script_tag = indic_script_tag_2(script_tag)
   let mut selected_script_tag = script_tag
   let mut is_old_spec = indic_has_old_spec(self.script)
@@ -627,6 +633,9 @@ pub fn Buffer::shape_indic(
   if gsub is Some(gsub) {
     let dflt_tag = @common.Tag::from_chars('D', 'F', 'L', 'T')
     let latn_tag = @common.Tag::from_chars('l', 'a', 't', 'n')
+    if buffer_layout_has_script(gsub.layout(), alt_script_tag3) {
+      return self.shape_use(font)
+    }
     let has_script = buffer_layout_has_script(gsub.layout(), script_tag) ||
       buffer_layout_has_script(gsub.layout(), alt_script_tag)
     if buffer_layout_has_script(gsub.layout(), alt_script_tag) {

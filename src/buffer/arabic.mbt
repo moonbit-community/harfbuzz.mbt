@@ -306,6 +306,18 @@ pub fn Buffer::shape_arabic(
     Err(err) => return Err(Font(err))
     Ok(value) => value
   }
+  if self.script == @common.script_syriac {
+    let mut has_syrc = false
+    if gsub is Some(gsub) {
+      let script_tag = self.script.to_tag()
+      if buffer_layout_has_script(gsub.layout(), script_tag) {
+        has_syrc = true
+      }
+    }
+    if !has_syrc {
+      return self.shape_ot(font)
+    }
+  }
   if actions.is_empty() {
     match self.shape_basic(font) {
       Err(err) => return Err(err)
