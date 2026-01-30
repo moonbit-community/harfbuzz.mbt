@@ -12,15 +12,11 @@ pub fn Buffer::shape_hebrew(
     Err(err) => return Err(Font(err))
     Ok(value) => value
   }
-  let gpos = match font.gpos() {
-    Err(err) => return Err(Font(err))
-    Ok(value) => value
-  }
   let script_tag = self.script.to_tag()
   let lang_tag = language_to_ot_tag(self.language)
   let map = match @ot_map.OtMap::new(
     gsub,
-    gpos,
+    None,
     script_tag,
     language_tag=lang_tag,
     gsub_features=self.gsub_features,
@@ -79,94 +75,14 @@ pub fn Buffer::shape_hebrew(
       self.positions = new_positions
     }
   }
-  let mut selected_gpos : @ot_tables.GposTable? = None
   let hebr_tag = @common.Tag::from_chars('h', 'e', 'b', 'r')
-  if gpos is Some(gpos) {
-    if buffer_layout_has_script(gpos.layout(), hebr_tag) {
-      selected_gpos = Some(gpos)
-    }
-  }
-  let gpos_present = selected_gpos is Some(_)
-  if selected_gpos is Some(gpos) {
-    let gdef = match font.gdef() {
-      Err(err) => return Err(Font(err))
-      Ok(value) => value
-    }
-    let glyphs : Array[UInt] = []
-    for info in self.infos {
-      glyphs.push(info.codepoint)
-    }
-    let deltas = match gdef {
-      None =>
-        match gpos.position_deltas_with_lookups(
-          glyphs[:],
-          map.gpos_lookups(),
-        ) {
-          Err(err) => return Err(Layout(err))
-          Ok(value) => value
-        }
-      Some(gdef) =>
-        match gpos.position_deltas_with_lookups(
-          glyphs[:],
-          map.gpos_lookups(),
-          gdef=gdef,
-        ) {
-          Err(err) => return Err(Layout(err))
-          Ok(value) => value
-        }
-    }
-    let new_positions : Array[GlyphPosition] = []
-    for i in 0..<self.positions.length() {
-      let pos = self.positions[i]
-      let delta = deltas[i]
-      new_positions.push(GlyphPosition::{
-        x_advance: pos.x_advance + delta.x_advance,
-        y_advance: pos.y_advance + delta.y_advance,
-        x_offset: pos.x_offset + delta.x_placement,
-        y_offset: pos.y_offset + delta.y_placement,
-      })
-    }
-    self.positions = new_positions
-  } else if self.direction.is_horizontal() {
-    let kern = match font.kern() {
-      Err(err) => return Err(Font(err))
-      Ok(value) => value
-    }
-    if kern is Some(kern) {
-      let new_positions : Array[GlyphPosition] = []
-      for pos in self.positions {
-        new_positions.push(pos)
-      }
-      if new_positions.length() >= 2 {
-        for i in 0..<(new_positions.length() - 1) {
-          let left = self.infos[i].codepoint
-          let right = self.infos[i + 1].codepoint
-          match kern.kern_value(left, right) {
-            None => ()
-            Some(value) => {
-              let pos = new_positions[i]
-              new_positions[i] = GlyphPosition::{
-                x_advance: pos.x_advance + value,
-                y_advance: pos.y_advance,
-                x_offset: pos.x_offset,
-                y_offset: pos.y_offset,
-              }
-            }
-          }
-        }
-      }
-      self.positions = new_positions
-    }
-  }
-  match zero_marks_by_gdef_or_unicode(font, self, unicode_mark_flags, gpos_present) {
-    Err(err) => return Err(err)
-    Ok(_) => ()
-  }
-  if !gpos_present {
-    match fallback_mark_position(font, self, unicode_mark_flags, combining_classes) {
-      Err(err) => return Err(err)
-      Ok(_) => ()
-    }
-  }
-  Ok(())
+  apply_gpos(
+    font,
+    self,
+    zero_width_marks=ZeroWidthMarks::ByGdefLate,
+    fallback_position=true,
+    unicode_mark_flags=unicode_mark_flags,
+    combining_classes=combining_classes,
+    gpos_tag=Some(hebr_tag),
+  )
 }
