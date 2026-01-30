@@ -645,7 +645,11 @@ pub fn Buffer::shape_indic(
     if !has_script &&
       (buffer_layout_has_script(gsub.layout(), dflt_tag) ||
         buffer_layout_has_script(gsub.layout(), latn_tag)) {
-      return self.shape_ot(font, fallback_position=false)
+      return self.shape_ot_with_options(
+        font,
+        fallback_position=false,
+        zero_width_marks=ZeroWidthMarks::Disabled,
+      )
     }
   }
   preprocess_vowel_constraints(self)

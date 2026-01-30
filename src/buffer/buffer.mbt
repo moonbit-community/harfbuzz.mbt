@@ -650,13 +650,22 @@ pub fn Buffer::shape_ot(
   font : @font.Font,
   fallback_position? : Bool = true,
 ) -> Result[Unit, ShapeError] {
+  self.shape_ot_with_options(
+    font,
+    fallback_position=fallback_position,
+    zero_width_marks=ZeroWidthMarks::ByGdefLate,
+  )
+}
+
+///|
+fn Buffer::shape_ot_with_options(
+  self : Buffer,
+  font : @font.Font,
+  fallback_position? : Bool = true,
+  zero_width_marks? : ZeroWidthMarks = ZeroWidthMarks::ByGdefLate,
+) -> Result[Unit, ShapeError] {
   self.guess_segment_properties()
-  let unicode_mark_flags = mark_flags_from_infos(self.infos)
-  let combining_classes : Array[Int] = []
-  for info in self.infos {
-    let klass = @unicode.modified_combining_class(info.codepoint).reinterpret_as_int()
-    combining_classes.push(recategorize_combining_class(info.codepoint, klass))
-  }
+  let (unicode_mark_flags, combining_classes) = collect_mark_fallback_data(self.infos)
   let gsub = match font.gsub() {
     Err(err) => return Err(Font(err))
     Ok(value) => value
@@ -665,6 +674,7 @@ pub fn Buffer::shape_ot(
     Err(err) => return Err(Font(err))
     Ok(value) => value
   }
+  let gpos_present = gpos is Some(_)
   match self.shape_basic(font) {
     Err(err) => return Err(err)
     Ok(_) => ()
@@ -731,6 +741,14 @@ pub fn Buffer::shape_ot(
       self.infos = new_infos
       self.positions = new_positions
     }
+  }
+  match zero_width_marks {
+    ZeroWidthMarks::ByGdefEarly =>
+      match zero_marks_by_gdef_or_unicode(font, self, unicode_mark_flags, gpos_present) {
+        Err(err) => return Err(err)
+        Ok(_) => ()
+      }
+    _ => ()
   }
   if gpos is Some(gpos) {
     let gdef = match font.gdef() {
@@ -803,35 +821,15 @@ pub fn Buffer::shape_ot(
       self.positions = new_positions
     }
   }
-  let adjust_offsets = gpos is None && self.direction.is_forward()
-  let gdef_for_marks = match font.gdef() {
-    Err(_) => None
-    Ok(value) => value
-  }
-  let mut used_flags : Array[Bool] = []
-  let mut zero_marks = false
-  match gdef_for_marks {
-    None => ()
-    Some(gdef) => {
-      if gdef.header().glyph_class_def_offset is Some(_) {
-        match mark_flags_from_gdef(gdef, self.infos) {
-          Err(err) => return Err(err)
-          Ok(value) => {
-            used_flags = value
-            zero_marks = true
-          }
-        }
+  match zero_width_marks {
+    ZeroWidthMarks::ByGdefLate =>
+      match zero_marks_by_gdef_or_unicode(font, self, unicode_mark_flags, gpos_present) {
+        Err(err) => return Err(err)
+        Ok(_) => ()
       }
-    }
+    _ => ()
   }
-  if !zero_marks && gpos is None && unicode_mark_flags.length() == self.infos.length() {
-    used_flags = unicode_mark_flags
-    zero_marks = true
-  }
-  if zero_marks {
-    zero_mark_advances_with_flags(self, used_flags, adjust_offsets=adjust_offsets)
-  }
-  if fallback_position && gpos is None {
+  if fallback_position && !gpos_present {
     match fallback_mark_position(font, self, unicode_mark_flags, combining_classes) {
       Err(err) => return Err(err)
       Ok(_) => ()

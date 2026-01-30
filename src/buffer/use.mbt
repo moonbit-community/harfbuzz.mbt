@@ -505,7 +505,11 @@ pub fn Buffer::shape_use(
     if !buffer_layout_has_script(gsub.layout(), script_tag) &&
       (buffer_layout_has_script(gsub.layout(), dflt_tag) ||
         buffer_layout_has_script(gsub.layout(), latn_tag)) {
-      return self.shape_ot(font, fallback_position=false)
+      return self.shape_ot_with_options(
+        font,
+        fallback_position=false,
+        zero_width_marks=ZeroWidthMarks::ByGdefEarly,
+      )
     }
   }
   preprocess_vowel_constraints(self)
