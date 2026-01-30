@@ -1739,3 +1739,29 @@ test "buffer shape hebrew applies hebr gpos" {
   inspect(positions[0].x_advance, content="520")
   inspect(positions[0].x_offset, content="6")
 }
+
+///|
+test "buffer shape hebrew applies hebr gpos snapshot" {
+  let font = @font.Font::from_bytes(build_font_bytes_ot_single_hebr())
+  let buffer = Buffer::new()
+  buffer.set_script(@common.script_hebrew)
+  buffer.add_string("A")
+  let result = buffer.shape_hebrew(font)
+  match result {
+    Err(err) => fail("shape error: \{err}")
+    Ok(_) => ()
+  }
+  let infos = buffer.infos()
+  let positions = buffer.positions()
+  let snapshot : Array[(UInt, Int, Int, Int, Int)] = []
+  for i in 0..<infos.length() {
+    snapshot.push((
+      infos[i].codepoint,
+      infos[i].cluster,
+      positions[i].x_advance,
+      positions[i].x_offset,
+      positions[i].y_offset,
+    ))
+  }
+  json_inspect(snapshot, content=[[3,0,520,6,0]])
+}
