@@ -99,6 +99,52 @@ fn indic_reph_requires_zwj(script : @common.Script) -> Bool {
   script == @common.script_telugu
 }
 
+fn indic_has_consonant_after(
+  categories : Array[Int],
+  start : Int,
+  end : Int,
+) -> Bool {
+  if start < 0 || end > categories.length() || start >= end {
+    return false
+  }
+  for i in start..<end {
+    if is_consonant_indic(categories[i]) {
+      return true
+    }
+  }
+  false
+}
+
+fn indic_reph_limit(
+  script : @common.Script,
+  categories : Array[Int],
+  start : Int,
+  end : Int,
+  has_rphf : Bool,
+) -> Int {
+  if !has_rphf || start < 0 || end > categories.length() || start + 2 >= end {
+    return start
+  }
+  if categories[start] != indic_cat_ra || categories[start + 1] != indic_cat_h {
+    return start
+  }
+  let mut limit = start + 2
+  if indic_reph_requires_zwj(script) {
+    if start + 2 >= end || categories[start + 2] != indic_cat_zwj {
+      return start
+    }
+    limit = start + 3
+  }
+  while limit < end &&
+    (categories[limit] == indic_cat_zwj || categories[limit] == indic_cat_zwnj) {
+    limit = limit + 1
+  }
+  if !indic_has_consonant_after(categories, limit, end) {
+    return start
+  }
+  limit
+}
+
 fn indic_virama_codepoint(script : @common.Script) -> UInt? {
   if script == @common.script_devanagari {
     return Some(0x094DU)
@@ -198,9 +244,11 @@ fn reorder_range_by_positions_indic(
 
 fn reorder_indic_syllables(
   buffer : Buffer,
+  script : @common.Script,
   categories : Array[Int],
   positions : Array[Int],
   syllables : Array[Int],
+  has_rphf : Bool,
 ) -> Unit {
   if categories.length() != buffer.infos.length() ||
     positions.length() != buffer.infos.length() ||
@@ -217,27 +265,14 @@ fn reorder_indic_syllables(
       j = j + 1
     }
     buffer.merge_clusters(i, j)
-    let mut base = j
-    let mut seen_below = false
-    let mut k = j
-    while k > i {
-      k = k - 1
-      if is_consonant_indic(current_categories[k]) {
-        if current_positions[k] != indic_pos_below_c &&
-          (current_positions[k] != indic_pos_post_c || seen_below) {
-          base = k
-          break
-        }
-        if current_positions[k] == indic_pos_below_c {
-          seen_below = true
-        }
-        base = k
-      } else if k > i &&
-        current_categories[k] == indic_cat_zwj &&
-        current_categories[k - 1] == indic_cat_h {
-        break
-      }
-    }
+    let reph_limit = indic_reph_limit(script, current_categories, i, j, has_rphf)
+    let base = find_base_indic_with_limit(
+      current_categories,
+      current_positions,
+      i,
+      j,
+      reph_limit,
+    )
     for k in i..<base {
       if current_positions[k] > indic_pos_pre_c {
         current_positions[k] = indic_pos_pre_c
@@ -283,19 +318,24 @@ fn reorder_indic_syllables(
   }
 }
 
-fn find_base_indic(
+fn find_base_indic_with_limit(
   categories : Array[Int],
   positions : Array[Int],
   start : Int,
   end : Int,
+  limit : Int,
 ) -> Int {
   if start < 0 || end > categories.length() || start >= end {
+    return start
+  }
+  let search_start = if limit < start { start } else { limit }
+  if search_start >= end {
     return start
   }
   let mut base = end
   let mut seen_below = false
   let mut k = end
-  while k > start {
+  while k > search_start {
     k = k - 1
     if is_consonant_indic(categories[k]) {
       if positions[k] != indic_pos_below_c &&
@@ -306,7 +346,7 @@ fn find_base_indic(
         seen_below = true
       }
       base = k
-    } else if k > start &&
+    } else if k > search_start &&
       categories[k] == indic_cat_zwj &&
       categories[k - 1] == indic_cat_h {
       break
@@ -315,7 +355,7 @@ fn find_base_indic(
   if base < end {
     return base
   }
-  start
+  search_start
 }
 
 fn indic_would_substitute(
@@ -379,7 +419,7 @@ fn build_indic_feature_masks(
     while j < syllables.length() && syllables[j] == syllable {
       j = j + 1
     }
-    let base = find_base_indic(categories, positions, i, j)
+    let mut has_reph = false
     if i + 1 < j &&
       categories[i] == indic_cat_ra &&
       categories[i + 1] == indic_cat_h {
@@ -393,9 +433,15 @@ fn build_indic_feature_masks(
       }
       if reph_len > 0 &&
         indic_would_substitute(gsub, rphf_lookups, glyphs, i, reph_len) {
-        masks[i] = masks[i] | rphf_bit
+        let limit = indic_reph_limit(script, categories, i, j, true)
+        if limit > i {
+          has_reph = true
+          masks[i] = masks[i] | rphf_bit
+        }
       }
     }
+    let reph_limit = indic_reph_limit(script, categories, i, j, has_reph)
+    let base = find_base_indic_with_limit(categories, positions, i, j, reph_limit)
     let mut pre_mask = half_bit
     if blwf_pre_and_post {
       pre_mask = pre_mask | blwf_bit
@@ -614,7 +660,15 @@ pub fn Buffer::shape_indic(
       )
     }
   }
-  reorder_indic_syllables(self, categories_after_i, positions_after, syllables_after)
+  let has_rphf = !rphf_lookups.is_empty()
+  reorder_indic_syllables(
+    self,
+    self.script,
+    categories_after_i,
+    positions_after,
+    syllables_after,
+    has_rphf,
+  )
   let reordered_categories : Array[Int] = []
   let reordered_positions : Array[Int] = []
   for info in self.infos {

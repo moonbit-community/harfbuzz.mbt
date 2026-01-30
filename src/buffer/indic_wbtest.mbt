@@ -19,7 +19,14 @@ test "indic reorder by positions with joiner attach" {
   for _ in 0..<categories.length() {
     syllables.push(syllable)
   }
-  reorder_indic_syllables(buffer, categories, positions, syllables)
+  reorder_indic_syllables(
+    buffer,
+    @common.script_devanagari,
+    categories,
+    positions,
+    syllables,
+    false,
+  )
   let result : Array[UInt] = []
   for info in buffer.infos() {
     result.push(info.codepoint)
