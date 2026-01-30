@@ -740,6 +740,22 @@ fn build_font_bytes() -> Bytes {
 }
 
 ///|
+fn build_font_bytes_space_fallback() -> Bytes {
+  let cmap = build_cmap_table(build_cmap_format12_groups([
+    (0x0020U, 0x0020U, 1U),
+    (0x2010U, 0x2010U, 2U),
+  ]))
+  let tables : Array[(@common.Tag, Bytes)] = [
+    (@common.Tag::from_chars('h', 'e', 'a', 'd'), build_head(1000, 0)),
+    (@common.Tag::from_chars('m', 'a', 'x', 'p'), build_maxp(4)),
+    (@common.Tag::from_chars('h', 'h', 'e', 'a'), build_hhea(4)),
+    (@common.Tag::from_chars('h', 'm', 't', 'x'), build_hmtx_ot()),
+    (@common.Tag::from_chars('c', 'm', 'a', 'p'), cmap),
+  ]
+  build_sfnt(tables)
+}
+
+///|
 fn build_font_bytes_ot() -> Bytes {
   let tables : Array[(@common.Tag, Bytes)] = [
     (@common.Tag::from_chars('h', 'e', 'a', 'd'), build_head(1000, 0)),
@@ -1034,6 +1050,22 @@ test "buffer shape basic" {
   let positions = buffer.positions()
   inspect(infos[0].codepoint, content="1")
   inspect(positions[0].x_advance, content="300")
+}
+
+///|
+test "buffer shape basic fallback for space and hyphen" {
+  let font = @font.Font::from_bytes(build_font_bytes_space_fallback())
+  let buffer = Buffer::new()
+  buffer.add_codepoint(0x00A0U)
+  buffer.add_codepoint(0x2011U)
+  let result = buffer.shape_basic(font)
+  match result {
+    Err(err) => fail("shape error: \{err}")
+    Ok(_) => ()
+  }
+  let infos = buffer.infos()
+  inspect(infos[0].codepoint, content="1")
+  inspect(infos[1].codepoint, content="2")
 }
 
 ///|

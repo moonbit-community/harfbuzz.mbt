@@ -221,6 +221,28 @@ fn default_gpos_features() -> Array[@common.Tag] {
   [@common.Tag::from_chars('k', 'e', 'r', 'n')]
 }
 
+fn fallback_glyph_for_codepoint(
+  font : @font.Font,
+  codepoint : UInt,
+) -> Result[UInt?, ShapeError] {
+  if codepoint == 0x2011U {
+    return match font.glyph_for_codepoint(0x2010U) {
+      Err(err) => Err(Font(err))
+      Ok(value) => Ok(value)
+    }
+  }
+  let cat = @unicode.general_category(codepoint)
+  if cat == @unicode.gc_space_separator ||
+    cat == @unicode.gc_line_separator ||
+    cat == @unicode.gc_paragraph_separator {
+    return match font.glyph_for_codepoint(0x0020U) {
+      Err(err) => Err(Font(err))
+      Ok(value) => Ok(value)
+    }
+  }
+  Ok(None)
+}
+
 ///|
 /// Get language.
 pub fn Buffer::get_language(self : Buffer) -> @common.Language {
@@ -628,8 +650,13 @@ pub fn Buffer::shape_basic(
   for info in self.infos {
     let glyph = match font.glyph_for_codepoint(info.codepoint) {
       Err(err) => return Err(Font(err))
-      Ok(None) => 0U
       Ok(Some(value)) => value
+      Ok(None) =>
+        match fallback_glyph_for_codepoint(font, info.codepoint) {
+          Err(err) => return Err(err)
+          Ok(None) => 0U
+          Ok(Some(value)) => value
+        }
     }
     let pos = match default_position(self, font, glyph) {
       Err(err) => return Err(err)
