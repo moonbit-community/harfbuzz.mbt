@@ -19,7 +19,17 @@ pub fn Buffer::shape_khmer(
   self : Buffer,
   font : @font.Font,
 ) -> Result[Unit, ShapeError] {
-  match insert_dotted_circle_if_supported(font, self) {
+  let categories : Array[UInt] = []
+  for info in self.infos {
+    categories.push(indic_category(indic_get_categories(info.codepoint)))
+  }
+  let syllables = find_syllables_khmer(categories)
+  match insert_dotted_circle_for_syllables(
+    font,
+    self,
+    syllables,
+    khmer_syllable_type_broken,
+  ) {
     Err(err) => return Err(err)
     Ok(_) => ()
   }
