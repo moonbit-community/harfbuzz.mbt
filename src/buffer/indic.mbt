@@ -248,13 +248,18 @@ fn reorder_indic_syllables(
   categories : Array[Int],
   positions : Array[Int],
   syllables : Array[Int],
-  has_rphf : Bool,
+  gsub : @ot_tables.GsubTable?,
+  glyphs : Array[UInt],
+  rphf_lookups : Array[Int],
 ) -> Unit {
   if categories.length() != buffer.infos.length() ||
     positions.length() != buffer.infos.length() ||
     syllables.length() != buffer.infos.length() {
     return ()
   }
+  let use_reph = glyphs.length() == categories.length() &&
+    !rphf_lookups.is_empty()
+  let reph_requires_zwj = indic_reph_requires_zwj(script)
   let mut current_categories = categories
   let mut current_positions = positions
   let mut i = 0
@@ -265,7 +270,28 @@ fn reorder_indic_syllables(
       j = j + 1
     }
     buffer.merge_clusters(i, j)
-    let reph_limit = indic_reph_limit(script, current_categories, i, j, has_rphf)
+    let mut has_reph = false
+    if use_reph &&
+      i + 1 < j &&
+      current_categories[i] == indic_cat_ra &&
+      current_categories[i + 1] == indic_cat_h {
+      let mut reph_len = 2
+      if reph_requires_zwj {
+        if i + 2 < j && current_categories[i + 2] == indic_cat_zwj {
+          reph_len = 3
+        } else {
+          reph_len = 0
+        }
+      }
+      if reph_len > 0 &&
+        indic_would_substitute(gsub, rphf_lookups, glyphs, i, reph_len) {
+        let limit = indic_reph_limit(script, current_categories, i, j, true)
+        if limit > i {
+          has_reph = true
+        }
+      }
+    }
+    let reph_limit = indic_reph_limit(script, current_categories, i, j, has_reph)
     let base = find_base_indic_with_limit(
       current_categories,
       current_positions,
@@ -660,14 +686,15 @@ pub fn Buffer::shape_indic(
       )
     }
   }
-  let has_rphf = !rphf_lookups.is_empty()
   reorder_indic_syllables(
     self,
     self.script,
     categories_after_i,
     positions_after,
     syllables_after,
-    has_rphf,
+    gsub,
+    glyphs_for_positions,
+    rphf_lookups,
   )
   let reordered_categories : Array[Int] = []
   let reordered_positions : Array[Int] = []

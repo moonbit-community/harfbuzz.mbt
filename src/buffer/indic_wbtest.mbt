@@ -25,7 +25,9 @@ test "indic reorder by positions with joiner attach" {
     categories,
     positions,
     syllables,
-    false,
+    None,
+    [],
+    [],
   )
   let result : Array[UInt] = []
   for info in buffer.infos() {
