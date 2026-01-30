@@ -1248,6 +1248,33 @@ test "buffer shape ot feature filter" {
 }
 
 ///|
+test "buffer shape ot feature filter snapshot" {
+  let font = @font.Font::from_bytes(build_font_bytes_ot())
+  let buffer = Buffer::new()
+  buffer.set_gsub_features([@common.Tag::from_chars('k', 'e', 'r', 'n')])
+  buffer.set_gpos_features([@common.Tag::from_chars('l', 'i', 'g', 'a')])
+  buffer.add_string("AB")
+  let result = buffer.shape_ot(font)
+  match result {
+    Err(err) => fail("shape error: \{err}")
+    Ok(_) => ()
+  }
+  let infos = buffer.infos()
+  let positions = buffer.positions()
+  let snapshot : Array[(UInt, Int, Int, Int, Int)] = []
+  for i in 0..<infos.length() {
+    snapshot.push((
+      infos[i].codepoint,
+      infos[i].cluster,
+      positions[i].x_advance,
+      positions[i].x_offset,
+      positions[i].y_offset,
+    ))
+  }
+  json_inspect(snapshot, content=[[1,0,300,0,0],[2,1,400,0,0]])
+}
+
+///|
 test "buffer shape ot single pos" {
   let font = @font.Font::from_bytes(build_font_bytes_ot_single())
   let buffer = Buffer::new()
