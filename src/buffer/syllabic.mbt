@@ -49,6 +49,7 @@ fn apply_gsub_features_for_syllables(
   feature_tags : Array[@common.Tag],
   syllables : Array[Int],
   glyph_masks? : Array[UInt] = [],
+  script_tag? : @common.Tag = buffer.script.to_tag(),
 ) -> Result[Unit, ShapeError] {
   if syllables.is_empty() || syllables.length() != buffer.infos.length() {
     return Ok(())
@@ -61,7 +62,7 @@ fn apply_gsub_features_for_syllables(
     Err(err) => return Err(Font(err))
     Ok(value) => value
   }
-  let script_tag = buffer.script.to_tag()
+  let script_tag = script_tag
   let lang_tag = language_to_ot_tag(buffer.language)
   let feature_lookups : Array[Array[Int]] = []
   for feature_tag in feature_tags {

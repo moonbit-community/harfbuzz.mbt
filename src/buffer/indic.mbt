@@ -99,6 +99,23 @@ fn indic_reph_requires_zwj(script : @common.Script) -> Bool {
   script == @common.script_telugu
 }
 
+fn indic_has_old_spec(script : @common.Script) -> Bool {
+  script == @common.script_devanagari ||
+  script == @common.script_bengali ||
+  script == @common.script_gurmukhi ||
+  script == @common.script_gujarati ||
+  script == @common.script_oriya ||
+  script == @common.script_tamil ||
+  script == @common.script_telugu ||
+  script == @common.script_kannada ||
+  script == @common.script_malayalam
+}
+
+fn indic_script_tag_2(script_tag : @common.Tag) -> @common.Tag {
+  let (b1, b2, b3, _) = script_tag.bytes()
+  @common.Tag::from_bytes(b1, b2, b3, b'2')
+}
+
 fn indic_has_consonant_after(
   categories : Array[Int],
   start : Int,
@@ -419,6 +436,7 @@ fn indic_would_substitute(
 
 fn build_indic_feature_masks(
   script : @common.Script,
+  is_old_spec : Bool,
   categories : Array[Int],
   positions : Array[Int],
   syllables : Array[Int],
@@ -480,6 +498,19 @@ fn build_indic_feature_masks(
     }
     for k in (base + 1)..<j {
       masks[k] = masks[k] | blwf_bit | abvf_bit | pstf_bit
+    }
+    if is_old_spec && script == @common.script_devanagari {
+      let mut k = i
+      while k + 1 < base {
+        if categories[k] == indic_cat_ra && categories[k + 1] == indic_cat_h {
+          let allow_eyelash = k + 2 == base || categories[k + 2] != indic_cat_zwj
+          if allow_eyelash {
+            masks[k] = masks[k] | blwf_bit
+            masks[k + 1] = masks[k + 1] | blwf_bit
+          }
+        }
+        k = k + 1
+      }
     }
     if !pref_lookups.is_empty() {
       let mut k = base + 1
@@ -571,11 +602,20 @@ pub fn Buffer::shape_indic(
     Ok(value) => value
   }
   let script_tag = self.script.to_tag()
+  let alt_script_tag = indic_script_tag_2(script_tag)
+  let mut selected_script_tag = script_tag
+  let mut is_old_spec = indic_has_old_spec(self.script)
   let lang_tag = language_to_ot_tag(self.language)
   if gsub is Some(gsub) {
     let dflt_tag = @common.Tag::from_chars('D', 'F', 'L', 'T')
     let latn_tag = @common.Tag::from_chars('l', 'a', 't', 'n')
-    if !buffer_layout_has_script(gsub.layout(), script_tag) &&
+    let has_script = buffer_layout_has_script(gsub.layout(), script_tag) ||
+      buffer_layout_has_script(gsub.layout(), alt_script_tag)
+    if buffer_layout_has_script(gsub.layout(), alt_script_tag) {
+      selected_script_tag = alt_script_tag
+      is_old_spec = false
+    }
+    if !has_script &&
       (buffer_layout_has_script(gsub.layout(), dflt_tag) ||
         buffer_layout_has_script(gsub.layout(), latn_tag)) {
       return self.shape_ot(font)
@@ -612,7 +652,7 @@ pub fn Buffer::shape_indic(
   let mut vatu_lookups : Array[Int] = []
   if gsub is Some(gsub) {
     rphf_lookups = match gsub.layout().select_lookup_offsets_for_feature(
-      script_tag,
+      selected_script_tag,
       indic_feature_tags[indic_feature_rphf],
       language_tag=lang_tag,
       include_required=false,
@@ -621,7 +661,7 @@ pub fn Buffer::shape_indic(
       Ok(value) => value
     }
     pref_lookups = match gsub.layout().select_lookup_offsets_for_feature(
-      script_tag,
+      selected_script_tag,
       indic_feature_tags[indic_feature_pref],
       language_tag=lang_tag,
       include_required=false,
@@ -630,7 +670,7 @@ pub fn Buffer::shape_indic(
       Ok(value) => value
     }
     blwf_lookups = match gsub.layout().select_lookup_offsets_for_feature(
-      script_tag,
+      selected_script_tag,
       indic_feature_tags[indic_feature_blwf],
       language_tag=lang_tag,
       include_required=false,
@@ -639,7 +679,7 @@ pub fn Buffer::shape_indic(
       Ok(value) => value
     }
     pstf_lookups = match gsub.layout().select_lookup_offsets_for_feature(
-      script_tag,
+      selected_script_tag,
       indic_feature_tags[indic_feature_pstf],
       language_tag=lang_tag,
       include_required=false,
@@ -648,7 +688,7 @@ pub fn Buffer::shape_indic(
       Ok(value) => value
     }
     vatu_lookups = match gsub.layout().select_lookup_offsets_for_feature(
-      script_tag,
+      selected_script_tag,
       indic_feature_tags[indic_feature_vatu],
       language_tag=lang_tag,
       include_required=false,
@@ -713,6 +753,7 @@ pub fn Buffer::shape_indic(
   }
   let glyph_masks = build_indic_feature_masks(
     self.script,
+    is_old_spec,
     reordered_categories,
     reordered_positions,
     syllables_after,
@@ -729,6 +770,7 @@ pub fn Buffer::shape_indic(
       indic_feature_tags,
       syllables_after,
       glyph_masks=glyph_masks,
+      script_tag=selected_script_tag,
     ) {
       Err(err) => return Err(err)
       Ok(_) => ()
