@@ -224,23 +224,199 @@ fn default_gpos_features() -> Array[@common.Tag] {
 fn fallback_glyph_for_codepoint(
   font : @font.Font,
   codepoint : UInt,
-) -> Result[UInt?, ShapeError] {
+) -> Result[(UInt?, @unicode.SpaceFallbackType?), ShapeError] {
   if codepoint == 0x2011U {
     return match font.glyph_for_codepoint(0x2010U) {
       Err(err) => Err(Font(err))
-      Ok(value) => Ok(value)
+      Ok(value) => Ok((value, None))
     }
   }
-  let cat = @unicode.general_category(codepoint)
-  if cat == @unicode.gc_space_separator ||
-    cat == @unicode.gc_line_separator ||
-    cat == @unicode.gc_paragraph_separator {
-    return match font.glyph_for_codepoint(0x0020U) {
-      Err(err) => Err(Font(err))
-      Ok(value) => Ok(value)
-    }
+  let space_type = @unicode.space_fallback_type(codepoint)
+  match space_type {
+    @unicode.SpaceFallbackType::NotSpace => ()
+    _ =>
+      return match font.glyph_for_codepoint(0x0020U) {
+        Err(err) => Err(Font(err))
+        Ok(None) => Ok((None, None))
+        Ok(Some(value)) => Ok((Some(value), Some(space_type)))
+      }
   }
-  Ok(None)
+  Ok((None, None))
+}
+
+fn space_fallback_divisor(space_type : @unicode.SpaceFallbackType) -> Int? {
+  match space_type {
+    @unicode.SpaceFallbackType::SpaceEm => Some(1)
+    @unicode.SpaceFallbackType::SpaceEm2 => Some(2)
+    @unicode.SpaceFallbackType::SpaceEm3 => Some(3)
+    @unicode.SpaceFallbackType::SpaceEm4 => Some(4)
+    @unicode.SpaceFallbackType::SpaceEm5 => Some(5)
+    @unicode.SpaceFallbackType::SpaceEm6 => Some(6)
+    @unicode.SpaceFallbackType::SpaceEm16 => Some(16)
+    _ => None
+  }
+}
+
+fn advance_for_codepoint(
+  font : @font.Font,
+  codepoint : UInt,
+  horizontal : Bool,
+) -> Result[Int?, ShapeError] {
+  match font.glyph_for_codepoint(codepoint) {
+    Err(err) => Err(Font(err))
+    Ok(None) => Ok(None)
+    Ok(Some(glyph)) =>
+      if horizontal {
+        match font.glyph_h_advance(glyph) {
+          Err(err) => Err(Font(err))
+          Ok(value) => Ok(Some(value))
+        }
+      } else {
+        match font.glyph_v_advance(glyph) {
+          Err(err) => Err(Font(err))
+          Ok(value) => Ok(Some(value))
+        }
+      }
+  }
+}
+
+fn adjust_space_fallback_position(
+  font : @font.Font,
+  direction : @common.Direction,
+  space_type : @unicode.SpaceFallbackType,
+  pos : GlyphPosition,
+) -> Result[GlyphPosition, ShapeError] {
+  let horizontal = !direction.is_vertical()
+  match space_type {
+    @unicode.SpaceFallbackType::NotSpace => Ok(pos)
+    @unicode.SpaceFallbackType::Space => Ok(pos)
+    @unicode.SpaceFallbackType::SpaceNarrow => {
+      if horizontal {
+        Ok(GlyphPosition::{
+          x_advance: pos.x_advance / 2,
+          y_advance: pos.y_advance,
+          x_offset: pos.x_offset,
+          y_offset: pos.y_offset,
+        })
+      } else {
+        Ok(GlyphPosition::{
+          x_advance: pos.x_advance,
+          y_advance: pos.y_advance / 2,
+          x_offset: pos.x_offset,
+          y_offset: pos.y_offset,
+        })
+      }
+    }
+    @unicode.SpaceFallbackType::Space4Em18 => {
+      let (scale_x, scale_y) = font.get_scale()
+      let scale = if horizontal { scale_x } else { scale_y }
+      let advance = scale * 4 / 18
+      if horizontal {
+        Ok(GlyphPosition::{
+          x_advance: advance,
+          y_advance: pos.y_advance,
+          x_offset: pos.x_offset,
+          y_offset: pos.y_offset,
+        })
+      } else {
+        Ok(GlyphPosition::{
+          x_advance: pos.x_advance,
+          y_advance: -advance,
+          x_offset: pos.x_offset,
+          y_offset: pos.y_offset,
+        })
+      }
+    }
+    @unicode.SpaceFallbackType::SpaceFigure => {
+      let mut value : Int? = None
+      let mut digit = 0x30
+      while digit <= 0x39 {
+        match advance_for_codepoint(font, digit.reinterpret_as_uint(), horizontal) {
+          Err(err) => return Err(err)
+          Ok(None) => ()
+          Ok(Some(advance)) => {
+            value = Some(advance)
+            break
+          }
+        }
+        digit = digit + 1
+      }
+      match value {
+        None => Ok(pos)
+        Some(advance) =>
+          if horizontal {
+            Ok(GlyphPosition::{
+              x_advance: advance,
+              y_advance: pos.y_advance,
+              x_offset: pos.x_offset,
+              y_offset: pos.y_offset,
+            })
+          } else {
+            Ok(GlyphPosition::{
+              x_advance: pos.x_advance,
+              y_advance: advance,
+              x_offset: pos.x_offset,
+              y_offset: pos.y_offset,
+            })
+          }
+      }
+    }
+    @unicode.SpaceFallbackType::SpacePunctuation => {
+      let mut value = match advance_for_codepoint(font, 0x2EU, horizontal) {
+        Err(err) => return Err(err)
+        Ok(advance) => advance
+      }
+      if value is None {
+        value = match advance_for_codepoint(font, 0x2CU, horizontal) {
+          Err(err) => return Err(err)
+          Ok(advance) => advance
+        }
+      }
+      match value {
+        None => Ok(pos)
+        Some(advance) =>
+          if horizontal {
+            Ok(GlyphPosition::{
+              x_advance: advance,
+              y_advance: pos.y_advance,
+              x_offset: pos.x_offset,
+              y_offset: pos.y_offset,
+            })
+          } else {
+            Ok(GlyphPosition::{
+              x_advance: pos.x_advance,
+              y_advance: advance,
+              x_offset: pos.x_offset,
+              y_offset: pos.y_offset,
+            })
+          }
+      }
+    }
+    _ =>
+      match space_fallback_divisor(space_type) {
+        None => Ok(pos)
+        Some(divisor) => {
+          let (scale_x, scale_y) = font.get_scale()
+          let scale = if horizontal { scale_x } else { scale_y }
+          let base = (scale + divisor / 2) / divisor
+          if horizontal {
+            Ok(GlyphPosition::{
+              x_advance: base,
+              y_advance: pos.y_advance,
+              x_offset: pos.x_offset,
+              y_offset: pos.y_offset,
+            })
+          } else {
+            Ok(GlyphPosition::{
+              x_advance: pos.x_advance,
+              y_advance: -base,
+              x_offset: pos.x_offset,
+              y_offset: pos.y_offset,
+            })
+          }
+        }
+      }
+  }
 }
 
 ///|
@@ -648,19 +824,31 @@ pub fn Buffer::shape_basic(
   let new_infos : Array[GlyphInfo] = []
   let new_positions : Array[GlyphPosition] = []
   for info in self.infos {
+    let mut space_type : @unicode.SpaceFallbackType? = None
     let glyph = match font.glyph_for_codepoint(info.codepoint) {
       Err(err) => return Err(Font(err))
       Ok(Some(value)) => value
       Ok(None) =>
         match fallback_glyph_for_codepoint(font, info.codepoint) {
           Err(err) => return Err(err)
-          Ok(None) => 0U
-          Ok(Some(value)) => value
+          Ok((None, _)) => 0U
+          Ok((Some(value), fallback_space_type)) => {
+            space_type = fallback_space_type
+            value
+          }
         }
     }
-    let pos = match default_position(self, font, glyph) {
+    let mut pos = match default_position(self, font, glyph) {
       Err(err) => return Err(err)
       Ok(value) => value
+    }
+    match space_type {
+      None => ()
+      Some(space_type) =>
+        pos = match adjust_space_fallback_position(font, self.direction, space_type, pos) {
+          Err(err) => return Err(err)
+          Ok(value) => value
+        }
     }
     new_infos.push(GlyphInfo::{ codepoint: glyph, cluster: info.cluster })
     new_positions.push(pos)

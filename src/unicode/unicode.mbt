@@ -455,3 +455,79 @@ pub fn is_extended_pictographic(u : UInt) -> Bool {
   let idx1 = (b << 6) + (ui & 63)
   emoji_b1(224, idx1) == 1
 }
+
+///|
+pub enum SpaceFallbackType {
+  NotSpace
+  SpaceEm
+  SpaceEm2
+  SpaceEm3
+  SpaceEm4
+  SpaceEm5
+  SpaceEm6
+  SpaceEm16
+  Space4Em18
+  Space
+  SpaceFigure
+  SpacePunctuation
+  SpaceNarrow
+} derive(Eq, Show, ToJson)
+
+///|
+/// Return space fallback type for a codepoint (subset of Zs, excluding OGHAM SPACE MARK).
+pub fn space_fallback_type(u : UInt) -> SpaceFallbackType {
+  match u {
+    0x0020U => SpaceFallbackType::Space
+    0x00A0U => SpaceFallbackType::Space
+    0x2000U => SpaceFallbackType::SpaceEm2
+    0x2001U => SpaceFallbackType::SpaceEm
+    0x2002U => SpaceFallbackType::SpaceEm2
+    0x2003U => SpaceFallbackType::SpaceEm
+    0x2004U => SpaceFallbackType::SpaceEm3
+    0x2005U => SpaceFallbackType::SpaceEm4
+    0x2006U => SpaceFallbackType::SpaceEm6
+    0x2007U => SpaceFallbackType::SpaceFigure
+    0x2008U => SpaceFallbackType::SpacePunctuation
+    0x2009U => SpaceFallbackType::SpaceEm5
+    0x200AU => SpaceFallbackType::SpaceEm16
+    0x202FU => SpaceFallbackType::SpaceNarrow
+    0x205FU => SpaceFallbackType::Space4Em18
+    0x3000U => SpaceFallbackType::SpaceEm
+    _ => SpaceFallbackType::NotSpace
+  }
+}
+
+///|
+/// True if a codepoint is a Unicode variation selector (excluding Mongolian selectors).
+pub fn is_variation_selector(u : UInt) -> Bool {
+  (u >= 0xFE00U && u <= 0xFE0FU) || (u >= 0xE0100U && u <= 0xE01EFU)
+}
+
+///|
+/// True if a codepoint has Default_Ignorable_Code_Point property (with HarfBuzz exceptions).
+pub fn is_default_ignorable(u : UInt) -> Bool {
+  let plane = u >> 16
+  if plane == 0U {
+    let page = u >> 8
+    match page {
+      0x00U => u == 0x00ADU
+      0x03U => u == 0x034FU
+      0x06U => u == 0x061CU
+      0x17U => u >= 0x17B4U && u <= 0x17B5U
+      0x18U => u >= 0x180BU && u <= 0x180EU
+      0x20U =>
+        (u >= 0x200BU && u <= 0x200FU) ||
+        (u >= 0x202AU && u <= 0x202EU) ||
+        (u >= 0x2060U && u <= 0x206FU)
+      0xFEU => (u >= 0xFE00U && u <= 0xFE0FU) || u == 0xFEFFU
+      0xFFU => u >= 0xFFF0U && u <= 0xFFF8U
+      _ => false
+    }
+  } else {
+    match plane {
+      0x01U => u >= 0x1D173U && u <= 0x1D17AU
+      0x0EU => u >= 0xE0000U && u <= 0xE0FFFU
+      _ => false
+    }
+  }
+}

@@ -35,6 +35,17 @@ test "unicode emoji extended pictographic" {
 }
 
 ///|
+test "unicode space fallback and ignorable helpers" {
+  inspect(space_fallback_type(0x2003U), content="SpaceEm")
+  inspect(space_fallback_type(0x202FU), content="SpaceNarrow")
+  inspect(space_fallback_type(0x1680U), content="NotSpace")
+  inspect(is_variation_selector(0xFE0FU), content="true")
+  inspect(is_variation_selector(0x180BU), content="false")
+  inspect(is_default_ignorable(0x00ADU), content="true")
+  inspect(is_default_ignorable(0x41U), content="false")
+}
+
+///|
 test "unicode arabic joining type" {
   inspect(arabic_joining_type_raw(0x0628U), content="3")
   inspect(arabic_joining_type_raw(0x0710U), content="4")

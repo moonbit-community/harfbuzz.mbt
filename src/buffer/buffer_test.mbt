@@ -1069,6 +1069,22 @@ test "buffer shape basic fallback for space and hyphen" {
 }
 
 ///|
+test "buffer shape basic fallback space advances" {
+  let font = @font.Font::from_bytes(build_font_bytes_space_fallback())
+  let buffer = Buffer::new()
+  buffer.add_codepoint(0x2003U)
+  buffer.add_codepoint(0x202FU)
+  let result = buffer.shape_basic(font)
+  match result {
+    Err(err) => fail("shape error: \{err}")
+    Ok(_) => ()
+  }
+  let positions = buffer.positions()
+  inspect(positions[0].x_advance, content="1000")
+  inspect(positions[1].x_advance, content="150")
+}
+
+///|
 test "buffer shape basic vertical advances" {
   let font = @font.Font::from_bytes(build_font_bytes())
   let buffer = Buffer::new()
