@@ -25,6 +25,7 @@ let use_feature_tags : Array[@common.Tag] = [
 ]
 
 let use_feature_rphf : Int = 4
+let use_feature_pref : Int = 5
 let use_feature_isol : Int = 13
 let use_feature_init : Int = 14
 let use_feature_medi : Int = 15
@@ -281,6 +282,97 @@ fn set_use_form_masks(
   }
 }
 
+fn use_apply_gsub(
+  gsub : @ot_tables.GsubTable?,
+  lookup_offsets : Array[Int],
+  glyphs : Array[UInt],
+  masks? : Array[UInt] = [],
+) -> (Array[UInt], Bool) {
+  if lookup_offsets.is_empty() || glyphs.is_empty() {
+    return (glyphs, false)
+  }
+  let gsub = match gsub {
+    None => return (glyphs, false)
+    Some(value) => value
+  }
+  let clusters = Array::make(glyphs.length(), 0)
+  match gsub.apply_with_lookups(
+    glyphs,
+    clusters,
+    lookup_offsets[:],
+    masks=masks,
+    lookup_mask=1U,
+  ) {
+    Err(_) => (glyphs, false)
+    Ok((next, _, changed)) => (next, changed)
+  }
+}
+
+fn update_use_categories_for_reph_pref(
+  categories : Array[Int],
+  syllables : Array[Int],
+  glyphs : Array[UInt],
+  gsub : @ot_tables.GsubTable?,
+  rphf_lookups : Array[Int],
+  pref_lookups : Array[Int],
+) -> Unit {
+  if categories.length() != syllables.length() || categories.length() != glyphs.length() {
+    return ()
+  }
+  let mut i = 0
+  while i < syllables.length() {
+    let syllable = syllables[i]
+    let mut j = i + 1
+    while j < syllables.length() && syllables[j] == syllable {
+      j = j + 1
+    }
+    let len = j - i
+    if len > 0 && !rphf_lookups.is_empty() {
+      let limit = if categories[i] == use_cat_r { 1 } else { if len > 3 { 3 } else { len } }
+      let masks = Array::make(len, 0U)
+      for k in 0..<limit {
+        masks[k] = 1U
+      }
+      let sub_glyphs : Array[UInt] = []
+      for k in i..<j {
+        sub_glyphs.push(glyphs[k])
+      }
+      let (_, changed) = use_apply_gsub(
+        gsub,
+        rphf_lookups,
+        sub_glyphs,
+        masks=masks,
+      )
+      if changed {
+        categories[i] = use_cat_r
+      }
+    }
+    if len > 0 && !pref_lookups.is_empty() {
+      let sub_glyphs : Array[UInt] = []
+      for k in i..<j {
+        sub_glyphs.push(glyphs[k])
+      }
+      let (next, changed) = use_apply_gsub(
+        gsub,
+        pref_lookups,
+        sub_glyphs,
+      )
+      if changed {
+        let mut idx = 0
+        let min_len = if next.length() < sub_glyphs.length() { next.length() } else { sub_glyphs.length() }
+        while idx < min_len && next[idx] == sub_glyphs[idx] {
+          idx = idx + 1
+        }
+        let target = if idx < len { i + idx } else { i }
+        if target >= i && target < j {
+          categories[target] = use_cat_vpre
+        }
+      }
+    }
+    i = j
+  }
+}
+
 fn apply_use_arabic_form_masks(
   masks : Array[UInt],
   actions : Array[Int],
@@ -441,6 +533,49 @@ pub fn Buffer::shape_use(
     marks_after.push(@unicode.is_mark(info.codepoint))
   }
   let syllables_after = find_syllables_use(categories_after_u, marks_after)
+  let mut rphf_lookups : Array[Int] = []
+  let mut pref_lookups : Array[Int] = []
+  if gsub is Some(gsub) {
+    let script_tag = self.script.to_tag()
+    let lang_tag = language_to_ot_tag(self.language)
+    rphf_lookups = match gsub.layout().select_lookup_offsets_for_feature(
+      script_tag,
+      use_feature_tags[use_feature_rphf],
+      language_tag=lang_tag,
+      include_required=false,
+    ) {
+      Err(err) => return Err(Layout(err))
+      Ok(value) => value
+    }
+    pref_lookups = match gsub.layout().select_lookup_offsets_for_feature(
+      script_tag,
+      use_feature_tags[use_feature_pref],
+      language_tag=lang_tag,
+      include_required=false,
+    ) {
+      Err(err) => return Err(Layout(err))
+      Ok(value) => value
+    }
+  }
+  if !rphf_lookups.is_empty() || !pref_lookups.is_empty() {
+    let glyphs_for_reorder : Array[UInt] = []
+    for info in self.infos {
+      let glyph = match font.glyph_for_codepoint(info.codepoint) {
+        Err(err) => return Err(Font(err))
+        Ok(None) => 0U
+        Ok(Some(value)) => value
+      }
+      glyphs_for_reorder.push(glyph)
+    }
+    update_use_categories_for_reph_pref(
+      categories_after_i,
+      syllables_after,
+      glyphs_for_reorder,
+      gsub,
+      rphf_lookups,
+      pref_lookups,
+    )
+  }
   reorder_use_syllables(self, categories_after_i, syllables_after)
   let reordered_categories : Array[Int] = []
   for info in self.infos {
