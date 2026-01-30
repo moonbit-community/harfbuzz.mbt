@@ -831,7 +831,7 @@ pub fn Buffer::shape_ot(
     zero_mark_advances_with_flags(self, used_flags, adjust_offsets=adjust_offsets)
   }
   if gpos is None {
-    match fallback_mark_position(font, self, used_flags, combining_classes) {
+    match fallback_mark_position(font, self, unicode_mark_flags, combining_classes) {
       Err(err) => return Err(err)
       Ok(_) => ()
     }
