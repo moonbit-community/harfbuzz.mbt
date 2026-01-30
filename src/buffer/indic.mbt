@@ -32,6 +32,9 @@ let indic_cat_ra : Int = 15
 let indic_cat_cm : Int = 16
 
 ///|
+let indic_cat_repha : Int = 14
+
+///|
 let indic_cat_v : Int = 2
 
 ///|
@@ -139,7 +142,22 @@ fn indic_reph_limit(
   end : Int,
   has_rphf : Bool,
 ) -> Int {
-  if !has_rphf || start < 0 || end > categories.length() || start + 2 >= end {
+  if start < 0 || end > categories.length() || start >= end {
+    return start
+  }
+  if script == @common.script_malayalam &&
+    categories[start] == indic_cat_repha {
+    let mut limit = start + 1
+    while limit < end &&
+      (categories[limit] == indic_cat_zwj || categories[limit] == indic_cat_zwnj) {
+      limit = limit + 1
+    }
+    if !indic_has_consonant_after(categories, limit, end) {
+      return start
+    }
+    return limit
+  }
+  if !has_rphf || start + 2 >= end {
     return start
   }
   if categories[start] != indic_cat_ra || categories[start + 1] != indic_cat_h {
