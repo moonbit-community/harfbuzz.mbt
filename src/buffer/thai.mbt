@@ -416,5 +416,5 @@ pub fn Buffer::shape_thai(
       Ok(_) => ()
     }
   }
-  self.shape_ot(font)
+  self.shape_ot(font, fallback_position=false)
 }

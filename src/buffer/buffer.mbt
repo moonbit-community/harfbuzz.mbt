@@ -648,6 +648,7 @@ pub fn Buffer::shape_basic(
 pub fn Buffer::shape_ot(
   self : Buffer,
   font : @font.Font,
+  fallback_position? : Bool = true,
 ) -> Result[Unit, ShapeError] {
   self.guess_segment_properties()
   let unicode_mark_flags = mark_flags_from_infos(self.infos)
@@ -830,7 +831,7 @@ pub fn Buffer::shape_ot(
   if zero_marks {
     zero_mark_advances_with_flags(self, used_flags, adjust_offsets=adjust_offsets)
   }
-  if gpos is None {
+  if fallback_position && gpos is None {
     match fallback_mark_position(font, self, unicode_mark_flags, combining_classes) {
       Err(err) => return Err(err)
       Ok(_) => ()
