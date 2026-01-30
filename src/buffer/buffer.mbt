@@ -650,11 +650,6 @@ pub fn Buffer::shape_ot(
   font : @font.Font,
 ) -> Result[Unit, ShapeError] {
   self.guess_segment_properties()
-  let mark_flags = mark_flags_from_infos(self.infos)
-  match self.shape_basic(font) {
-    Err(err) => return Err(err)
-    Ok(_) => ()
-  }
   let gsub = match font.gsub() {
     Err(err) => return Err(Font(err))
     Ok(value) => value
@@ -662,6 +657,14 @@ pub fn Buffer::shape_ot(
   let gpos = match font.gpos() {
     Err(err) => return Err(Font(err))
     Ok(value) => value
+  }
+  let mut mark_flags : Array[Bool] = []
+  if gsub is None && gpos is None {
+    mark_flags = mark_flags_from_infos(self.infos)
+  }
+  match self.shape_basic(font) {
+    Err(err) => return Err(err)
+    Ok(_) => ()
   }
   let script_tag = self.script.to_tag()
   let lang_tag = language_to_ot_tag(self.language)
@@ -798,7 +801,23 @@ pub fn Buffer::shape_ot(
     }
   }
   if gsub is None && gpos is None {
-    zero_mark_advances_with_flags(self, mark_flags)
+    let gdef = match font.gdef() {
+      Err(err) => return Err(Font(err))
+      Ok(value) => value
+    }
+    let mut used_flags = mark_flags
+    match gdef {
+      None => ()
+      Some(gdef) => {
+        if gdef.header().glyph_class_def_offset is Some(_) {
+          match mark_flags_from_gdef(gdef, self.infos) {
+            Err(err) => return Err(err)
+            Ok(value) => used_flags = value
+          }
+        }
+      }
+    }
+    zero_mark_advances_with_flags(self, used_flags)
   }
   Ok(())
 }

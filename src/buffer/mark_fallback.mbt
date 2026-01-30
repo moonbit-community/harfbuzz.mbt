@@ -11,6 +11,21 @@ fn mark_flags_from_infos(infos : Array[GlyphInfo]) -> Array[Bool] {
   flags
 }
 
+fn mark_flags_from_gdef(
+  gdef : @ot_tables.GdefTable,
+  infos : Array[GlyphInfo],
+) -> Result[Array[Bool], ShapeError] {
+  let flags : Array[Bool] = []
+  for info in infos {
+    let glyph_class = match gdef.glyph_class(info.codepoint) {
+      Err(err) => return Err(Layout(err))
+      Ok(value) => value
+    }
+    flags.push(glyph_class == 3)
+  }
+  Ok(flags)
+}
+
 fn zero_mark_advances_with_flags(buffer : Buffer, marks : Array[Bool]) -> Unit {
   if buffer.infos.length() != buffer.positions.length() ||
     buffer.infos.length() != marks.length() {

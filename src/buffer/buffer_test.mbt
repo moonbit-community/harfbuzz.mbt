@@ -947,6 +947,37 @@ fn build_font_bytes_mark_fallback() -> Bytes {
   build_sfnt(tables)
 }
 
+fn build_gdef_mark_class_table() -> Bytes {
+  let bytes : Array[Byte] = []
+  push_u32(bytes, 0x00010000)
+  push_u16(bytes, 12)
+  push_u16(bytes, 0)
+  push_u16(bytes, 0)
+  push_u16(bytes, 0)
+  // glyph class def (glyph 2 -> class 3)
+  push_u16(bytes, 1)
+  push_u16(bytes, 2)
+  push_u16(bytes, 1)
+  push_u16(bytes, 3)
+  Bytes::from_array(bytes)
+}
+
+fn build_font_bytes_mark_fallback_gdef() -> Bytes {
+  let cmap = build_cmap_table(build_cmap_format12_groups([
+    (0x41U, 0x41U, 1U),
+    (0x42U, 0x42U, 2U),
+  ]))
+  let tables : Array[(@common.Tag, Bytes)] = [
+    (@common.Tag::from_chars('h', 'e', 'a', 'd'), build_head(1000, 0)),
+    (@common.Tag::from_chars('m', 'a', 'x', 'p'), build_maxp(4)),
+    (@common.Tag::from_chars('h', 'h', 'e', 'a'), build_hhea(4)),
+    (@common.Tag::from_chars('h', 'm', 't', 'x'), build_hmtx_ot()),
+    (@common.Tag::from_chars('c', 'm', 'a', 'p'), cmap),
+    (@common.Tag::from_chars('G', 'D', 'E', 'F'), build_gdef_mark_class_table()),
+  ]
+  build_sfnt(tables)
+}
+
 ///|
 test "buffer shape basic" {
   let font = @font.Font::from_bytes(build_font_bytes())
@@ -1058,6 +1089,21 @@ test "buffer shape ot zeroes mark advances without gpos" {
   let buffer = Buffer::new()
   buffer.add_codepoint(0x41U)
   buffer.add_codepoint(0x0301U)
+  let result = buffer.shape_ot(font)
+  match result {
+    Err(err) => fail("shape error: \{err}")
+    Ok(_) => ()
+  }
+  let positions = buffer.positions()
+  inspect(positions[0].x_advance, content="300")
+  inspect(positions[1].x_advance, content="0")
+}
+
+test "buffer shape ot zeroes mark advances using gdef mark class" {
+  let font = @font.Font::from_bytes(build_font_bytes_mark_fallback_gdef())
+  let buffer = Buffer::new()
+  buffer.add_codepoint(0x41U)
+  buffer.add_codepoint(0x42U)
   let result = buffer.shape_ot(font)
   match result {
     Err(err) => fail("shape error: \{err}")
