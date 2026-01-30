@@ -48,9 +48,23 @@ fn apply_gsub_features_for_syllables(
   gsub : @ot_tables.GsubTable,
   feature_tags : Array[@common.Tag],
   syllables : Array[Int],
+  feature_masks? : Array[Array[UInt]] = [],
+  lookup_mask? : UInt = 1U,
 ) -> Result[Unit, ShapeError] {
   if syllables.is_empty() || syllables.length() != buffer.infos.length() {
     return Ok(())
+  }
+  let mut use_masks = !feature_masks.is_empty()
+  if use_masks && feature_masks.length() != feature_tags.length() {
+    use_masks = false
+  }
+  if use_masks {
+    for masks in feature_masks {
+      if !masks.is_empty() && masks.length() != buffer.infos.length() {
+        use_masks = false
+        break
+      }
+    }
   }
   let gdef = match font.gdef() {
     Err(err) => return Err(Font(err))
@@ -109,9 +123,20 @@ fn apply_gsub_features_for_syllables(
       sub_clusters.push(current_clusters[k])
     }
     let mut sub_changed = false
-    for lookup_offsets in feature_lookups {
+    let mut masks_valid = use_masks
+    for feature_index in 0..<feature_lookups.length() {
+      let lookup_offsets = feature_lookups[feature_index]
       if lookup_offsets.is_empty() {
         continue
+      }
+      let sub_masks : Array[UInt] = []
+      if masks_valid && use_masks {
+        let feature_mask = feature_masks[feature_index]
+        if !feature_mask.is_empty() {
+          for k in start..<end {
+            sub_masks.push(feature_mask[k])
+          }
+        }
       }
       let result = match gdef {
         None =>
@@ -119,6 +144,8 @@ fn apply_gsub_features_for_syllables(
             sub_glyphs,
             sub_clusters,
             lookup_offsets[:],
+            masks=sub_masks,
+            lookup_mask=lookup_mask,
           ) {
             Err(err) => return Err(Layout(err))
             Ok(value) => value
@@ -129,6 +156,8 @@ fn apply_gsub_features_for_syllables(
             sub_clusters,
             lookup_offsets[:],
             gdef=gdef,
+            masks=sub_masks,
+            lookup_mask=lookup_mask,
           ) {
             Err(err) => return Err(Layout(err))
             Ok(value) => value
@@ -137,6 +166,9 @@ fn apply_gsub_features_for_syllables(
       let (next_glyphs, next_clusters, did_change) = result
       sub_glyphs = next_glyphs
       sub_clusters = next_clusters
+      if !sub_masks.is_empty() && sub_glyphs.length() != sub_masks.length() {
+        masks_valid = false
+      }
       if did_change {
         sub_changed = true
       }

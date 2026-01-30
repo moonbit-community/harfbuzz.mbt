@@ -82,6 +82,14 @@ let indic_pos_smvd : Int = 13
 ///|
 let indic_pos_end : Int = 14
 
+let indic_feature_rphf : Int = 2
+let indic_feature_pref : Int = 4
+let indic_feature_blwf : Int = 5
+let indic_feature_abvf : Int = 6
+let indic_feature_half : Int = 7
+let indic_feature_pstf : Int = 8
+let indic_feature_init : Int = 11
+
 fn is_consonant_indic(category : Int) -> Bool {
   category == indic_cat_c ||
   category == indic_cat_cs ||
@@ -235,6 +243,120 @@ fn reorder_indic_syllables(
   }
 }
 
+fn find_base_indic(
+  categories : Array[Int],
+  positions : Array[Int],
+  start : Int,
+  end : Int,
+) -> Int {
+  if start < 0 || end > categories.length() || start >= end {
+    return start
+  }
+  let mut base = end
+  let mut seen_below = false
+  let mut k = end
+  while k > start {
+    k = k - 1
+    if is_consonant_indic(categories[k]) {
+      if positions[k] != indic_pos_below_c &&
+        (positions[k] != indic_pos_post_c || seen_below) {
+        return k
+      }
+      if positions[k] == indic_pos_below_c {
+        seen_below = true
+      }
+      base = k
+    } else if k > start &&
+      categories[k] == indic_cat_zwj &&
+      categories[k - 1] == indic_cat_h {
+      break
+    }
+  }
+  if base < end {
+    return base
+  }
+  start
+}
+
+fn build_indic_feature_masks(
+  categories : Array[Int],
+  positions : Array[Int],
+  syllables : Array[Int],
+) -> Array[Array[UInt]] {
+  let len = categories.length()
+  let masks : Array[Array[UInt]] = []
+  for _ in 0..<indic_feature_tags.length() {
+    masks.push([])
+  }
+  let rphf_mask = Array::make(len, 0U)
+  let pref_mask = Array::make(len, 0U)
+  let blwf_mask = Array::make(len, 0U)
+  let abvf_mask = Array::make(len, 0U)
+  let half_mask = Array::make(len, 0U)
+  let pstf_mask = Array::make(len, 0U)
+  let init_mask = Array::make(len, 0U)
+  masks[indic_feature_rphf] = rphf_mask
+  masks[indic_feature_pref] = pref_mask
+  masks[indic_feature_blwf] = blwf_mask
+  masks[indic_feature_abvf] = abvf_mask
+  masks[indic_feature_half] = half_mask
+  masks[indic_feature_pstf] = pstf_mask
+  masks[indic_feature_init] = init_mask
+  let mut i = 0
+  while i < syllables.length() {
+    let syllable = syllables[i]
+    let mut j = i + 1
+    while j < syllables.length() && syllables[j] == syllable {
+      j = j + 1
+    }
+    let base = find_base_indic(categories, positions, i, j)
+    if i + 1 < j &&
+      categories[i] == indic_cat_ra &&
+      categories[i + 1] == indic_cat_h {
+      rphf_mask[i] = 1U
+    }
+    for k in i..<base {
+      half_mask[k] = 1U
+    }
+    if base >= i && base < j {
+      init_mask[base] = 1U
+    }
+    for k in (base + 1)..<j {
+      blwf_mask[k] = 1U
+      abvf_mask[k] = 1U
+      pstf_mask[k] = 1U
+    }
+    let mut k = base + 1
+    while k + 1 < j {
+      if categories[k] == indic_cat_h && categories[k + 1] == indic_cat_ra {
+        pref_mask[k] = 1U
+        pref_mask[k + 1] = 1U
+        break
+      }
+      k = k + 1
+    }
+    let mut z = i + 1
+    while z < j {
+      if categories[z] == indic_cat_zwnj {
+        let mut p = z - 1
+        while p >= i {
+          if is_consonant_indic(categories[p]) {
+            half_mask[p] = 0U
+            break
+          }
+          if p == 0 {
+            break
+          }
+          p = p - 1
+        }
+      }
+      z = z + 1
+    }
+    i = j
+  }
+  masks
+}
+
 ///|
 pub fn Buffer::shape_indic(
   self : Buffer,
@@ -279,6 +401,18 @@ pub fn Buffer::shape_indic(
   }
   let syllables_after = find_syllables_indic(categories_after_u)
   reorder_indic_syllables(self, categories_after_i, positions_after, syllables_after)
+  let reordered_categories : Array[Int] = []
+  let reordered_positions : Array[Int] = []
+  for info in self.infos {
+    let packed = indic_get_categories(info.codepoint)
+    reordered_categories.push(indic_category(packed).reinterpret_as_int())
+    reordered_positions.push(indic_position(packed))
+  }
+  let feature_masks = build_indic_feature_masks(
+    reordered_categories,
+    reordered_positions,
+    syllables_after,
+  )
   match self.shape_basic(font) {
     Err(err) => return Err(err)
     Ok(_) => ()
@@ -290,6 +424,7 @@ pub fn Buffer::shape_indic(
       gsub,
       indic_feature_tags,
       syllables_after,
+      feature_masks=feature_masks,
     ) {
       Err(err) => return Err(err)
       Ok(_) => ()

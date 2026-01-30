@@ -3098,6 +3098,35 @@ test "gsub ligature substitution apply" {
 }
 
 ///|
+test "gsub ligature substitution apply mask" {
+  let gsub_bytes = build_layout_table(
+    build_gsub_ligature_lookup(),
+    @common.Tag::from_chars('l', 'i', 'g', 'a'),
+  )
+  let gsub = match GsubTable::parse(@blob.Blob::from_bytes(gsub_bytes)) {
+    Err(err) => fail("parse error: \{err}")
+    Ok(value) => value
+  }
+  let glyphs : Array[UInt] = [3U, 4U, 5U]
+  let clusters : Array[Int] = [0, 1, 2]
+  let masks : Array[UInt] = [1U, 0U, 1U]
+  let result = match gsub.apply_with_lookups(
+    glyphs,
+    clusters,
+    gsub.layout().lookup_list().offsets(),
+    masks=masks,
+    lookup_mask=1U,
+  ) {
+    Err(err) => fail("apply error: \{err}")
+    Ok(value) => value
+  }
+  let (new_glyphs, new_clusters, changed) = result
+  inspect(changed, content="false")
+  inspect(new_glyphs, content="[3, 4, 5]")
+  inspect(new_clusters, content="[0, 1, 2]")
+}
+
+///|
 test "gsub multiple substitution apply" {
   let gsub_bytes = build_layout_table(
     build_gsub_multiple_lookup(),

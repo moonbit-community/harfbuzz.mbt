@@ -24,6 +24,17 @@ let use_feature_tags : Array[@common.Tag] = [
   @common.Tag::from_chars('p', 's', 't', 's'),
 ]
 
+let use_feature_rphf : Int = 4
+let use_feature_isol : Int = 13
+let use_feature_init : Int = 14
+let use_feature_medi : Int = 15
+let use_feature_fina : Int = 16
+
+let use_form_isol : Int = 0
+let use_form_init : Int = 1
+let use_form_medi : Int = 2
+let use_form_fina : Int = 3
+
 ///|
 let use_cat_r : Int = 18
 
@@ -226,6 +237,119 @@ fn reorder_use_syllables(
   }
 }
 
+fn set_use_form_masks(
+  isol_mask : Array[UInt],
+  init_mask : Array[UInt],
+  medi_mask : Array[UInt],
+  fina_mask : Array[UInt],
+  start : Int,
+  end : Int,
+  form : Int,
+) -> Unit {
+  if start < 0 || end > isol_mask.length() || start >= end {
+    return ()
+  }
+  for i in start..<end {
+    isol_mask[i] = 0U
+    init_mask[i] = 0U
+    medi_mask[i] = 0U
+    fina_mask[i] = 0U
+    if form == use_form_isol {
+      isol_mask[i] = 1U
+    } else if form == use_form_init {
+      init_mask[i] = 1U
+    } else if form == use_form_medi {
+      medi_mask[i] = 1U
+    } else if form == use_form_fina {
+      fina_mask[i] = 1U
+    }
+  }
+}
+
+fn build_use_feature_masks(
+  categories : Array[Int],
+  syllables : Array[Int],
+) -> Array[Array[UInt]] {
+  let len = categories.length()
+  let masks : Array[Array[UInt]] = []
+  for _ in 0..<use_feature_tags.length() {
+    masks.push([])
+  }
+  let rphf_mask = Array::make(len, 0U)
+  let isol_mask = Array::make(len, 0U)
+  let init_mask = Array::make(len, 0U)
+  let medi_mask = Array::make(len, 0U)
+  let fina_mask = Array::make(len, 0U)
+  masks[use_feature_rphf] = rphf_mask
+  masks[use_feature_isol] = isol_mask
+  masks[use_feature_init] = init_mask
+  masks[use_feature_medi] = medi_mask
+  masks[use_feature_fina] = fina_mask
+  let mut last_start = -1
+  let mut last_form = -1
+  let mut i = 0
+  while i < syllables.length() {
+    let syllable = syllables[i]
+    let mut j = i + 1
+    while j < syllables.length() && syllables[j] == syllable {
+      j = j + 1
+    }
+    let syllable_type = syllable & 0x0f
+    let joinable =
+      syllable_type == use_syllable_type_virama_terminated_cluster ||
+      syllable_type == use_syllable_type_sakot_terminated_cluster ||
+      syllable_type == use_syllable_type_standard_cluster ||
+      syllable_type == use_syllable_type_number_joiner_terminated_cluster ||
+      syllable_type == use_syllable_type_numeral_cluster ||
+      syllable_type == use_syllable_type_symbol_cluster ||
+      syllable_type == use_syllable_type_broken_cluster
+    if joinable {
+      let mut join = false
+      if last_form == use_form_fina || last_form == use_form_isol {
+        join = true
+      }
+      if join && last_start >= 0 {
+        let prev_form = if last_form == use_form_fina {
+          use_form_medi
+        } else {
+          use_form_init
+        }
+        set_use_form_masks(
+          isol_mask,
+          init_mask,
+          medi_mask,
+          fina_mask,
+          last_start,
+          i,
+          prev_form,
+        )
+      }
+      let current_form = if join { use_form_fina } else { use_form_isol }
+      set_use_form_masks(
+        isol_mask,
+        init_mask,
+        medi_mask,
+        fina_mask,
+        i,
+        j,
+        current_form,
+      )
+      last_start = i
+      last_form = current_form
+    } else {
+      last_start = -1
+      last_form = -1
+    }
+    let limit = if categories[i] == use_cat_r { 1 } else { j - i }
+    let rphf_limit = if limit > 3 { 3 } else { limit }
+    for k in i..<(i + rphf_limit) {
+      rphf_mask[k] = 1U
+    }
+    i = j
+  }
+  masks
+}
+
 ///|
 pub fn Buffer::shape_use(
   self : Buffer,
@@ -272,6 +396,11 @@ pub fn Buffer::shape_use(
   }
   let syllables_after = find_syllables_use(categories_after_u, marks_after)
   reorder_use_syllables(self, categories_after_i, syllables_after)
+  let reordered_categories : Array[Int] = []
+  for info in self.infos {
+    reordered_categories.push(use_category(info.codepoint))
+  }
+  let feature_masks = build_use_feature_masks(reordered_categories, syllables_after)
   match self.shape_basic(font) {
     Err(err) => return Err(err)
     Ok(_) => ()
@@ -283,6 +412,7 @@ pub fn Buffer::shape_use(
       gsub,
       use_feature_tags,
       syllables_after,
+      feature_masks=feature_masks,
     ) {
       Err(err) => return Err(err)
       Ok(_) => ()

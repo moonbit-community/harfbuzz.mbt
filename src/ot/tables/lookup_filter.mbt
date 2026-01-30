@@ -4,7 +4,15 @@ fn should_ignore_glyph(
   lookup_flag : Int,
   gdef : GdefTable?,
   mark_filtering_set : Int?,
+  masks? : Array[UInt] = [],
+  index? : Int = -1,
+  lookup_mask? : UInt = 0xFFFFFFFFU,
 ) -> Result[Bool, OtLayoutError] {
+  if !masks.is_empty() && index >= 0 {
+    if (masks[index] & lookup_mask) == 0U {
+      return Ok(true)
+    }
+  }
   if lookup_flag == 0 {
     return Ok(false)
   }
@@ -62,6 +70,8 @@ fn collect_forward_indices(
   lookup_flag : Int,
   gdef : GdefTable?,
   mark_filtering_set : Int?,
+  masks? : Array[UInt] = [],
+  lookup_mask? : UInt = 0xFFFFFFFFU,
 ) -> Result[Array[Int]?, OtLayoutError] {
   if count <= 0 {
     return Err(InvalidFormat)
@@ -74,6 +84,9 @@ fn collect_forward_indices(
     lookup_flag,
     gdef,
     mark_filtering_set,
+    masks=masks,
+    index=start_index,
+    lookup_mask=lookup_mask,
   )
   match first_ignored {
     Err(err) => Err(err)
@@ -91,6 +104,9 @@ fn collect_forward_indices(
           lookup_flag,
           gdef,
           mark_filtering_set,
+          masks=masks,
+          index=cursor,
+          lookup_mask=lookup_mask,
         )
         match ignored {
           Err(err) => return Err(err)
@@ -114,6 +130,8 @@ fn collect_backward_indices(
   lookup_flag : Int,
   gdef : GdefTable?,
   mark_filtering_set : Int?,
+  masks? : Array[UInt] = [],
+  lookup_mask? : UInt = 0xFFFFFFFFU,
 ) -> Result[Array[Int]?, OtLayoutError] {
   if count < 0 {
     return Err(InvalidFormat)
@@ -132,6 +150,9 @@ fn collect_backward_indices(
       lookup_flag,
       gdef,
       mark_filtering_set,
+      masks=masks,
+      index=cursor,
+      lookup_mask=lookup_mask,
     )
     match ignored {
       Err(err) => return Err(err)

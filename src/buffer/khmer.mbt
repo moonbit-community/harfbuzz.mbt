@@ -14,6 +14,12 @@ let khmer_feature_tags : Array[@common.Tag] = [
   @common.Tag::from_chars('c', 'l', 'i', 'g'),
 ]
 
+let khmer_feature_pref : Int = 2
+let khmer_feature_blwf : Int = 3
+let khmer_feature_abvf : Int = 4
+let khmer_feature_pstf : Int = 5
+let khmer_feature_cfar : Int = 6
+
 ///|
 let khmer_cat_h : Int = 4
 
@@ -136,6 +142,58 @@ fn reorder_khmer_syllables(
   }
 }
 
+fn build_khmer_feature_masks(
+  categories : Array[Int],
+  syllables : Array[Int],
+) -> Array[Array[UInt]] {
+  let len = categories.length()
+  let masks : Array[Array[UInt]] = []
+  for _ in 0..<khmer_feature_tags.length() {
+    masks.push([])
+  }
+  let pref_mask = Array::make(len, 0U)
+  let blwf_mask = Array::make(len, 0U)
+  let abvf_mask = Array::make(len, 0U)
+  let pstf_mask = Array::make(len, 0U)
+  let cfar_mask = Array::make(len, 0U)
+  masks[khmer_feature_pref] = pref_mask
+  masks[khmer_feature_blwf] = blwf_mask
+  masks[khmer_feature_abvf] = abvf_mask
+  masks[khmer_feature_pstf] = pstf_mask
+  masks[khmer_feature_cfar] = cfar_mask
+  let mut i = 0
+  while i < syllables.length() {
+    let syllable = syllables[i]
+    let mut j = i + 1
+    while j < syllables.length() && syllables[j] == syllable {
+      j = j + 1
+    }
+    let syllable_type = syllable & 0x0f
+    if syllable_type == khmer_syllable_type_consonant ||
+      syllable_type == khmer_syllable_type_broken {
+      for k in (i + 1)..<j {
+        blwf_mask[k] = 1U
+        abvf_mask[k] = 1U
+        pstf_mask[k] = 1U
+      }
+      let mut k = i + 1
+      while k + 1 < j {
+        if categories[k] == khmer_cat_h && categories[k + 1] == khmer_cat_ra {
+          pref_mask[k] = 1U
+          pref_mask[k + 1] = 1U
+          for m in (k + 2)..<j {
+            cfar_mask[m] = 1U
+          }
+          break
+        }
+        k = k + 1
+      }
+    }
+    i = j
+  }
+  masks
+}
+
 ///|
 pub fn Buffer::shape_khmer(
   self : Buffer,
@@ -164,6 +222,11 @@ pub fn Buffer::shape_khmer(
   }
   let syllables_after = find_syllables_khmer(categories_after_u)
   reorder_khmer_syllables(self, categories_after_i, syllables_after)
+  let reordered_categories : Array[Int] = []
+  for info in self.infos {
+    reordered_categories.push(khmer_category(info.codepoint))
+  }
+  let feature_masks = build_khmer_feature_masks(reordered_categories, syllables_after)
   match self.shape_basic(font) {
     Err(err) => return Err(err)
     Ok(_) => ()
@@ -179,6 +242,7 @@ pub fn Buffer::shape_khmer(
       gsub,
       khmer_feature_tags,
       syllables_after,
+      feature_masks=feature_masks,
     ) {
       Err(err) => return Err(err)
       Ok(_) => ()
