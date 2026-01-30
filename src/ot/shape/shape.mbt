@@ -4,7 +4,9 @@ pub fn shape(font : @font.Font, buffer : @buffer.Buffer) -> Result[Unit, @buffer
   buffer.guess_segment_properties()
   buffer.normalize()
   let script = buffer.get_script()
-  if script == @common.script_arabic || script == @common.script_mongolian {
+  let direction = buffer.get_direction()
+  if (script == @common.script_arabic || script == @common.script_syriac) &&
+    direction.is_horizontal() {
     return buffer.shape_arabic(font)
   }
   if script == @common.script_thai || script == @common.script_lao {
@@ -47,6 +49,7 @@ fn is_indic_script(script : @common.Script) -> Bool {
 ///|
 fn is_use_script(script : @common.Script) -> Bool {
   script == @common.script_sinhala ||
+    script == @common.script_mongolian ||
     script == @common.script_tibetan ||
     script == @common.script_buhid ||
     script == @common.script_hanunoo ||

@@ -337,7 +337,9 @@ pub fn Buffer::shape_arabic(
     }
   }
   if !has_gsub_features {
-    apply_arabic_fallback(self, actions)
+    if self.script == @common.script_arabic {
+      apply_arabic_fallback(self, actions)
+    }
     match self.shape_basic(font) {
       Err(err) => return Err(err)
       Ok(_) => ()
