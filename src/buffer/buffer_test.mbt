@@ -125,10 +125,13 @@ test "buffer normalize skips variation selectors" {
   buffer.add_codepoint(0xFE0FU)
   buffer.normalize()
   let cps : Array[UInt] = []
+  let clusters : Array[Int] = []
   for info in buffer.infos() {
     cps.push(info.codepoint)
+    clusters.push(info.cluster)
   }
   inspect(cps, content="[65, 769, 65039]")
+  inspect(clusters, content="[0, 1, 1]")
 }
 
 ///|

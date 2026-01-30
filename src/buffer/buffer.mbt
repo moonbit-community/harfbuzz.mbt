@@ -487,6 +487,7 @@ pub fn Buffer::normalize(self : Buffer) -> Unit {
   }
   for info in self.infos {
     if @unicode.is_variation_selector(info.codepoint) {
+      merge_variation_selector_clusters(self)
       return ()
     }
   }
@@ -559,6 +560,21 @@ pub fn Buffer::normalize(self : Buffer) -> Unit {
   }
   if is_hangul {
     normalize_hangul(self)
+  }
+}
+
+///|
+fn merge_variation_selector_clusters(buffer : Buffer) -> Unit {
+  let mut last_non_vs = -1
+  for i in 0..<buffer.infos.length() {
+    let codepoint = buffer.infos[i].codepoint
+    if @unicode.is_variation_selector(codepoint) {
+      if last_non_vs >= 0 {
+        buffer.merge_clusters(last_non_vs, i + 1)
+      }
+    } else {
+      last_non_vs = i
+    }
   }
 }
 
