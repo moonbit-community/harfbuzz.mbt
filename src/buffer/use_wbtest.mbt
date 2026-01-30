@@ -60,3 +60,28 @@ test "use feature masks apply arabic isol" {
   let isol_bit = 1U << use_feature_isol
   inspect((masks[0] & isol_bit) != 0U, content="true")
 }
+
+///|
+test "use feature masks apply arabic init medi fina" {
+  let categories : Array[Int] = [1, 1, 1, 1]
+  let syllable = (1 << 4) | use_syllable_type_standard_cluster
+  let syllables : Array[Int] = [syllable, syllable, syllable, syllable]
+  let masks = build_use_feature_masks(
+    categories,
+    syllables,
+    arabic_actions=[
+      arabic_action_isol,
+      arabic_action_init,
+      arabic_action_medi,
+      arabic_action_fina,
+    ],
+  )
+  let isol_bit = 1U << use_feature_isol
+  let init_bit = 1U << use_feature_init
+  let medi_bit = 1U << use_feature_medi
+  let fina_bit = 1U << use_feature_fina
+  inspect((masks[0] & isol_bit) != 0U, content="true")
+  inspect((masks[1] & init_bit) != 0U, content="true")
+  inspect((masks[2] & medi_bit) != 0U, content="true")
+  inspect((masks[3] & fina_bit) != 0U, content="true")
+}
