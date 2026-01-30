@@ -648,6 +648,7 @@ pub fn Buffer::shape_indic(
       return self.shape_ot(font)
     }
   }
+  preprocess_vowel_constraints(self)
   let categories : Array[UInt] = []
   for info in self.infos {
     categories.push(indic_category(indic_get_categories(info.codepoint)))

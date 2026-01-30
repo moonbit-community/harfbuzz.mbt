@@ -508,6 +508,7 @@ pub fn Buffer::shape_use(
       return self.shape_ot(font)
     }
   }
+  preprocess_vowel_constraints(self)
   let categories : Array[UInt] = []
   let marks : Array[Bool] = []
   for info in self.infos {
