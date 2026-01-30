@@ -650,15 +650,20 @@ pub fn Buffer::shape_indic(
   }
   preprocess_vowel_constraints(self)
   let categories : Array[UInt] = []
+  let categories_i : Array[Int] = []
   for info in self.infos {
-    categories.push(indic_category(indic_get_categories(info.codepoint)))
+    let category = indic_category(indic_get_categories(info.codepoint))
+    categories.push(category)
+    categories_i.push(category.reinterpret_as_int())
   }
   let syllables = find_syllables_indic(categories)
-  match insert_dotted_circle_for_syllables(
+  match insert_dotted_circle_for_syllables_with_repha(
     font,
     self,
     syllables,
     indic_syllable_type_broken_cluster,
+    categories_i,
+    indic_cat_repha,
   ) {
     Err(err) => return Err(err)
     Ok(_) => ()

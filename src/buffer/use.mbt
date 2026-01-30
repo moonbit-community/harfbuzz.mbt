@@ -510,17 +510,22 @@ pub fn Buffer::shape_use(
   }
   preprocess_vowel_constraints(self)
   let categories : Array[UInt] = []
+  let categories_i : Array[Int] = []
   let marks : Array[Bool] = []
   for info in self.infos {
-    categories.push(use_get_category(info.codepoint))
+    let category = use_get_category(info.codepoint)
+    categories.push(category)
+    categories_i.push(category.reinterpret_as_int())
     marks.push(@unicode.is_mark(info.codepoint))
   }
   let syllables = find_syllables_use(categories, marks)
-  match insert_dotted_circle_for_syllables(
+  match insert_dotted_circle_for_syllables_with_repha(
     font,
     self,
     syllables,
     use_syllable_type_broken_cluster,
+    categories_i,
+    use_cat_r,
   ) {
     Err(err) => return Err(err)
     Ok(_) => ()

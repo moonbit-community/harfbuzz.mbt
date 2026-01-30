@@ -163,3 +163,29 @@ test "syllabic dotted circle once per broken syllable" {
   inspect(infos[1].codepoint, content="769")
   inspect(infos[2].codepoint, content="769")
 }
+
+test "syllabic dotted circle inserts after repha in broken syllable" {
+  let font = @font.Font::from_bytes(build_font_bytes_cmap(0x25CCU, 0x25CCU, 1U))
+  let buffer = Buffer::new()
+  buffer.add_codepoint(0x41U)
+  buffer.add_codepoint(0x42U)
+  let syllables : Array[Int] = [1, 1]
+  let categories : Array[Int] = [indic_cat_repha, 0]
+  let inserted = match insert_dotted_circle_for_syllables_with_repha(
+    font,
+    buffer,
+    syllables,
+    1,
+    categories,
+    indic_cat_repha,
+  ) {
+    Err(err) => fail("shape error: \{err}")
+    Ok(value) => value
+  }
+  inspect(inserted, content="true")
+  let infos = buffer.infos()
+  inspect(infos.length(), content="3")
+  inspect(infos[0].codepoint, content="65")
+  inspect(infos[1].codepoint, content="9676")
+  inspect(infos[2].codepoint, content="66")
+}

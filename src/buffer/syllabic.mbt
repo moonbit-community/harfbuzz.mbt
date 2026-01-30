@@ -41,6 +41,71 @@ fn insert_dotted_circle_for_syllables(
   Ok(inserted)
 }
 
+fn insert_dotted_circle_for_syllables_with_repha(
+  font : @font.Font,
+  buffer : Buffer,
+  syllables : Array[Int],
+  broken_type : Int,
+  categories : Array[Int],
+  repha_category : Int,
+) -> Result[Bool, ShapeError] {
+  if buffer.infos.length() != syllables.length() || buffer.infos.is_empty() ||
+    categories.length() != buffer.infos.length() {
+    return Ok(false)
+  }
+  let has_dotted_circle = match font.glyph_for_codepoint(dotted_circle_codepoint) {
+    Err(err) => return Err(Font(err))
+    Ok(None) => false
+    Ok(Some(_)) => true
+  }
+  if !has_dotted_circle {
+    return Ok(false)
+  }
+  let next_infos : Array[GlyphInfo] = []
+  let next_positions : Array[GlyphPosition] = []
+  let mut inserted = false
+  let mut last_syllable = -1
+  let mut i = 0
+  while i < buffer.infos.length() {
+    let syllable = syllables[i]
+    if syllable != last_syllable && (syllable & 0x0f) == broken_type {
+      inserted = true
+      last_syllable = syllable
+      let mut j = i
+      while j < buffer.infos.length() &&
+        syllables[j] == syllable &&
+        categories[j] == repha_category {
+        next_infos.push(buffer.infos[j])
+        next_positions.push(buffer.positions[j])
+        j = j + 1
+      }
+      let cluster = if j < buffer.infos.length() && syllables[j] == syllable {
+        buffer.infos[j].cluster
+      } else {
+        buffer.infos[i].cluster
+      }
+      next_infos.push(GlyphInfo::{ codepoint: dotted_circle_codepoint, cluster })
+      next_positions.push(GlyphPosition::{ x_advance: 0, y_advance: 0, x_offset: 0, y_offset: 0 })
+      while j < buffer.infos.length() && syllables[j] == syllable {
+        next_infos.push(buffer.infos[j])
+        next_positions.push(buffer.positions[j])
+        j = j + 1
+      }
+      i = j
+      continue
+    }
+    next_infos.push(buffer.infos[i])
+    next_positions.push(buffer.positions[i])
+    last_syllable = syllable
+    i = i + 1
+  }
+  if inserted {
+    buffer.infos = next_infos
+    buffer.positions = next_positions
+  }
+  Ok(inserted)
+}
+
 ///|
 fn apply_gsub_features_for_syllables(
   font : @font.Font,
