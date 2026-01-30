@@ -62,3 +62,19 @@ fn insert_dotted_circle_for_broken_syllables(buffer : Buffer) -> Bool {
   }
   inserted
 }
+
+///|
+fn insert_dotted_circle_if_supported(
+  font : @font.Font,
+  buffer : Buffer,
+) -> Result[Bool, ShapeError] {
+  let has_dotted_circle = match font.glyph_for_codepoint(dotted_circle_codepoint) {
+    Err(err) => return Err(Font(err))
+    Ok(None) => false
+    Ok(Some(_)) => true
+  }
+  if !has_dotted_circle {
+    return Ok(false)
+  }
+  Ok(insert_dotted_circle_for_broken_syllables(buffer))
+}

@@ -38,7 +38,10 @@ pub fn Buffer::shape_indic(
       return self.shape_ot(font)
     }
   }
-  ignore(insert_dotted_circle_for_broken_syllables(self))
+  match insert_dotted_circle_if_supported(font, self) {
+    Err(err) => return Err(err)
+    Ok(_) => ()
+  }
   match self.shape_basic(font) {
     Err(err) => return Err(err)
     Ok(_) => ()
