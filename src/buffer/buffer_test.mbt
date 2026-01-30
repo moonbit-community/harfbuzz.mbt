@@ -342,6 +342,29 @@ fn build_hmtx_ot() -> Bytes {
   Bytes::from_array(bytes)
 }
 
+fn build_loca_short(offsets : Array[Int]) -> Bytes {
+  let bytes : Array[Byte] = []
+  for offset in offsets {
+    push_u16(bytes, offset / 2)
+  }
+  Bytes::from_array(bytes)
+}
+
+fn build_glyf_mark_fallback() -> Bytes {
+  let bytes : Array[Byte] = []
+  push_i16(bytes, 1)
+  push_i16(bytes, 0)
+  push_i16(bytes, 0)
+  push_i16(bytes, 100)
+  push_i16(bytes, 100)
+  push_i16(bytes, 1)
+  push_i16(bytes, 0)
+  push_i16(bytes, 0)
+  push_i16(bytes, 20)
+  push_i16(bytes, 20)
+  Bytes::from_array(bytes)
+}
+
 ///|
 fn push_tag(bytes : Array[Byte], tag : @common.Tag) -> Unit {
   let (b1, b2, b3, b4) = tag.bytes()
@@ -978,6 +1001,25 @@ fn build_font_bytes_mark_fallback_gdef() -> Bytes {
   build_sfnt(tables)
 }
 
+fn build_font_bytes_mark_fallback_position() -> Bytes {
+  let cmap = build_cmap_table(build_cmap_format12_groups([
+    (0x41U, 0x41U, 1U),
+    (0x0301U, 0x0301U, 2U),
+  ]))
+  let glyf = build_glyf_mark_fallback()
+  let loca = build_loca_short([0, 0, glyf.length() / 2, glyf.length(), glyf.length()])
+  let tables : Array[(@common.Tag, Bytes)] = [
+    (@common.Tag::from_chars('h', 'e', 'a', 'd'), build_head(1000, 0)),
+    (@common.Tag::from_chars('m', 'a', 'x', 'p'), build_maxp(4)),
+    (@common.Tag::from_chars('h', 'h', 'e', 'a'), build_hhea(4)),
+    (@common.Tag::from_chars('h', 'm', 't', 'x'), build_hmtx_ot()),
+    (@common.Tag::from_chars('c', 'm', 'a', 'p'), cmap),
+    (@common.Tag::from_chars('l', 'o', 'c', 'a'), loca),
+    (@common.Tag::from_chars('g', 'l', 'y', 'f'), glyf),
+  ]
+  build_sfnt(tables)
+}
+
 ///|
 test "buffer shape basic" {
   let font = @font.Font::from_bytes(build_font_bytes())
@@ -1112,6 +1154,22 @@ test "buffer shape ot zeroes mark advances using gdef mark class" {
   let positions = buffer.positions()
   inspect(positions[0].x_advance, content="300")
   inspect(positions[1].x_advance, content="0")
+}
+
+test "buffer shape ot fallback mark positioning without gpos" {
+  let font = @font.Font::from_bytes(build_font_bytes_mark_fallback_position())
+  let buffer = Buffer::new()
+  buffer.add_codepoint(0x41U)
+  buffer.add_codepoint(0x0301U)
+  let result = buffer.shape_ot(font)
+  match result {
+    Err(err) => fail("shape error: \{err}")
+    Ok(_) => ()
+  }
+  let positions = buffer.positions()
+  inspect(positions[1].x_advance, content="0")
+  inspect(positions[1].x_offset, content="140")
+  inspect(positions[1].y_offset, content="122")
 }
 
 ///|
