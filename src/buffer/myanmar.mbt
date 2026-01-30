@@ -284,9 +284,13 @@ pub fn Buffer::shape_myanmar(
     Err(err) => return Err(Font(err))
     Ok(value) => value
   }
+  let script_tag = self.script.to_tag()
+  let mym2_tag = @common.Tag::from_chars('m', 'y', 'm', '2')
+  let mut selected_script_tag = script_tag
+  if gsub is Some(gsub) && buffer_layout_has_script(gsub.layout(), mym2_tag) {
+    selected_script_tag = mym2_tag
+  }
   if gsub is Some(gsub) {
-    let script_tag = self.script.to_tag()
-    let mym2_tag = @common.Tag::from_chars('m', 'y', 'm', '2')
     let dflt_tag = @common.Tag::from_chars('D', 'F', 'L', 'T')
     let latn_tag = @common.Tag::from_chars('l', 'a', 't', 'n')
     if !buffer_layout_has_script(gsub.layout(), mym2_tag) {
@@ -331,6 +335,7 @@ pub fn Buffer::shape_myanmar(
       gsub,
       myanmar_feature_tags,
       syllables_after,
+      script_tag=selected_script_tag,
     ) {
       Err(err) => return Err(err)
       Ok(_) => ()
