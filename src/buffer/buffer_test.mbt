@@ -354,6 +354,44 @@ fn build_script_list_for(tag : @common.Tag) -> Bytes {
 }
 
 ///|
+fn build_script_table(feature_indices : Array[Int]) -> Bytes {
+  let bytes : Array[Byte] = []
+  push_u16(bytes, 4)
+  push_u16(bytes, 0)
+  push_u16(bytes, 0)
+  push_u16(bytes, 0xffff)
+  push_u16(bytes, feature_indices.length())
+  for idx in feature_indices {
+    push_u16(bytes, idx)
+  }
+  Bytes::from_array(bytes)
+}
+
+///|
+fn build_script_list_two(
+  tag1 : @common.Tag,
+  table1 : Bytes,
+  tag2 : @common.Tag,
+  table2 : Bytes,
+) -> Bytes {
+  let bytes : Array[Byte] = []
+  push_u16(bytes, 2)
+  push_tag(bytes, tag1)
+  let first_offset = 2 + 2 * 6
+  push_u16(bytes, first_offset)
+  push_tag(bytes, tag2)
+  let second_offset = first_offset + table1.length()
+  push_u16(bytes, second_offset)
+  for b in table1 {
+    bytes.push(b)
+  }
+  for b in table2 {
+    bytes.push(b)
+  }
+  Bytes::from_array(bytes)
+}
+
+///|
 fn build_feature_list(tag : @common.Tag) -> Bytes {
   let bytes : Array[Byte] = []
   push_u16(bytes, 1)
@@ -419,6 +457,34 @@ fn build_layout_table_with_script(
   push_u16(bytes, feature_offset)
   push_u16(bytes, lookup_offset)
   for b in script {
+    bytes.push(b)
+  }
+  for b in feature {
+    bytes.push(b)
+  }
+  for b in lookup_list {
+    bytes.push(b)
+  }
+  Bytes::from_array(bytes)
+}
+
+///|
+fn build_layout_table_with_script_list(
+  lookup : Bytes,
+  feature_tag : @common.Tag,
+  script_list : Bytes,
+) -> Bytes {
+  let feature = build_feature_list(feature_tag)
+  let lookup_list = build_lookup_list(lookup)
+  let bytes : Array[Byte] = []
+  push_u32(bytes, 0x00010000)
+  let script_offset = 10
+  let feature_offset = script_offset + script_list.length()
+  let lookup_offset = feature_offset + feature.length()
+  push_u16(bytes, script_offset)
+  push_u16(bytes, feature_offset)
+  push_u16(bytes, lookup_offset)
+  for b in script_list {
     bytes.push(b)
   }
   for b in feature {
@@ -702,6 +768,35 @@ fn build_font_bytes_indic3() -> Bytes {
 }
 
 ///|
+fn build_font_bytes_myanmar_mym2_dflt() -> Bytes {
+  let dflt_table = build_script_table([])
+  let mym2_table = build_script_table([0])
+  let script_list = build_script_list_two(
+    @common.Tag::from_chars('D', 'F', 'L', 'T'),
+    dflt_table,
+    @common.Tag::from_chars('m', 'y', 'm', '2'),
+    mym2_table,
+  )
+  let gsub_table = build_layout_table_with_script_list(
+    build_gsub_lookup(),
+    @common.Tag::from_chars('r', 'p', 'h', 'f'),
+    script_list,
+  )
+  let tables : Array[(@common.Tag, Bytes)] = [
+    (@common.Tag::from_chars('h', 'e', 'a', 'd'), build_head(1000, 0)),
+    (@common.Tag::from_chars('m', 'a', 'x', 'p'), build_maxp(4)),
+    (@common.Tag::from_chars('h', 'h', 'e', 'a'), build_hhea(4)),
+    (@common.Tag::from_chars('h', 'm', 't', 'x'), build_hmtx_ot()),
+    (
+      @common.Tag::from_chars('c', 'm', 'a', 'p'),
+      build_cmap_table(build_cmap_format12(0x1000U, 0x1000U, 1U)),
+    ),
+    (@common.Tag::from_chars('G', 'S', 'U', 'B'), gsub_table),
+  ]
+  build_sfnt(tables)
+}
+
+///|
 fn build_font_bytes_syrc_gsub() -> Bytes {
   let tables : Array[(@common.Tag, Bytes)] = [
     (@common.Tag::from_chars('h', 'e', 'a', 'd'), build_head(1000, 0)),
@@ -871,6 +966,21 @@ test "buffer shape myanmar fallback" {
   }
   let infos = buffer.infos()
   inspect(infos[0].codepoint, content="1")
+}
+
+///|
+test "buffer shape myanmar prefers mym2 over dflt" {
+  let font = @font.Font::from_bytes(build_font_bytes_myanmar_mym2_dflt())
+  let buffer = Buffer::new()
+  buffer.set_script(@common.script_myanmar)
+  buffer.add_codepoint(0x1000U)
+  let result = buffer.shape_myanmar(font)
+  match result {
+    Err(err) => fail("shape error: \{err}")
+    Ok(_) => ()
+  }
+  let infos = buffer.infos()
+  inspect(infos[0].codepoint, content="3")
 }
 
 ///|
