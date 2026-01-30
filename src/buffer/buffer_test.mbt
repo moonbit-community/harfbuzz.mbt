@@ -636,6 +636,24 @@ fn build_cmap_format12(start : UInt, end : UInt, start_gid : UInt) -> Bytes {
 }
 
 ///|
+fn build_cmap_format12_groups(groups : Array[(UInt, UInt, UInt)]) -> Bytes {
+  let bytes : Array[Byte] = []
+  let length = 16 + groups.length() * 12
+  push_u16(bytes, 12)
+  push_u16(bytes, 0)
+  push_u32(bytes, length)
+  push_u32(bytes, 0)
+  push_u32(bytes, groups.length())
+  for group in groups {
+    let (start, end, start_gid) = group
+    push_u32(bytes, start.reinterpret_as_int())
+    push_u32(bytes, end.reinterpret_as_int())
+    push_u32(bytes, start_gid.reinterpret_as_int())
+  }
+  Bytes::from_array(bytes)
+}
+
+///|
 fn build_kern_table() -> Bytes {
   let bytes : Array[Byte] = []
   push_u16(bytes, 0)
@@ -763,6 +781,37 @@ fn build_font_bytes_indic3() -> Bytes {
       @common.Tag::from_chars('i', 's', 'o', 'l'),
       @common.Tag::from_chars('d', 'e', 'v', '3'),
     ),
+  ]
+  build_sfnt(tables)
+}
+
+///|
+fn build_font_bytes_indic_dev2_dflt() -> Bytes {
+  let dflt_table = build_script_table([])
+  let dev2_table = build_script_table([0])
+  let script_list = build_script_list_two(
+    @common.Tag::from_chars('D', 'F', 'L', 'T'),
+    dflt_table,
+    @common.Tag::from_chars('d', 'e', 'v', '2'),
+    dev2_table,
+  )
+  let gsub_table = build_layout_table_with_script_list(
+    build_gsub_lookup(),
+    @common.Tag::from_chars('r', 'p', 'h', 'f'),
+    script_list,
+  )
+  let cmap = build_cmap_table(build_cmap_format12_groups([
+    (0x0930U, 0x0930U, 1U),
+    (0x094DU, 0x094DU, 2U),
+    (0x0915U, 0x0915U, 3U),
+  ]))
+  let tables : Array[(@common.Tag, Bytes)] = [
+    (@common.Tag::from_chars('h', 'e', 'a', 'd'), build_head(1000, 0)),
+    (@common.Tag::from_chars('m', 'a', 'x', 'p'), build_maxp(4)),
+    (@common.Tag::from_chars('h', 'h', 'e', 'a'), build_hhea(4)),
+    (@common.Tag::from_chars('h', 'm', 't', 'x'), build_hmtx_ot()),
+    (@common.Tag::from_chars('c', 'm', 'a', 'p'), cmap),
+    (@common.Tag::from_chars('G', 'S', 'U', 'B'), gsub_table),
   ]
   build_sfnt(tables)
 }
@@ -1032,6 +1081,28 @@ test "buffer shape indic routes to use for dev3 gsub" {
   }
   let infos = buffer.infos()
   inspect(infos[0].codepoint, content="3")
+}
+
+///|
+test "buffer shape indic prefers dev2 over dflt" {
+  let font = @font.Font::from_bytes(build_font_bytes_indic_dev2_dflt())
+  let buffer = Buffer::new()
+  buffer.set_script(@common.script_devanagari)
+  buffer.add_codepoint(0x0930U)
+  buffer.add_codepoint(0x094DU)
+  buffer.add_codepoint(0x0915U)
+  let result = buffer.shape_indic(font)
+  match result {
+    Err(err) => fail("shape error: \{err}")
+    Ok(_) => ()
+  }
+  let mut has_ra = false
+  for info in buffer.infos() {
+    if info.codepoint == 1U {
+      has_ra = true
+    }
+  }
+  inspect(has_ra, content="false")
 }
 
 ///|
