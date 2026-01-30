@@ -818,6 +818,27 @@ fn build_font_bytes_syrc_gsub() -> Bytes {
 }
 
 ///|
+fn build_font_bytes_dflt_gsub() -> Bytes {
+  let tables : Array[(@common.Tag, Bytes)] = [
+    (@common.Tag::from_chars('h', 'e', 'a', 'd'), build_head(1000, 0)),
+    (@common.Tag::from_chars('m', 'a', 'x', 'p'), build_maxp(4)),
+    (@common.Tag::from_chars('h', 'h', 'e', 'a'), build_hhea(4)),
+    (@common.Tag::from_chars('h', 'm', 't', 'x'), build_hmtx_ot()),
+    (
+      @common.Tag::from_chars('c', 'm', 'a', 'p'),
+      build_cmap_table(build_cmap_format12(0x0628U, 0x0628U, 1U)),
+    ),
+    build_ot_table_with_script(
+      @common.Tag::from_chars('G', 'S', 'U', 'B'),
+      build_gsub_lookup(),
+      @common.Tag::from_chars('l', 'i', 'g', 'a'),
+      @common.Tag::from_chars('D', 'F', 'L', 'T'),
+    ),
+  ]
+  build_sfnt(tables)
+}
+
+///|
 fn build_font_bytes_kern() -> Bytes {
   let tables : Array[(@common.Tag, Bytes)] = [
     (@common.Tag::from_chars('h', 'e', 'a', 'd'), build_head(1000, 0)),
@@ -1016,6 +1037,21 @@ test "buffer shape indic routes to use for dev3 gsub" {
 ///|
 test "buffer shape arabic syriac uses gsub when syrc present" {
   let font = @font.Font::from_bytes(build_font_bytes_syrc_gsub())
+  let buffer = Buffer::new()
+  buffer.set_script(@common.script_syriac)
+  buffer.add_codepoint(0x0628U)
+  let result = buffer.shape_arabic(font)
+  match result {
+    Err(err) => fail("shape error: \{err}")
+    Ok(_) => ()
+  }
+  let infos = buffer.infos()
+  inspect(infos[0].codepoint, content="3")
+}
+
+///|
+test "buffer shape arabic syriac falls back to dflt gsub" {
+  let font = @font.Font::from_bytes(build_font_bytes_dflt_gsub())
   let buffer = Buffer::new()
   buffer.set_script(@common.script_syriac)
   buffer.add_codepoint(0x0628U)
