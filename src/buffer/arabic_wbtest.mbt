@@ -120,6 +120,17 @@ fn arabic_test_build_hmtx() -> Bytes {
   Bytes::from_array(bytes)
 }
 
+fn arabic_test_build_hmtx_n(count : Int, advance : Int) -> Bytes {
+  let bytes : Array[Byte] = []
+  let mut i = 0
+  while i < count {
+    arabic_test_push_u16(bytes, advance)
+    arabic_test_push_u16(bytes, 0)
+    i = i + 1
+  }
+  Bytes::from_array(bytes)
+}
+
 ///|
 fn arabic_test_build_vmtx() -> Bytes {
   let bytes : Array[Byte] = []
@@ -158,6 +169,23 @@ fn arabic_test_build_cmap_format12(start : UInt, end : UInt, start_gid : UInt) -
   Bytes::from_array(bytes)
 }
 
+fn arabic_test_build_cmap_format12_groups(groups : Array[(UInt, UInt, UInt)]) -> Bytes {
+  let bytes : Array[Byte] = []
+  let length = 16 + groups.length() * 12
+  arabic_test_push_u16(bytes, 12)
+  arabic_test_push_u16(bytes, 0)
+  arabic_test_push_u32(bytes, length)
+  arabic_test_push_u32(bytes, 0)
+  arabic_test_push_u32(bytes, groups.length())
+  for group in groups {
+    let (start, end, start_gid) = group
+    arabic_test_push_u32(bytes, start.reinterpret_as_int())
+    arabic_test_push_u32(bytes, end.reinterpret_as_int())
+    arabic_test_push_u32(bytes, start_gid.reinterpret_as_int())
+  }
+  Bytes::from_array(bytes)
+}
+
 ///|
 fn build_font_bytes_arabic_base() -> Bytes {
   let tables : Array[(@common.Tag, Bytes)] = [
@@ -177,6 +205,43 @@ fn build_font_bytes_arabic_base() -> Bytes {
   arabic_test_build_sfnt(tables)
 }
 
+fn build_font_bytes_arabic_fallback() -> Bytes {
+  let base = 0x0628U
+  let init = match @unicode.arabic_shaping_form(base, 0) {
+    None => base
+    Some(value) => value
+  }
+  let medi = match @unicode.arabic_shaping_form(base, 1) {
+    None => base
+    Some(value) => value
+  }
+  let fina = match @unicode.arabic_shaping_form(base, 2) {
+    None => base
+    Some(value) => value
+  }
+  let isol = match @unicode.arabic_shaping_form(base, 3) {
+    None => base
+    Some(value) => value
+  }
+  let cmap = arabic_test_build_cmap_table(
+    arabic_test_build_cmap_format12_groups([
+      (base, base, 1U),
+      (init, init, 2U),
+      (medi, medi, 3U),
+      (fina, fina, 4U),
+      (isol, isol, 5U),
+    ]),
+  )
+  let tables : Array[(@common.Tag, Bytes)] = [
+    (@common.Tag::from_chars('h', 'e', 'a', 'd'), arabic_test_build_head(1000, 0)),
+    (@common.Tag::from_chars('m', 'a', 'x', 'p'), arabic_test_build_maxp(6)),
+    (@common.Tag::from_chars('h', 'h', 'e', 'a'), arabic_test_build_hhea(6)),
+    (@common.Tag::from_chars('h', 'm', 't', 'x'), arabic_test_build_hmtx_n(6, 500)),
+    (@common.Tag::from_chars('c', 'm', 'a', 'p'), cmap),
+  ]
+  arabic_test_build_sfnt(tables)
+}
+
 ///|
 test "arabic fallback skipped for non-arabic script" {
   let font = @font.Font::from_bytes(build_font_bytes_arabic_base())
@@ -190,4 +255,31 @@ test "arabic fallback skipped for non-arabic script" {
   }
   let infos = buffer.infos()
   inspect(infos[0].codepoint, content="1")
+}
+
+///|
+test "arabic fallback snapshot" {
+  let font = @font.Font::from_bytes(build_font_bytes_arabic_fallback())
+  let buffer = Buffer::new()
+  buffer.set_script(@common.script_arabic)
+  buffer.add_codepoint(0x0628U)
+  buffer.add_codepoint(0x0628U)
+  let result = buffer.shape_arabic(font)
+  match result {
+    Err(err) => fail("shape error: \{err}")
+    Ok(_) => ()
+  }
+  let infos = buffer.infos()
+  let positions = buffer.positions()
+  let snapshot : Array[(UInt, Int, Int, Int, Int)] = []
+  for i in 0..<infos.length() {
+    snapshot.push((
+      infos[i].codepoint,
+      infos[i].cluster,
+      positions[i].x_advance,
+      positions[i].x_offset,
+      positions[i].y_offset,
+    ))
+  }
+  json_inspect(snapshot, content=[[2,0,500,0,0],[4,1,500,0,0]])
 }
