@@ -756,6 +756,21 @@ fn build_font_bytes_space_fallback() -> Bytes {
 }
 
 ///|
+fn build_font_bytes_default_ignorables() -> Bytes {
+  let cmap = build_cmap_table(build_cmap_format12_groups([
+    (0x200DU, 0x200DU, 1U),
+  ]))
+  let tables : Array[(@common.Tag, Bytes)] = [
+    (@common.Tag::from_chars('h', 'e', 'a', 'd'), build_head(1000, 0)),
+    (@common.Tag::from_chars('m', 'a', 'x', 'p'), build_maxp(4)),
+    (@common.Tag::from_chars('h', 'h', 'e', 'a'), build_hhea(4)),
+    (@common.Tag::from_chars('h', 'm', 't', 'x'), build_hmtx_ot()),
+    (@common.Tag::from_chars('c', 'm', 'a', 'p'), cmap),
+  ]
+  build_sfnt(tables)
+}
+
+///|
 fn build_font_bytes_ot() -> Bytes {
   let tables : Array[(@common.Tag, Bytes)] = [
     (@common.Tag::from_chars('h', 'e', 'a', 'd'), build_head(1000, 0)),
@@ -1098,6 +1113,56 @@ test "buffer shape basic vertical advances" {
   let positions = buffer.positions()
   inspect(positions[0].x_advance, content="0")
   inspect(positions[0].y_advance, content="-800")
+}
+
+///|
+test "buffer shape ot default ignorable zeroed" {
+  let font = @font.Font::from_bytes(build_font_bytes_default_ignorables())
+  let buffer = Buffer::new()
+  buffer.add_codepoint(0x200DU)
+  let result = buffer.shape_ot(font)
+  match result {
+    Err(err) => fail("shape error: \{err}")
+    Ok(_) => ()
+  }
+  let infos = buffer.infos()
+  let positions = buffer.positions()
+  inspect(infos[0].codepoint, content="1")
+  inspect(positions[0].x_advance, content="0")
+}
+
+///|
+test "buffer shape ot preserve default ignorable" {
+  let font = @font.Font::from_bytes(build_font_bytes_default_ignorables())
+  let buffer = Buffer::new()
+  buffer.set_preserve_default_ignorables(true)
+  buffer.add_codepoint(0x200DU)
+  let result = buffer.shape_ot(font)
+  match result {
+    Err(err) => fail("shape error: \{err}")
+    Ok(_) => ()
+  }
+  let positions = buffer.positions()
+  inspect(positions[0].x_advance, content="300")
+}
+
+///|
+test "buffer shape ot variation selector fallback" {
+  let font = @font.Font::from_bytes(build_font_bytes_default_ignorables())
+  let buffer = Buffer::new()
+  buffer.set_remove_default_ignorables(true)
+  buffer.set_not_found_variation_selector(Some(3U))
+  buffer.add_codepoint(0xFE0FU)
+  let result = buffer.shape_ot(font)
+  match result {
+    Err(err) => fail("shape error: \{err}")
+    Ok(_) => ()
+  }
+  inspect(buffer.len(), content="1")
+  let infos = buffer.infos()
+  let positions = buffer.positions()
+  inspect(infos[0].codepoint, content="3")
+  inspect(positions[0].x_advance, content="0")
 }
 
 ///|

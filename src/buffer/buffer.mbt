@@ -3,6 +3,7 @@
 pub struct GlyphInfo {
   codepoint : UInt
   cluster : Int
+  unicode : UInt
 } derive(Eq, Show, ToJson)
 
 ///|
@@ -30,6 +31,9 @@ pub struct Buffer {
   mut language : @common.Language
   mut gsub_features : Array[@common.Tag]
   mut gpos_features : Array[@common.Tag]
+  mut preserve_default_ignorables : Bool
+  mut remove_default_ignorables : Bool
+  mut not_found_variation_selector : UInt?
 } derive(Show, ToJson)
 
 ///|
@@ -43,6 +47,9 @@ pub fn Buffer::new() -> Buffer {
     language: @common.language_invalid,
     gsub_features: default_gsub_features(),
     gpos_features: default_gpos_features(),
+    preserve_default_ignorables: false,
+    remove_default_ignorables: false,
+    not_found_variation_selector: None,
   }
 }
 
@@ -73,7 +80,7 @@ pub fn Buffer::add_codepoint(
   cluster? : Int = -1,
 ) -> Unit {
   let actual_cluster = if cluster < 0 { self.infos.length() } else { cluster }
-  self.infos.push(GlyphInfo::{ codepoint, cluster: actual_cluster })
+  self.infos.push(GlyphInfo::{ codepoint, cluster: actual_cluster, unicode: codepoint })
   self.positions.push(GlyphPosition::{
     x_advance: 0,
     y_advance: 0,
@@ -148,7 +155,7 @@ pub fn Buffer::merge_clusters(self : Buffer, start : Int, end : Int) -> Unit {
   }
   for i in start..<end {
     let info = self.infos[i]
-    self.infos[i] = GlyphInfo::{ codepoint: info.codepoint, cluster: min_cluster }
+    self.infos[i] = GlyphInfo::{ codepoint: info.codepoint, cluster: min_cluster, unicode: info.unicode }
   }
 }
 
@@ -209,6 +216,30 @@ pub fn Buffer::gsub_features(self : Buffer) -> ArrayView[@common.Tag] {
 ///|
 pub fn Buffer::gpos_features(self : Buffer) -> ArrayView[@common.Tag] {
   self.gpos_features[:]
+}
+
+///|
+/// Preserve default-ignorable codepoints (do not hide/zero).
+pub fn Buffer::set_preserve_default_ignorables(self : Buffer, preserve : Bool) -> Unit {
+  self.preserve_default_ignorables = preserve
+}
+
+///|
+/// Remove default-ignorable glyphs instead of zeroing advances.
+pub fn Buffer::set_remove_default_ignorables(self : Buffer, remove : Bool) -> Unit {
+  self.remove_default_ignorables = remove
+}
+
+///|
+/// Set the fallback glyph for not-found variation selectors.
+pub fn Buffer::set_not_found_variation_selector(self : Buffer, glyph : UInt?) -> Unit {
+  self.not_found_variation_selector = glyph
+}
+
+///|
+/// Get the fallback glyph for not-found variation selectors.
+pub fn Buffer::get_not_found_variation_selector(self : Buffer) -> UInt? {
+  self.not_found_variation_selector
 }
 
 ///|
@@ -511,7 +542,7 @@ pub fn Buffer::normalize(self : Buffer) -> Unit {
         Some(composed) => {
           self.merge_clusters(start, i + 1)
           let base = self.infos[start]
-          self.infos[start] = GlyphInfo::{ codepoint: composed, cluster: base.cluster }
+          self.infos[start] = GlyphInfo::{ codepoint: composed, cluster: base.cluster, unicode: composed }
           ignore(self.infos.remove(i))
           ignore(self.positions.remove(i))
           len = len - 1
@@ -605,7 +636,7 @@ fn normalize_hangul(buffer : Buffer) -> Unit {
       Some(value) => {
         buffer.merge_clusters(i, i + 2)
         let base = buffer.infos[i]
-        buffer.infos[i] = GlyphInfo::{ codepoint: value, cluster: base.cluster }
+        buffer.infos[i] = GlyphInfo::{ codepoint: value, cluster: base.cluster, unicode: value }
         ignore(buffer.infos.remove(i + 1))
         ignore(buffer.positions.remove(i + 1))
         len = len - 1
@@ -617,7 +648,7 @@ fn normalize_hangul(buffer : Buffer) -> Unit {
               Some(composed) => {
                 buffer.merge_clusters(i, i + 2)
                 let base = buffer.infos[i]
-                buffer.infos[i] = GlyphInfo::{ codepoint: composed, cluster: base.cluster }
+                buffer.infos[i] = GlyphInfo::{ codepoint: composed, cluster: base.cluster, unicode: composed }
                 ignore(buffer.infos.remove(i + 1))
                 ignore(buffer.positions.remove(i + 1))
                 len = len - 1
@@ -850,7 +881,7 @@ pub fn Buffer::shape_basic(
           Ok(value) => value
         }
     }
-    new_infos.push(GlyphInfo::{ codepoint: glyph, cluster: info.cluster })
+    new_infos.push(GlyphInfo::{ codepoint: glyph, cluster: info.cluster, unicode: info.unicode })
     new_positions.push(pos)
   }
   self.infos = new_infos
@@ -941,6 +972,7 @@ fn Buffer::shape_ot_with_options(
     }
     let (next_glyphs, next_clusters, changed) = result
     if changed || next_glyphs.length() != self.infos.length() {
+      let same_len = next_glyphs.length() == self.infos.length()
       let new_infos : Array[GlyphInfo] = []
       let new_positions : Array[GlyphPosition] = []
       for i in 0..<next_glyphs.length() {
@@ -950,7 +982,8 @@ fn Buffer::shape_ot_with_options(
           Err(err) => return Err(err)
           Ok(value) => value
         }
-        new_infos.push(GlyphInfo::{ codepoint: glyph, cluster })
+        let unicode = if same_len { self.infos[i].unicode } else { 0U }
+        new_infos.push(GlyphInfo::{ codepoint: glyph, cluster, unicode })
         new_positions.push(pos)
       }
       self.infos = new_infos
@@ -1050,7 +1083,90 @@ fn Buffer::shape_ot_with_options(
       Ok(_) => ()
     }
   }
+  finalize_default_ignorables_and_variation_selectors(self)
   Ok(())
+}
+
+///|
+fn is_effective_default_ignorable(buffer : Buffer, info : GlyphInfo) -> Bool {
+  if !@unicode.is_default_ignorable(info.unicode) {
+    return false
+  }
+  match buffer.not_found_variation_selector {
+    None => true
+    Some(_) => !@unicode.is_variation_selector(info.unicode)
+  }
+}
+
+///|
+fn apply_default_ignorables(buffer : Buffer) -> Unit {
+  if buffer.preserve_default_ignorables {
+    return ()
+  }
+  if buffer.remove_default_ignorables {
+    let new_infos : Array[GlyphInfo] = []
+    let new_positions : Array[GlyphPosition] = []
+    for i in 0..<buffer.infos.length() {
+      if is_effective_default_ignorable(buffer, buffer.infos[i]) {
+        continue
+      }
+      new_infos.push(buffer.infos[i])
+      new_positions.push(buffer.positions[i])
+    }
+    buffer.infos = new_infos
+    buffer.positions = new_positions
+    return ()
+  }
+  for i in 0..<buffer.infos.length() {
+    if !is_effective_default_ignorable(buffer, buffer.infos[i]) {
+      continue
+    }
+    let pos = buffer.positions[i]
+    let next_pos =
+      if buffer.direction.is_vertical() {
+        GlyphPosition::{
+          x_advance: 0,
+          y_advance: 0,
+          x_offset: pos.x_offset,
+          y_offset: 0,
+        }
+      } else {
+        GlyphPosition::{
+          x_advance: 0,
+          y_advance: 0,
+          x_offset: 0,
+          y_offset: pos.y_offset,
+        }
+      }
+    buffer.positions[i] = next_pos
+  }
+}
+
+///|
+fn apply_variation_selector_fallback(buffer : Buffer) -> Unit {
+  match buffer.not_found_variation_selector {
+    None => ()
+    Some(glyph) => {
+      for i in 0..<buffer.infos.length() {
+        let info = buffer.infos[i]
+        if @unicode.is_variation_selector(info.unicode) {
+          buffer.infos[i] = GlyphInfo::{ codepoint: glyph, cluster: info.cluster, unicode: info.unicode }
+          buffer.positions[i] = GlyphPosition::{
+            x_advance: 0,
+            y_advance: 0,
+            x_offset: 0,
+            y_offset: 0,
+          }
+        }
+      }
+    }
+  }
+}
+
+///|
+fn finalize_default_ignorables_and_variation_selectors(buffer : Buffer) -> Unit {
+  apply_default_ignorables(buffer)
+  apply_variation_selector_fallback(buffer)
 }
 
 ///|

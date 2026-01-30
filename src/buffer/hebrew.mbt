@@ -59,6 +59,7 @@ pub fn Buffer::shape_hebrew(
     }
     let (next_glyphs, next_clusters, changed) = result
     if changed || next_glyphs.length() != self.infos.length() {
+      let same_len = next_glyphs.length() == self.infos.length()
       let new_infos : Array[GlyphInfo] = []
       let new_positions : Array[GlyphPosition] = []
       for i in 0..<next_glyphs.length() {
@@ -68,7 +69,8 @@ pub fn Buffer::shape_hebrew(
           Err(err) => return Err(err)
           Ok(value) => value
         }
-        new_infos.push(GlyphInfo::{ codepoint: glyph, cluster })
+        let unicode = if same_len { self.infos[i].unicode } else { 0U }
+        new_infos.push(GlyphInfo::{ codepoint: glyph, cluster, unicode })
         new_positions.push(pos)
       }
       self.infos = new_infos

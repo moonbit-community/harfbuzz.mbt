@@ -104,7 +104,7 @@ fn preprocess_hangul_for_font(
             Ok(true) => {
               changed = true
               for component in components {
-                next_infos.push(GlyphInfo::{ codepoint: component, cluster: info.cluster })
+                next_infos.push(GlyphInfo::{ codepoint: component, cluster: info.cluster, unicode: component })
               }
               continue
             }
@@ -141,9 +141,11 @@ pub fn Buffer::shape_hangul(
   }
   let mut current_glyphs : Array[UInt] = []
   let mut current_clusters : Array[Int] = []
+  let mut current_unicodes : Array[UInt] = []
   for info in self.infos {
     current_glyphs.push(info.codepoint)
     current_clusters.push(info.cluster)
+    current_unicodes.push(info.unicode)
   }
   let mut changed = false
   if gsub is Some(gsub) {
@@ -194,6 +196,9 @@ pub fn Buffer::shape_hangul(
           }
       }
       let (next_glyphs, next_clusters, did_change) = result
+      if next_glyphs.length() != current_unicodes.length() {
+        current_unicodes = Array::make(next_glyphs.length(), 0U)
+      }
       current_glyphs = next_glyphs
       current_clusters = next_clusters
       if did_change {
@@ -201,7 +206,7 @@ pub fn Buffer::shape_hangul(
       }
     }
   }
-  if changed {
+  if changed || current_glyphs.length() != self.infos.length() {
     let infos : Array[GlyphInfo] = []
     let positions : Array[GlyphPosition] = []
     for i in 0..<current_glyphs.length() {
@@ -210,7 +215,12 @@ pub fn Buffer::shape_hangul(
         Err(err) => return Err(err)
         Ok(value) => value
       }
-      infos.push(GlyphInfo::{ codepoint: glyph, cluster: current_clusters[i] })
+      let unicode = if current_unicodes.length() == current_glyphs.length() {
+        current_unicodes[i]
+      } else {
+        0U
+      }
+      infos.push(GlyphInfo::{ codepoint: glyph, cluster: current_clusters[i], unicode })
       positions.push(pos)
     }
     self.infos = infos
