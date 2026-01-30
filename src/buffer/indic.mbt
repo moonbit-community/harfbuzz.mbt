@@ -90,6 +90,14 @@ let indic_feature_half : Int = 7
 let indic_feature_pstf : Int = 8
 let indic_feature_init : Int = 11
 
+fn indic_blwf_pre_and_post(script : @common.Script) -> Bool {
+  script != @common.script_telugu && script != @common.script_kannada
+}
+
+fn indic_reph_requires_zwj(script : @common.Script) -> Bool {
+  script == @common.script_telugu
+}
+
 fn is_consonant_indic(category : Int) -> Bool {
   category == indic_cat_c ||
   category == indic_cat_cs ||
@@ -278,10 +286,48 @@ fn find_base_indic(
   start
 }
 
+fn indic_would_substitute(
+  gsub : @ot_tables.GsubTable?,
+  lookup_offsets : Array[Int],
+  glyphs : Array[UInt],
+  start : Int,
+  length : Int,
+) -> Bool {
+  if lookup_offsets.is_empty() || length <= 0 || start < 0 ||
+    start + length > glyphs.length() {
+    return false
+  }
+  let gsub = match gsub {
+    None => return false
+    Some(value) => value
+  }
+  let sub_glyphs : Array[UInt] = []
+  for i in start..<(start + length) {
+    sub_glyphs.push(glyphs[i])
+  }
+  let sub_clusters = Array::make(length, 0)
+  let sub_masks = Array::make(length, 1U)
+  match gsub.apply_with_lookups(
+    sub_glyphs,
+    sub_clusters,
+    lookup_offsets[:],
+    masks=sub_masks,
+    lookup_mask=1U,
+  ) {
+    Err(_) => false
+    Ok((_, _, changed)) => changed
+  }
+}
+
 fn build_indic_feature_masks(
+  script : @common.Script,
   categories : Array[Int],
   positions : Array[Int],
   syllables : Array[Int],
+  glyphs : Array[UInt],
+  gsub : @ot_tables.GsubTable?,
+  rphf_lookups : Array[Int],
+  pref_lookups : Array[Int],
 ) -> Array[UInt] {
   let len = categories.length()
   let masks = Array::make(len, 0U)
@@ -292,6 +338,8 @@ fn build_indic_feature_masks(
   let half_bit = 1U << indic_feature_half
   let pstf_bit = 1U << indic_feature_pstf
   let init_bit = 1U << indic_feature_init
+  let blwf_pre_and_post = indic_blwf_pre_and_post(script)
+  let reph_requires_zwj = indic_reph_requires_zwj(script)
   let mut i = 0
   while i < syllables.length() {
     let syllable = syllables[i]
@@ -303,10 +351,25 @@ fn build_indic_feature_masks(
     if i + 1 < j &&
       categories[i] == indic_cat_ra &&
       categories[i + 1] == indic_cat_h {
-      masks[i] = masks[i] | rphf_bit
+      let mut reph_len = 2
+      if reph_requires_zwj {
+        if i + 2 < j && categories[i + 2] == indic_cat_zwj {
+          reph_len = 3
+        } else {
+          reph_len = 0
+        }
+      }
+      if reph_len > 0 &&
+        indic_would_substitute(gsub, rphf_lookups, glyphs, i, reph_len) {
+        masks[i] = masks[i] | rphf_bit
+      }
+    }
+    let mut pre_mask = half_bit
+    if blwf_pre_and_post {
+      pre_mask = pre_mask | blwf_bit
     }
     for k in i..<base {
-      masks[k] = masks[k] | half_bit
+      masks[k] = masks[k] | pre_mask
     }
     if base >= i && base < j {
       masks[base] = masks[base] | init_bit
@@ -314,14 +377,18 @@ fn build_indic_feature_masks(
     for k in (base + 1)..<j {
       masks[k] = masks[k] | blwf_bit | abvf_bit | pstf_bit
     }
-    let mut k = base + 1
-    while k + 1 < j {
-      if categories[k] == indic_cat_h && categories[k + 1] == indic_cat_ra {
-        masks[k] = masks[k] | pref_bit
-        masks[k + 1] = masks[k + 1] | pref_bit
-        break
+    if !pref_lookups.is_empty() {
+      let mut k = base + 1
+      while k + 1 < j {
+        if categories[k] == indic_cat_h && categories[k + 1] == indic_cat_ra {
+          if indic_would_substitute(gsub, pref_lookups, glyphs, k, 2) {
+            masks[k] = masks[k] | pref_bit
+            masks[k + 1] = masks[k + 1] | pref_bit
+            break
+          }
+        }
+        k = k + 1
       }
-      k = k + 1
     }
     let mut z = i + 1
     while z < j {
@@ -354,8 +421,8 @@ pub fn Buffer::shape_indic(
     Err(err) => return Err(Font(err))
     Ok(value) => value
   }
+  let script_tag = self.script.to_tag()
   if gsub is Some(gsub) {
-    let script_tag = self.script.to_tag()
     let dflt_tag = @common.Tag::from_chars('D', 'F', 'L', 'T')
     let latn_tag = @common.Tag::from_chars('l', 'a', 't', 'n')
     if !buffer_layout_has_script(gsub.layout(), script_tag) &&
@@ -396,15 +463,47 @@ pub fn Buffer::shape_indic(
     reordered_categories.push(indic_category(packed).reinterpret_as_int())
     reordered_positions.push(indic_position(packed))
   }
-  let glyph_masks = build_indic_feature_masks(
-    reordered_categories,
-    reordered_positions,
-    syllables_after,
-  )
+  let mut rphf_lookups : Array[Int] = []
+  let mut pref_lookups : Array[Int] = []
+  if gsub is Some(gsub) {
+    let lang_tag = language_to_ot_tag(self.language)
+    rphf_lookups = match gsub.layout().select_lookup_offsets_for_feature(
+      script_tag,
+      indic_feature_tags[indic_feature_rphf],
+      language_tag=lang_tag,
+      include_required=false,
+    ) {
+      Err(err) => return Err(Layout(err))
+      Ok(value) => value
+    }
+    pref_lookups = match gsub.layout().select_lookup_offsets_for_feature(
+      script_tag,
+      indic_feature_tags[indic_feature_pref],
+      language_tag=lang_tag,
+      include_required=false,
+    ) {
+      Err(err) => return Err(Layout(err))
+      Ok(value) => value
+    }
+  }
   match self.shape_basic(font) {
     Err(err) => return Err(err)
     Ok(_) => ()
   }
+  let glyphs : Array[UInt] = []
+  for info in self.infos {
+    glyphs.push(info.codepoint)
+  }
+  let glyph_masks = build_indic_feature_masks(
+    self.script,
+    reordered_categories,
+    reordered_positions,
+    syllables_after,
+    glyphs,
+    gsub,
+    rphf_lookups,
+    pref_lookups,
+  )
   if gsub is Some(gsub) {
     match apply_gsub_features_for_syllables(
       font,

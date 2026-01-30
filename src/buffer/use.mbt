@@ -35,6 +35,22 @@ let use_form_init : Int = 1
 let use_form_medi : Int = 2
 let use_form_fina : Int = 3
 
+fn use_has_arabic_joining(script : @common.Script) -> Bool {
+  script == @common.script_adlam ||
+  script == @common.script_arabic ||
+  script == @common.script_chorasmian ||
+  script == @common.script_hanifi_rohingya ||
+  script == @common.script_mandaic ||
+  script == @common.script_manichaean ||
+  script == @common.script_mongolian ||
+  script == @common.script_nko ||
+  script == @common.script_old_uyghur ||
+  script == @common.script_phags_pa ||
+  script == @common.script_psalter_pahlavi ||
+  script == @common.script_sogdian ||
+  script == @common.script_syriac
+}
+
 ///|
 let use_cat_r : Int = 18
 
@@ -265,9 +281,38 @@ fn set_use_form_masks(
   }
 }
 
+fn apply_use_arabic_form_masks(
+  masks : Array[UInt],
+  actions : Array[Int],
+  isol_bit : UInt,
+  init_bit : UInt,
+  medi_bit : UInt,
+  fina_bit : UInt,
+) -> Bool {
+  if actions.is_empty() || actions.length() != masks.length() {
+    return false
+  }
+  for i in 0..<actions.length() {
+    let action = actions[i]
+    if action == arabic_action_isol {
+      masks[i] = masks[i] | isol_bit
+    } else if action == arabic_action_init {
+      masks[i] = masks[i] | init_bit
+    } else if action == arabic_action_medi || action == arabic_action_med2 {
+      masks[i] = masks[i] | medi_bit
+    } else if action == arabic_action_fina ||
+      action == arabic_action_fin2 ||
+      action == arabic_action_fin3 {
+      masks[i] = masks[i] | fina_bit
+    }
+  }
+  true
+}
+
 fn build_use_feature_masks(
   categories : Array[Int],
   syllables : Array[Int],
+  arabic_actions? : Array[Int] = [],
 ) -> Array[UInt] {
   let len = categories.length()
   let masks = Array::make(len, 0U)
@@ -276,6 +321,14 @@ fn build_use_feature_masks(
   let init_bit = 1U << use_feature_init
   let medi_bit = 1U << use_feature_medi
   let fina_bit = 1U << use_feature_fina
+  let applied_arabic = apply_use_arabic_form_masks(
+    masks,
+    arabic_actions,
+    isol_bit,
+    init_bit,
+    medi_bit,
+    fina_bit,
+  )
   let mut last_start = -1
   let mut last_form = -1
   let mut i = 0
@@ -294,7 +347,7 @@ fn build_use_feature_masks(
       syllable_type == use_syllable_type_numeral_cluster ||
       syllable_type == use_syllable_type_symbol_cluster ||
       syllable_type == use_syllable_type_broken_cluster
-    if joinable {
+    if joinable && !applied_arabic {
       let mut join = false
       if last_form == use_form_fina || last_form == use_form_isol {
         join = true
@@ -329,7 +382,7 @@ fn build_use_feature_masks(
       )
       last_start = i
       last_form = current_form
-    } else {
+    } else if !applied_arabic {
       last_start = -1
       last_form = -1
     }
@@ -393,7 +446,18 @@ pub fn Buffer::shape_use(
   for info in self.infos {
     reordered_categories.push(use_category(info.codepoint))
   }
-  let glyph_masks = build_use_feature_masks(reordered_categories, syllables_after)
+  let mut arabic_actions : Array[Int] = []
+  if use_has_arabic_joining(self.script) {
+    arabic_actions = arabic_joining_actions(self)
+    if self.script == @common.script_mongolian {
+      apply_mongolian_variation_selectors(arabic_actions, self.infos)
+    }
+  }
+  let glyph_masks = build_use_feature_masks(
+    reordered_categories,
+    syllables_after,
+    arabic_actions=arabic_actions,
+  )
   match self.shape_basic(font) {
     Err(err) => return Err(err)
     Ok(_) => ()
