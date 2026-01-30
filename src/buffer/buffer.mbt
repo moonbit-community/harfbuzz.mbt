@@ -651,6 +651,11 @@ pub fn Buffer::shape_ot(
 ) -> Result[Unit, ShapeError] {
   self.guess_segment_properties()
   let unicode_mark_flags = mark_flags_from_infos(self.infos)
+  let combining_classes : Array[Int] = []
+  for info in self.infos {
+    let klass = @unicode.modified_combining_class(info.codepoint).reinterpret_as_int()
+    combining_classes.push(recategorize_combining_class(info.codepoint, klass))
+  }
   let gsub = match font.gsub() {
     Err(err) => return Err(Font(err))
     Ok(value) => value
@@ -824,6 +829,12 @@ pub fn Buffer::shape_ot(
   }
   if zero_marks {
     zero_mark_advances_with_flags(self, used_flags, adjust_offsets=adjust_offsets)
+  }
+  if gpos is None {
+    match fallback_mark_position(font, self, used_flags, combining_classes) {
+      Err(err) => return Err(err)
+      Ok(_) => ()
+    }
   }
   Ok(())
 }
