@@ -34,7 +34,17 @@ pub fn Buffer::shape_myanmar(
       }
     }
   }
-  match insert_dotted_circle_if_supported(font, self) {
+  let categories : Array[UInt] = []
+  for info in self.infos {
+    categories.push(indic_category(indic_get_categories(info.codepoint)))
+  }
+  let syllables = find_syllables_myanmar(categories)
+  match insert_dotted_circle_for_syllables(
+    font,
+    self,
+    syllables,
+    myanmar_syllable_type_broken,
+  ) {
     Err(err) => return Err(err)
     Ok(_) => ()
   }
