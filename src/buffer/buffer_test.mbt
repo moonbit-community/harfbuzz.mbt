@@ -1149,6 +1149,31 @@ test "buffer shape ot default ignorable zeroed" {
 }
 
 ///|
+test "buffer shape ot default ignorable zeroed snapshot" {
+  let font = @font.Font::from_bytes(build_font_bytes_default_ignorables())
+  let buffer = Buffer::new()
+  buffer.add_codepoint(0x200DU)
+  let result = buffer.shape_ot(font)
+  match result {
+    Err(err) => fail("shape error: \{err}")
+    Ok(_) => ()
+  }
+  let infos = buffer.infos()
+  let positions = buffer.positions()
+  let snapshot : Array[(UInt, Int, Int, Int, Int)] = []
+  for i in 0..<infos.length() {
+    snapshot.push((
+      infos[i].codepoint,
+      infos[i].cluster,
+      positions[i].x_advance,
+      positions[i].x_offset,
+      positions[i].y_offset,
+    ))
+  }
+  json_inspect(snapshot, content=[[1,0,0,0,0]])
+}
+
+///|
 test "buffer shape ot preserve default ignorable" {
   let font = @font.Font::from_bytes(build_font_bytes_default_ignorables())
   let buffer = Buffer::new()
@@ -1161,6 +1186,32 @@ test "buffer shape ot preserve default ignorable" {
   }
   let positions = buffer.positions()
   inspect(positions[0].x_advance, content="300")
+}
+
+///|
+test "buffer shape ot preserve default ignorable snapshot" {
+  let font = @font.Font::from_bytes(build_font_bytes_default_ignorables())
+  let buffer = Buffer::new()
+  buffer.set_preserve_default_ignorables(true)
+  buffer.add_codepoint(0x200DU)
+  let result = buffer.shape_ot(font)
+  match result {
+    Err(err) => fail("shape error: \{err}")
+    Ok(_) => ()
+  }
+  let infos = buffer.infos()
+  let positions = buffer.positions()
+  let snapshot : Array[(UInt, Int, Int, Int, Int)] = []
+  for i in 0..<infos.length() {
+    snapshot.push((
+      infos[i].codepoint,
+      infos[i].cluster,
+      positions[i].x_advance,
+      positions[i].x_offset,
+      positions[i].y_offset,
+    ))
+  }
+  json_inspect(snapshot, content=[[1,0,300,0,0]])
 }
 
 ///|
@@ -1180,6 +1231,33 @@ test "buffer shape ot variation selector fallback" {
   let positions = buffer.positions()
   inspect(infos[0].codepoint, content="3")
   inspect(positions[0].x_advance, content="0")
+}
+
+///|
+test "buffer shape ot variation selector fallback snapshot" {
+  let font = @font.Font::from_bytes(build_font_bytes_default_ignorables())
+  let buffer = Buffer::new()
+  buffer.set_remove_default_ignorables(true)
+  buffer.set_not_found_variation_selector(Some(3U))
+  buffer.add_codepoint(0xFE0FU)
+  let result = buffer.shape_ot(font)
+  match result {
+    Err(err) => fail("shape error: \{err}")
+    Ok(_) => ()
+  }
+  let infos = buffer.infos()
+  let positions = buffer.positions()
+  let snapshot : Array[(UInt, Int, Int, Int, Int)] = []
+  for i in 0..<infos.length() {
+    snapshot.push((
+      infos[i].codepoint,
+      infos[i].cluster,
+      positions[i].x_advance,
+      positions[i].x_offset,
+      positions[i].y_offset,
+    ))
+  }
+  json_inspect(snapshot, content=[[3,0,0,0,0]])
 }
 
 ///|
