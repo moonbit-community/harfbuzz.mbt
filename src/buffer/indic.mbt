@@ -88,6 +88,7 @@ let indic_feature_blwf : Int = 5
 let indic_feature_abvf : Int = 6
 let indic_feature_half : Int = 7
 let indic_feature_pstf : Int = 8
+let indic_feature_vatu : Int = 9
 let indic_feature_init : Int = 11
 
 fn indic_blwf_pre_and_post(script : @common.Script) -> Bool {
@@ -96,6 +97,37 @@ fn indic_blwf_pre_and_post(script : @common.Script) -> Bool {
 
 fn indic_reph_requires_zwj(script : @common.Script) -> Bool {
   script == @common.script_telugu
+}
+
+fn indic_virama_codepoint(script : @common.Script) -> UInt? {
+  if script == @common.script_devanagari {
+    return Some(0x094DU)
+  }
+  if script == @common.script_bengali {
+    return Some(0x09CDU)
+  }
+  if script == @common.script_gurmukhi {
+    return Some(0x0A4DU)
+  }
+  if script == @common.script_gujarati {
+    return Some(0x0ACDU)
+  }
+  if script == @common.script_oriya {
+    return Some(0x0B4DU)
+  }
+  if script == @common.script_tamil {
+    return Some(0x0BCDU)
+  }
+  if script == @common.script_telugu {
+    return Some(0x0C4DU)
+  }
+  if script == @common.script_kannada {
+    return Some(0x0CCDU)
+  }
+  if script == @common.script_malayalam {
+    return Some(0x0D4DU)
+  }
+  None
 }
 
 fn is_consonant_indic(category : Int) -> Bool {
@@ -412,6 +444,51 @@ fn build_indic_feature_masks(
   masks
 }
 
+fn update_indic_positions_from_face(
+  positions : Array[Int],
+  glyphs : Array[UInt],
+  gsub : @ot_tables.GsubTable?,
+  virama_glyph : UInt,
+  blwf_lookups : Array[Int],
+  pstf_lookups : Array[Int],
+  vatu_lookups : Array[Int],
+  pref_lookups : Array[Int],
+) -> Unit {
+  if positions.length() != glyphs.length() {
+    return ()
+  }
+  if virama_glyph == 0U {
+    return ()
+  }
+  if blwf_lookups.is_empty() &&
+    pstf_lookups.is_empty() &&
+    vatu_lookups.is_empty() &&
+    pref_lookups.is_empty() {
+    return ()
+  }
+  for i in 0..<positions.length() {
+    if positions[i] != indic_pos_base_c {
+      continue
+    }
+    let consonant = glyphs[i]
+    let seq1 : Array[UInt] = [virama_glyph, consonant]
+    let seq2 : Array[UInt] = [consonant, virama_glyph]
+    if indic_would_substitute(gsub, blwf_lookups, seq1, 0, 2) ||
+      indic_would_substitute(gsub, blwf_lookups, seq2, 0, 2) ||
+      indic_would_substitute(gsub, vatu_lookups, seq1, 0, 2) ||
+      indic_would_substitute(gsub, vatu_lookups, seq2, 0, 2) {
+      positions[i] = indic_pos_below_c
+    } else if indic_would_substitute(gsub, pstf_lookups, seq1, 0, 2) ||
+      indic_would_substitute(gsub, pstf_lookups, seq2, 0, 2) ||
+      indic_would_substitute(gsub, pref_lookups, seq1, 0, 2) ||
+      indic_would_substitute(gsub, pref_lookups, seq2, 0, 2) {
+      positions[i] = indic_pos_post_c
+    } else {
+      positions[i] = indic_pos_base_c
+    }
+  }
+}
+
 ///|
 pub fn Buffer::shape_indic(
   self : Buffer,
@@ -422,6 +499,7 @@ pub fn Buffer::shape_indic(
     Ok(value) => value
   }
   let script_tag = self.script.to_tag()
+  let lang_tag = language_to_ot_tag(self.language)
   if gsub is Some(gsub) {
     let dflt_tag = @common.Tag::from_chars('D', 'F', 'L', 'T')
     let latn_tag = @common.Tag::from_chars('l', 'a', 't', 'n')
@@ -455,18 +533,12 @@ pub fn Buffer::shape_indic(
     positions_after.push(indic_position(packed))
   }
   let syllables_after = find_syllables_indic(categories_after_u)
-  reorder_indic_syllables(self, categories_after_i, positions_after, syllables_after)
-  let reordered_categories : Array[Int] = []
-  let reordered_positions : Array[Int] = []
-  for info in self.infos {
-    let packed = indic_get_categories(info.codepoint)
-    reordered_categories.push(indic_category(packed).reinterpret_as_int())
-    reordered_positions.push(indic_position(packed))
-  }
   let mut rphf_lookups : Array[Int] = []
   let mut pref_lookups : Array[Int] = []
+  let mut blwf_lookups : Array[Int] = []
+  let mut pstf_lookups : Array[Int] = []
+  let mut vatu_lookups : Array[Int] = []
   if gsub is Some(gsub) {
-    let lang_tag = language_to_ot_tag(self.language)
     rphf_lookups = match gsub.layout().select_lookup_offsets_for_feature(
       script_tag,
       indic_feature_tags[indic_feature_rphf],
@@ -485,6 +557,70 @@ pub fn Buffer::shape_indic(
       Err(err) => return Err(Layout(err))
       Ok(value) => value
     }
+    blwf_lookups = match gsub.layout().select_lookup_offsets_for_feature(
+      script_tag,
+      indic_feature_tags[indic_feature_blwf],
+      language_tag=lang_tag,
+      include_required=false,
+    ) {
+      Err(err) => return Err(Layout(err))
+      Ok(value) => value
+    }
+    pstf_lookups = match gsub.layout().select_lookup_offsets_for_feature(
+      script_tag,
+      indic_feature_tags[indic_feature_pstf],
+      language_tag=lang_tag,
+      include_required=false,
+    ) {
+      Err(err) => return Err(Layout(err))
+      Ok(value) => value
+    }
+    vatu_lookups = match gsub.layout().select_lookup_offsets_for_feature(
+      script_tag,
+      indic_feature_tags[indic_feature_vatu],
+      language_tag=lang_tag,
+      include_required=false,
+    ) {
+      Err(err) => return Err(Layout(err))
+      Ok(value) => value
+    }
+  }
+  let glyphs_for_positions : Array[UInt] = []
+  for info in self.infos {
+    let glyph = match font.glyph_for_codepoint(info.codepoint) {
+      Err(err) => return Err(Font(err))
+      Ok(None) => 0U
+      Ok(Some(value)) => value
+    }
+    glyphs_for_positions.push(glyph)
+  }
+  match indic_virama_codepoint(self.script) {
+    None => ()
+    Some(virama_codepoint) => {
+      let virama_glyph = match font.glyph_for_codepoint(virama_codepoint) {
+        Err(err) => return Err(Font(err))
+        Ok(None) => 0U
+        Ok(Some(value)) => value
+      }
+      update_indic_positions_from_face(
+        positions_after,
+        glyphs_for_positions,
+        gsub,
+        virama_glyph,
+        blwf_lookups,
+        pstf_lookups,
+        vatu_lookups,
+        pref_lookups,
+      )
+    }
+  }
+  reorder_indic_syllables(self, categories_after_i, positions_after, syllables_after)
+  let reordered_categories : Array[Int] = []
+  let reordered_positions : Array[Int] = []
+  for info in self.infos {
+    let packed = indic_get_categories(info.codepoint)
+    reordered_categories.push(indic_category(packed).reinterpret_as_int())
+    reordered_positions.push(indic_position(packed))
   }
   match self.shape_basic(font) {
     Err(err) => return Err(err)
