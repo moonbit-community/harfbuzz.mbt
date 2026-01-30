@@ -38,7 +38,17 @@ pub fn Buffer::shape_indic(
       return self.shape_ot(font)
     }
   }
-  match insert_dotted_circle_if_supported(font, self) {
+  let categories : Array[UInt] = []
+  for info in self.infos {
+    categories.push(indic_category(indic_get_categories(info.codepoint)))
+  }
+  let syllables = find_syllables_indic(categories)
+  match insert_dotted_circle_for_syllables(
+    font,
+    self,
+    syllables,
+    indic_syllable_type_broken_cluster,
+  ) {
     Err(err) => return Err(err)
     Ok(_) => ()
   }

@@ -43,7 +43,19 @@ pub fn Buffer::shape_use(
       return self.shape_ot(font)
     }
   }
-  match insert_dotted_circle_if_supported(font, self) {
+  let categories : Array[UInt] = []
+  let marks : Array[Bool] = []
+  for info in self.infos {
+    categories.push(use_get_category(info.codepoint))
+    marks.push(@unicode.is_mark(info.codepoint))
+  }
+  let syllables = find_syllables_use(categories, marks)
+  match insert_dotted_circle_for_syllables(
+    font,
+    self,
+    syllables,
+    use_syllable_type_broken_cluster,
+  ) {
     Err(err) => return Err(err)
     Ok(_) => ()
   }

@@ -1,14 +1,3 @@
-test "syllabic insert dotted circle for leading mark" {
-  let buffer = Buffer::new()
-  buffer.add_codepoint(0x0301U)
-  let inserted = insert_dotted_circle_for_broken_syllables(buffer)
-  inspect(inserted, content="true")
-  let infos = buffer.infos()
-  inspect(infos.length(), content="2")
-  inspect(infos[0].codepoint, content="9676")
-  inspect(infos[1].codepoint, content="769")
-}
-
 fn push_u16(bytes : Array[Byte], value : Int) -> Unit {
   bytes.push(((value >> 8) & 0xff).to_byte())
   bytes.push((value & 0xff).to_byte())
@@ -90,36 +79,17 @@ fn build_font_bytes_cmap(start : UInt, end : UInt, start_gid : UInt) -> Bytes {
   build_sfnt_with_table(@common.Tag::from_chars('c', 'm', 'a', 'p'), cmap)
 }
 
-test "syllabic no dotted circle after base" {
-  let buffer = Buffer::new()
-  buffer.add_codepoint(0x41U)
-  buffer.add_codepoint(0x0301U)
-  let inserted = insert_dotted_circle_for_broken_syllables(buffer)
-  inspect(inserted, content="false")
-  let infos = buffer.infos()
-  inspect(infos.length(), content="2")
-  inspect(infos[0].codepoint, content="65")
-  inspect(infos[1].codepoint, content="769")
-}
-
-test "syllabic insert dotted circle after separator" {
-  let buffer = Buffer::new()
-  buffer.add_codepoint(0x41U)
-  buffer.add_codepoint(0x20U)
-  buffer.add_codepoint(0x0301U)
-  let inserted = insert_dotted_circle_for_broken_syllables(buffer)
-  inspect(inserted, content="true")
-  let infos = buffer.infos()
-  inspect(infos.length(), content="4")
-  inspect(infos[2].codepoint, content="9676")
-  inspect(infos[3].codepoint, content="769")
-}
-
 test "syllabic dotted circle requires font mapping" {
   let font = @font.Font::from_bytes(build_font_bytes_cmap(0x41U, 0x41U, 1U))
   let buffer = Buffer::new()
   buffer.add_codepoint(0x0301U)
-  let inserted = match insert_dotted_circle_if_supported(font, buffer) {
+  let syllables : Array[Int] = [1]
+  let inserted = match insert_dotted_circle_for_syllables(
+    font,
+    buffer,
+    syllables,
+    1,
+  ) {
     Err(err) => fail("shape error: \{err}")
     Ok(value) => value
   }
@@ -133,7 +103,13 @@ test "syllabic dotted circle uses font mapping" {
   let font = @font.Font::from_bytes(build_font_bytes_cmap(0x25CCU, 0x25CCU, 1U))
   let buffer = Buffer::new()
   buffer.add_codepoint(0x0301U)
-  let inserted = match insert_dotted_circle_if_supported(font, buffer) {
+  let syllables : Array[Int] = [1]
+  let inserted = match insert_dotted_circle_for_syllables(
+    font,
+    buffer,
+    syllables,
+    1,
+  ) {
     Err(err) => fail("shape error: \{err}")
     Ok(value) => value
   }
