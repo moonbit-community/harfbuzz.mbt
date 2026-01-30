@@ -166,3 +166,45 @@ test "thai fallback pua snapshot" {
   }
   json_inspect(snapshot, content=[[1,0,300,0,0],[3,1,500,0,0]])
 }
+
+fn build_font_bytes_thai_pua_rd() -> Bytes {
+  let cmap = thai_test_build_cmap_table(thai_test_build_cmap_format12_groups([
+    (0x0E0DU, 0x0E0DU, 1U),
+    (0x0E38U, 0x0E38U, 2U),
+    (0xF70FU, 0xF70FU, 3U),
+  ]))
+  let tables : Array[(@common.Tag, Bytes)] = [
+    (@common.Tag::from_chars('h', 'e', 'a', 'd'), thai_test_build_head(1000, 0)),
+    (@common.Tag::from_chars('m', 'a', 'x', 'p'), thai_test_build_maxp(4)),
+    (@common.Tag::from_chars('h', 'h', 'e', 'a'), thai_test_build_hhea(4)),
+    (@common.Tag::from_chars('h', 'm', 't', 'x'), thai_test_build_hmtx_ot()),
+    (@common.Tag::from_chars('c', 'm', 'a', 'p'), cmap),
+  ]
+  thai_test_build_sfnt(tables)
+}
+
+test "thai fallback pua base replacement snapshot" {
+  let font = @font.Font::from_bytes(build_font_bytes_thai_pua_rd())
+  let buffer = Buffer::new()
+  buffer.set_script(@common.script_thai)
+  buffer.add_codepoint(0x0E0DU)
+  buffer.add_codepoint(0x0E38U)
+  let result = buffer.shape_thai(font)
+  match result {
+    Err(err) => fail("shape error: \{err}")
+    Ok(_) => ()
+  }
+  let infos = buffer.infos()
+  let positions = buffer.positions()
+  let snapshot : Array[(UInt, Int, Int, Int, Int)] = []
+  for i in 0..<infos.length() {
+    snapshot.push((
+      infos[i].codepoint,
+      infos[i].cluster,
+      positions[i].x_advance,
+      positions[i].x_offset,
+      positions[i].y_offset,
+    ))
+  }
+  json_inspect(snapshot, content=[[3,0,500,0,0],[2,1,0,-400,0]])
+}
