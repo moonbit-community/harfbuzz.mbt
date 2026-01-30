@@ -199,3 +199,7 @@ fn indic_get_categories(u : UInt) -> UInt {
 fn indic_category(value : UInt) -> UInt {
   value & 0xffU
 }
+
+fn indic_position(value : UInt) -> Int {
+  (value >> 8).reinterpret_as_int()
+}
