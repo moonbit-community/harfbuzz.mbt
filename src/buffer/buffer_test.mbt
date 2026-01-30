@@ -118,6 +118,20 @@ test "buffer normalize compose" {
 }
 
 ///|
+test "buffer normalize skips variation selectors" {
+  let buffer = Buffer::new()
+  buffer.add_codepoint(0x41U)
+  buffer.add_codepoint(0x0301U)
+  buffer.add_codepoint(0xFE0FU)
+  buffer.normalize()
+  let cps : Array[UInt] = []
+  for info in buffer.infos() {
+    cps.push(info.codepoint)
+  }
+  inspect(cps, content="[65, 769, 65039]")
+}
+
+///|
 test "buffer normalize indic compose exception" {
   let buffer = Buffer::new()
   buffer.set_script(@common.script_bengali)

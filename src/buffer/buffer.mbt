@@ -485,6 +485,11 @@ pub fn Buffer::normalize(self : Buffer) -> Unit {
   if len <= 1 {
     return ()
   }
+  for info in self.infos {
+    if @unicode.is_variation_selector(info.codepoint) {
+      return ()
+    }
+  }
   let is_hebrew = self.script == @common.script_hebrew
   let is_arabic = self.script == @common.script_arabic
   let is_hangul = self.script == @common.script_hangul
