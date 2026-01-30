@@ -650,6 +650,7 @@ pub fn Buffer::shape_ot(
   font : @font.Font,
 ) -> Result[Unit, ShapeError] {
   self.guess_segment_properties()
+  let mark_flags = mark_flags_from_infos(self.infos)
   match self.shape_basic(font) {
     Err(err) => return Err(err)
     Ok(_) => ()
@@ -795,6 +796,9 @@ pub fn Buffer::shape_ot(
       }
       self.positions = new_positions
     }
+  }
+  if gsub is None && gpos is None {
+    zero_mark_advances_with_flags(self, mark_flags)
   }
   Ok(())
 }

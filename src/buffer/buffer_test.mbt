@@ -932,6 +932,22 @@ fn build_font_bytes_kern() -> Bytes {
 }
 
 ///|
+fn build_font_bytes_mark_fallback() -> Bytes {
+  let cmap = build_cmap_table(build_cmap_format12_groups([
+    (0x41U, 0x41U, 1U),
+    (0x0301U, 0x0301U, 2U),
+  ]))
+  let tables : Array[(@common.Tag, Bytes)] = [
+    (@common.Tag::from_chars('h', 'e', 'a', 'd'), build_head(1000, 0)),
+    (@common.Tag::from_chars('m', 'a', 'x', 'p'), build_maxp(4)),
+    (@common.Tag::from_chars('h', 'h', 'e', 'a'), build_hhea(4)),
+    (@common.Tag::from_chars('h', 'm', 't', 'x'), build_hmtx_ot()),
+    (@common.Tag::from_chars('c', 'm', 'a', 'p'), cmap),
+  ]
+  build_sfnt(tables)
+}
+
+///|
 test "buffer shape basic" {
   let font = @font.Font::from_bytes(build_font_bytes())
   let buffer = Buffer::new()
@@ -1034,6 +1050,22 @@ test "buffer shape ot kern fallback" {
   inspect(positions[0].x_advance, content="250")
   inspect(positions[1].x_advance, content="400")
   inspect(positions[0].x_offset, content="0")
+}
+
+///|
+test "buffer shape ot zeroes mark advances without gpos" {
+  let font = @font.Font::from_bytes(build_font_bytes_mark_fallback())
+  let buffer = Buffer::new()
+  buffer.add_codepoint(0x41U)
+  buffer.add_codepoint(0x0301U)
+  let result = buffer.shape_ot(font)
+  match result {
+    Err(err) => fail("shape error: \{err}")
+    Ok(_) => ()
+  }
+  let positions = buffer.positions()
+  inspect(positions[0].x_advance, content="300")
+  inspect(positions[1].x_advance, content="0")
 }
 
 ///|
