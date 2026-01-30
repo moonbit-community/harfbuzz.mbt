@@ -204,12 +204,47 @@ fn apply_arabic_fallback(buffer : Buffer, actions : Array[Int]) -> Unit {
 }
 
 ///|
-fn apply_gpos(font : @font.Font, buffer : Buffer) -> Result[Unit, ShapeError] {
+fn apply_gpos(
+  font : @font.Font,
+  buffer : Buffer,
+  zero_width_marks? : ZeroWidthMarks = ZeroWidthMarks::Disabled,
+  fallback_position? : Bool = false,
+  unicode_mark_flags? : Array[Bool] = [],
+  combining_classes? : Array[Int] = [],
+  gpos_tag? : @common.Tag? = None,
+) -> Result[Unit, ShapeError] {
   let gpos = match font.gpos() {
     Err(err) => return Err(Font(err))
     Ok(value) => value
   }
-  if gpos is Some(gpos) {
+  let mut gpos_to_use : @ot_tables.GposTable? = None
+  let mut gpos_present = false
+  match gpos {
+    None => ()
+    Some(gpos) => {
+      match gpos_tag {
+        None => {
+          gpos_to_use = Some(gpos)
+          gpos_present = true
+        }
+        Some(tag) => {
+          if buffer_layout_has_script(gpos.layout(), tag) {
+            gpos_to_use = Some(gpos)
+            gpos_present = true
+          }
+        }
+      }
+    }
+  }
+  match zero_width_marks {
+    ZeroWidthMarks::ByGdefEarly =>
+      match zero_marks_by_gdef_or_unicode(font, buffer, unicode_mark_flags, gpos_present) {
+        Err(err) => return Err(err)
+        Ok(_) => ()
+      }
+    _ => ()
+  }
+  if gpos_to_use is Some(gpos) {
     let gdef = match font.gdef() {
       Err(err) => return Err(Font(err))
       Ok(value) => value
@@ -218,7 +253,10 @@ fn apply_gpos(font : @font.Font, buffer : Buffer) -> Result[Unit, ShapeError] {
     for info in buffer.infos {
       glyphs.push(info.codepoint)
     }
-    let script_tag = buffer.script.to_tag()
+    let script_tag = match gpos_tag {
+      None => buffer.script.to_tag()
+      Some(tag) => tag
+    }
     let lang_tag = language_to_ot_tag(buffer.language)
     let lookup_offsets = match gpos.layout().select_lookup_offsets_with_features(
       script_tag,
@@ -290,6 +328,20 @@ fn apply_gpos(font : @font.Font, buffer : Buffer) -> Result[Unit, ShapeError] {
       buffer.positions = new_positions
     }
   }
+  match zero_width_marks {
+    ZeroWidthMarks::ByGdefLate =>
+      match zero_marks_by_gdef_or_unicode(font, buffer, unicode_mark_flags, gpos_present) {
+        Err(err) => return Err(err)
+        Ok(_) => ()
+      }
+    _ => ()
+  }
+  if fallback_position && !gpos_present {
+    match fallback_mark_position(font, buffer, unicode_mark_flags, combining_classes) {
+      Err(err) => return Err(err)
+      Ok(_) => ()
+    }
+  }
   Ok(())
 }
 
@@ -318,12 +370,20 @@ pub fn Buffer::shape_arabic(
       return self.shape_ot(font)
     }
   }
+  let (unicode_mark_flags, combining_classes) = collect_mark_fallback_data(self.infos)
   if actions.is_empty() {
     match self.shape_basic(font) {
       Err(err) => return Err(err)
       Ok(_) => ()
     }
-    return apply_gpos(font, self)
+    return apply_gpos(
+      font,
+      self,
+      zero_width_marks=ZeroWidthMarks::ByGdefLate,
+      fallback_position=true,
+      unicode_mark_flags=unicode_mark_flags,
+      combining_classes=combining_classes,
+    )
   }
   let mut current_glyphs : Array[UInt] = []
   let mut current_clusters : Array[Int] = []
@@ -356,7 +416,14 @@ pub fn Buffer::shape_arabic(
       Err(err) => return Err(err)
       Ok(_) => ()
     }
-    return apply_gpos(font, self)
+    return apply_gpos(
+      font,
+      self,
+      zero_width_marks=ZeroWidthMarks::ByGdefLate,
+      fallback_position=true,
+      unicode_mark_flags=unicode_mark_flags,
+      combining_classes=combining_classes,
+    )
   }
   if gsub is Some(gsub) {
     match self.shape_basic(font) {
@@ -436,5 +503,12 @@ pub fn Buffer::shape_arabic(
     self.infos = infos
     self.positions = positions
   }
-  apply_gpos(font, self)
+  apply_gpos(
+    font,
+    self,
+    zero_width_marks=ZeroWidthMarks::ByGdefLate,
+    fallback_position=true,
+    unicode_mark_flags=unicode_mark_flags,
+    combining_classes=combining_classes,
+  )
 }

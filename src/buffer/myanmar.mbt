@@ -324,6 +324,7 @@ pub fn Buffer::shape_myanmar(
   }
   let syllables_after = find_syllables_myanmar(categories_after_u)
   reorder_myanmar_syllables(self, categories_after_i, syllables_after)
+  let (unicode_mark_flags, combining_classes) = collect_mark_fallback_data(self.infos)
   match self.shape_basic(font) {
     Err(err) => return Err(err)
     Ok(_) => ()
@@ -341,5 +342,12 @@ pub fn Buffer::shape_myanmar(
       Ok(_) => ()
     }
   }
-  apply_gpos(font, self)
+  apply_gpos(
+    font,
+    self,
+    zero_width_marks=ZeroWidthMarks::ByGdefEarly,
+    fallback_position=false,
+    unicode_mark_flags=unicode_mark_flags,
+    combining_classes=combining_classes,
+  )
 }

@@ -3,6 +3,7 @@ pub fn Buffer::shape_hebrew(
   self : Buffer,
   font : @font.Font,
 ) -> Result[Unit, ShapeError] {
+  let (unicode_mark_flags, combining_classes) = collect_mark_fallback_data(self.infos)
   match self.shape_basic(font) {
     Err(err) => return Err(err)
     Ok(_) => ()
@@ -85,6 +86,7 @@ pub fn Buffer::shape_hebrew(
       selected_gpos = Some(gpos)
     }
   }
+  let gpos_present = selected_gpos is Some(_)
   if selected_gpos is Some(gpos) {
     let gdef = match font.gdef() {
       Err(err) => return Err(Font(err))
@@ -154,6 +156,16 @@ pub fn Buffer::shape_hebrew(
         }
       }
       self.positions = new_positions
+    }
+  }
+  match zero_marks_by_gdef_or_unicode(font, self, unicode_mark_flags, gpos_present) {
+    Err(err) => return Err(err)
+    Ok(_) => ()
+  }
+  if !gpos_present {
+    match fallback_mark_position(font, self, unicode_mark_flags, combining_classes) {
+      Err(err) => return Err(err)
+      Ok(_) => ()
     }
   }
   Ok(())

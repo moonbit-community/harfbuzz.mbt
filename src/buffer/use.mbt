@@ -599,6 +599,7 @@ pub fn Buffer::shape_use(
     syllables_after,
     arabic_actions=arabic_actions,
   )
+  let (unicode_mark_flags, combining_classes) = collect_mark_fallback_data(self.infos)
   match self.shape_basic(font) {
     Err(err) => return Err(err)
     Ok(_) => ()
@@ -617,5 +618,12 @@ pub fn Buffer::shape_use(
       Ok(_) => ()
     }
   }
-  apply_gpos(font, self)
+  apply_gpos(
+    font,
+    self,
+    zero_width_marks=ZeroWidthMarks::ByGdefEarly,
+    fallback_position=false,
+    unicode_mark_flags=unicode_mark_flags,
+    combining_classes=combining_classes,
+  )
 }

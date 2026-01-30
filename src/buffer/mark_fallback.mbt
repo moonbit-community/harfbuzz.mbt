@@ -26,6 +26,22 @@ fn mark_flags_from_gdef(
   Ok(flags)
 }
 
+priv enum ZeroWidthMarks {
+  Disabled
+  ByGdefEarly
+  ByGdefLate
+}
+
+fn collect_mark_fallback_data(infos : Array[GlyphInfo]) -> (Array[Bool], Array[Int]) {
+  let marks = mark_flags_from_infos(infos)
+  let combining_classes : Array[Int] = []
+  for info in infos {
+    let klass = @unicode.modified_combining_class(info.codepoint).reinterpret_as_int()
+    combining_classes.push(recategorize_combining_class(info.codepoint, klass))
+  }
+  (marks, combining_classes)
+}
+
 struct GlyphExtents {
   mut x_bearing : Int
   mut y_bearing : Int
@@ -399,4 +415,37 @@ fn zero_mark_advances_with_flags(
       }
     }
   }
+}
+
+fn zero_marks_by_gdef_or_unicode(
+  font : @font.Font,
+  buffer : Buffer,
+  unicode_marks : Array[Bool],
+  gpos_present : Bool,
+) -> Result[Unit, ShapeError] {
+  let adjust_offsets = !gpos_present && buffer.direction.is_forward()
+  let mut zeroed = false
+  let gdef = match font.gdef() {
+    Err(err) => return Err(Font(err))
+    Ok(value) => value
+  }
+  match gdef {
+    None => ()
+    Some(gdef) => {
+      if gdef.header().glyph_class_def_offset is Some(_) {
+        let flags = match mark_flags_from_gdef(gdef, buffer.infos) {
+          Err(err) => return Err(err)
+          Ok(value) => value
+        }
+        zero_mark_advances_with_flags(buffer, flags, adjust_offsets=adjust_offsets)
+        zeroed = true
+      }
+    }
+  }
+  if !zeroed &&
+    !gpos_present &&
+    unicode_marks.length() == buffer.infos.length() {
+    zero_mark_advances_with_flags(buffer, unicode_marks, adjust_offsets=adjust_offsets)
+  }
+  Ok(())
 }

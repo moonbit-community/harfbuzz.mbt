@@ -129,6 +129,7 @@ pub fn Buffer::shape_hangul(
     Err(err) => return Err(err)
     Ok(_) => ()
   }
+  let (unicode_mark_flags, combining_classes) = collect_mark_fallback_data(self.infos)
   let actions = hangul_actions(self)
   match self.shape_basic(font) {
     Err(err) => return Err(err)
@@ -215,5 +216,12 @@ pub fn Buffer::shape_hangul(
     self.infos = infos
     self.positions = positions
   }
-  apply_gpos(font, self)
+  apply_gpos(
+    font,
+    self,
+    zero_width_marks=ZeroWidthMarks::Disabled,
+    fallback_position=true,
+    unicode_mark_flags=unicode_mark_flags,
+    combining_classes=combining_classes,
+  )
 }
