@@ -118,6 +118,34 @@ test "buffer normalize compose" {
 }
 
 ///|
+test "buffer normalize indic compose exception" {
+  let buffer = Buffer::new()
+  buffer.set_script(@common.script_bengali)
+  buffer.add_codepoint(0x09AFU)
+  buffer.add_codepoint(0x09BCU)
+  buffer.normalize()
+  let cps : Array[UInt] = []
+  for info in buffer.infos() {
+    cps.push(info.codepoint)
+  }
+  inspect(cps, content="[2527]")
+}
+
+///|
+test "buffer normalize indic skip mark-base compose" {
+  let buffer = Buffer::new()
+  buffer.set_script(@common.script_devanagari)
+  buffer.add_codepoint(0x0308U)
+  buffer.add_codepoint(0x0301U)
+  buffer.normalize()
+  let cps : Array[UInt] = []
+  for info in buffer.infos() {
+    cps.push(info.codepoint)
+  }
+  inspect(cps, content="[776, 769]")
+}
+
+///|
 test "buffer normalize hebrew reorder" {
   let buffer = Buffer::new()
   buffer.set_script(@common.script_hebrew)

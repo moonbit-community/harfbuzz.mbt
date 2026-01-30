@@ -304,7 +304,7 @@ pub fn Buffer::normalize(self : Buffer) -> Unit {
     while i < end {
       let base = self.infos[start].codepoint
       let mark = self.infos[i].codepoint
-      let composed = match @unicode.compose(base, mark) {
+      let composed = match compose_for_script(self.script, base, mark) {
         None => if is_hebrew { compose_hebrew(base, mark) } else { None }
         Some(value) => Some(value)
       }
