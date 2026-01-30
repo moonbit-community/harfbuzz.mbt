@@ -1328,6 +1328,32 @@ test "buffer shape ot fallback mark positioning without gpos" {
 }
 
 ///|
+test "buffer shape ot fallback mark positioning snapshot" {
+  let font = @font.Font::from_bytes(build_font_bytes_mark_fallback_position())
+  let buffer = Buffer::new()
+  buffer.add_codepoint(0x41U)
+  buffer.add_codepoint(0x0301U)
+  let result = buffer.shape_ot(font)
+  match result {
+    Err(err) => fail("shape error: \{err}")
+    Ok(_) => ()
+  }
+  let infos = buffer.infos()
+  let positions = buffer.positions()
+  let snapshot : Array[(UInt, Int, Int, Int, Int)] = []
+  for i in 0..<infos.length() {
+    snapshot.push((
+      infos[i].codepoint,
+      infos[i].cluster,
+      positions[i].x_advance,
+      positions[i].x_offset,
+      positions[i].y_offset,
+    ))
+  }
+  json_inspect(snapshot, content=[[1,0,300,0,0],[2,1,0,140,122]])
+}
+
+///|
 test "buffer shape ot skips kern for vertical" {
   let font = @font.Font::from_bytes(build_font_bytes_kern())
   let buffer = Buffer::new()
