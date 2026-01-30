@@ -47,3 +47,16 @@ test "use reorder vpre after halant" {
   }
   inspect(result, content="[20, 21, 23, 22]")
 }
+
+///|
+test "use feature masks apply arabic isol" {
+  let categories : Array[Int] = [1]
+  let syllables : Array[Int] = [(1 << 4) | use_syllable_type_standard_cluster]
+  let masks = build_use_feature_masks(
+    categories,
+    syllables,
+    arabic_actions=[arabic_action_isol],
+  )
+  let isol_bit = 1U << use_feature_isol
+  inspect((masks[0] & isol_bit) != 0U, content="true")
+}
