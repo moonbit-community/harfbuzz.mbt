@@ -61,6 +61,43 @@ pub fn GsubTable::apply_with_lookups(
   masks? : Array[UInt] = [],
   lookup_mask? : UInt = 0xFFFFFFFFU,
 ) -> Result[(Array[UInt], Array[Int], Bool), OtLayoutError] {
+  let result = match gdef {
+    None =>
+      self.apply_with_lookups_and_masks(
+        glyphs,
+        clusters,
+        lookup_offsets,
+        masks=masks,
+        lookup_mask=lookup_mask,
+      )
+    Some(gdef) =>
+      self.apply_with_lookups_and_masks(
+        glyphs,
+        clusters,
+        lookup_offsets,
+        gdef=gdef,
+        masks=masks,
+        lookup_mask=lookup_mask,
+      )
+  }
+  match result {
+    Err(err) => Err(err)
+    Ok((next_glyphs, next_clusters, _, changed)) => {
+      Ok((next_glyphs, next_clusters, changed))
+    }
+  }
+}
+
+///|
+pub fn GsubTable::apply_with_lookups_and_masks(
+  self : GsubTable,
+  glyphs : Array[UInt],
+  clusters : Array[Int],
+  lookup_offsets : ArrayView[Int],
+  gdef? : GdefTable,
+  masks? : Array[UInt] = [],
+  lookup_mask? : UInt = 0xFFFFFFFFU,
+) -> Result[(Array[UInt], Array[Int], Array[UInt], Bool), OtLayoutError] {
   if clusters.length() != glyphs.length() {
     return Err(InvalidFormat)
   }
@@ -71,6 +108,7 @@ pub fn GsubTable::apply_with_lookups(
   let lookup_list_offsets = self.layout.lookup_list.offsets
   let mut current_glyphs = glyphs
   let mut current_clusters = clusters
+  let mut current_masks = masks
   let mut changed = false
   let gdef = gdef
   for lookup_offset in lookup_offsets {
@@ -86,7 +124,7 @@ pub fn GsubTable::apply_with_lookups(
             lookup_flag,
             mark_filtering_set,
             gdef,
-            masks=masks,
+            masks=current_masks,
             lookup_mask=lookup_mask,
           ) {
             Err(err) => return Err(err)
@@ -104,15 +142,16 @@ pub fn GsubTable::apply_with_lookups(
             lookup_flag,
             mark_filtering_set,
             gdef,
-            masks=masks,
+            masks=current_masks,
             lookup_mask=lookup_mask,
           ) {
             Err(err) => return Err(err)
             Ok(value) => value
           }
-          let (next_glyphs, next_clusters, did_change) = result
+          let (next_glyphs, next_clusters, next_masks, did_change) = result
           current_glyphs = next_glyphs
           current_clusters = next_clusters
+          current_masks = next_masks
           if did_change {
             changed = true
           }
@@ -124,7 +163,7 @@ pub fn GsubTable::apply_with_lookups(
             lookup_flag,
             mark_filtering_set,
             gdef,
-            masks=masks,
+            masks=current_masks,
             lookup_mask=lookup_mask,
           ) {
             Err(err) => return Err(err)
@@ -142,15 +181,16 @@ pub fn GsubTable::apply_with_lookups(
             lookup_flag,
             mark_filtering_set,
             gdef,
-            masks=masks,
+            masks=current_masks,
             lookup_mask=lookup_mask,
           ) {
             Err(err) => return Err(err)
             Ok(value) => value
           }
-          let (next_glyphs, next_clusters, did_change) = result
+          let (next_glyphs, next_clusters, next_masks, did_change) = result
           current_glyphs = next_glyphs
           current_clusters = next_clusters
+          current_masks = next_masks
           if did_change {
             changed = true
           }
@@ -163,7 +203,7 @@ pub fn GsubTable::apply_with_lookups(
             lookup_flag,
             mark_filtering_set,
             gdef,
-            masks=masks,
+            masks=current_masks,
             lookup_mask=lookup_mask,
           ) {
             Err(err) => return Err(err)
@@ -181,7 +221,7 @@ pub fn GsubTable::apply_with_lookups(
             lookup_flag,
             mark_filtering_set,
             gdef,
-            masks=masks,
+            masks=current_masks,
             lookup_mask=lookup_mask,
           ) {
             Err(err) => return Err(err)
@@ -198,7 +238,7 @@ pub fn GsubTable::apply_with_lookups(
             lookup_flag,
             mark_filtering_set,
             gdef,
-            masks=masks,
+            masks=current_masks,
             lookup_mask=lookup_mask,
           ) {
             Err(err) => return Err(err)
@@ -213,7 +253,7 @@ pub fn GsubTable::apply_with_lookups(
       }
     }
   }
-  Ok((current_glyphs, current_clusters, changed))
+  Ok((current_glyphs, current_clusters, current_masks, changed))
 }
 
 ///|
@@ -313,9 +353,11 @@ fn apply_ligature_subtable_list(
   gdef : GdefTable?,
   masks? : Array[UInt] = [],
   lookup_mask? : UInt = 0xFFFFFFFFU,
-) -> Result[(Array[UInt], Array[Int], Bool), OtLayoutError] {
+) -> Result[(Array[UInt], Array[Int], Array[UInt], Bool), OtLayoutError] {
   let new_glyphs : Array[UInt] = []
   let new_clusters : Array[Int] = []
+  let new_masks : Array[UInt] = []
+  let has_masks = !masks.is_empty()
   let skip = Array::make(glyphs.length(), false)
   let mut changed = false
   let len = glyphs.length()
@@ -340,6 +382,9 @@ fn apply_ligature_subtable_list(
       Ok(true) => {
         new_glyphs.push(glyph)
         new_clusters.push(clusters[i])
+        if has_masks {
+          new_masks.push(masks[i])
+        }
         i = i + 1
         continue
       }
@@ -361,6 +406,9 @@ fn apply_ligature_subtable_list(
       Ok(None) => {
         new_glyphs.push(glyphs[i])
         new_clusters.push(clusters[i])
+        if has_masks {
+          new_masks.push(masks[i])
+        }
         i = i + 1
       }
       Ok(Some((lig_glyph, indices))) => {
@@ -369,6 +417,13 @@ fn apply_ligature_subtable_list(
         }
         new_glyphs.push(lig_glyph)
         new_clusters.push(clusters[indices[0]])
+        if has_masks {
+          let mut lig_mask = 0U
+          for idx in indices {
+            lig_mask = lig_mask | masks[idx]
+          }
+          new_masks.push(lig_mask)
+        }
         if lig_glyph != glyphs[indices[0]] {
           changed = true
         }
@@ -384,7 +439,7 @@ fn apply_ligature_subtable_list(
       }
     }
   }
-  Ok((new_glyphs, new_clusters, changed))
+  Ok((new_glyphs, new_clusters, new_masks, changed))
 }
 
 ///|
@@ -2518,12 +2573,14 @@ fn apply_multiple_subtable_list(
   gdef : GdefTable?,
   masks? : Array[UInt] = [],
   lookup_mask? : UInt = 0xFFFFFFFFU,
-) -> Result[(Array[UInt], Array[Int], Bool), OtLayoutError] {
+) -> Result[(Array[UInt], Array[Int], Array[UInt], Bool), OtLayoutError] {
   if clusters.length() != glyphs.length() {
     return Err(InvalidFormat)
   }
   let new_glyphs : Array[UInt] = []
   let new_clusters : Array[Int] = []
+  let new_masks : Array[UInt] = []
+  let has_masks = !masks.is_empty()
   let mut changed = false
   for i in 0..<glyphs.length() {
     let glyph = glyphs[i]
@@ -2541,6 +2598,9 @@ fn apply_multiple_subtable_list(
       Ok(true) => {
         new_glyphs.push(glyph)
         new_clusters.push(clusters[i])
+        if has_masks {
+          new_masks.push(masks[i])
+        }
         continue
       }
       Ok(false) => ()
@@ -2551,6 +2611,9 @@ fn apply_multiple_subtable_list(
       Ok(None) => {
         new_glyphs.push(glyph)
         new_clusters.push(clusters[i])
+        if has_masks {
+          new_masks.push(masks[i])
+        }
       }
       Ok(Some(sequence)) => {
         if sequence.is_empty() {
@@ -2559,6 +2622,9 @@ fn apply_multiple_subtable_list(
         for value in sequence {
           new_glyphs.push(value)
           new_clusters.push(clusters[i])
+          if has_masks {
+            new_masks.push(masks[i])
+          }
         }
         if sequence.length() != 1 || sequence[0] != glyph {
           changed = true
@@ -2566,7 +2632,7 @@ fn apply_multiple_subtable_list(
       }
     }
   }
-  Ok((new_glyphs, new_clusters, changed))
+  Ok((new_glyphs, new_clusters, new_masks, changed))
 }
 
 ///|

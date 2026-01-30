@@ -3127,6 +3127,35 @@ test "gsub ligature substitution apply mask" {
 }
 
 ///|
+test "gsub ligature substitution mask propagation" {
+  let gsub_bytes = build_layout_table_with_lookups(
+    [build_gsub_ligature_lookup(), build_gsub_single_lookup(6, 9)],
+    @common.Tag::from_chars('l', 'i', 'g', 'a'),
+  )
+  let gsub = match GsubTable::parse(@blob.Blob::from_bytes(gsub_bytes)) {
+    Err(err) => fail("parse error: \{err}")
+    Ok(value) => value
+  }
+  let glyphs : Array[UInt] = [3U, 4U]
+  let clusters : Array[Int] = [0, 1]
+  let masks : Array[UInt] = [1U, 1U]
+  let result = match gsub.apply_with_lookups(
+    glyphs,
+    clusters,
+    gsub.layout().lookup_list().offsets(),
+    masks=masks,
+    lookup_mask=1U,
+  ) {
+    Err(err) => fail("apply error: \{err}")
+    Ok(value) => value
+  }
+  let (new_glyphs, new_clusters, changed) = result
+  inspect(changed, content="true")
+  inspect(new_glyphs, content="[9]")
+  inspect(new_clusters, content="[0]")
+}
+
+///|
 test "gsub multiple substitution apply" {
   let gsub_bytes = build_layout_table(
     build_gsub_multiple_lookup(),
@@ -3150,6 +3179,35 @@ test "gsub multiple substitution apply" {
   inspect(changed, content="true")
   inspect(new_glyphs, content="[6, 7, 4]")
   inspect(new_clusters, content="[0, 0, 1]")
+}
+
+///|
+test "gsub multiple substitution mask propagation" {
+  let gsub_bytes = build_layout_table_with_lookups(
+    [build_gsub_multiple_lookup(), build_gsub_single_lookup(6, 9)],
+    @common.Tag::from_chars('l', 'i', 'g', 'a'),
+  )
+  let gsub = match GsubTable::parse(@blob.Blob::from_bytes(gsub_bytes)) {
+    Err(err) => fail("parse error: \{err}")
+    Ok(value) => value
+  }
+  let glyphs : Array[UInt] = [3U]
+  let clusters : Array[Int] = [0]
+  let masks : Array[UInt] = [1U]
+  let result = match gsub.apply_with_lookups(
+    glyphs,
+    clusters,
+    gsub.layout().lookup_list().offsets(),
+    masks=masks,
+    lookup_mask=1U,
+  ) {
+    Err(err) => fail("apply error: \{err}")
+    Ok(value) => value
+  }
+  let (new_glyphs, new_clusters, changed) = result
+  inspect(changed, content="true")
+  inspect(new_glyphs, content="[9, 7]")
+  inspect(new_clusters, content="[0, 0]")
 }
 
 ///|

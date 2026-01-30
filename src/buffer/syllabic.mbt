@@ -48,23 +48,14 @@ fn apply_gsub_features_for_syllables(
   gsub : @ot_tables.GsubTable,
   feature_tags : Array[@common.Tag],
   syllables : Array[Int],
-  feature_masks? : Array[Array[UInt]] = [],
-  lookup_mask? : UInt = 1U,
+  glyph_masks? : Array[UInt] = [],
 ) -> Result[Unit, ShapeError] {
   if syllables.is_empty() || syllables.length() != buffer.infos.length() {
     return Ok(())
   }
-  let mut use_masks = !feature_masks.is_empty()
-  if use_masks && feature_masks.length() != feature_tags.length() {
+  let mut use_masks = !glyph_masks.is_empty()
+  if use_masks && glyph_masks.length() != buffer.infos.length() {
     use_masks = false
-  }
-  if use_masks {
-    for masks in feature_masks {
-      if !masks.is_empty() && masks.length() != buffer.infos.length() {
-        use_masks = false
-        break
-      }
-    }
   }
   let gdef = match font.gdef() {
     Err(err) => return Err(Font(err))
@@ -97,9 +88,15 @@ fn apply_gsub_features_for_syllables(
   }
   let mut current_glyphs : Array[UInt] = []
   let mut current_clusters : Array[Int] = []
+  let mut current_masks : Array[UInt] = []
   for info in buffer.infos {
     current_glyphs.push(info.codepoint)
     current_clusters.push(info.cluster)
+  }
+  if use_masks {
+    for value in glyph_masks {
+      current_masks.push(value)
+    }
   }
   let mut changed = false
   let mut delta = 0
@@ -118,29 +115,24 @@ fn apply_gsub_features_for_syllables(
     }
     let mut sub_glyphs : Array[UInt] = []
     let mut sub_clusters : Array[Int] = []
+    let mut sub_masks : Array[UInt] = []
     for k in start..<end {
       sub_glyphs.push(current_glyphs[k])
       sub_clusters.push(current_clusters[k])
+      if use_masks {
+        sub_masks.push(current_masks[k])
+      }
     }
     let mut sub_changed = false
-    let mut masks_valid = use_masks
     for feature_index in 0..<feature_lookups.length() {
       let lookup_offsets = feature_lookups[feature_index]
       if lookup_offsets.is_empty() {
         continue
       }
-      let sub_masks : Array[UInt] = []
-      if masks_valid && use_masks {
-        let feature_mask = feature_masks[feature_index]
-        if !feature_mask.is_empty() {
-          for k in start..<end {
-            sub_masks.push(feature_mask[k])
-          }
-        }
-      }
+      let lookup_mask = 1U << feature_index
       let result = match gdef {
         None =>
-          match gsub.apply_with_lookups(
+          match gsub.apply_with_lookups_and_masks(
             sub_glyphs,
             sub_clusters,
             lookup_offsets[:],
@@ -151,7 +143,7 @@ fn apply_gsub_features_for_syllables(
             Ok(value) => value
           }
         Some(gdef) =>
-          match gsub.apply_with_lookups(
+          match gsub.apply_with_lookups_and_masks(
             sub_glyphs,
             sub_clusters,
             lookup_offsets[:],
@@ -163,11 +155,11 @@ fn apply_gsub_features_for_syllables(
             Ok(value) => value
           }
       }
-      let (next_glyphs, next_clusters, did_change) = result
+      let (next_glyphs, next_clusters, next_masks, did_change) = result
       sub_glyphs = next_glyphs
       sub_clusters = next_clusters
-      if !sub_masks.is_empty() && sub_glyphs.length() != sub_masks.length() {
-        masks_valid = false
+      if use_masks {
+        sub_masks = next_masks
       }
       if did_change {
         sub_changed = true
@@ -178,20 +170,33 @@ fn apply_gsub_features_for_syllables(
     if sub_changed || new_len != old_len {
       let next_glyphs : Array[UInt] = []
       let next_clusters : Array[Int] = []
+      let next_masks : Array[UInt] = []
       for k in 0..<start {
         next_glyphs.push(current_glyphs[k])
         next_clusters.push(current_clusters[k])
+        if use_masks {
+          next_masks.push(current_masks[k])
+        }
       }
       for k in 0..<new_len {
         next_glyphs.push(sub_glyphs[k])
         next_clusters.push(sub_clusters[k])
+        if use_masks {
+          next_masks.push(sub_masks[k])
+        }
       }
       for k in end..<current_glyphs.length() {
         next_glyphs.push(current_glyphs[k])
         next_clusters.push(current_clusters[k])
+        if use_masks {
+          next_masks.push(current_masks[k])
+        }
       }
       current_glyphs = next_glyphs
       current_clusters = next_clusters
+      if use_masks {
+        current_masks = next_masks
+      }
       delta = delta + new_len - old_len
       changed = true
     }

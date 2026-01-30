@@ -238,30 +238,29 @@ fn reorder_use_syllables(
 }
 
 fn set_use_form_masks(
-  isol_mask : Array[UInt],
-  init_mask : Array[UInt],
-  medi_mask : Array[UInt],
-  fina_mask : Array[UInt],
+  masks : Array[UInt],
+  isol_bit : UInt,
+  init_bit : UInt,
+  medi_bit : UInt,
+  fina_bit : UInt,
   start : Int,
   end : Int,
   form : Int,
 ) -> Unit {
-  if start < 0 || end > isol_mask.length() || start >= end {
+  if start < 0 || end > masks.length() || start >= end {
     return ()
   }
+  let clear_bits = 0xFFFFFFFFU - (isol_bit | init_bit | medi_bit | fina_bit)
   for i in start..<end {
-    isol_mask[i] = 0U
-    init_mask[i] = 0U
-    medi_mask[i] = 0U
-    fina_mask[i] = 0U
+    masks[i] = masks[i] & clear_bits
     if form == use_form_isol {
-      isol_mask[i] = 1U
+      masks[i] = masks[i] | isol_bit
     } else if form == use_form_init {
-      init_mask[i] = 1U
+      masks[i] = masks[i] | init_bit
     } else if form == use_form_medi {
-      medi_mask[i] = 1U
+      masks[i] = masks[i] | medi_bit
     } else if form == use_form_fina {
-      fina_mask[i] = 1U
+      masks[i] = masks[i] | fina_bit
     }
   }
 }
@@ -269,22 +268,14 @@ fn set_use_form_masks(
 fn build_use_feature_masks(
   categories : Array[Int],
   syllables : Array[Int],
-) -> Array[Array[UInt]] {
+) -> Array[UInt] {
   let len = categories.length()
-  let masks : Array[Array[UInt]] = []
-  for _ in 0..<use_feature_tags.length() {
-    masks.push([])
-  }
-  let rphf_mask = Array::make(len, 0U)
-  let isol_mask = Array::make(len, 0U)
-  let init_mask = Array::make(len, 0U)
-  let medi_mask = Array::make(len, 0U)
-  let fina_mask = Array::make(len, 0U)
-  masks[use_feature_rphf] = rphf_mask
-  masks[use_feature_isol] = isol_mask
-  masks[use_feature_init] = init_mask
-  masks[use_feature_medi] = medi_mask
-  masks[use_feature_fina] = fina_mask
+  let masks = Array::make(len, 0U)
+  let rphf_bit = 1U << use_feature_rphf
+  let isol_bit = 1U << use_feature_isol
+  let init_bit = 1U << use_feature_init
+  let medi_bit = 1U << use_feature_medi
+  let fina_bit = 1U << use_feature_fina
   let mut last_start = -1
   let mut last_form = -1
   let mut i = 0
@@ -315,10 +306,11 @@ fn build_use_feature_masks(
           use_form_init
         }
         set_use_form_masks(
-          isol_mask,
-          init_mask,
-          medi_mask,
-          fina_mask,
+          masks,
+          isol_bit,
+          init_bit,
+          medi_bit,
+          fina_bit,
           last_start,
           i,
           prev_form,
@@ -326,10 +318,11 @@ fn build_use_feature_masks(
       }
       let current_form = if join { use_form_fina } else { use_form_isol }
       set_use_form_masks(
-        isol_mask,
-        init_mask,
-        medi_mask,
-        fina_mask,
+        masks,
+        isol_bit,
+        init_bit,
+        medi_bit,
+        fina_bit,
         i,
         j,
         current_form,
@@ -343,7 +336,7 @@ fn build_use_feature_masks(
     let limit = if categories[i] == use_cat_r { 1 } else { j - i }
     let rphf_limit = if limit > 3 { 3 } else { limit }
     for k in i..<(i + rphf_limit) {
-      rphf_mask[k] = 1U
+      masks[k] = masks[k] | rphf_bit
     }
     i = j
   }
@@ -400,7 +393,7 @@ pub fn Buffer::shape_use(
   for info in self.infos {
     reordered_categories.push(use_category(info.codepoint))
   }
-  let feature_masks = build_use_feature_masks(reordered_categories, syllables_after)
+  let glyph_masks = build_use_feature_masks(reordered_categories, syllables_after)
   match self.shape_basic(font) {
     Err(err) => return Err(err)
     Ok(_) => ()
@@ -412,7 +405,7 @@ pub fn Buffer::shape_use(
       gsub,
       use_feature_tags,
       syllables_after,
-      feature_masks=feature_masks,
+      glyph_masks=glyph_masks,
     ) {
       Err(err) => return Err(err)
       Ok(_) => ()

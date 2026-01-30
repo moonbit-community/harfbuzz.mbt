@@ -282,26 +282,16 @@ fn build_indic_feature_masks(
   categories : Array[Int],
   positions : Array[Int],
   syllables : Array[Int],
-) -> Array[Array[UInt]] {
+) -> Array[UInt] {
   let len = categories.length()
-  let masks : Array[Array[UInt]] = []
-  for _ in 0..<indic_feature_tags.length() {
-    masks.push([])
-  }
-  let rphf_mask = Array::make(len, 0U)
-  let pref_mask = Array::make(len, 0U)
-  let blwf_mask = Array::make(len, 0U)
-  let abvf_mask = Array::make(len, 0U)
-  let half_mask = Array::make(len, 0U)
-  let pstf_mask = Array::make(len, 0U)
-  let init_mask = Array::make(len, 0U)
-  masks[indic_feature_rphf] = rphf_mask
-  masks[indic_feature_pref] = pref_mask
-  masks[indic_feature_blwf] = blwf_mask
-  masks[indic_feature_abvf] = abvf_mask
-  masks[indic_feature_half] = half_mask
-  masks[indic_feature_pstf] = pstf_mask
-  masks[indic_feature_init] = init_mask
+  let masks = Array::make(len, 0U)
+  let rphf_bit = 1U << indic_feature_rphf
+  let pref_bit = 1U << indic_feature_pref
+  let blwf_bit = 1U << indic_feature_blwf
+  let abvf_bit = 1U << indic_feature_abvf
+  let half_bit = 1U << indic_feature_half
+  let pstf_bit = 1U << indic_feature_pstf
+  let init_bit = 1U << indic_feature_init
   let mut i = 0
   while i < syllables.length() {
     let syllable = syllables[i]
@@ -313,24 +303,22 @@ fn build_indic_feature_masks(
     if i + 1 < j &&
       categories[i] == indic_cat_ra &&
       categories[i + 1] == indic_cat_h {
-      rphf_mask[i] = 1U
+      masks[i] = masks[i] | rphf_bit
     }
     for k in i..<base {
-      half_mask[k] = 1U
+      masks[k] = masks[k] | half_bit
     }
     if base >= i && base < j {
-      init_mask[base] = 1U
+      masks[base] = masks[base] | init_bit
     }
     for k in (base + 1)..<j {
-      blwf_mask[k] = 1U
-      abvf_mask[k] = 1U
-      pstf_mask[k] = 1U
+      masks[k] = masks[k] | blwf_bit | abvf_bit | pstf_bit
     }
     let mut k = base + 1
     while k + 1 < j {
       if categories[k] == indic_cat_h && categories[k + 1] == indic_cat_ra {
-        pref_mask[k] = 1U
-        pref_mask[k + 1] = 1U
+        masks[k] = masks[k] | pref_bit
+        masks[k + 1] = masks[k + 1] | pref_bit
         break
       }
       k = k + 1
@@ -341,7 +329,7 @@ fn build_indic_feature_masks(
         let mut p = z - 1
         while p >= i {
           if is_consonant_indic(categories[p]) {
-            half_mask[p] = 0U
+            masks[p] = masks[p] & (0xFFFFFFFFU - half_bit)
             break
           }
           if p == 0 {
@@ -408,7 +396,7 @@ pub fn Buffer::shape_indic(
     reordered_categories.push(indic_category(packed).reinterpret_as_int())
     reordered_positions.push(indic_position(packed))
   }
-  let feature_masks = build_indic_feature_masks(
+  let glyph_masks = build_indic_feature_masks(
     reordered_categories,
     reordered_positions,
     syllables_after,
@@ -424,7 +412,7 @@ pub fn Buffer::shape_indic(
       gsub,
       indic_feature_tags,
       syllables_after,
-      feature_masks=feature_masks,
+      glyph_masks=glyph_masks,
     ) {
       Err(err) => return Err(err)
       Ok(_) => ()
