@@ -650,6 +650,7 @@ pub fn Buffer::shape_ot(
   font : @font.Font,
 ) -> Result[Unit, ShapeError] {
   self.guess_segment_properties()
+  let unicode_mark_flags = mark_flags_from_infos(self.infos)
   let gsub = match font.gsub() {
     Err(err) => return Err(Font(err))
     Ok(value) => value
@@ -657,10 +658,6 @@ pub fn Buffer::shape_ot(
   let gpos = match font.gpos() {
     Err(err) => return Err(Font(err))
     Ok(value) => value
-  }
-  let mut mark_flags : Array[Bool] = []
-  if gsub is None && gpos is None {
-    mark_flags = mark_flags_from_infos(self.infos)
   }
   match self.shape_basic(font) {
     Err(err) => return Err(err)
@@ -800,24 +797,33 @@ pub fn Buffer::shape_ot(
       self.positions = new_positions
     }
   }
-  if gsub is None && gpos is None {
-    let gdef = match font.gdef() {
-      Err(err) => return Err(Font(err))
-      Ok(value) => value
-    }
-    let mut used_flags = mark_flags
-    match gdef {
-      None => ()
-      Some(gdef) => {
-        if gdef.header().glyph_class_def_offset is Some(_) {
-          match mark_flags_from_gdef(gdef, self.infos) {
-            Err(err) => return Err(err)
-            Ok(value) => used_flags = value
+  let adjust_offsets = gpos is None && self.direction.is_forward()
+  let gdef_for_marks = match font.gdef() {
+    Err(_) => None
+    Ok(value) => value
+  }
+  let mut used_flags : Array[Bool] = []
+  let mut zero_marks = false
+  match gdef_for_marks {
+    None => ()
+    Some(gdef) => {
+      if gdef.header().glyph_class_def_offset is Some(_) {
+        match mark_flags_from_gdef(gdef, self.infos) {
+          Err(err) => return Err(err)
+          Ok(value) => {
+            used_flags = value
+            zero_marks = true
           }
         }
       }
     }
-    zero_mark_advances_with_flags(self, used_flags)
+  }
+  if !zero_marks && gpos is None && unicode_mark_flags.length() == self.infos.length() {
+    used_flags = unicode_mark_flags
+    zero_marks = true
+  }
+  if zero_marks {
+    zero_mark_advances_with_flags(self, used_flags, adjust_offsets=adjust_offsets)
   }
   Ok(())
 }

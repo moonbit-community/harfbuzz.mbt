@@ -26,7 +26,11 @@ fn mark_flags_from_gdef(
   Ok(flags)
 }
 
-fn zero_mark_advances_with_flags(buffer : Buffer, marks : Array[Bool]) -> Unit {
+fn zero_mark_advances_with_flags(
+  buffer : Buffer,
+  marks : Array[Bool],
+  adjust_offsets? : Bool = false,
+) -> Unit {
   if buffer.infos.length() != buffer.positions.length() ||
     buffer.infos.length() != marks.length() {
     return ()
@@ -34,11 +38,13 @@ fn zero_mark_advances_with_flags(buffer : Buffer, marks : Array[Bool]) -> Unit {
   for i in 0..<buffer.infos.length() {
     if marks[i] {
       let pos = buffer.positions[i]
+      let x_offset = if adjust_offsets { pos.x_offset - pos.x_advance } else { pos.x_offset }
+      let y_offset = if adjust_offsets { pos.y_offset - pos.y_advance } else { pos.y_offset }
       buffer.positions[i] = GlyphPosition::{
         x_advance: 0,
         y_advance: 0,
-        x_offset: pos.x_offset,
-        y_offset: pos.y_offset,
+        x_offset,
+        y_offset,
       }
     }
   }
