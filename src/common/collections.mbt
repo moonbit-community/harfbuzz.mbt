@@ -519,8 +519,59 @@ pub fn CodepointMap::values(self : CodepointMap) -> Array[UInt] {
 }
 
 ///|
+pub fn CodepointMap::keys_set(self : CodepointMap) -> CodepointSet {
+  let set = CodepointSet::new()
+  for key in self.map.keys() {
+    set.add(key)
+  }
+  set
+}
+
+///|
+pub fn CodepointMap::values_set(self : CodepointMap) -> CodepointSet {
+  let set = CodepointSet::new()
+  for value in self.map.values() {
+    set.add(value)
+  }
+  set
+}
+
+///|
 pub fn CodepointMap::iter(self : CodepointMap) -> Iter[(UInt, UInt)] {
   self.map.iter()
+}
+
+///|
+/// Iterate entries in a deterministic order (by key).
+/// Returns (next_index, key, value).
+pub fn CodepointMap::next(
+  self : CodepointMap,
+  idx? : Int = -1,
+) -> (Int, UInt, UInt)? {
+  let entries = Array::from_iter(self.map.iter())
+  entries.sort_by((a, b) => {
+    let (ak, av) = a
+    let (bk, bv) = b
+    if ak < bk {
+      -1
+    } else if ak > bk {
+      1
+    } else if av < bv {
+      -1
+    } else if av > bv {
+      1
+    } else {
+      0
+    }
+  })
+  let start = if idx < -1 { -1 } else { idx }
+  let next_idx = start + 1
+  if next_idx < 0 || next_idx >= entries.length() {
+    None
+  } else {
+    let (key, value) = entries[next_idx]
+    Some((next_idx, key, value))
+  }
 }
 
 ///|

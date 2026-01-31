@@ -202,6 +202,23 @@ test "codepoint map equality" {
 }
 
 ///|
+test "codepoint map next/keys values" {
+  let map = CodepointMap::new()
+  map.set(5U, 1U)
+  map.set(2U, 3U)
+  map.set(9U, 0U)
+  inspect(map.next(), content="Some((0, 2, 3))")
+  inspect(map.next(idx=0), content="Some((1, 5, 1))")
+  inspect(map.next(idx=1), content="Some((2, 9, 0))")
+  inspect(map.next(idx=2), content="None")
+
+  let keys = map.keys_set().to_sorted_array()
+  let values = map.values_set().to_sorted_array()
+  inspect(keys, content="[2, 5, 9]")
+  inspect(values, content="[0, 1, 3]")
+}
+
+///|
 test "codepoint incremental bimap" {
   let bimap = CodepointIncBiMap::new()
   inspect(bimap.add(10U), content="0")
