@@ -1766,6 +1766,32 @@ test "buffer shape arabic syriac falls back to dflt gsub" {
 }
 
 ///|
+test "buffer shape arabic syriac dflt gsub snapshot" {
+  let font = @font.Font::from_bytes(build_font_bytes_dflt_gsub())
+  let buffer = Buffer::new()
+  buffer.set_script(@common.script_syriac)
+  buffer.add_codepoint(0x0628U)
+  let result = buffer.shape_arabic(font)
+  match result {
+    Err(err) => fail("shape error: \{err}")
+    Ok(_) => ()
+  }
+  let infos = buffer.infos()
+  let positions = buffer.positions()
+  let snapshot : Array[(UInt, Int, Int, Int, Int)] = []
+  for i in 0..<infos.length() {
+    snapshot.push((
+      infos[i].codepoint,
+      infos[i].cluster,
+      positions[i].x_advance,
+      positions[i].x_offset,
+      positions[i].y_offset,
+    ))
+  }
+  json_inspect(snapshot, content=[[3,0,500,0,0]])
+}
+
+///|
 test "buffer shape use fallback" {
   let font = @font.Font::from_bytes(build_font_bytes())
   let buffer = Buffer::new()
