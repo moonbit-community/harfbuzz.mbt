@@ -312,3 +312,28 @@ test "serialize objects whence and signed offsets" {
     }
   }
 }
+
+///|
+test "serialize objects bias and virtual order" {
+  let obj0 = SerializeObject::new(Bytes::from_array([0, 0]))
+  obj0.real_links.push(SerializeLink::new(2, 0, 1, bias=2))
+  let obj1 = SerializeObject::new(Bytes::from_array([0x33, 0x44]))
+  let result = serialize_objects([obj0, obj1])
+  match result {
+    Err(err) => fail("serialize failed: \{err}")
+    Ok(bytes) => {
+      let ints = bytes.to_array().map(b => b.to_int())
+      inspect(ints, content="[0, 4, 51, 68]")
+    }
+  }
+
+  let obj2 = SerializeObject::new(Bytes::from_array([0]))
+  obj2.virtual_links.push(0)
+  let obj3 = SerializeObject::new(Bytes::from_array([0]))
+  let result2 = serialize_objects([obj2, obj3])
+  match result2 {
+    Err(SerializeError::VirtualOrder) => ()
+    Err(err) => fail("unexpected error: \{err}")
+    Ok(_) => fail("expected virtual order error")
+  }
+}
