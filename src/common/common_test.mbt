@@ -224,3 +224,31 @@ test "codepoint incremental bimap" {
   inspect(bimap.get(5U), content="1")
   inspect(bimap.get(9U), content="2")
 }
+
+///|
+test "serialize objects patch offsets" {
+  let obj0 = SerializeObject::new(Bytes::from_array([0, 0, 0, 0]))
+  obj0.real_links.push(SerializeLink::{ width: 2, position: 0, objidx: 1 })
+  let obj1 = SerializeObject::new(Bytes::from_array([0xAA, 0xBB]))
+  let result = serialize_objects([obj0, obj1])
+  match result {
+    Err(err) => fail("serialize failed: \{err}")
+    Ok(bytes) => {
+      let ints = bytes.to_array().map(b => b.to_int())
+      inspect(ints, content="[0, 4, 0, 0, 170, 187]")
+    }
+  }
+}
+
+///|
+test "serialize objects detects overflow" {
+  let obj0 = SerializeObject::new(Bytes::make(300, 0))
+  obj0.real_links.push(SerializeLink::{ width: 1, position: 0, objidx: 1 })
+  let obj1 = SerializeObject::new(Bytes::from_array([0]))
+  let result = serialize_objects([obj0, obj1])
+  match result {
+    Err(SerializeError::OffsetOverflow) => ()
+    Err(err) => fail("unexpected error: \{err}")
+    Ok(_) => fail("expected overflow error")
+  }
+}
