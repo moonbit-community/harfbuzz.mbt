@@ -119,3 +119,47 @@ pub fn GvarTable::glyph_variation_data(self : GvarTable, glyph : Int) -> Bytes? 
   }
   Some(self.data[base + start:base + start + length].to_bytes())
 }
+
+///|
+pub fn GvarTable::shared_tuples(self : GvarTable) -> Result[Array[Int], VarError] {
+  if self.shared_tuple_count <= 0 {
+    return Ok([])
+  }
+  if self.shared_tuples_offset <= 0 || self.shared_tuples_offset >= self.data.length() {
+    return Err(UnexpectedEof)
+  }
+  let total = self.shared_tuple_count * self.axis_count
+  let tuples : Array[Int] = []
+  let mut pos = self.shared_tuples_offset
+  for _ in 0..<total {
+    let value = read_i16(self.data, pos)
+    match value {
+      Err(err) => return Err(err)
+      Ok(v) => tuples.push(v)
+    }
+    pos = pos + 2
+  }
+  Ok(tuples)
+}
+
+///|
+pub fn GvarTable::glyph_tuple_variations(
+  self : GvarTable,
+  glyph : Int,
+) -> Result[TupleVariationData?, VarError] {
+  let data = self.glyph_variation_data(glyph)
+  match data {
+    None => Ok(None)
+    Some(bytes) => {
+      let shared = match self.shared_tuples() {
+        Err(err) => return Err(err)
+        Ok(value) => value
+      }
+      let parsed = TupleVariationData::parse(bytes[:], self.axis_count, shared)
+      match parsed {
+        Err(err) => Err(err)
+        Ok(value) => Ok(Some(value))
+      }
+    }
+  }
+}
