@@ -47,6 +47,35 @@ pub fn CodepointSet::add(self : CodepointSet, value : UInt) -> Unit {
 }
 
 ///|
+pub fn CodepointSet::add_array(self : CodepointSet, values : ArrayView[UInt]) -> Unit {
+  for value in values {
+    self.set.add(value)
+  }
+}
+
+///|
+pub fn CodepointSet::add_sorted_array(
+  self : CodepointSet,
+  values : ArrayView[UInt],
+) -> Bool {
+  if values.is_empty() {
+    return true
+  }
+  let mut prev = values[0]
+  for i in 1..<values.length() {
+    let value = values[i]
+    if value < prev {
+      return false
+    }
+    prev = value
+  }
+  for value in values {
+    self.set.add(value)
+  }
+  true
+}
+
+///|
 pub fn CodepointSet::add_range(
   self : CodepointSet,
   first : UInt,
@@ -199,6 +228,37 @@ pub fn CodepointSet::next(self : CodepointSet, after? : UInt = codepoint_invalid
     }
   }
   None
+}
+
+///|
+pub fn CodepointSet::next_many(
+  self : CodepointSet,
+  after? : UInt = codepoint_invalid,
+  size? : Int = 0,
+) -> Array[UInt] {
+  if size <= 0 {
+    return []
+  }
+  let values = sorted_values(self)
+  if values.is_empty() {
+    return []
+  }
+  let out : Array[UInt] = []
+  let mut started = after == codepoint_invalid
+  for value in values {
+    if !started {
+      if value > after {
+        started = true
+      } else {
+        continue
+      }
+    }
+    out.push(value)
+    if out.length() >= size {
+      break
+    }
+  }
+  out
 }
 
 ///|

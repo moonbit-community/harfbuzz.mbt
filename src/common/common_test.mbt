@@ -116,12 +116,14 @@ test "codepoint set basics" {
   inspect(set.is_empty(), content="true")
   assert_true(set.add_range(2U, 4U))
   set.add(10U)
+  set.add_array([6U, 7U])
+  assert_true(set.add_sorted_array([12U, 13U, 14U]))
   set.del(3U)
   set.del_range(10U, 11U)
-  inspect(set.to_sorted_array(), content="[2, 4]")
-  inspect(set.population(), content="2")
+  inspect(set.to_sorted_array(), content="[2, 4, 6, 7, 12, 13, 14]")
+  inspect(set.population(), content="7")
   inspect(set.get_min(), content="2")
-  inspect(set.get_max(), content="4")
+  inspect(set.get_max(), content="14")
 }
 
 ///|
@@ -138,6 +140,14 @@ test "codepoint set next and ranges" {
   inspect(set.previous_range(end=8U), content="Some((7, 8))")
   inspect(set.intersects(2U, 4U), content="true")
   inspect(set.intersects(6U, 6U), content="false")
+  inspect(set.next_many(after=1U, size=3), content="[2, 3, 5]")
+}
+
+///|
+test "codepoint set add_sorted_array rejects unsorted" {
+  let set = CodepointSet::new()
+  inspect(set.add_sorted_array([3U, 2U]), content="false")
+  inspect(set.is_empty(), content="true")
 }
 
 ///|
