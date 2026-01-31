@@ -25,6 +25,14 @@ fn thai_test_push_u32(bytes : Array[Byte], value : Int) -> Unit {
   bytes.push((value & 0xff).to_byte())
 }
 
+fn thai_test_push_tag(bytes : Array[Byte], tag : @common.Tag) -> Unit {
+  let (b1, b2, b3, b4) = tag.bytes()
+  bytes.push(b1)
+  bytes.push(b2)
+  bytes.push(b3)
+  bytes.push(b4)
+}
+
 fn thai_test_build_sfnt(tables : Array[(@common.Tag, Bytes)]) -> Bytes {
   let bytes : Array[Byte] = []
   thai_test_push_u32(bytes, 0x00010000)
@@ -125,6 +133,94 @@ fn thai_test_build_cmap_format12_groups(groups : Array[(UInt, UInt, UInt)]) -> B
   Bytes::from_array(bytes)
 }
 
+fn thai_test_build_script_list_for(tag : @common.Tag) -> Bytes {
+  let bytes : Array[Byte] = []
+  thai_test_push_u16(bytes, 1)
+  thai_test_push_tag(bytes, tag)
+  thai_test_push_u16(bytes, 8)
+  thai_test_push_u16(bytes, 4)
+  thai_test_push_u16(bytes, 0)
+  thai_test_push_u16(bytes, 0)
+  thai_test_push_u16(bytes, 0xffff)
+  thai_test_push_u16(bytes, 1)
+  thai_test_push_u16(bytes, 0)
+  Bytes::from_array(bytes)
+}
+
+fn thai_test_build_feature_list(tag : @common.Tag) -> Bytes {
+  let bytes : Array[Byte] = []
+  thai_test_push_u16(bytes, 1)
+  thai_test_push_tag(bytes, tag)
+  thai_test_push_u16(bytes, 8)
+  thai_test_push_u16(bytes, 0)
+  thai_test_push_u16(bytes, 1)
+  thai_test_push_u16(bytes, 0)
+  Bytes::from_array(bytes)
+}
+
+fn thai_test_build_lookup_list(lookup : Bytes) -> Bytes {
+  let bytes : Array[Byte] = []
+  thai_test_push_u16(bytes, 1)
+  thai_test_push_u16(bytes, 4)
+  for b in lookup {
+    bytes.push(b)
+  }
+  Bytes::from_array(bytes)
+}
+
+fn thai_test_build_layout_table_with_script(
+  lookup : Bytes,
+  feature_tag : @common.Tag,
+  script_tag : @common.Tag,
+) -> Bytes {
+  let script = thai_test_build_script_list_for(script_tag)
+  let feature = thai_test_build_feature_list(feature_tag)
+  let lookup_list = thai_test_build_lookup_list(lookup)
+  let bytes : Array[Byte] = []
+  thai_test_push_u32(bytes, 0x00010000)
+  let script_offset = 10
+  let feature_offset = script_offset + script.length()
+  let lookup_offset = feature_offset + feature.length()
+  thai_test_push_u16(bytes, script_offset)
+  thai_test_push_u16(bytes, feature_offset)
+  thai_test_push_u16(bytes, lookup_offset)
+  for b in script {
+    bytes.push(b)
+  }
+  for b in feature {
+    bytes.push(b)
+  }
+  for b in lookup_list {
+    bytes.push(b)
+  }
+  Bytes::from_array(bytes)
+}
+
+fn thai_test_build_gsub_subtable(target : Int, substitute : Int) -> Bytes {
+  let bytes : Array[Byte] = []
+  thai_test_push_u16(bytes, 2)
+  thai_test_push_u16(bytes, 8)
+  thai_test_push_u16(bytes, 1)
+  thai_test_push_u16(bytes, substitute)
+  thai_test_push_u16(bytes, 1)
+  thai_test_push_u16(bytes, 1)
+  thai_test_push_u16(bytes, target)
+  Bytes::from_array(bytes)
+}
+
+fn thai_test_build_gsub_lookup() -> Bytes {
+  let subtable = thai_test_build_gsub_subtable(1, 1)
+  let bytes : Array[Byte] = []
+  thai_test_push_u16(bytes, 1)
+  thai_test_push_u16(bytes, 0)
+  thai_test_push_u16(bytes, 1)
+  thai_test_push_u16(bytes, 8)
+  for b in subtable {
+    bytes.push(b)
+  }
+  Bytes::from_array(bytes)
+}
+
 fn build_font_bytes_thai_pua() -> Bytes {
   let cmap = thai_test_build_cmap_table(thai_test_build_cmap_format12_groups([
     (0x0E01U, 0x0E01U, 1U),
@@ -207,4 +303,52 @@ test "thai fallback pua base replacement snapshot" {
     ))
   }
   json_inspect(snapshot, content=[[3,0,500,0,0],[2,1,0,-400,0]])
+}
+
+fn build_font_bytes_thai_pua_gsub() -> Bytes {
+  let cmap = thai_test_build_cmap_table(thai_test_build_cmap_format12_groups([
+    (0x0E01U, 0x0E01U, 1U),
+    (0x0E48U, 0x0E48U, 2U),
+    (0xF70AU, 0xF70AU, 3U),
+  ]))
+  let gsub = thai_test_build_layout_table_with_script(
+    thai_test_build_gsub_lookup(),
+    @common.Tag::from_chars('l', 'i', 'g', 'a'),
+    @common.Tag::from_chars('t', 'h', 'a', 'i'),
+  )
+  let tables : Array[(@common.Tag, Bytes)] = [
+    (@common.Tag::from_chars('h', 'e', 'a', 'd'), thai_test_build_head(1000, 0)),
+    (@common.Tag::from_chars('m', 'a', 'x', 'p'), thai_test_build_maxp(4)),
+    (@common.Tag::from_chars('h', 'h', 'e', 'a'), thai_test_build_hhea(4)),
+    (@common.Tag::from_chars('h', 'm', 't', 'x'), thai_test_build_hmtx_ot()),
+    (@common.Tag::from_chars('c', 'm', 'a', 'p'), cmap),
+    (@common.Tag::from_chars('G', 'S', 'U', 'B'), gsub),
+  ]
+  thai_test_build_sfnt(tables)
+}
+
+test "thai fallback skipped with gsub snapshot" {
+  let font = @font.Font::from_bytes(build_font_bytes_thai_pua_gsub())
+  let buffer = Buffer::new()
+  buffer.set_script(@common.script_thai)
+  buffer.add_codepoint(0x0E01U)
+  buffer.add_codepoint(0x0E48U)
+  let result = buffer.shape_thai(font)
+  match result {
+    Err(err) => fail("shape error: \{err}")
+    Ok(_) => ()
+  }
+  let infos = buffer.infos()
+  let positions = buffer.positions()
+  let snapshot : Array[(UInt, Int, Int, Int, Int)] = []
+  for i in 0..<infos.length() {
+    snapshot.push((
+      infos[i].codepoint,
+      infos[i].cluster,
+      positions[i].x_advance,
+      positions[i].x_offset,
+      positions[i].y_offset,
+    ))
+  }
+  json_inspect(snapshot, content=[[1,0,300,0,0],[2,1,0,-400,0]])
 }
