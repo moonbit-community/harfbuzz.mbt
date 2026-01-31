@@ -80,3 +80,15 @@ Unicode data, variations, color/paint, and subsetting.
 - Expand unit tests for table parsing and layout application.
 - Add shaping snapshots with a font corpus (Latin/Arabic/Indic + mark positioning).
 - Validate parity against upstream HarfBuzz outputs where feasible.
+
+### Shaping Snapshot Coverage (current)
+- Core OT shaping: GSUB/GPOS snapshots, single-pos, feature filter, kern fallback, vertical kern skip.
+- Mark handling: GDEF mark class zeroing, fallback mark positioning.
+- Default ignorables / variation selectors: zeroed/preserve/remove, VS fallback, VS mapping (cmap 14 non-default), VS default mapping.
+- Script shapers:
+  - Arabic: fallback snapshot and Syriac GSUB/DFLT snapshots.
+  - Hebrew: hebr GPOS applied + no-hebr GPOS snapshot.
+  - Indic: fallback snapshot, dev2 selection snapshot, dev3->USE routing snapshot.
+  - Myanmar: fallback snapshot, mym2-over-DFLT snapshot.
+  - USE: fallback snapshot.
+  - Thai: PUA fallback (mark substitution), base replacement, GSUB-present skip snapshots.
