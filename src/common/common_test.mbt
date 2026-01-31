@@ -258,6 +258,21 @@ test "serialize objects patch offsets" {
 }
 
 ///|
+test "serialize objects offsets" {
+  let obj0 = SerializeObject::new(Bytes::from_array([0, 0, 0, 0]))
+  let obj1 = SerializeObject::new(Bytes::from_array([0xAA, 0xBB, 0xCC]))
+  let result = serialize_objects_with_offsets([obj0, obj1])
+  match result {
+    Err(err) => fail("serialize failed: \{err}")
+    Ok((bytes, starts)) => {
+      inspect(starts, content="[0, 4]")
+      let ints = bytes.to_array().map(b => b.to_int())
+      inspect(ints, content="[0, 0, 0, 0, 170, 187, 204]")
+    }
+  }
+}
+
+///|
 test "serialize objects detects overflow" {
   let obj0 = SerializeObject::new(Bytes::make(300, 0))
   obj0.real_links.push(SerializeLink::new(1, 0, 1))

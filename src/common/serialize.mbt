@@ -99,9 +99,9 @@ fn signed_limits(width : Int) -> (Int, Int)? {
 
 ///|
 /// Serialize objects into a contiguous buffer, patching offsets for real links.
-pub fn serialize_objects(
+fn serialize_objects_with_starts(
   objects : ArrayView[SerializeObject],
-) -> Result[Bytes, SerializeError] {
+) -> Result[(Bytes, Array[Int]), SerializeError] {
   let count = objects.length()
   let starts : Array[Int] = []
   let mut total = 0
@@ -172,7 +172,26 @@ pub fn serialize_objects(
   for bytes in patched {
     buffer.write_bytes(Bytes::from_array(bytes))
   }
-  Ok(buffer.to_bytes())
+  Ok((buffer.to_bytes(), starts))
+}
+
+///|
+/// Serialize objects into a contiguous buffer, patching offsets for real links.
+pub fn serialize_objects(
+  objects : ArrayView[SerializeObject],
+) -> Result[Bytes, SerializeError] {
+  match serialize_objects_with_starts(objects) {
+    Err(err) => Err(err)
+    Ok((bytes, _)) => Ok(bytes)
+  }
+}
+
+///|
+/// Serialize objects and return their start offsets in the original order.
+pub fn serialize_objects_with_offsets(
+  objects : ArrayView[SerializeObject],
+) -> Result[(Bytes, Array[Int]), SerializeError] {
+  serialize_objects_with_starts(objects)
 }
 
 fn order_objects(objects : ArrayView[SerializeObject]) -> Result[Array[Int], SerializeError] {
