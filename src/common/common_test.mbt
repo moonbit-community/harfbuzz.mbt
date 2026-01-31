@@ -228,7 +228,7 @@ test "codepoint incremental bimap" {
 ///|
 test "serialize objects patch offsets" {
   let obj0 = SerializeObject::new(Bytes::from_array([0, 0, 0, 0]))
-  obj0.real_links.push(SerializeLink::{ width: 2, position: 0, objidx: 1 })
+  obj0.real_links.push(SerializeLink::new(2, 0, 1))
   let obj1 = SerializeObject::new(Bytes::from_array([0xAA, 0xBB]))
   let result = serialize_objects([obj0, obj1])
   match result {
@@ -243,12 +243,72 @@ test "serialize objects patch offsets" {
 ///|
 test "serialize objects detects overflow" {
   let obj0 = SerializeObject::new(Bytes::make(300, 0))
-  obj0.real_links.push(SerializeLink::{ width: 1, position: 0, objidx: 1 })
+  obj0.real_links.push(SerializeLink::new(1, 0, 1))
   let obj1 = SerializeObject::new(Bytes::from_array([0]))
   let result = serialize_objects([obj0, obj1])
   match result {
     Err(SerializeError::OffsetOverflow) => ()
     Err(err) => fail("unexpected error: \{err}")
     Ok(_) => fail("expected overflow error")
+  }
+}
+
+///|
+test "serialize objects whence and signed offsets" {
+  let obj0 = SerializeObject::new(Bytes::from_array([0, 0, 0, 0]))
+  obj0.real_links.push(
+    SerializeLink::new(
+      2,
+      0,
+      1,
+      whence=SerializeWhence::Tail,
+    ),
+  )
+  let obj1 = SerializeObject::new(Bytes::from_array([0x11, 0x22]))
+  let result = serialize_objects([obj0, obj1])
+  match result {
+    Err(err) => fail("serialize failed: \{err}")
+    Ok(bytes) => {
+      let ints = bytes.to_array().map(b => b.to_int())
+      inspect(ints, content="[0, 0, 0, 0, 17, 34]")
+    }
+  }
+
+  let obj2 = SerializeObject::new(Bytes::from_array([0, 0]))
+  obj2.real_links.push(
+    SerializeLink::new(
+      2,
+      0,
+      1,
+      whence=SerializeWhence::Absolute,
+    ),
+  )
+  let obj3 = SerializeObject::new(Bytes::from_array([0xAA, 0xBB]))
+  let result2 = serialize_objects([obj2, obj3])
+  match result2 {
+    Err(err) => fail("serialize failed: \{err}")
+    Ok(bytes) => {
+      let ints = bytes.to_array().map(b => b.to_int())
+      inspect(ints, content="[0, 2, 170, 187]")
+    }
+  }
+
+  let obj4 = SerializeObject::new(Bytes::from_array([0, 0]))
+  let obj5 = SerializeObject::new(Bytes::from_array([0, 0]))
+  obj5.real_links.push(
+    SerializeLink::new(
+      2,
+      0,
+      0,
+      is_signed=true,
+    ),
+  )
+  let result3 = serialize_objects([obj4, obj5])
+  match result3 {
+    Err(err) => fail("serialize failed: \{err}")
+    Ok(bytes) => {
+      let ints = bytes.to_array().map(b => b.to_int())
+      inspect(ints, content="[0, 0, 255, 254]")
+    }
   }
 }

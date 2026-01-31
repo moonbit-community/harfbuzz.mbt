@@ -5,6 +5,14 @@ pub enum SerializeError {
   OffsetOverflow
   InvalidLink
   NegativeOffset
+  VirtualOrder
+} derive(Eq, Show)
+
+///|
+pub(all) enum SerializeWhence {
+  Head
+  Tail
+  Absolute
 } derive(Eq, Show)
 
 ///|
@@ -12,17 +20,33 @@ pub(all) struct SerializeLink {
   width : Int
   position : Int
   objidx : Int
+  is_signed : Bool
+  whence : SerializeWhence
+  bias : Int
 }
 
 ///|
 pub struct SerializeObject {
   data : Bytes
   real_links : Array[SerializeLink]
+  virtual_links : Array[Int]
 }
 
 ///|
 pub fn SerializeObject::new(data : Bytes) -> SerializeObject {
-  SerializeObject::{ data, real_links: [] }
+  SerializeObject::{ data, real_links: [], virtual_links: [] }
+}
+
+///|
+pub fn SerializeLink::new(
+  width : Int,
+  position : Int,
+  objidx : Int,
+  is_signed? : Bool = false,
+  whence? : SerializeWhence = SerializeWhence::Head,
+  bias? : Int = 0,
+) -> SerializeLink {
+  SerializeLink::{ width, position, objidx, is_signed, whence, bias }
 }
 
 fn max_value_for_width(width : Int) -> UInt? {
@@ -63,6 +87,16 @@ fn write_offset(
   Ok(())
 }
 
+fn signed_limits(width : Int) -> (Int, Int)? {
+  if width <= 0 {
+    return None
+  }
+  let bits = width * 8
+  let max = (1 << (bits - 1)) - 1
+  let min = -1 * (1 << (bits - 1))
+  Some((min, max))
+}
+
 ///|
 /// Serialize objects into a contiguous buffer, patching offsets for real links.
 pub fn serialize_objects(
@@ -80,20 +114,53 @@ pub fn serialize_objects(
     patched.push(obj.data.to_array())
   }
   for i in 0..<count {
+    for target in objects[i].virtual_links {
+      if target < 0 || target >= count {
+        return Err(SerializeError::InvalidLink)
+      }
+      if target <= i {
+        return Err(SerializeError::VirtualOrder)
+      }
+    }
+  }
+  for i in 0..<count {
     let base = starts[i]
     for link in objects[i].real_links {
       if link.objidx < 0 || link.objidx >= count {
         return Err(SerializeError::InvalidLink)
       }
-      let target = starts[link.objidx] - base
-      if target < 0 {
+      let target_start = starts[link.objidx]
+      let origin = match link.whence {
+        SerializeWhence::Head => base
+        SerializeWhence::Tail => base + objects[i].data.length()
+        SerializeWhence::Absolute => 0
+      }
+      let offset = target_start + link.bias - origin
+      if !link.is_signed && offset < 0 {
         return Err(SerializeError::NegativeOffset)
+      }
+      let value = if link.is_signed {
+        let limits = match signed_limits(link.width) {
+          None => return Err(SerializeError::InvalidWidth)
+          Some((min, max)) => (min, max)
+        }
+        if offset < limits.0 || offset > limits.1 {
+          return Err(SerializeError::OffsetOverflow)
+        }
+        if offset < 0 {
+          let mask = 1 << (link.width * 8)
+          (offset + mask).reinterpret_as_uint()
+        } else {
+          offset.reinterpret_as_uint()
+        }
+      } else {
+        offset.reinterpret_as_uint()
       }
       let result = write_offset(
         patched[i],
         link.position,
         link.width,
-        target.reinterpret_as_uint(),
+        value,
       )
       match result {
         Ok(_) => ()
