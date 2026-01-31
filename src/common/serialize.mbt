@@ -216,6 +216,14 @@ fn order_objects(objects : ArrayView[SerializeObject]) -> Result[Array[Int], Ser
   Ok(order)
 }
 
+///|
+/// Compute a packed order that satisfies virtual links.
+pub fn pack_object_order(
+  objects : ArrayView[SerializeObject],
+) -> Result[Array[Int], SerializeError] {
+  order_objects(objects)
+}
+
 fn remap_objects(
   objects : ArrayView[SerializeObject],
   order : ArrayView[Int],
@@ -267,6 +275,19 @@ fn remap_objects(
 }
 
 ///|
+/// Serialize objects in a provided order.
+pub fn serialize_objects_in_order(
+  objects : ArrayView[SerializeObject],
+  order : ArrayView[Int],
+) -> Result[Bytes, SerializeError] {
+  let remapped = match remap_objects(objects, order) {
+    Ok(value) => value
+    Err(err) => return Err(err)
+  }
+  serialize_objects(remapped[:])
+}
+
+///|
 /// Serialize objects after packing them to satisfy virtual link ordering.
 pub fn serialize_objects_packed(
   objects : ArrayView[SerializeObject],
@@ -280,4 +301,20 @@ pub fn serialize_objects_packed(
     Err(err) => return Err(err)
   }
   serialize_objects(remapped[:])
+}
+
+///|
+/// Serialize objects after packing them to satisfy virtual link ordering, returning the order.
+pub fn serialize_objects_packed_with_order(
+  objects : ArrayView[SerializeObject],
+) -> Result[(Bytes, Array[Int]), SerializeError] {
+  let order = match order_objects(objects) {
+    Ok(value) => value
+    Err(err) => return Err(err)
+  }
+  let bytes = match serialize_objects_in_order(objects, order[:]) {
+    Ok(value) => value
+    Err(err) => return Err(err)
+  }
+  Ok((bytes, order))
 }

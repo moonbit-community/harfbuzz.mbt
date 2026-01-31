@@ -355,6 +355,30 @@ test "serialize objects packed order" {
 }
 
 ///|
+test "serialize objects pack order helper" {
+  let obj0 = SerializeObject::new(Bytes::from_array([0]))
+  let obj1 = SerializeObject::new(Bytes::from_array([0]))
+  obj1.virtual_links.push(0)
+  let order = pack_object_order([obj0, obj1])
+  inspect(order, content="Ok([1, 0])")
+}
+
+///|
+test "serialize objects in order" {
+  let obj0 = SerializeObject::new(Bytes::from_array([0, 0]))
+  let obj1 = SerializeObject::new(Bytes::from_array([0, 0]))
+  obj1.real_links.push(SerializeLink::new(2, 0, 0))
+  let result = serialize_objects_in_order([obj0, obj1], [1, 0])
+  match result {
+    Err(err) => fail("serialize failed: \{err}")
+    Ok(bytes) => {
+      let ints = bytes.to_array().map(b => b.to_int())
+      inspect(ints, content="[0, 2, 0, 0]")
+    }
+  }
+}
+
+///|
 test "serialize objects packed cycle" {
   let obj0 = SerializeObject::new(Bytes::from_array([0]))
   let obj1 = SerializeObject::new(Bytes::from_array([0]))
