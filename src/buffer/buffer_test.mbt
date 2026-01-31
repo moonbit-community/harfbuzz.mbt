@@ -1729,6 +1729,32 @@ test "buffer shape use fallback" {
 }
 
 ///|
+test "buffer shape use fallback snapshot" {
+  let font = @font.Font::from_bytes(build_font_bytes())
+  let buffer = Buffer::new()
+  buffer.set_script(@common.script_sinhala)
+  buffer.add_string("A")
+  let result = buffer.shape_use(font)
+  match result {
+    Err(err) => fail("shape error: \{err}")
+    Ok(_) => ()
+  }
+  let infos = buffer.infos()
+  let positions = buffer.positions()
+  let snapshot : Array[(UInt, Int, Int, Int, Int)] = []
+  for i in 0..<infos.length() {
+    snapshot.push((
+      infos[i].codepoint,
+      infos[i].cluster,
+      positions[i].x_advance,
+      positions[i].x_offset,
+      positions[i].y_offset,
+    ))
+  }
+  json_inspect(snapshot, content=[[1,0,300,0,0]])
+}
+
+///|
 test "buffer shape hebrew skips gpos without hebr" {
   let font = @font.Font::from_bytes(build_font_bytes_ot())
   let buffer = Buffer::new()
