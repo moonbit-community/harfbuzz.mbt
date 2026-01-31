@@ -198,6 +198,7 @@ test "codepoint map equality" {
   inspect(map_a.is_equal(map_b), content="true")
   map_b.set(3U, 4U)
   inspect(map_a.is_equal(map_b), content="false")
+  inspect(map_a.hash() != 0, content="true")
 }
 
 ///|

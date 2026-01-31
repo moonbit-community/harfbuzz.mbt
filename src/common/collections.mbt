@@ -440,6 +440,33 @@ pub fn CodepointMap::is_equal(self : CodepointMap, other : CodepointMap) -> Bool
 }
 
 ///|
+pub fn CodepointMap::hash(self : CodepointMap) -> Int {
+  let entries = Array::from_iter(self.map.iter())
+  entries.sort_by((a, b) => {
+    let (ak, av) = a
+    let (bk, bv) = b
+    if ak < bk {
+      -1
+    } else if ak > bk {
+      1
+    } else if av < bv {
+      -1
+    } else if av > bv {
+      1
+    } else {
+      0
+    }
+  })
+  let hasher = Hasher::new(seed=0)
+  for pair in entries {
+    let (key, value) = pair
+    hasher.combine_uint(key)
+    hasher.combine_uint(value)
+  }
+  hasher.finalize()
+}
+
+///|
 pub fn CodepointMap::copy(self : CodepointMap) -> CodepointMap {
   CodepointMap::{ map: self.map.copy() }
 }
