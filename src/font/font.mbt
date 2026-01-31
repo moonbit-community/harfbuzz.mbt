@@ -765,6 +765,23 @@ pub fn Font::glyph_for_codepoint(
 }
 
 ///|
+/// Map a codepoint + variation selector to a glyph id, if supported.
+pub fn Font::variation_glyph_for(
+  self : Font,
+  codepoint : UInt,
+  selector : UInt,
+) -> Result[(Bool, UInt?), FontError] {
+  match self.ensure_cmap() {
+    Err(err) => Err(err)
+    Ok(cmap) =>
+      match cmap.variation_mapping(codepoint, selector) {
+        Err(err) => Err(Parse(err))
+        Ok(value) => Ok(value)
+      }
+  }
+}
+
+///|
 /// Return glyph horizontal advance.
 pub fn Font::glyph_h_advance(
   self : Font,

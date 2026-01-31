@@ -875,19 +875,41 @@ pub fn Buffer::shape_basic(
 ) -> Result[Unit, ShapeError] {
   let new_infos : Array[GlyphInfo] = []
   let new_positions : Array[GlyphPosition] = []
-  for info in self.infos {
+  let mut i = 0
+  while i < self.infos.length() {
+    let info = self.infos[i]
+    let mut skip_next = false
+    let mut use_variation_glyph = None
+    if i + 1 < self.infos.length() {
+      let next = self.infos[i + 1]
+      if @unicode.is_variation_selector(next.codepoint) {
+        let mapping = match font.variation_glyph_for(info.codepoint, next.codepoint) {
+          Err(err) => return Err(Font(err))
+          Ok(value) => value
+        }
+        let (supported, glyph) = mapping
+        if supported {
+          skip_next = true
+          use_variation_glyph = glyph
+        }
+      }
+    }
     let mut space_type : @unicode.SpaceFallbackType? = None
-    let glyph = match font.glyph_for_codepoint(info.codepoint) {
-      Err(err) => return Err(Font(err))
-      Ok(Some(value)) => value
-      Ok(None) =>
-        match fallback_glyph_for_codepoint(font, info.codepoint) {
-          Err(err) => return Err(err)
-          Ok((None, _)) => 0U
-          Ok((Some(value), fallback_space_type)) => {
-            space_type = fallback_space_type
-            value
-          }
+    let glyph = match use_variation_glyph {
+      Some(value) => value
+      None =>
+        match font.glyph_for_codepoint(info.codepoint) {
+          Err(err) => return Err(Font(err))
+          Ok(Some(value)) => value
+          Ok(None) =>
+            match fallback_glyph_for_codepoint(font, info.codepoint) {
+              Err(err) => return Err(err)
+              Ok((None, _)) => 0U
+              Ok((Some(value), fallback_space_type)) => {
+                space_type = fallback_space_type
+                value
+              }
+            }
         }
     }
     let mut pos = match default_position(self, font, glyph) {
@@ -904,6 +926,11 @@ pub fn Buffer::shape_basic(
     }
     new_infos.push(GlyphInfo::{ codepoint: glyph, cluster: info.cluster, unicode: info.unicode })
     new_positions.push(pos)
+    if skip_next {
+      i = i + 2
+    } else {
+      i = i + 1
+    }
   }
   self.infos = new_infos
   self.positions = new_positions

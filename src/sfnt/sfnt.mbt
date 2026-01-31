@@ -31,6 +31,17 @@ fn read_u16(data : BytesView, offset : Int) -> Result[UInt, SfntError] {
 }
 
 ///|
+fn read_u24(data : BytesView, offset : Int) -> Result[UInt, SfntError] {
+  if offset + 3 > data.length() {
+    return Err(UnexpectedEof)
+  }
+  let b0 = data[offset].to_uint()
+  let b1 = data[offset + 1].to_uint()
+  let b2 = data[offset + 2].to_uint()
+  Ok((b0 << 16) | (b1 << 8) | b2)
+}
+
+///|
 fn read_u32(data : BytesView, offset : Int) -> Result[UInt, SfntError] {
   if offset + 4 > data.length() {
     return Err(UnexpectedEof)
