@@ -120,6 +120,8 @@ test "codepoint set basics" {
   set.del_range(10U, 11U)
   inspect(set.to_sorted_array(), content="[2, 4]")
   inspect(set.population(), content="2")
+  inspect(set.get_min(), content="2")
+  inspect(set.get_max(), content="4")
 }
 
 ///|
@@ -134,6 +136,8 @@ test "codepoint set next and ranges" {
   inspect(set.next_range(), content="Some((1, 3))")
   inspect(set.next_range(start=4U), content="Some((5, 5))")
   inspect(set.previous_range(end=8U), content="Some((7, 8))")
+  inspect(set.intersects(2U, 4U), content="true")
+  inspect(set.intersects(6U, 6U), content="false")
 }
 
 ///|
@@ -151,6 +155,16 @@ test "codepoint map and bimap" {
   inspect(bimap.backward(9U), content="3")
   bimap.del(3U)
   inspect(bimap.get(3U), content="\{map_value_invalid}")
+}
+
+///|
+test "codepoint map equality" {
+  let map_a = CodepointMap::new()
+  map_a.set(1U, 2U)
+  let map_b = map_a.copy()
+  inspect(map_a.is_equal(map_b), content="true")
+  map_b.set(3U, 4U)
+  inspect(map_a.is_equal(map_b), content="false")
 }
 
 ///|

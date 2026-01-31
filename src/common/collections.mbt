@@ -30,6 +30,18 @@ pub fn CodepointSet::population(self : CodepointSet) -> Int {
 }
 
 ///|
+pub fn CodepointSet::get_min(self : CodepointSet) -> UInt {
+  let values = sorted_values(self)
+  if values.is_empty() { map_value_invalid } else { values[0] }
+}
+
+///|
+pub fn CodepointSet::get_max(self : CodepointSet) -> UInt {
+  let values = sorted_values(self)
+  if values.is_empty() { map_value_invalid } else { values[values.length() - 1] }
+}
+
+///|
 pub fn CodepointSet::add(self : CodepointSet, value : UInt) -> Unit {
   self.set.add(value)
 }
@@ -122,6 +134,49 @@ pub fn CodepointSet::subtract(self : CodepointSet, other : CodepointSet) -> Code
     }
   }
   out
+}
+
+///|
+pub fn CodepointSet::is_equal(self : CodepointSet, other : CodepointSet) -> Bool {
+  self.set.equal(other.set)
+}
+
+///|
+pub fn CodepointSet::is_subset(self : CodepointSet, other : CodepointSet) -> Bool {
+  for value in self.set.iter() {
+    if !other.set.contains(value) {
+      return false
+    }
+  }
+  true
+}
+
+///|
+pub fn CodepointSet::may_intersect(self : CodepointSet, other : CodepointSet) -> Bool {
+  for value in self.set.iter() {
+    if other.set.contains(value) {
+      return true
+    }
+  }
+  false
+}
+
+///|
+pub fn CodepointSet::intersects(self : CodepointSet, first : UInt, last : UInt) -> Bool {
+  if first > last {
+    return false
+  }
+  let values = sorted_values(self)
+  for value in values {
+    if value < first {
+      continue
+    }
+    if value > last {
+      break
+    }
+    return true
+  }
+  false
 }
 
 fn sorted_values(set : CodepointSet) -> Array[UInt] {
@@ -254,6 +309,11 @@ pub fn CodepointMap::is_empty(self : CodepointMap) -> Bool {
 ///|
 pub fn CodepointMap::population(self : CodepointMap) -> Int {
   self.map.length()
+}
+
+///|
+pub fn CodepointMap::is_equal(self : CodepointMap, other : CodepointMap) -> Bool {
+  self.map.equal(other.map)
 }
 
 ///|
