@@ -1421,6 +1421,41 @@ test "buffer shape ot variation selector default snapshot" {
 }
 
 ///|
+test "buffer serialize glyphs json" {
+  let font = @font.Font::from_bytes(build_font_bytes_ot())
+  let buffer = Buffer::new()
+  buffer.add_string("AB")
+  let result = buffer.shape_ot(font)
+  match result {
+    Err(err) => fail("shape error: \{err}")
+    Ok(_) => ()
+  }
+  let output = buffer.serialize(format=BufferSerializeFormat::Json)
+  inspect(
+    output,
+    content="[{\"g\":3,\"cl\":0,\"dx\":5,\"dy\":0,\"ax\":480,\"ay\":0},{\"g\":2,\"cl\":1,\"dx\":0,\"dy\":0,\"ax\":410,\"ay\":0}]",
+  )
+}
+
+///|
+test "buffer serialize unicode text" {
+  let font = @font.Font::from_bytes(build_font_bytes_ot())
+  let buffer = Buffer::new()
+  buffer.add_string("AB")
+  let result = buffer.shape_ot(font)
+  match result {
+    Err(err) => fail("shape error: \{err}")
+    Ok(_) => ()
+  }
+  let output = buffer.serialize(
+    format=BufferSerializeFormat::Text,
+    mode=BufferSerializeMode::Unicode,
+    no_positions=true,
+  )
+  inspect(output, content="<U+0041=0|U+0042=1>")
+}
+
+///|
 test "buffer shape ot" {
   let font = @font.Font::from_bytes(build_font_bytes_ot())
   let buffer = Buffer::new()
