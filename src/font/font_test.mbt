@@ -244,6 +244,27 @@ fn build_hvar_var_store() -> Bytes {
 }
 
 ///|
+fn build_vvar_var_store() -> Bytes {
+  let bytes : Array[Byte] = []
+  push_u16(bytes, 1) // format
+  push_u32(bytes, 12) // region list offset
+  push_u16(bytes, 1) // data count
+  push_u32(bytes, 22) // data offset
+  push_u16(bytes, 1) // axis count
+  push_u16(bytes, 1) // region count
+  push_i16(bytes, 0) // start
+  push_i16(bytes, 0x4000) // peak 1.0
+  push_i16(bytes, 0x4000) // end 1.0
+  push_u16(bytes, 2) // item count
+  push_u16(bytes, 1) // word size count
+  push_u16(bytes, 1) // region index count
+  push_u16(bytes, 0) // region index
+  push_i16(bytes, 5) // delta item 0
+  push_i16(bytes, 30) // delta item 1
+  Bytes::from_array(bytes)
+}
+
+///|
 fn build_delta_map_two() -> Bytes {
   let bytes : Array[Byte] = []
   bytes.push(0) // format
@@ -259,6 +280,28 @@ fn build_delta_map_two() -> Bytes {
 ///|
 fn build_hvar_table() -> Bytes {
   let var_store = build_hvar_var_store()
+  let adv_map = build_delta_map_two()
+  let header_len = 20
+  let var_offset = header_len
+  let adv_offset = var_offset + var_store.length()
+  let bytes : Array[Byte] = []
+  push_u32(bytes, 0x00010000) // version
+  push_u32(bytes, var_offset)
+  push_u32(bytes, adv_offset)
+  push_u32(bytes, 0)
+  push_u32(bytes, 0)
+  for b in var_store {
+    bytes.push(b)
+  }
+  for b in adv_map {
+    bytes.push(b)
+  }
+  Bytes::from_array(bytes)
+}
+
+///|
+fn build_vvar_table() -> Bytes {
+  let var_store = build_vvar_var_store()
   let adv_map = build_delta_map_two()
   let header_len = 20
   let var_offset = header_len
@@ -296,6 +339,28 @@ fn build_font_bytes_hvar() -> Bytes {
     (@common.Tag::from_chars('f', 'v', 'a', 'r'), build_fvar_table()),
     (@common.Tag::from_chars('a', 'v', 'a', 'r'), build_avar_table()),
     (@common.Tag::from_chars('H', 'V', 'A', 'R'), build_hvar_table()),
+  ]
+  build_sfnt(tables)
+}
+
+///|
+fn build_font_bytes_vvar() -> Bytes {
+  let glyf = build_glyf_table()
+  let loca = build_loca_short([0, 0, glyf.length()])
+  let tables : Array[(@common.Tag, Bytes)] = [
+    (@common.Tag::from_chars('h', 'e', 'a', 'd'), build_head(1000, 0)),
+    (@common.Tag::from_chars('m', 'a', 'x', 'p'), build_maxp(2)),
+    (@common.Tag::from_chars('v', 'h', 'e', 'a'), build_vhea(2)),
+    (@common.Tag::from_chars('v', 'm', 't', 'x'), build_vmtx()),
+    (@common.Tag::from_chars('l', 'o', 'c', 'a'), loca),
+    (@common.Tag::from_chars('g', 'l', 'y', 'f'), glyf),
+    (
+      @common.Tag::from_chars('c', 'm', 'a', 'p'),
+      build_cmap_table(build_cmap_format12(0x41U, 0x41U, 1U)),
+    ),
+    (@common.Tag::from_chars('f', 'v', 'a', 'r'), build_fvar_table()),
+    (@common.Tag::from_chars('a', 'v', 'a', 'r'), build_avar_table()),
+    (@common.Tag::from_chars('V', 'V', 'A', 'R'), build_vvar_table()),
   ]
   build_sfnt(tables)
 }
@@ -394,6 +459,23 @@ test "font hvar advance delta" {
     Ok(value) => value
   }
   inspect(advance, content="320")
+}
+
+///|
+test "font vvar advance delta" {
+  let font = Font::from_bytes(build_font_bytes_vvar())
+  let variations : Array[@ot_var.AxisCoord] = [
+    @ot_var.AxisCoord::new(@common.Tag::from_chars('w', 'g', 'h', 't'), 1.0),
+  ]
+  match font.set_variations(variations) {
+    Err(err) => fail("set variations failed: \{err}")
+    Ok(_) => ()
+  }
+  let advance = match font.glyph_v_advance(1U) {
+    Err(err) => fail("advance error: \{err}")
+    Ok(value) => value
+  }
+  inspect(advance, content="-830")
 }
 
 ///|
