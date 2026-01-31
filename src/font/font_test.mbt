@@ -250,7 +250,7 @@ test "font variation coords" {
     Err(err) => fail("set variations failed: \{err}")
     Ok(_) => ()
   }
-  inspect(font.variation_coords(), content="[49152]")
+  inspect(font.variation_coords(), content="[12288]")
 }
 
 ///|

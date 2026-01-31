@@ -871,6 +871,9 @@ pub fn Font::set_variations(
         Ok(None) => ()
         Ok(Some(avar)) => normalized = avar.map_coords_16_16(normalized)
       }
+      for i in 0..<normalized.length() {
+        normalized[i] = @ot_var.fixed16_to_f2dot14(normalized[i])
+      }
       self.var_coords_design = Some(design_coords)
       self.var_coords_norm = Some(normalized)
       Ok(())

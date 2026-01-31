@@ -47,6 +47,13 @@ fn read_u32(data : BytesView, offset : Int) -> Result[UInt, VarError] {
   Ok((b0 << 24) | (b1 << 16) | (b2 << 8) | b3)
 }
 
+fn read_u32_int(data : BytesView, offset : Int) -> Result[Int, VarError] {
+  match read_u32(data, offset) {
+    Err(err) => Err(err)
+    Ok(value) => Ok(value.reinterpret_as_int())
+  }
+}
+
 fn read_i16(data : BytesView, offset : Int) -> Result[Int, VarError] {
   match read_u16(data, offset) {
     Err(err) => Err(err)
@@ -86,6 +93,10 @@ fn double_to_fixed16(value : Double) -> Int {
 
 fn f2dot14_to_double(raw : Int) -> Double {
   raw.to_double() / 16384.0
+}
+
+pub fn fixed16_to_f2dot14(raw : Int) -> Int {
+  (raw + 2) >> 2
 }
 
 fn clamp_double(value : Double, min_value : Double, max_value : Double) -> Double {
