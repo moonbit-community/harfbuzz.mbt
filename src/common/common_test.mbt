@@ -391,3 +391,34 @@ test "serialize objects packed cycle" {
     Ok(_) => fail("expected virtual order error")
   }
 }
+
+///|
+test "serialize objects invalid links" {
+  let obj0 = SerializeObject::new(Bytes::from_array([0, 0]))
+  let obj1 = SerializeObject::new(Bytes::from_array([0, 0]))
+  obj1.real_links.push(SerializeLink::new(2, 0, 0))
+  let result = serialize_objects([obj0, obj1])
+  match result {
+    Err(SerializeError::NegativeOffset) => ()
+    Err(err) => fail("unexpected error: \{err}")
+    Ok(_) => fail("expected negative offset error")
+  }
+
+  let obj2 = SerializeObject::new(Bytes::from_array([0]))
+  obj2.real_links.push(SerializeLink::new(2, 4, 0))
+  let result2 = serialize_objects([obj2])
+  match result2 {
+    Err(SerializeError::OutOfBounds) => ()
+    Err(err) => fail("unexpected error: \{err}")
+    Ok(_) => fail("expected out of bounds error")
+  }
+
+  let obj3 = SerializeObject::new(Bytes::from_array([0]))
+  obj3.real_links.push(SerializeLink::new(5, 0, 0))
+  let result3 = serialize_objects([obj3])
+  match result3 {
+    Err(SerializeError::InvalidWidth) => ()
+    Err(err) => fail("unexpected error: \{err}")
+    Ok(_) => fail("expected invalid width error")
+  }
+}
