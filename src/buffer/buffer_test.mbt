@@ -73,6 +73,24 @@ test "buffer replace glyphs" {
 }
 
 ///|
+test "buffer verify monotone clusters" {
+  let buffer = Buffer::new()
+  buffer.set_direction(@common.direction_ltr)
+  buffer.add_codepoint(0x41U, cluster=0)
+  buffer.add_codepoint(0x42U, cluster=2)
+  inspect(buffer.verify(), content="true")
+}
+
+///|
+test "buffer verify non-monotone clusters" {
+  let buffer = Buffer::new()
+  buffer.set_direction(@common.direction_ltr)
+  buffer.add_codepoint(0x41U, cluster=3)
+  buffer.add_codepoint(0x42U, cluster=1)
+  inspect(buffer.verify(), content="false")
+}
+
+///|
 test "buffer guess segment properties" {
   let buffer = Buffer::new()
   buffer.set_script(@common.script_arabic)
