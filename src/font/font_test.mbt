@@ -223,6 +223,84 @@ fn build_font_bytes_variations() -> Bytes {
 }
 
 ///|
+fn build_hvar_var_store() -> Bytes {
+  let bytes : Array[Byte] = []
+  push_u16(bytes, 1) // format
+  push_u32(bytes, 12) // region list offset
+  push_u16(bytes, 1) // data count
+  push_u32(bytes, 22) // data offset
+  push_u16(bytes, 1) // axis count
+  push_u16(bytes, 1) // region count
+  push_i16(bytes, 0) // start
+  push_i16(bytes, 0x4000) // peak 1.0
+  push_i16(bytes, 0x4000) // end 1.0
+  push_u16(bytes, 2) // item count
+  push_u16(bytes, 1) // word size count
+  push_u16(bytes, 1) // region index count
+  push_u16(bytes, 0) // region index
+  push_i16(bytes, 10) // delta item 0
+  push_i16(bytes, 20) // delta item 1
+  Bytes::from_array(bytes)
+}
+
+///|
+fn build_delta_map_two() -> Bytes {
+  let bytes : Array[Byte] = []
+  bytes.push(0) // format
+  bytes.push(0x1F) // width=2, inner bits=16
+  push_u16(bytes, 2) // map count
+  bytes.push(0)
+  bytes.push(0) // var idx 0
+  bytes.push(0)
+  bytes.push(1) // var idx 1
+  Bytes::from_array(bytes)
+}
+
+///|
+fn build_hvar_table() -> Bytes {
+  let var_store = build_hvar_var_store()
+  let adv_map = build_delta_map_two()
+  let header_len = 20
+  let var_offset = header_len
+  let adv_offset = var_offset + var_store.length()
+  let bytes : Array[Byte] = []
+  push_u32(bytes, 0x00010000) // version
+  push_u32(bytes, var_offset)
+  push_u32(bytes, adv_offset)
+  push_u32(bytes, 0)
+  push_u32(bytes, 0)
+  for b in var_store {
+    bytes.push(b)
+  }
+  for b in adv_map {
+    bytes.push(b)
+  }
+  Bytes::from_array(bytes)
+}
+
+///|
+fn build_font_bytes_hvar() -> Bytes {
+  let glyf = build_glyf_table()
+  let loca = build_loca_short([0, 0, glyf.length()])
+  let tables : Array[(@common.Tag, Bytes)] = [
+    (@common.Tag::from_chars('h', 'e', 'a', 'd'), build_head(1000, 0)),
+    (@common.Tag::from_chars('m', 'a', 'x', 'p'), build_maxp(2)),
+    (@common.Tag::from_chars('h', 'h', 'e', 'a'), build_hhea(2)),
+    (@common.Tag::from_chars('h', 'm', 't', 'x'), build_hmtx()),
+    (@common.Tag::from_chars('l', 'o', 'c', 'a'), loca),
+    (@common.Tag::from_chars('g', 'l', 'y', 'f'), glyf),
+    (
+      @common.Tag::from_chars('c', 'm', 'a', 'p'),
+      build_cmap_table(build_cmap_format12(0x41U, 0x41U, 1U)),
+    ),
+    (@common.Tag::from_chars('f', 'v', 'a', 'r'), build_fvar_table()),
+    (@common.Tag::from_chars('a', 'v', 'a', 'r'), build_avar_table()),
+    (@common.Tag::from_chars('H', 'V', 'A', 'R'), build_hvar_table()),
+  ]
+  build_sfnt(tables)
+}
+
+///|
 test "font basics" {
   let font = Font::from_bytes([0x00, 0x01])
   let (sx, sy) = font.get_scale()
@@ -299,6 +377,23 @@ test "font scale defaults to upem" {
   let font = Font::from_bytes(bytes)
   let _ = font.glyph_h_advance(1U)
   inspect(font.get_scale(), content="(1000, 1000)")
+}
+
+///|
+test "font hvar advance delta" {
+  let font = Font::from_bytes(build_font_bytes_hvar())
+  let variations : Array[@ot_var.AxisCoord] = [
+    @ot_var.AxisCoord::new(@common.Tag::from_chars('w', 'g', 'h', 't'), 1.0),
+  ]
+  match font.set_variations(variations) {
+    Err(err) => fail("set variations failed: \{err}")
+    Ok(_) => ()
+  }
+  let advance = match font.glyph_h_advance(1U) {
+    Err(err) => fail("advance error: \{err}")
+    Ok(value) => value
+  }
+  inspect(advance, content="320")
 }
 
 ///|

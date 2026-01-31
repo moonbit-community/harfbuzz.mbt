@@ -39,6 +39,7 @@ pub struct Font {
   mut gsub : @ot_tables.GsubTable?
   mut gpos : @ot_tables.GposTable?
   mut gdef : @ot_tables.GdefTable?
+  mut hvar : @ot_var.HvarTable?
   mut fvar : @ot_var.FvarTable?
   mut avar : @ot_var.AvarTable?
   mut var_coords_design : Array[Double]?
@@ -124,6 +125,9 @@ let tag_fvar : @common.Tag = @common.Tag::from_chars('f', 'v', 'a', 'r')
 let tag_avar : @common.Tag = @common.Tag::from_chars('a', 'v', 'a', 'r')
 
 ///|
+let tag_hvar : @common.Tag = @common.Tag::from_chars('H', 'V', 'A', 'R')
+
+///|
 /// Create a font from a face.
 pub fn Font::new(face : @face.Face) -> Font {
   Font::{
@@ -156,6 +160,7 @@ pub fn Font::new(face : @face.Face) -> Font {
     gsub: None,
     gpos: None,
     gdef: None,
+    hvar: None,
     fvar: None,
     avar: None,
     var_coords_design: None,
@@ -764,6 +769,25 @@ pub fn Font::gdef(self : Font) -> Result[@ot_tables.GdefTable?, FontError] {
 }
 
 ///|
+pub fn Font::hvar(self : Font) -> Result[@ot_var.HvarTable?, FontError] {
+  match self.hvar {
+    Some(hvar) => Ok(Some(hvar))
+    None =>
+      match self.face.reference_table_optional(tag_hvar) {
+        Err(err) => Err(FaceTable(err))
+        Ok(None) => Ok(None)
+        Ok(Some(blob)) =>
+          match @ot_var.HvarTable::parse(blob.as_view()) {
+            Err(err) => Err(Var(err))
+            Ok(hvar) => {
+              self.hvar = Some(hvar)
+              Ok(Some(hvar))
+            }
+          }
+      }
+  }
+}
+///|
 pub fn Font::fvar(self : Font) -> Result[@ot_var.FvarTable?, FontError] {
   match self.fvar {
     Some(fvar) => Ok(Some(fvar))
@@ -907,7 +931,20 @@ pub fn Font::glyph_h_advance(
   if index < 0 || index >= hmtx.advances.length() {
     return Err(GlyphOutOfRange)
   }
-  Ok(scale_value(hmtx.advances[index], self.scale_x, head.units_per_em))
+  let mut advance = hmtx.advances[index]
+  match self.var_coords_norm {
+    None => ()
+    Some(coords) =>
+      match self.hvar() {
+        Err(err) => return Err(err)
+        Ok(None) => ()
+        Ok(Some(hvar)) => {
+          let delta = hvar.advance_delta(glyph, coords)
+          advance = advance + delta.round().to_int()
+        }
+      }
+  }
+  Ok(scale_value(advance, self.scale_x, head.units_per_em))
 }
 
 ///|

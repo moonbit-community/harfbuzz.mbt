@@ -47,6 +47,13 @@ fn read_u32(data : BytesView, offset : Int) -> Result[UInt, VarError] {
   Ok((b0 << 24) | (b1 << 16) | (b2 << 8) | b3)
 }
 
+fn read_u8_int(data : BytesView, offset : Int) -> Result[Int, VarError] {
+  if offset < 0 || offset + 1 > data.length() {
+    return Err(UnexpectedEof)
+  }
+  Ok(data[offset].to_int())
+}
+
 fn read_u32_int(data : BytesView, offset : Int) -> Result[Int, VarError] {
   match read_u32(data, offset) {
     Err(err) => Err(err)

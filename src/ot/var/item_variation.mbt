@@ -3,14 +3,14 @@ pub(all) struct VarRegionAxis {
   start_coord : Int
   peak_coord : Int
   end_coord : Int
-}
+} derive(Eq, Show, ToJson)
 
 ///|
 pub(all) struct VarRegionList {
   axis_count : Int
   region_count : Int
   axes : Array[VarRegionAxis]
-}
+} derive(Eq, Show, ToJson)
 
 ///|
 pub(all) struct VarData {
@@ -19,13 +19,13 @@ pub(all) struct VarData {
   long_words : Bool
   region_indices : Array[Int]
   deltas : Bytes
-}
+} derive(Eq, Show, ToJson)
 
 ///|
 pub struct ItemVariationStore {
   region_list : VarRegionList
   data_sets : Array[VarData]
-}
+} derive(Show, ToJson)
 
 fn VarRegionAxis::evaluate(self : VarRegionAxis, coord : Int) -> Double {
   let peak = self.peak_coord
