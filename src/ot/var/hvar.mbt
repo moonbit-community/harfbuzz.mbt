@@ -71,3 +71,31 @@ pub fn HvarTable::advance_delta(
   }
   self.var_store.get_delta(var_idx, coords)
 }
+
+///|
+pub fn HvarTable::lsb_delta(
+  self : HvarTable,
+  glyph : UInt,
+  coords : Array[Int],
+) -> Double {
+  let map = match self.lsb_map {
+    None => return 0.0
+    Some(value) => value
+  }
+  let var_idx = map.map(glyph)
+  self.var_store.get_delta(var_idx, coords)
+}
+
+///|
+pub fn HvarTable::rsb_delta(
+  self : HvarTable,
+  glyph : UInt,
+  coords : Array[Int],
+) -> Double {
+  let map = match self.rsb_map {
+    None => return 0.0
+    Some(value) => value
+  }
+  let var_idx = map.map(glyph)
+  self.var_store.get_delta(var_idx, coords)
+}
