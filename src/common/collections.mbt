@@ -144,6 +144,59 @@ pub fn CodepointSet::union(self : CodepointSet, other : CodepointSet) -> Codepoi
 }
 
 ///|
+pub fn CodepointSet::set_from(self : CodepointSet, other : CodepointSet) -> Unit {
+  self.set.clear()
+  for value in other.set.iter() {
+    self.set.add(value)
+  }
+}
+
+///|
+pub fn CodepointSet::union_in_place(self : CodepointSet, other : CodepointSet) -> Unit {
+  for value in other.set.iter() {
+    self.set.add(value)
+  }
+}
+
+///|
+pub fn CodepointSet::intersect_in_place(self : CodepointSet, other : CodepointSet) -> Unit {
+  let to_remove : Array[UInt] = []
+  for value in self.set.iter() {
+    if !other.set.contains(value) {
+      to_remove.push(value)
+    }
+  }
+  for value in to_remove {
+    self.set.remove(value)
+  }
+}
+
+///|
+pub fn CodepointSet::subtract_in_place(self : CodepointSet, other : CodepointSet) -> Unit {
+  for value in other.set.iter() {
+    self.set.remove(value)
+  }
+}
+
+///|
+pub fn CodepointSet::symmetric_difference_in_place(
+  self : CodepointSet,
+  other : CodepointSet,
+) -> Unit {
+  let to_remove : Array[UInt] = []
+  for value in other.set.iter() {
+    if self.set.contains(value) {
+      to_remove.push(value)
+    } else {
+      self.set.add(value)
+    }
+  }
+  for value in to_remove {
+    self.set.remove(value)
+  }
+}
+
+///|
 pub fn CodepointSet::intersect(self : CodepointSet, other : CodepointSet) -> CodepointSet {
   let out = CodepointSet::new()
   for value in self.set.iter() {
@@ -206,6 +259,16 @@ pub fn CodepointSet::intersects(self : CodepointSet, first : UInt, last : UInt) 
     return true
   }
   false
+}
+
+///|
+pub fn CodepointSet::hash(self : CodepointSet) -> Int {
+  let values = sorted_values(self)
+  let hasher = Hasher::new(seed=0)
+  for value in values {
+    hasher.combine_uint(value)
+  }
+  hasher.finalize()
 }
 
 fn sorted_values(set : CodepointSet) -> Array[UInt] {

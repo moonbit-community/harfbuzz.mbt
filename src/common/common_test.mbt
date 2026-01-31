@@ -151,6 +151,29 @@ test "codepoint set add_sorted_array rejects unsorted" {
 }
 
 ///|
+test "codepoint set in-place ops" {
+  let set = CodepointSet::new()
+  assert_true(set.add_range(1U, 3U))
+  let other = CodepointSet::new()
+  other.add_array([3U, 4U, 5U])
+  set.union_in_place(other)
+  inspect(set.to_sorted_array(), content="[1, 2, 3, 4, 5]")
+  let sub = CodepointSet::new()
+  sub.add_array([2U, 5U])
+  set.subtract_in_place(sub)
+  inspect(set.to_sorted_array(), content="[1, 3, 4]")
+  let keep = CodepointSet::new()
+  keep.add_array([1U, 4U])
+  set.intersect_in_place(keep)
+  inspect(set.to_sorted_array(), content="[1, 4]")
+  let diff = CodepointSet::new()
+  diff.add_array([4U, 6U])
+  set.symmetric_difference_in_place(diff)
+  inspect(set.to_sorted_array(), content="[1, 6]")
+  inspect(set.hash() != 0, content="true")
+}
+
+///|
 test "codepoint map and bimap" {
   let map = CodepointMap::new()
   map.set(1U, 5U)
