@@ -1632,6 +1632,32 @@ test "buffer shape myanmar prefers mym2 over dflt" {
 }
 
 ///|
+test "buffer shape myanmar prefers mym2 over dflt snapshot" {
+  let font = @font.Font::from_bytes(build_font_bytes_myanmar_mym2_dflt())
+  let buffer = Buffer::new()
+  buffer.set_script(@common.script_myanmar)
+  buffer.add_codepoint(0x1000U)
+  let result = buffer.shape_myanmar(font)
+  match result {
+    Err(err) => fail("shape error: \{err}")
+    Ok(_) => ()
+  }
+  let infos = buffer.infos()
+  let positions = buffer.positions()
+  let snapshot : Array[(UInt, Int, Int, Int, Int)] = []
+  for i in 0..<infos.length() {
+    snapshot.push((
+      infos[i].codepoint,
+      infos[i].cluster,
+      positions[i].x_advance,
+      positions[i].x_offset,
+      positions[i].y_offset,
+    ))
+  }
+  json_inspect(snapshot, content=[[3,0,500,0,0]])
+}
+
+///|
 test "buffer shape indic fallback" {
   let font = @font.Font::from_bytes(build_font_bytes())
   let buffer = Buffer::new()
