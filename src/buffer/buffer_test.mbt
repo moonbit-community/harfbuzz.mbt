@@ -243,6 +243,11 @@ fn push_u16(bytes : Array[Byte], value : Int) -> Unit {
 }
 
 ///|
+fn push_u8(bytes : Array[Byte], value : Int) -> Unit {
+  bytes.push((value & 0xff).to_byte())
+}
+
+///|
 fn push_i16(bytes : Array[Byte], value : Int) -> Unit {
   let adjusted = if value < 0 { value + 0x10000 } else { value }
   push_u16(bytes, adjusted)
@@ -746,6 +751,25 @@ fn build_cmap_format14_non_default(selector : UInt, mappings : Array[(UInt, UInt
   Bytes::from_array(bytes)
 }
 
+fn build_cmap_format14_default(selector : UInt, ranges : Array[(UInt, UInt)]) -> Bytes {
+  let bytes : Array[Byte] = []
+  let default_offset = 21
+  let length = default_offset + 4 + ranges.length() * 4
+  push_u16(bytes, 14)
+  push_u32(bytes, length)
+  push_u32(bytes, 1)
+  push_u24(bytes, selector.reinterpret_as_int())
+  push_u32(bytes, default_offset)
+  push_u32(bytes, 0)
+  push_u32(bytes, ranges.length())
+  for range in ranges {
+    let (start, count) = range
+    push_u24(bytes, start.reinterpret_as_int())
+    push_u8(bytes, count.reinterpret_as_int())
+  }
+  Bytes::from_array(bytes)
+}
+
 fn build_cmap_table_with_variation(subtable : Bytes, variation : Bytes) -> Bytes {
   let bytes : Array[Byte] = []
   push_u16(bytes, 0)
@@ -840,6 +864,25 @@ fn build_font_bytes_variation_selector() -> Bytes {
     build_cmap_format14_non_default(
       0xFE0FU,
       [(0x41U, 3U)],
+    ),
+  )
+  let tables : Array[(@common.Tag, Bytes)] = [
+    (@common.Tag::from_chars('h', 'e', 'a', 'd'), build_head(1000, 0)),
+    (@common.Tag::from_chars('m', 'a', 'x', 'p'), build_maxp(4)),
+    (@common.Tag::from_chars('h', 'h', 'e', 'a'), build_hhea(4)),
+    (@common.Tag::from_chars('h', 'm', 't', 'x'), build_hmtx_ot()),
+    (@common.Tag::from_chars('c', 'm', 'a', 'p'), cmap),
+  ]
+  build_sfnt(tables)
+}
+
+///|
+fn build_font_bytes_variation_selector_default() -> Bytes {
+  let cmap = build_cmap_table_with_variation(
+    build_cmap_format12(0x41U, 0x41U, 1U),
+    build_cmap_format14_default(
+      0xFE0FU,
+      [(0x41U, 0U)],
     ),
   )
   let tables : Array[(@common.Tag, Bytes)] = [
@@ -1349,6 +1392,32 @@ test "buffer shape ot variation selector mapping snapshot" {
     ))
   }
   json_inspect(snapshot, content=[[3,0,500,0,0]])
+}
+
+///|
+test "buffer shape ot variation selector default snapshot" {
+  let font = @font.Font::from_bytes(build_font_bytes_variation_selector_default())
+  let buffer = Buffer::new()
+  buffer.add_codepoint(0x41U)
+  buffer.add_codepoint(0xFE0FU)
+  let result = buffer.shape_ot(font)
+  match result {
+    Err(err) => fail("shape error: \{err}")
+    Ok(_) => ()
+  }
+  let infos = buffer.infos()
+  let positions = buffer.positions()
+  let snapshot : Array[(UInt, Int, Int, Int, Int)] = []
+  for i in 0..<infos.length() {
+    snapshot.push((
+      infos[i].codepoint,
+      infos[i].cluster,
+      positions[i].x_advance,
+      positions[i].x_offset,
+      positions[i].y_offset,
+    ))
+  }
+  json_inspect(snapshot, content=[[1,0,300,0,0]])
 }
 
 ///|
