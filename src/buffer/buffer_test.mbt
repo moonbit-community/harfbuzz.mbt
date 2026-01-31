@@ -1673,6 +1673,32 @@ test "buffer shape indic fallback" {
 }
 
 ///|
+test "buffer shape indic fallback snapshot" {
+  let font = @font.Font::from_bytes(build_font_bytes())
+  let buffer = Buffer::new()
+  buffer.set_script(@common.script_devanagari)
+  buffer.add_string("A")
+  let result = buffer.shape_indic(font)
+  match result {
+    Err(err) => fail("shape error: \{err}")
+    Ok(_) => ()
+  }
+  let infos = buffer.infos()
+  let positions = buffer.positions()
+  let snapshot : Array[(UInt, Int, Int, Int, Int)] = []
+  for i in 0..<infos.length() {
+    snapshot.push((
+      infos[i].codepoint,
+      infos[i].cluster,
+      positions[i].x_advance,
+      positions[i].x_offset,
+      positions[i].y_offset,
+    ))
+  }
+  json_inspect(snapshot, content=[[1,0,300,0,0]])
+}
+
+///|
 test "buffer shape indic routes to use for dev3 gsub" {
   let font = @font.Font::from_bytes(build_font_bytes_indic3())
   let buffer = Buffer::new()
