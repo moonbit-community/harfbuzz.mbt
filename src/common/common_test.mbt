@@ -337,3 +337,33 @@ test "serialize objects bias and virtual order" {
     Ok(_) => fail("expected virtual order error")
   }
 }
+
+///|
+test "serialize objects packed order" {
+  let obj0 = SerializeObject::new(Bytes::from_array([0, 0]))
+  let obj1 = SerializeObject::new(Bytes::from_array([0, 0]))
+  obj1.virtual_links.push(0)
+  obj1.real_links.push(SerializeLink::new(2, 0, 0))
+  let result = serialize_objects_packed([obj0, obj1])
+  match result {
+    Err(err) => fail("serialize failed: \{err}")
+    Ok(bytes) => {
+      let ints = bytes.to_array().map(b => b.to_int())
+      inspect(ints, content="[0, 2, 0, 0]")
+    }
+  }
+}
+
+///|
+test "serialize objects packed cycle" {
+  let obj0 = SerializeObject::new(Bytes::from_array([0]))
+  let obj1 = SerializeObject::new(Bytes::from_array([0]))
+  obj0.virtual_links.push(1)
+  obj1.virtual_links.push(0)
+  let result = serialize_objects_packed([obj0, obj1])
+  match result {
+    Err(SerializeError::VirtualOrder) => ()
+    Err(err) => fail("unexpected error: \{err}")
+    Ok(_) => fail("expected virtual order error")
+  }
+}

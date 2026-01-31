@@ -174,3 +174,110 @@ pub fn serialize_objects(
   }
   Ok(buffer.to_bytes())
 }
+
+fn order_objects(objects : ArrayView[SerializeObject]) -> Result[Array[Int], SerializeError] {
+  let count = objects.length()
+  let edges : Array[Array[Int]] = []
+  let indegree : Array[Int] = Array::make(count, 0)
+  for _ in 0..<count {
+    edges.push([])
+  }
+  for i in 0..<count {
+    for target in objects[i].virtual_links {
+      if target < 0 || target >= count {
+        return Err(SerializeError::InvalidLink)
+      }
+      edges[i].push(target)
+      indegree[target] = indegree[target] + 1
+    }
+  }
+  let queue : Array[Int] = []
+  for i in 0..<count {
+    if indegree[i] == 0 {
+      queue.push(i)
+    }
+  }
+  let order : Array[Int] = []
+  let mut index = 0
+  while index < queue.length() {
+    let node = queue[index]
+    index = index + 1
+    order.push(node)
+    for next in edges[node] {
+      indegree[next] = indegree[next] - 1
+      if indegree[next] == 0 {
+        queue.push(next)
+      }
+    }
+  }
+  if order.length() != count {
+    return Err(SerializeError::VirtualOrder)
+  }
+  Ok(order)
+}
+
+fn remap_objects(
+  objects : ArrayView[SerializeObject],
+  order : ArrayView[Int],
+) -> Result[Array[SerializeObject], SerializeError] {
+  let count = objects.length()
+  let new_index : Array[Int] = Array::make(count, -1)
+  for i in 0..<order.length() {
+    let old_idx = order[i]
+    if old_idx < 0 || old_idx >= count {
+      return Err(SerializeError::InvalidLink)
+    }
+    new_index[old_idx] = i
+  }
+  let out : Array[SerializeObject] = []
+  for i in 0..<order.length() {
+    let old_idx = order[i]
+    let old = objects[old_idx]
+    let obj = SerializeObject::new(old.data)
+    for link in old.real_links {
+      if link.objidx < 0 || link.objidx >= count {
+        return Err(SerializeError::InvalidLink)
+      }
+      let mapped = new_index[link.objidx]
+      if mapped < 0 {
+        return Err(SerializeError::InvalidLink)
+      }
+      obj.real_links.push(SerializeLink::{
+        width: link.width,
+        position: link.position,
+        objidx: mapped,
+        is_signed: link.is_signed,
+        whence: link.whence,
+        bias: link.bias,
+      })
+    }
+    for target in old.virtual_links {
+      if target < 0 || target >= count {
+        return Err(SerializeError::InvalidLink)
+      }
+      let mapped = new_index[target]
+      if mapped < 0 {
+        return Err(SerializeError::InvalidLink)
+      }
+      obj.virtual_links.push(mapped)
+    }
+    out.push(obj)
+  }
+  Ok(out)
+}
+
+///|
+/// Serialize objects after packing them to satisfy virtual link ordering.
+pub fn serialize_objects_packed(
+  objects : ArrayView[SerializeObject],
+) -> Result[Bytes, SerializeError] {
+  let order = match order_objects(objects) {
+    Ok(value) => value
+    Err(err) => return Err(err)
+  }
+  let remapped = match remap_objects(objects, order[:]) {
+    Ok(value) => value
+    Err(err) => return Err(err)
+  }
+  serialize_objects(remapped[:])
+}
