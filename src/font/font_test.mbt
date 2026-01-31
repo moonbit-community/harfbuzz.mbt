@@ -366,6 +366,39 @@ fn build_font_bytes_vvar() -> Bytes {
 }
 
 ///|
+fn build_mvar_table() -> Bytes {
+  let var_store = build_hvar_var_store()
+  let header_len = 12
+  let record_len = 8
+  let var_offset = header_len + record_len
+  let bytes : Array[Byte] = []
+  push_u32(bytes, 0x00010000) // version
+  push_u16(bytes, 0) // reserved
+  push_u16(bytes, record_len) // record size
+  push_u16(bytes, 1) // record count
+  push_u16(bytes, var_offset)
+  bytes.push(b'T')
+  bytes.push(b'E')
+  bytes.push(b'S')
+  bytes.push(b'T')
+  push_u32(bytes, 0) // varIdx
+  for b in var_store {
+    bytes.push(b)
+  }
+  Bytes::from_array(bytes)
+}
+
+///|
+fn build_font_bytes_mvar() -> Bytes {
+  let tables : Array[(@common.Tag, Bytes)] = [
+    (@common.Tag::from_chars('f', 'v', 'a', 'r'), build_fvar_table()),
+    (@common.Tag::from_chars('a', 'v', 'a', 'r'), build_avar_table()),
+    (@common.Tag::from_chars('M', 'V', 'A', 'R'), build_mvar_table()),
+  ]
+  build_sfnt(tables)
+}
+
+///|
 test "font basics" {
   let font = Font::from_bytes([0x00, 0x01])
   let (sx, sy) = font.get_scale()
@@ -476,6 +509,23 @@ test "font vvar advance delta" {
     Ok(value) => value
   }
   inspect(advance, content="-830")
+}
+
+///|
+test "font mvar delta" {
+  let font = Font::from_bytes(build_font_bytes_mvar())
+  let variations : Array[@ot_var.AxisCoord] = [
+    @ot_var.AxisCoord::new(@common.Tag::from_chars('w', 'g', 'h', 't'), 1.0),
+  ]
+  match font.set_variations(variations) {
+    Err(err) => fail("set variations failed: \{err}")
+    Ok(_) => ()
+  }
+  let delta = match font.mvar_delta(@common.Tag::from_chars('T', 'E', 'S', 'T')) {
+    Err(err) => fail("mvar error: \{err}")
+    Ok(value) => value
+  }
+  inspect(delta.round().to_int(), content="10")
 }
 
 ///|

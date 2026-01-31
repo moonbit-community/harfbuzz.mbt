@@ -8,7 +8,7 @@ pub struct MvarRecord {
 pub struct MvarTable {
   records : Array[MvarRecord]
   var_store : ItemVariationStore
-}
+} derive(Show, ToJson)
 
 ///|
 pub fn MvarTable::parse(data : BytesView) -> Result[MvarTable, VarError] {

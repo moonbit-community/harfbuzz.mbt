@@ -41,6 +41,7 @@ pub struct Font {
   mut gdef : @ot_tables.GdefTable?
   mut hvar : @ot_var.HvarTable?
   mut vvar : @ot_var.HvarTable?
+  mut mvar : @ot_var.MvarTable?
   mut fvar : @ot_var.FvarTable?
   mut avar : @ot_var.AvarTable?
   mut var_coords_design : Array[Double]?
@@ -132,6 +133,9 @@ let tag_hvar : @common.Tag = @common.Tag::from_chars('H', 'V', 'A', 'R')
 let tag_vvar : @common.Tag = @common.Tag::from_chars('V', 'V', 'A', 'R')
 
 ///|
+let tag_mvar : @common.Tag = @common.Tag::from_chars('M', 'V', 'A', 'R')
+
+///|
 /// Create a font from a face.
 pub fn Font::new(face : @face.Face) -> Font {
   Font::{
@@ -166,6 +170,7 @@ pub fn Font::new(face : @face.Face) -> Font {
     gdef: None,
     hvar: None,
     vvar: None,
+    mvar: None,
     fvar: None,
     avar: None,
     var_coords_design: None,
@@ -828,6 +833,39 @@ pub fn Font::vvar(self : Font) -> Result[@ot_var.HvarTable?, FontError] {
               Ok(Some(vvar))
             }
           }
+      }
+  }
+}
+
+///|
+pub fn Font::mvar(self : Font) -> Result[@ot_var.MvarTable?, FontError] {
+  match self.mvar {
+    Some(mvar) => Ok(Some(mvar))
+    None =>
+      match self.face.reference_table_optional(tag_mvar) {
+        Err(err) => Err(FaceTable(err))
+        Ok(None) => Ok(None)
+        Ok(Some(blob)) =>
+          match @ot_var.MvarTable::parse(blob.as_view()) {
+            Err(err) => Err(Var(err))
+            Ok(mvar) => {
+              self.mvar = Some(mvar)
+              Ok(Some(mvar))
+            }
+          }
+      }
+  }
+}
+
+///|
+pub fn Font::mvar_delta(self : Font, tag : @common.Tag) -> Result[Double, FontError] {
+  match self.var_coords_norm {
+    None => Ok(0.0)
+    Some(coords) =>
+      match self.mvar() {
+        Err(err) => Err(err)
+        Ok(None) => Ok(0.0)
+        Ok(Some(mvar)) => Ok(mvar.get_var(tag, coords))
       }
   }
 }
