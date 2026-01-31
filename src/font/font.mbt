@@ -2,6 +2,7 @@
 suberror FontError {
   FaceTable(@face.FaceTableError)
   Parse(@sfnt.SfntError)
+  Var(@ot_var.VarError)
   Layout(@ot_tables.OtLayoutError)
   GlyphOutOfRange
 } derive(Eq, Show, ToJson)
@@ -38,6 +39,10 @@ pub struct Font {
   mut gsub : @ot_tables.GsubTable?
   mut gpos : @ot_tables.GposTable?
   mut gdef : @ot_tables.GdefTable?
+  mut fvar : @ot_var.FvarTable?
+  mut avar : @ot_var.AvarTable?
+  mut var_coords_design : Array[Double]?
+  mut var_coords_norm : Array[Int]?
 } derive(Show, ToJson)
 
 ///|
@@ -113,6 +118,12 @@ let tag_gpos : @common.Tag = @common.Tag::from_chars('G', 'P', 'O', 'S')
 let tag_gdef : @common.Tag = @common.Tag::from_chars('G', 'D', 'E', 'F')
 
 ///|
+let tag_fvar : @common.Tag = @common.Tag::from_chars('f', 'v', 'a', 'r')
+
+///|
+let tag_avar : @common.Tag = @common.Tag::from_chars('a', 'v', 'a', 'r')
+
+///|
 /// Create a font from a face.
 pub fn Font::new(face : @face.Face) -> Font {
   Font::{
@@ -145,6 +156,10 @@ pub fn Font::new(face : @face.Face) -> Font {
     gsub: None,
     gpos: None,
     gdef: None,
+    fvar: None,
+    avar: None,
+    var_coords_design: None,
+    var_coords_norm: None,
   }
 }
 
@@ -749,6 +764,46 @@ pub fn Font::gdef(self : Font) -> Result[@ot_tables.GdefTable?, FontError] {
 }
 
 ///|
+pub fn Font::fvar(self : Font) -> Result[@ot_var.FvarTable?, FontError] {
+  match self.fvar {
+    Some(fvar) => Ok(Some(fvar))
+    None =>
+      match self.face.reference_table_optional(tag_fvar) {
+        Err(err) => Err(FaceTable(err))
+        Ok(None) => Ok(None)
+        Ok(Some(blob)) =>
+          match @ot_var.FvarTable::parse(blob.as_view()) {
+            Err(err) => Err(Var(err))
+            Ok(fvar) => {
+              self.fvar = Some(fvar)
+              Ok(Some(fvar))
+            }
+          }
+      }
+  }
+}
+
+///|
+pub fn Font::avar(self : Font) -> Result[@ot_var.AvarTable?, FontError] {
+  match self.avar {
+    Some(avar) => Ok(Some(avar))
+    None =>
+      match self.face.reference_table_optional(tag_avar) {
+        Err(err) => Err(FaceTable(err))
+        Ok(None) => Ok(None)
+        Ok(Some(blob)) =>
+          match @ot_var.AvarTable::parse(blob.as_view()) {
+            Err(err) => Err(Var(err))
+            Ok(avar) => {
+              self.avar = Some(avar)
+              Ok(Some(avar))
+            }
+          }
+      }
+  }
+}
+
+///|
 /// Map a codepoint to a glyph id.
 pub fn Font::glyph_for_codepoint(
   self : Font,
@@ -778,6 +833,56 @@ pub fn Font::variation_glyph_for(
         Err(err) => Err(Parse(err))
         Ok(value) => Ok(value)
       }
+  }
+}
+
+///|
+pub fn Font::set_variations(
+  self : Font,
+  variations : Array[@ot_var.AxisCoord],
+) -> Result[Unit, FontError] {
+  let fvar = match self.fvar() {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  match fvar {
+    None => {
+      self.var_coords_design = None
+      self.var_coords_norm = None
+      Ok(())
+    }
+    Some(fvar) => {
+      let axis_count = fvar.axes.length()
+      let design_coords : Array[Double] = Array::make(axis_count, 0.0)
+      for i in 0..<axis_count {
+        design_coords[i] = fvar.axes[i].default_value
+      }
+      for variation in variations {
+        match fvar.axis_index(variation.tag) {
+          None => ()
+          Some(index) => if index >= 0 && index < axis_count {
+            design_coords[index] = variation.value
+          }
+        }
+      }
+      let mut normalized = fvar.normalize_design_coords(design_coords.copy())
+      match self.avar() {
+        Err(err) => return Err(err)
+        Ok(None) => ()
+        Ok(Some(avar)) => normalized = avar.map_coords_16_16(normalized)
+      }
+      self.var_coords_design = Some(design_coords)
+      self.var_coords_norm = Some(normalized)
+      Ok(())
+    }
+  }
+}
+
+///|
+pub fn Font::variation_coords(self : Font) -> Array[Int] {
+  match self.var_coords_norm {
+    None => []
+    Some(coords) => coords.copy()
   }
 }
 

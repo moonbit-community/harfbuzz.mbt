@@ -114,7 +114,8 @@ fn serialize_objects_with_starts(
     patched.push(obj.data.to_array())
   }
   for i in 0..<count {
-    for target in objects[i].virtual_links {
+    let obj = objects[i]
+    for target in obj.virtual_links {
       if target < 0 || target >= count {
         return Err(SerializeError::InvalidLink)
       }
@@ -122,10 +123,23 @@ fn serialize_objects_with_starts(
         return Err(SerializeError::VirtualOrder)
       }
     }
+    for link in obj.real_links {
+      if link.width == 0 {
+        if link.objidx < 0 || link.objidx >= count {
+          return Err(SerializeError::InvalidLink)
+        }
+        if link.objidx <= i {
+          return Err(SerializeError::VirtualOrder)
+        }
+      }
+    }
   }
   for i in 0..<count {
     let base = starts[i]
     for link in objects[i].real_links {
+      if link.width == 0 {
+        continue
+      }
       if link.objidx < 0 || link.objidx >= count {
         return Err(SerializeError::InvalidLink)
       }
@@ -208,6 +222,15 @@ fn order_objects(objects : ArrayView[SerializeObject]) -> Result[Array[Int], Ser
       }
       edges[i].push(target)
       indegree[target] = indegree[target] + 1
+    }
+    for link in objects[i].real_links {
+      if link.width == 0 {
+        if link.objidx < 0 || link.objidx >= count {
+          return Err(SerializeError::InvalidLink)
+        }
+        edges[i].push(link.objidx)
+        indegree[link.objidx] = indegree[link.objidx] + 1
+      }
     }
   }
   let queue : Array[Int] = []

@@ -16,6 +16,10 @@
     {
       "path": "moonbit-community/harfbuzz/ot/tables",
       "alias": "ot_tables"
+    },
+    {
+      "path": "moonbit-community/harfbuzz/ot/var",
+      "alias": "ot_var"
     }
   ]
 }

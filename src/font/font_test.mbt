@@ -181,6 +181,48 @@ fn build_font_bytes() -> Bytes {
 }
 
 ///|
+fn build_fvar_table() -> Bytes {
+  Bytes::from_array([
+    0x00, 0x01, 0x00, 0x00, // version 1.0
+    0x00, 0x10, // axis offset
+    0x00, 0x02, // reserved
+    0x00, 0x01, // axis count
+    0x00, 0x14, // axis size
+    0x00, 0x00, // instance count
+    0x00, 0x08, // instance size
+    0x77, 0x67, 0x68, 0x74, // 'wght'
+    0xFF, 0xFF, 0x00, 0x00, // min -1.0
+    0x00, 0x00, 0x00, 0x00, // default 0.0
+    0x00, 0x01, 0x00, 0x00, // max 1.0
+    0x00, 0x00, // flags
+    0x01, 0x00, // name id
+  ])
+}
+
+///|
+fn build_avar_table() -> Bytes {
+  Bytes::from_array([
+    0x00, 0x01, 0x00, 0x00, // version 1.0
+    0x00, 0x00, // reserved
+    0x00, 0x01, // axis count
+    0x00, 0x04, // segment count
+    0xC0, 0x00, 0xC0, 0x00, // -1.0 -> -1.0
+    0x00, 0x00, 0x00, 0x00, // 0.0 -> 0.0
+    0x20, 0x00, 0x30, 0x00, // 0.5 -> 0.75
+    0x40, 0x00, 0x40, 0x00, // 1.0 -> 1.0
+  ])
+}
+
+///|
+fn build_font_bytes_variations() -> Bytes {
+  let tables : Array[(@common.Tag, Bytes)] = [
+    (@common.Tag::from_chars('f', 'v', 'a', 'r'), build_fvar_table()),
+    (@common.Tag::from_chars('a', 'v', 'a', 'r'), build_avar_table()),
+  ]
+  build_sfnt(tables)
+}
+
+///|
 test "font basics" {
   let font = Font::from_bytes([0x00, 0x01])
   let (sx, sy) = font.get_scale()
@@ -196,6 +238,19 @@ test "font face access" {
   let font = Font::from_bytes([0x00])
   let face = font.get_face()
   inspect(face.get_index(), content="0")
+}
+
+///|
+test "font variation coords" {
+  let font = Font::from_bytes(build_font_bytes_variations())
+  let variations : Array[@ot_var.AxisCoord] = [
+    @ot_var.AxisCoord::new(@common.Tag::from_chars('w', 'g', 'h', 't'), 0.5),
+  ]
+  match font.set_variations(variations) {
+    Err(err) => fail("set variations failed: \{err}")
+    Ok(_) => ()
+  }
+  inspect(font.variation_coords(), content="[49152]")
 }
 
 ///|
