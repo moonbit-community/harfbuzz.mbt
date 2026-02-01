@@ -16,6 +16,7 @@ Unicode data, variations, color/paint, and subsetting.
 - `ot/tables`: coverage, layout, lookup parsing; GSUB/GPOS apply; GDEF parsing; lookup flag filtering.
   - GSUB: lookup types 1-8 and extension.
   - GPOS: lookup types 1-8 and extension (single, pair, cursive, mark-to-*, contextual, chaining).
+- `ot/cff`: CFF1/CFF2 parsing + bounds helpers (fixtures present).
 - `ot/var`: variation tables + var store (fvar/gvar/avar/cvar/hvar/vvar/mvar/varc) with tests.
 - `ot/color` + `paint`: COLR/CPAL parsing + COLRv1 paint graph decoding (no rendering/backends yet).
 - `aat`: AAT layout tables + shaping (morx/mort/kerx/ankr/trak + bsln/feat/opbd/just/ltag).
@@ -36,6 +37,7 @@ Unicode data, variations, color/paint, and subsetting.
 | `ot/shape` | OT shaping + normalization | `hb-ot-shape.*`, `hb-ot-shaper-*.cc` | partial (normalization + script shapers in buffer; OT fallback gaps + variation selector glyph lookup pending) |
 | `ot/map` | Feature/lookup mapping | `hb-ot-map.*` | partial (lookup selection + feature allowlists) |
 | `shape` | Generic shaper registry + plan | `hb-shape.*`, `hb-shape-plan.*`, `hb-shaper.*` | partial (plan + registry scaffold) |
+| `ot/cff` | CFF/CFF2 parsing + bounds | `hb-ot-cff*`, `hb-cff*` | done |
 | `ot/var` | Variation tables + var store | `hb-ot-var*` | done |
 | `ot/color` | COLR/CPAL + color utilities | `hb-ot-color.*` | partial |
 | `paint` | Paint API | `hb-paint.*` | partial |
@@ -53,7 +55,7 @@ Unicode data, variations, color/paint, and subsetting.
   `hb-ot-shaper-*.cc` (arabic/indic/khmer/myanmar/use/hangul/hebrew/thai/syllabic) -> `ot/shape`
   (most script shapers + normalization done; remaining: variation selector glyph lookup + any missing fallback passes).
 - OT map/feature selection: `hb-ot-map.*` -> `ot/map`.
-- CFF/CFF2 support: `hb-ot-cff*`, `hb-cff*` -> planned `sfnt/cff` or `ot/cff` package.
+- CFF/CFF2 support: `hb-ot-cff*`, `hb-cff*` -> `ot/cff` (done).
 - Graphite2 shaper: `hb-graphite2.*` -> `graphite` (excluded; requires external Graphite2 library).
 - Buffer serialization/verify: `hb-buffer-serialize.*`, `hb-buffer-verify.cc` -> `buffer`.
 - Utility data structures and helpers: `hb-set.*`, `hb-map.*`, `hb-serialize.*`, `hb-repacker.*`,
