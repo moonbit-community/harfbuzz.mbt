@@ -292,6 +292,124 @@ fn decode_tuple_values(data : BytesView) -> Result[Array[Int], VarError] {
   Ok(values)
 }
 
+fn decode_tuple_values_count(
+  data : BytesView,
+  count : Int,
+) -> Result[(Array[Int], Int), VarError] {
+  if count < 0 {
+    return Err(InvalidFormat)
+  }
+  let values : Array[Int] = []
+  let mut pos = 0
+  while values.length() < count {
+    if pos >= data.length() {
+      return Err(UnexpectedEof)
+    }
+    let control = data[pos].to_int()
+    pos = pos + 1
+    let run_count = (control & 0x3F) + 1
+    let mode = control & 0xC0
+    if mode == 0x80 {
+      for _ in 0..<run_count {
+        if values.length() < count {
+          values.push(0)
+        }
+      }
+    } else if mode == 0x40 {
+      let needed = run_count * 2
+      if pos + needed > data.length() {
+        return Err(UnexpectedEof)
+      }
+      for _ in 0..<run_count {
+        let value = read_i16(data, pos)
+        match value {
+          Err(err) => return Err(err)
+          Ok(v) => {
+            if values.length() < count {
+              values.push(v)
+            }
+          }
+        }
+        pos = pos + 2
+      }
+    } else if mode == 0xC0 {
+      let needed = run_count * 4
+      if pos + needed > data.length() {
+        return Err(UnexpectedEof)
+      }
+      for _ in 0..<run_count {
+        let value = read_i32(data, pos)
+        match value {
+          Err(err) => return Err(err)
+          Ok(v) => {
+            if values.length() < count {
+              values.push(v)
+            }
+          }
+        }
+        pos = pos + 4
+      }
+    } else {
+      if pos + run_count > data.length() {
+        return Err(UnexpectedEof)
+      }
+      for _ in 0..<run_count {
+        if values.length() < count {
+          values.push(int8_from_byte_varc(data[pos]))
+        }
+        pos = pos + 1
+      }
+    }
+  }
+  Ok((values, pos))
+}
+
+fn read_u32var(data : BytesView, offset : Int) -> Result[(UInt, Int), VarError] {
+  if offset < 0 || offset >= data.length() {
+    return Err(UnexpectedEof)
+  }
+  let b0 = data[offset].to_uint()
+  if b0 < 0x80U {
+    return Ok((b0, 1))
+  }
+  if b0 < 0xC0U {
+    if offset + 2 > data.length() {
+      return Err(UnexpectedEof)
+    }
+    let b1 = data[offset + 1].to_uint()
+    let value = ((b0 & 0x3FU) << 8) | b1
+    return Ok((value, 2))
+  }
+  if b0 < 0xE0U {
+    if offset + 3 > data.length() {
+      return Err(UnexpectedEof)
+    }
+    let b1 = data[offset + 1].to_uint()
+    let b2 = data[offset + 2].to_uint()
+    let value = ((b0 & 0x1FU) << 16) | (b1 << 8) | b2
+    return Ok((value, 3))
+  }
+  if b0 < 0xF0U {
+    if offset + 4 > data.length() {
+      return Err(UnexpectedEof)
+    }
+    let b1 = data[offset + 1].to_uint()
+    let b2 = data[offset + 2].to_uint()
+    let b3 = data[offset + 3].to_uint()
+    let value = ((b0 & 0x0FU) << 24) | (b1 << 16) | (b2 << 8) | b3
+    return Ok((value, 4))
+  }
+  if offset + 5 > data.length() {
+    return Err(UnexpectedEof)
+  }
+  let b1 = data[offset + 1].to_uint()
+  let b2 = data[offset + 2].to_uint()
+  let b3 = data[offset + 3].to_uint()
+  let b4 = data[offset + 4].to_uint()
+  let value = (b1 << 24) | (b2 << 16) | (b3 << 8) | b4
+  Ok((value, 5))
+}
+
 fn coverage_index_varc(
   data : BytesView,
   offset : Int,

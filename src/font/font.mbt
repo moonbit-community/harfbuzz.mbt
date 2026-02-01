@@ -947,6 +947,30 @@ pub fn Font::varc(self : Font) -> Result[@ot_var.VarcTable?, FontError] {
 }
 
 ///|
+pub fn Font::varc_components(
+  self : Font,
+  glyph : UInt,
+) -> Result[Array[@ot_var.VarcComponent]?, FontError] {
+  let varc = match self.varc() {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  match varc {
+    None => Ok(None)
+    Some(varc) => {
+      let coords : Array[Int] = match self.var_coords_norm {
+        None => []
+        Some(value) => value
+      }
+      match varc.glyph_components(glyph.reinterpret_as_int(), coords, coords) {
+        Err(err) => Err(Var(err))
+        Ok(value) => Ok(Some(value))
+      }
+    }
+  }
+}
+
+///|
 pub fn Font::mvar_delta(self : Font, tag : @common.Tag) -> Result[Double, FontError] {
   match self.var_coords_norm {
     None => Ok(0.0)
