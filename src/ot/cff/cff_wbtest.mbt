@@ -47,11 +47,17 @@ test "cff1 seac bounds" {
     171,
     172,
     14,
+    149,
+    159,
+    169,
+    171,
+    172,
+    14,
   ]
   let charstrings = CffIndex::{
-    count: 4,
+    count: 5,
     off_size: 1,
-    offsets: [1, 2, 9, 16, 21],
+    offsets: [1, 2, 9, 16, 21, 27],
     data,
   }
   let empty_index = CffIndex::{ count: 0, off_size: 0, offsets: [], data: Bytes::from_array([]) }
@@ -72,6 +78,21 @@ test "cff1 seac bounds" {
     charset_map: None,
   }
   let bounds = match cff1.glyph_bounds(3) {
+    Err(err) => fail("bounds error: \{err}")
+    Ok(value) => value
+  }
+  match bounds {
+    None => fail("missing bounds")
+    Some(bounds) => {
+      let x_min = bounds.x_min.round().to_int()
+      let y_min = bounds.y_min.round().to_int()
+      let x_max = bounds.x_max.round().to_int()
+      let y_max = bounds.y_max.round().to_int()
+      inspect((x_min, y_min, x_max, y_max), content="(0, 0, 20, 35)")
+    }
+  }
+
+  let bounds = match cff1.glyph_bounds(4) {
     Err(err) => fail("bounds error: \{err}")
     Ok(value) => value
   }

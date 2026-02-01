@@ -426,7 +426,7 @@ fn interpret_charstring(
       14 => {
         let offset = width_offset(state, stack)
         let count = stack.length() - offset
-        if count == 4 {
+        if count >= 4 {
           let seac_context = match seac {
             None => return Err(InvalidFormat)
             Some(value) => value
@@ -434,10 +434,11 @@ fn interpret_charstring(
           if in_seac {
             return Err(InvalidFormat)
           }
-          let adx = stack[offset]
-          let ady = stack[offset + 1]
-          let bchar = stack[offset + 2].round().to_int()
-          let achar = stack[offset + 3].round().to_int()
+          let base_index = offset + count - 4
+          let adx = stack[base_index]
+          let ady = stack[base_index + 1]
+          let bchar = stack[base_index + 2].round().to_int()
+          let achar = stack[base_index + 3].round().to_int()
           let base_sid = match cff1_standard_sid(bchar) {
             None => return Err(InvalidFormat)
             Some(value) => value
