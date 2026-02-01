@@ -42,6 +42,8 @@ pub struct Font {
   mut trak : @aat.TrakTable?
   mut morx : @aat.MorxTable?
   mut mort : @aat.MortTable?
+  mut kerx : @aat.KerxTable?
+  mut ankr : @aat.AnkrTable?
   mut gsub : @ot_tables.GsubTable?
   mut gpos : @ot_tables.GposTable?
   mut gdef : @ot_tables.GdefTable?
@@ -183,6 +185,12 @@ let tag_morx : @common.Tag = @common.Tag::from_chars('m', 'o', 'r', 'x')
 let tag_mort : @common.Tag = @common.Tag::from_chars('m', 'o', 'r', 't')
 
 ///|
+let tag_kerx : @common.Tag = @common.Tag::from_chars('k', 'e', 'r', 'x')
+
+///|
+let tag_ankr : @common.Tag = @common.Tag::from_chars('a', 'n', 'k', 'r')
+
+///|
 /// Create a font from a face.
 pub fn Font::new(face : @face.Face) -> Font {
   Font::{
@@ -215,6 +223,8 @@ pub fn Font::new(face : @face.Face) -> Font {
     trak: None,
     morx: None,
     mort: None,
+    kerx: None,
+    ankr: None,
     gsub: None,
     gpos: None,
     gdef: None,
@@ -859,6 +869,56 @@ pub fn Font::mort(self : Font) -> Result[@aat.MortTable?, FontError] {
             Ok(mort) => {
               self.mort = Some(mort)
               Ok(Some(mort))
+            }
+          }
+        }
+      }
+  }
+}
+
+///|
+pub fn Font::kerx(self : Font) -> Result[@aat.KerxTable?, FontError] {
+  match self.kerx {
+    Some(kerx) => Ok(Some(kerx))
+    None =>
+      match self.face.reference_table_optional(tag_kerx) {
+        Err(err) => Err(FaceTable(err))
+        Ok(None) => Ok(None)
+        Ok(Some(blob)) => {
+          let maxp = match self.ensure_maxp() {
+            Err(err) => return Err(err)
+            Ok(maxp) => maxp
+          }
+          match @aat.KerxTable::parse(blob.as_view(), maxp.num_glyphs) {
+            Err(err) => Err(Aat(err))
+            Ok(kerx) => {
+              self.kerx = Some(kerx)
+              Ok(Some(kerx))
+            }
+          }
+        }
+      }
+  }
+}
+
+///|
+pub fn Font::ankr(self : Font) -> Result[@aat.AnkrTable?, FontError] {
+  match self.ankr {
+    Some(ankr) => Ok(Some(ankr))
+    None =>
+      match self.face.reference_table_optional(tag_ankr) {
+        Err(err) => Err(FaceTable(err))
+        Ok(None) => Ok(None)
+        Ok(Some(blob)) => {
+          let maxp = match self.ensure_maxp() {
+            Err(err) => return Err(err)
+            Ok(maxp) => maxp
+          }
+          match @aat.AnkrTable::parse(blob.as_view(), maxp.num_glyphs) {
+            Err(err) => Err(Aat(err))
+            Ok(ankr) => {
+              self.ankr = Some(ankr)
+              Ok(Some(ankr))
             }
           }
         }

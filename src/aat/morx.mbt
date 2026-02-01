@@ -326,13 +326,6 @@ fn RearrangementSubtable::apply(
   changed
 }
 
-fn read_u32_non_negative(data : BytesView, offset : Int) -> Result[Int, AatError] {
-  match read_u32_int(data, offset) {
-    Err(err) => Err(err)
-    Ok(value) => if value < 0 { Err(InvalidFormat) } else { Ok(value) }
-  }
-}
-
 fn read_count(
   data : BytesView,
   offset : Int,

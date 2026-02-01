@@ -1,5 +1,5 @@
 ///|
-/// Shape a buffer using AAT tables (currently trak only).
+/// Shape a buffer using AAT tables (morx, kerx, trak).
 pub fn shape(
   font : @font.Font,
   buffer : @buffer.Buffer,
@@ -11,6 +11,10 @@ pub fn shape(
     Ok(_) => ()
   }
   match buffer.apply_morx(font) {
+    Err(err) => return Err(err)
+    Ok(_) => ()
+  }
+  match buffer.apply_kerx(font) {
     Err(err) => return Err(err)
     Ok(_) => ()
   }

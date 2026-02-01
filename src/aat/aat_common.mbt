@@ -43,6 +43,13 @@ fn read_u32_int(data : BytesView, offset : Int) -> Result[Int, AatError] {
   }
 }
 
+fn read_u32_non_negative(data : BytesView, offset : Int) -> Result[Int, AatError] {
+  match read_u32_int(data, offset) {
+    Err(err) => Err(err)
+    Ok(value) => if value < 0 { Err(InvalidFormat) } else { Ok(value) }
+  }
+}
+
 fn read_i16(data : BytesView, offset : Int) -> Result[Int, AatError] {
   match read_u16_int(data, offset) {
     Err(err) => Err(err)

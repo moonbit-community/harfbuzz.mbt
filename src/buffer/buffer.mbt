@@ -1009,7 +1009,7 @@ pub fn Buffer::apply_trak(
 }
 
 ///|
-/// Apply AAT morx/mort non-contextual substitutions if present.
+/// Apply AAT morx/mort substitutions and rearrangements if present.
 pub fn Buffer::apply_morx(
   self : Buffer,
   font : @font.Font,
@@ -1075,6 +1075,70 @@ pub fn Buffer::apply_morx(
   }
   self.infos = new_infos
   self.positions = new_positions
+  Ok(())
+}
+
+///|
+/// Apply AAT kerx kerning adjustments if present.
+pub fn Buffer::apply_kerx(
+  self : Buffer,
+  font : @font.Font,
+) -> Result[Unit, ShapeError] {
+  let kerx = match font.kerx() {
+    Err(err) => return Err(Font(err))
+    Ok(value) => value
+  }
+  let kerx = match kerx {
+    None => return Ok(())
+    Some(kerx) => kerx
+  }
+  if !kerx.has_data() {
+    return Ok(())
+  }
+  if self.infos.length() < 2 {
+    return Ok(())
+  }
+  let horizontal = self.direction.is_horizontal()
+  let (scale_x, scale_y) = font.get_scale()
+  let scale = if horizontal { scale_x } else { scale_y }
+  let upem = font.get_face().get_upem()
+  let positions : Array[GlyphPosition] = []
+  for pos in self.positions {
+    positions.push(pos)
+  }
+  for i in 0..<(self.infos.length() - 1) {
+    let left = self.infos[i].codepoint
+    let right = self.infos[i + 1].codepoint
+    let kern = kerx.kern_value(left, right, horizontal)
+    if kern == 0 {
+      continue
+    }
+    let adjustment = if upem == 0 {
+      kern
+    } else {
+      (kern * scale) / upem
+    }
+    if adjustment == 0 {
+      continue
+    }
+    let pos = positions[i]
+    positions[i] = if horizontal {
+      GlyphPosition::{
+        x_advance: pos.x_advance + adjustment,
+        y_advance: pos.y_advance,
+        x_offset: pos.x_offset,
+        y_offset: pos.y_offset,
+      }
+    } else {
+      GlyphPosition::{
+        x_advance: pos.x_advance,
+        y_advance: pos.y_advance + adjustment,
+        x_offset: pos.x_offset,
+        y_offset: pos.y_offset,
+      }
+    }
+  }
+  self.positions = positions
   Ok(())
 }
 
