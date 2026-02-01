@@ -132,6 +132,102 @@ fn build_glyf_table() -> Bytes {
 }
 
 ///|
+fn build_glyf_simple_square() -> Bytes {
+  let bytes : Array[Byte] = []
+  push_i16(bytes, 1) // contours
+  push_i16(bytes, 0) // x min
+  push_i16(bytes, 0) // y min
+  push_i16(bytes, 50) // x max
+  push_i16(bytes, 50) // y max
+  push_u16(bytes, 3) // endPtsOfContours[0]
+  push_u16(bytes, 0) // instruction length
+  bytes.push(0x31) // on-curve, x same, y same
+  bytes.push(0x33) // on-curve, x short + same, y same
+  bytes.push(0x35) // on-curve, x same, y short + same
+  bytes.push(0x23) // on-curve, x short (neg), y same
+  bytes.push(50) // x delta +50
+  bytes.push(50) // x delta -50
+  bytes.push(50) // y delta +50
+  if (bytes.length() & 1) != 0 {
+    bytes.push(0)
+  }
+  Bytes::from_array(bytes)
+}
+
+///|
+fn build_gvar_tuple_iup_phantom() -> Bytes {
+  let bytes : Array[Byte] = []
+  push_u16(bytes, 2) // tuple var count
+  push_u16(bytes, 16) // data offset
+  push_u16(bytes, 10) // tuple 0 data size
+  push_u16(bytes, 0xA000) // embedded peak + private points
+  push_i16(bytes, 0x4000) // peak 1.0
+  push_u16(bytes, 8) // tuple 1 data size
+  push_u16(bytes, 0xA000) // embedded peak + private points
+  push_i16(bytes, 0x4000) // peak 1.0
+  // tuple 0 data: points [1, 3]
+  bytes.push(2) // point count
+  bytes.push(1) // run count 2
+  bytes.push(1)
+  bytes.push(2)
+  bytes.push(1) // x deltas
+  bytes.push(0x32) // 50
+  bytes.push(0xec) // -20
+  bytes.push(1) // y deltas
+  bytes.push(0x0A) // 10
+  bytes.push(0x00)
+  // tuple 1 data: phantom points [4, 5]
+  bytes.push(2) // point count
+  bytes.push(1) // run count 2
+  bytes.push(4)
+  bytes.push(1)
+  bytes.push(1) // x deltas
+  bytes.push(10)
+  bytes.push(30)
+  bytes.push(0x81) // y deltas: two zeros
+  Bytes::from_array(bytes)
+}
+
+///|
+fn build_gvar_table_iup_phantom(tuple_data : Bytes) -> Bytes {
+  let bytes : Array[Byte] = []
+  push_u32(bytes, 0x00010000) // version 1.0
+  push_u16(bytes, 1) // axis count
+  push_u16(bytes, 0) // shared tuple count
+  push_u32(bytes, 0) // shared tuples offset
+  push_u16(bytes, 2) // glyph count
+  push_u16(bytes, 0) // flags short offsets
+  push_u32(bytes, 26) // data offset (20 + 6)
+  push_u16(bytes, 0) // glyph 0 start
+  push_u16(bytes, 0) // glyph 1 start
+  push_u16(bytes, tuple_data.length() / 2) // glyph 1 end
+  for b in tuple_data {
+    bytes.push(b)
+  }
+  Bytes::from_array(bytes)
+}
+
+///|
+fn build_font_bytes_gvar_iup() -> Bytes {
+  let glyf = build_glyf_simple_square()
+  let loca = build_loca_short([0, 0, glyf.length()])
+  let gvar = build_gvar_table_iup_phantom(build_gvar_tuple_iup_phantom())
+  let tables : Array[(@common.Tag, Bytes)] = [
+    (@common.Tag::from_chars('h', 'e', 'a', 'd'), build_head(1000, 0)),
+    (@common.Tag::from_chars('m', 'a', 'x', 'p'), build_maxp(2)),
+    (@common.Tag::from_chars('h', 'h', 'e', 'a'), build_hhea(2)),
+    (@common.Tag::from_chars('h', 'm', 't', 'x'), build_hmtx()),
+    (@common.Tag::from_chars('v', 'h', 'e', 'a'), build_vhea(2)),
+    (@common.Tag::from_chars('v', 'm', 't', 'x'), build_vmtx()),
+    (@common.Tag::from_chars('l', 'o', 'c', 'a'), loca),
+    (@common.Tag::from_chars('g', 'l', 'y', 'f'), glyf),
+    (@common.Tag::from_chars('f', 'v', 'a', 'r'), build_fvar_table()),
+    (@common.Tag::from_chars('g', 'v', 'a', 'r'), gvar),
+  ]
+  build_sfnt(tables)
+}
+
+///|
 fn build_cmap_table(subtable : Bytes) -> Bytes {
   let bytes : Array[Byte] = []
   push_u16(bytes, 0)
@@ -622,6 +718,32 @@ test "font hvar advance delta" {
     Err(err) => fail("set variations failed: \{err}")
     Ok(_) => ()
   }
+  let advance = match font.glyph_h_advance(1U) {
+    Err(err) => fail("advance error: \{err}")
+    Ok(value) => value
+  }
+  inspect(advance, content="320")
+}
+
+///|
+test "font gvar outline deltas and phantom points" {
+  let font = Font::from_bytes(build_font_bytes_gvar_iup())
+  let variations : Array[@ot_var.AxisCoord] = [
+    @ot_var.AxisCoord::new(@common.Tag::from_chars('w', 'g', 'h', 't'), 1.0),
+  ]
+  match font.set_variations(variations) {
+    Err(err) => fail("set variations failed: \{err}")
+    Ok(_) => ()
+  }
+  let bounds = match font.glyph_bounds(1U) {
+    Err(err) => fail("bounds error: \{err}")
+    Ok(None) => fail("missing bounds")
+    Ok(Some(value)) => value
+  }
+  inspect(bounds.x_min, content="-20")
+  inspect(bounds.y_min, content="10")
+  inspect(bounds.x_max, content="100")
+  inspect(bounds.y_max, content="50")
   let advance = match font.glyph_h_advance(1U) {
     Err(err) => fail("advance error: \{err}")
     Ok(value) => value

@@ -1153,15 +1153,29 @@ pub fn Font::glyph_h_advance(
   let mut advance = hmtx.advances[index]
   match self.var_coords_norm {
     None => ()
-    Some(coords) =>
-      match self.hvar() {
+    Some(coords) => {
+      let hvar = match self.hvar() {
         Err(err) => return Err(err)
-        Ok(None) => ()
-        Ok(Some(hvar)) => {
+        Ok(value) => value
+      }
+      match hvar {
+        Some(hvar) => {
           let delta = hvar.advance_delta(glyph, coords)
           advance = advance + delta.round().to_int()
         }
+        None =>
+          match self.gvar() {
+            Err(err) => return Err(err)
+            Ok(None) => ()
+            Ok(Some(_)) =>
+              match self.glyph_gvar_advance(glyph, coords, false) {
+                Err(err) => return Err(err)
+                Ok(None) => ()
+                Ok(Some(value)) => advance = value
+              }
+          }
       }
+    }
   }
   Ok(scale_value(advance, self.scale_x, head.units_per_em))
 }
@@ -1186,21 +1200,21 @@ fn Font::glyph_bounds_with_coords(
   depth : Int,
 ) -> Result[@sfnt.GlyphBounds?, FontError] {
   if depth <= 0 {
-    return self.glyph_bounds_raw(glyph)
+    return self.glyph_bounds_raw(glyph, coords)
   }
   let varc = match self.varc() {
     Err(err) => return Err(err)
     Ok(value) => value
   }
   match varc {
-    None => self.glyph_bounds_raw(glyph)
+    None => self.glyph_bounds_raw(glyph, coords)
     Some(varc) => {
       let components = match varc.glyph_components(glyph.reinterpret_as_int(), coords, coords) {
         Err(err) => return Err(Var(err))
         Ok(value) => value
       }
       if components.is_empty() {
-        return self.glyph_bounds_raw(glyph)
+        return self.glyph_bounds_raw(glyph, coords)
       }
       let mut min_x : Double? = None
       let mut min_y : Double? = None
@@ -1261,7 +1275,7 @@ fn Font::glyph_bounds_with_coords(
           let y_max = @math.ceil(max_y).to_int()
           Ok(Some(@sfnt.GlyphBounds::new(-1, x_min, y_min, x_max, y_max)))
         }
-        _ => self.glyph_bounds_raw(glyph)
+        _ => self.glyph_bounds_raw(glyph, coords)
       }
     }
   }
@@ -1270,6 +1284,7 @@ fn Font::glyph_bounds_with_coords(
 fn Font::glyph_bounds_raw(
   self : Font,
   glyph : UInt,
+  coords : Array[Int],
 ) -> Result[@sfnt.GlyphBounds?, FontError] {
   let maxp = match self.ensure_maxp() {
     Err(err) => return Err(err)
@@ -1294,6 +1309,29 @@ fn Font::glyph_bounds_raw(
   let start = offsets[index]
   let end = offsets[index + 1]
   let length = end - start
+  if !coords.is_empty() {
+    let gvar = match self.gvar() {
+      Err(err) => return Err(err)
+      Ok(value) => value
+    }
+    match gvar {
+      None => ()
+      Some(_) => {
+        let points = match self.glyph_points_with_gvar(glyph, coords) {
+          Err(err) => return Err(err)
+          Ok(value) => value
+        }
+        match points {
+          None => ()
+          Some(points) =>
+            match glyph_bounds_from_points_for_font(points) {
+              None => ()
+              Some(bounds) => return Ok(Some(bounds))
+            }
+        }
+      }
+    }
+  }
   match glyf.glyph_bounds(start, length) {
     Err(err) => Err(Parse(err))
     Ok(bounds) => Ok(bounds)
@@ -1322,15 +1360,29 @@ pub fn Font::glyph_v_advance(
   let mut advance = vmtx.advances[index]
   match self.var_coords_norm {
     None => ()
-    Some(coords) =>
-      match self.vvar() {
+    Some(coords) => {
+      let vvar = match self.vvar() {
         Err(err) => return Err(err)
-        Ok(None) => ()
-        Ok(Some(vvar)) => {
+        Ok(value) => value
+      }
+      match vvar {
+        Some(vvar) => {
           let delta = vvar.advance_delta(glyph, coords)
           advance = advance + delta.round().to_int()
         }
+        None =>
+          match self.gvar() {
+            Err(err) => return Err(err)
+            Ok(None) => ()
+            Ok(Some(_)) =>
+              match self.glyph_gvar_advance(glyph, coords, true) {
+                Err(err) => return Err(err)
+                Ok(None) => ()
+                Ok(Some(value)) => advance = value
+              }
+          }
       }
+    }
   }
   Ok(-scale_value(advance, self.scale_y, head.units_per_em))
 }
