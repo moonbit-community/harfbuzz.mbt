@@ -88,3 +88,48 @@ test "cff charstring bounds simple" {
     }
   }
 }
+
+///|
+test "cff2 parse minimal" {
+  let bytes : Bytes = [
+    0x02,
+    0x00,
+    0x05,
+    0x00,
+    0x08,
+    0x9C,
+    0x11,
+    0xA3,
+    0x0C,
+    0x24,
+    0xAA,
+    0x0C,
+    0x25,
+    0x00,
+    0x00,
+    0x00,
+    0x00,
+    0x00,
+    0x00,
+    0x00,
+    0x01,
+    0x01,
+    0x01,
+    0x01,
+    0x00,
+    0x00,
+    0x00,
+    0x01,
+    0x01,
+    0x01,
+    0x01,
+    0x00,
+  ]
+  let cff2 = match Cff2Table::parse(bytes[:]) {
+    Err(err) => fail("cff2 parse error: \{err}")
+    Ok(value) => value
+  }
+  inspect((cff2.top_dict_offset, cff2.top_dict_size), content="(5, 8)")
+  inspect((cff2.charstrings.count, cff2.fd_array.count), content="(1, 1)")
+  inspect((cff2.fdselect_offset, cff2.vstore_offset), content="(31, 0)")
+}
