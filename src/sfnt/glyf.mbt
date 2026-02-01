@@ -34,6 +34,20 @@ pub fn GlyphPoint::translate(self : GlyphPoint, dx : Double, dy : Double) -> Uni
 }
 
 ///|
+pub fn GlyphPoint::set(self : GlyphPoint, x : Double, y : Double) -> Unit {
+  self.x = x
+  self.y = y
+}
+
+///|
+pub fn GlyphPoint::transform(self : GlyphPoint, a : Double, b : Double, c : Double, d : Double) -> Unit {
+  let nx = self.x * a + self.y * c
+  let ny = self.x * b + self.y * d
+  self.x = nx
+  self.y = ny
+}
+
+///|
 pub fn GlyphBounds::new(
   contours : Int,
   x_min : Int,
@@ -48,6 +62,23 @@ pub fn GlyphBounds::new(
 /// Parsed glyf table (raw view).
 pub struct GlyfTable {
   data : BytesView
+} derive(Show, ToJson)
+
+///|
+pub struct CompositeComponent {
+  glyph : Int
+  flags : Int
+  arg1 : Int
+  arg2 : Int
+  a : Double
+  b : Double
+  c : Double
+  d : Double
+  tx : Double
+  ty : Double
+  is_anchored : Bool
+  use_my_metrics : Bool
+  scaled_offset : Bool
 } derive(Show, ToJson)
 
 ///|
@@ -170,6 +201,18 @@ fn read_simple_coords(
   Ok((coords, pos))
 }
 
+fn read_i8(data : BytesView, offset : Int) -> Result[Int, SfntError] {
+  if offset < 0 || offset >= data.length() {
+    return Err(UnexpectedEof)
+  }
+  let v = data[offset].to_int()
+  Ok(if v >= 0x80 { v - 0x100 } else { v })
+}
+
+fn f2dot14_to_double(value : Int) -> Double {
+  value.to_double() / 16384.0
+}
+
 ///|
 /// Read simple glyph outline points. Returns None for composite glyphs.
 pub fn GlyfTable::glyph_simple_points(
@@ -286,4 +329,202 @@ pub fn GlyfTable::glyph_simple_points(
     points[end_point].is_end_point = true
   }
   Ok(Some(points))
+}
+
+///|
+/// Read composite glyph component records. Returns None for non-composite glyphs.
+pub fn GlyfTable::glyph_composite_components(
+  self : GlyfTable,
+  offset : Int,
+  length : Int,
+) -> Result[Array[CompositeComponent]?, SfntError] {
+  if offset < 0 || length < 0 {
+    return Err(InvalidFormat)
+  }
+  let data_len = self.data.length()
+  if offset > data_len {
+    return Err(UnexpectedEof)
+  }
+  if length == 0 {
+    return Ok(Some([]))
+  }
+  if length < 10 || offset + length > data_len {
+    return Err(UnexpectedEof)
+  }
+  let contours = read_i16(self.data, offset)
+  let num_contours = match contours {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  if num_contours >= 0 {
+    return Ok(None)
+  }
+  let mut pos = offset + 10
+  let end = offset + length
+  let components : Array[CompositeComponent] = []
+  let mut last_flags = 0
+  while true {
+    if pos + 4 > end {
+      return Err(UnexpectedEof)
+    }
+    let flags = read_u16_int(self.data, pos)
+    let glyph_index = read_u16_int(self.data, pos + 2)
+    let flags = match flags {
+      Err(err) => return Err(err)
+      Ok(value) => value
+    }
+    let mut glyph = match glyph_index {
+      Err(err) => return Err(err)
+      Ok(value) => value
+    }
+    pos = pos + 4
+    if (flags & 0x2000) != 0 {
+      let gid24 = read_u24(self.data, pos)
+      match gid24 {
+        Err(err) => return Err(err)
+        Ok(value) => glyph = value.reinterpret_as_int()
+      }
+      pos = pos + 3
+    }
+    let args_are_words = (flags & 0x0001) != 0
+    let args_are_xy = (flags & 0x0002) != 0
+    let mut arg1 = 0
+    let mut arg2 = 0
+    if args_are_words {
+      if args_are_xy {
+        let a1 = read_i16(self.data, pos)
+        let a2 = read_i16(self.data, pos + 2)
+        match (a1, a2) {
+          (Err(err), _) => return Err(err)
+          (_, Err(err)) => return Err(err)
+          (Ok(v1), Ok(v2)) => {
+            arg1 = v1
+            arg2 = v2
+          }
+        }
+      } else {
+        let a1 = read_u16_int(self.data, pos)
+        let a2 = read_u16_int(self.data, pos + 2)
+        match (a1, a2) {
+          (Err(err), _) => return Err(err)
+          (_, Err(err)) => return Err(err)
+          (Ok(v1), Ok(v2)) => {
+            arg1 = v1
+            arg2 = v2
+          }
+        }
+      }
+      pos = pos + 4
+    } else {
+      if args_are_xy {
+        let a1 = read_i8(self.data, pos)
+        let a2 = read_i8(self.data, pos + 1)
+        match (a1, a2) {
+          (Err(err), _) => return Err(err)
+          (_, Err(err)) => return Err(err)
+          (Ok(v1), Ok(v2)) => {
+            arg1 = v1
+            arg2 = v2
+          }
+        }
+      } else {
+        let a1 = read_u8_int(self.data, pos)
+        let a2 = read_u8_int(self.data, pos + 1)
+        match (a1, a2) {
+          (Err(err), _) => return Err(err)
+          (_, Err(err)) => return Err(err)
+          (Ok(v1), Ok(v2)) => {
+            arg1 = v1
+            arg2 = v2
+          }
+        }
+      }
+      pos = pos + 2
+    }
+    let mut a = 1.0
+    let mut b = 0.0
+    let mut c = 0.0
+    let mut d = 1.0
+    if (flags & 0x0008) != 0 {
+      let scale = read_i16(self.data, pos)
+      match scale {
+        Err(err) => return Err(err)
+        Ok(value) => {
+          let s = f2dot14_to_double(value)
+          a = s
+          d = s
+        }
+      }
+      pos = pos + 2
+    } else if (flags & 0x0040) != 0 {
+      let xscale = read_i16(self.data, pos)
+      let yscale = read_i16(self.data, pos + 2)
+      match (xscale, yscale) {
+        (Err(err), _) => return Err(err)
+        (_, Err(err)) => return Err(err)
+        (Ok(v1), Ok(v2)) => {
+          a = f2dot14_to_double(v1)
+          d = f2dot14_to_double(v2)
+        }
+      }
+      pos = pos + 4
+    } else if (flags & 0x0080) != 0 {
+      let v0 = read_i16(self.data, pos)
+      let v1 = read_i16(self.data, pos + 2)
+      let v2 = read_i16(self.data, pos + 4)
+      let v3 = read_i16(self.data, pos + 6)
+      match (v0, v1, v2, v3) {
+        (Err(err), _, _, _) => return Err(err)
+        (_, Err(err), _, _) => return Err(err)
+        (_, _, Err(err), _) => return Err(err)
+        (_, _, _, Err(err)) => return Err(err)
+        (Ok(v0), Ok(v1), Ok(v2), Ok(v3)) => {
+          a = f2dot14_to_double(v0)
+          b = f2dot14_to_double(v1)
+          c = f2dot14_to_double(v2)
+          d = f2dot14_to_double(v3)
+        }
+      }
+      pos = pos + 8
+    }
+    let is_anchored = !args_are_xy
+    let use_my_metrics = (flags & 0x0200) != 0
+    let scaled_offset = (flags & 0x0800) != 0 && (flags & 0x1000) == 0
+    let tx = if is_anchored { 0.0 } else { arg1.to_double() }
+    let ty = if is_anchored { 0.0 } else { arg2.to_double() }
+    components.push(CompositeComponent::{
+      glyph,
+      flags,
+      arg1,
+      arg2,
+      a,
+      b,
+      c,
+      d,
+      tx,
+      ty,
+      is_anchored,
+      use_my_metrics,
+      scaled_offset,
+    })
+    last_flags = flags
+    if (flags & 0x0020) == 0 {
+      break
+    }
+  }
+  if (last_flags & 0x0100) != 0 {
+    if pos + 2 > end {
+      return Err(UnexpectedEof)
+    }
+    let instr_len = read_u16_int(self.data, pos)
+    let instr_len = match instr_len {
+      Err(err) => return Err(err)
+      Ok(value) => value
+    }
+    pos = pos + 2 + instr_len
+    if pos > end {
+      return Err(UnexpectedEof)
+    }
+  }
+  Ok(Some(components))
 }

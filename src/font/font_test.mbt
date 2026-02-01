@@ -100,6 +100,21 @@ fn build_hmtx() -> Bytes {
 }
 
 ///|
+fn build_hmtx_three() -> Bytes {
+  let bytes : Array[Byte] = []
+  // glyph 0 advance 200, lsb 0
+  push_u16(bytes, 200)
+  push_u16(bytes, 0)
+  // glyph 1 advance 300, lsb 0
+  push_u16(bytes, 300)
+  push_u16(bytes, 0)
+  // glyph 2 advance 400, lsb 0
+  push_u16(bytes, 400)
+  push_u16(bytes, 0)
+  Bytes::from_array(bytes)
+}
+
+///|
 fn build_vmtx() -> Bytes {
   let bytes : Array[Byte] = []
   // glyph 0 advance 700, tsb 0
@@ -107,6 +122,21 @@ fn build_vmtx() -> Bytes {
   push_u16(bytes, 0)
   // glyph 1 advance 800, tsb 0
   push_u16(bytes, 800)
+  push_u16(bytes, 0)
+  Bytes::from_array(bytes)
+}
+
+///|
+fn build_vmtx_three() -> Bytes {
+  let bytes : Array[Byte] = []
+  // glyph 0 advance 700, tsb 0
+  push_u16(bytes, 700)
+  push_u16(bytes, 0)
+  // glyph 1 advance 800, tsb 0
+  push_u16(bytes, 800)
+  push_u16(bytes, 0)
+  // glyph 2 advance 900, tsb 0
+  push_u16(bytes, 900)
   push_u16(bytes, 0)
   Bytes::from_array(bytes)
 }
@@ -150,6 +180,36 @@ fn build_glyf_simple_square() -> Bytes {
   bytes.push(50) // y delta +50
   if (bytes.length() & 1) != 0 {
     bytes.push(0)
+  }
+  Bytes::from_array(bytes)
+}
+
+///|
+fn build_glyf_composite_one_component() -> Bytes {
+  let bytes : Array[Byte] = []
+  push_i16(bytes, -1) // composite
+  push_i16(bytes, 100) // x min
+  push_i16(bytes, 0) // y min
+  push_i16(bytes, 150) // x max
+  push_i16(bytes, 50) // y max
+  let flags = 0x0003 // args are words + xy values
+  push_u16(bytes, flags)
+  push_u16(bytes, 1) // component glyph id
+  push_i16(bytes, 100) // dx
+  push_i16(bytes, 0) // dy
+  Bytes::from_array(bytes)
+}
+
+///|
+fn build_glyf_table_composite() -> Bytes {
+  let glyph1 = build_glyf_simple_square()
+  let glyph2 = build_glyf_composite_one_component()
+  let bytes : Array[Byte] = []
+  for b in glyph1 {
+    bytes.push(b)
+  }
+  for b in glyph2 {
+    bytes.push(b)
   }
   Bytes::from_array(bytes)
 }
@@ -205,6 +265,66 @@ fn build_gvar_table_iup_phantom(tuple_data : Bytes) -> Bytes {
     bytes.push(b)
   }
   Bytes::from_array(bytes)
+}
+
+///|
+fn build_gvar_tuple_composite() -> Bytes {
+  let bytes : Array[Byte] = []
+  push_u16(bytes, 1) // tuple var count
+  push_u16(bytes, 10) // data offset
+  push_u16(bytes, 8) // tuple data size
+  push_u16(bytes, 0xA000) // embedded peak + private points
+  push_i16(bytes, 0x4000) // peak 1.0
+  bytes.push(2) // point count
+  bytes.push(1) // run count 2
+  bytes.push(0) // point 0
+  bytes.push(2) // point 2
+  bytes.push(1) // x deltas: bytes
+  bytes.push(20)
+  bytes.push(30)
+  bytes.push(0x81) // y deltas: two zeros
+  Bytes::from_array(bytes)
+}
+
+///|
+fn build_gvar_table_composite(tuple_data : Bytes) -> Bytes {
+  let bytes : Array[Byte] = []
+  push_u32(bytes, 0x00010000) // version 1.0
+  push_u16(bytes, 1) // axis count
+  push_u16(bytes, 0) // shared tuple count
+  push_u32(bytes, 0) // shared tuples offset
+  push_u16(bytes, 3) // glyph count
+  push_u16(bytes, 0) // flags short offsets
+  push_u32(bytes, 28) // data offset (20 + 8 offsets)
+  push_u16(bytes, 0) // glyph 0 start
+  push_u16(bytes, 0) // glyph 1 start
+  push_u16(bytes, 0) // glyph 2 start
+  push_u16(bytes, tuple_data.length() / 2) // glyph 2 end
+  for b in tuple_data {
+    bytes.push(b)
+  }
+  Bytes::from_array(bytes)
+}
+
+///|
+fn build_font_bytes_gvar_composite() -> Bytes {
+  let glyf = build_glyf_table_composite()
+  let offsets : Array[Int] = [0, 0, glyf.length() - build_glyf_composite_one_component().length(), glyf.length()]
+  let loca = build_loca_short(offsets)
+  let gvar = build_gvar_table_composite(build_gvar_tuple_composite())
+  let tables : Array[(@common.Tag, Bytes)] = [
+    (@common.Tag::from_chars('h', 'e', 'a', 'd'), build_head(1000, 0)),
+    (@common.Tag::from_chars('m', 'a', 'x', 'p'), build_maxp(3)),
+    (@common.Tag::from_chars('h', 'h', 'e', 'a'), build_hhea(3)),
+    (@common.Tag::from_chars('h', 'm', 't', 'x'), build_hmtx_three()),
+    (@common.Tag::from_chars('v', 'h', 'e', 'a'), build_vhea(3)),
+    (@common.Tag::from_chars('v', 'm', 't', 'x'), build_vmtx_three()),
+    (@common.Tag::from_chars('l', 'o', 'c', 'a'), loca),
+    (@common.Tag::from_chars('g', 'l', 'y', 'f'), glyf),
+    (@common.Tag::from_chars('f', 'v', 'a', 'r'), build_fvar_table()),
+    (@common.Tag::from_chars('g', 'v', 'a', 'r'), gvar),
+  ]
+  build_sfnt(tables)
 }
 
 ///|
@@ -749,6 +869,49 @@ test "font gvar outline deltas and phantom points" {
     Ok(value) => value
   }
   inspect(advance, content="320")
+}
+
+///|
+test "font gvar composite deltas" {
+  let font = Font::from_bytes(build_font_bytes_gvar_composite())
+  let variations : Array[@ot_var.AxisCoord] = [
+    @ot_var.AxisCoord::new(@common.Tag::from_chars('w', 'g', 'h', 't'), 1.0),
+  ]
+  match font.set_variations(variations) {
+    Err(err) => fail("set variations failed: \{err}")
+    Ok(_) => ()
+  }
+  let gvar = match font.gvar() {
+    Err(err) => fail("gvar error: \{err}")
+    Ok(value) => value
+  }
+  match gvar {
+    None => fail("missing gvar")
+    Some(gvar) => {
+      let data = gvar.glyph_variation_data(2)
+      inspect(data.map(bytes => bytes.length()), content="Some(18)")
+      let deltas = match gvar.glyph_deltas(2, [16384], 5) {
+        Err(err) => fail("gvar deltas error: \{err}")
+        Ok(value) => value
+      }
+      let deltas_x = deltas.0.map(delta => delta.round().to_int())
+      inspect(deltas_x, content="[20, 0, 30, 0, 0]")
+    }
+  }
+  let bounds = match font.glyph_bounds(2U) {
+    Err(err) => fail("bounds error: \{err}")
+    Ok(None) => fail("missing bounds")
+    Ok(Some(value)) => value
+  }
+  inspect(bounds.x_min, content="120")
+  inspect(bounds.y_min, content="0")
+  inspect(bounds.x_max, content="170")
+  inspect(bounds.y_max, content="50")
+  let advance = match font.glyph_h_advance(2U) {
+    Err(err) => fail("advance error: \{err}")
+    Ok(value) => value
+  }
+  inspect(advance, content="430")
 }
 
 ///|

@@ -114,6 +114,9 @@ pub fn GvarTable::glyph_variation_data(self : GvarTable, glyph : Int) -> Bytes? 
   }
   let base = self.data_offset
   let length = end - start
+  if length == 0 {
+    return None
+  }
   if base < 0 || base + end > self.data.length() {
     return None
   }

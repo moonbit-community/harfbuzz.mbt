@@ -182,6 +182,48 @@ fn apply_gvar_deltas_to_points(
   }
 }
 
+fn transform_points(
+  points : Array[@sfnt.GlyphPoint],
+  a : Double,
+  b : Double,
+  c : Double,
+  d : Double,
+) -> Unit {
+  if a == 1.0 && b == 0.0 && c == 0.0 && d == 1.0 {
+    return
+  }
+  for point in points {
+    point.transform(a, b, c, d)
+  }
+}
+
+fn translate_points(
+  points : Array[@sfnt.GlyphPoint],
+  dx : Double,
+  dy : Double,
+) -> Unit {
+  if dx == 0.0 && dy == 0.0 {
+    return
+  }
+  for point in points {
+    point.translate(dx, dy)
+  }
+}
+
+fn apply_component_transform(
+  points : Array[@sfnt.GlyphPoint],
+  component : @sfnt.CompositeComponent,
+  trans_point : @sfnt.GlyphPoint,
+) -> Unit {
+  if component.scaled_offset {
+    translate_points(points, trans_point.x, trans_point.y)
+    transform_points(points, component.a, component.b, component.c, component.d)
+  } else {
+    transform_points(points, component.a, component.b, component.c, component.d)
+    translate_points(points, trans_point.x, trans_point.y)
+  }
+}
+
 fn build_phantom_points(
   bounds : @sfnt.GlyphBounds?,
   hmtx : @sfnt.HmtxTable,
@@ -243,6 +285,40 @@ fn build_phantom_points(
   Ok(phantoms)
 }
 
+fn split_phantoms(
+  points : Array[@sfnt.GlyphPoint],
+) -> (Array[@sfnt.GlyphPoint], Array[@sfnt.GlyphPoint]) {
+  let mut outline_len = points.length()
+  if outline_len >= 4 {
+    outline_len = outline_len - 4
+  } else {
+    outline_len = 0
+  }
+  let outlines : Array[@sfnt.GlyphPoint] = []
+  let phantoms : Array[@sfnt.GlyphPoint] = []
+  for i in 0..<outline_len {
+    outlines.push(points[i])
+  }
+  for i in outline_len..<points.length() {
+    phantoms.push(points[i])
+  }
+  (outlines, phantoms)
+}
+
+fn ensure_four_phantoms(points : Array[@sfnt.GlyphPoint]) -> Array[@sfnt.GlyphPoint] {
+  if points.length() >= 4 {
+    return points
+  }
+  let out : Array[@sfnt.GlyphPoint] = []
+  for point in points {
+    out.push(point)
+  }
+  while out.length() < 4 {
+    out.push(@sfnt.GlyphPoint::new(0.0, 0.0, 0, false))
+  }
+  out
+}
+
 fn glyph_bounds_from_points(
   points : Array[@sfnt.GlyphPoint],
   contour_count : Int,
@@ -269,11 +345,15 @@ fn glyph_bounds_from_points(
   Some(@sfnt.GlyphBounds::new(contour_count, x_min, y_min, x_max, y_max))
 }
 
-fn Font::glyph_points_with_gvar(
+fn Font::glyph_points_with_gvar_depth(
   self : Font,
   glyph : UInt,
   coords : Array[Int],
+  depth : Int,
 ) -> Result[Array[@sfnt.GlyphPoint]?, FontError] {
+  if depth <= 0 {
+    return Ok(None)
+  }
   let maxp = match self.ensure_maxp() {
     Err(err) => return Err(err)
     Ok(value) => value
@@ -301,12 +381,126 @@ fn Font::glyph_points_with_gvar(
     Err(err) => return Err(Parse(err))
     Ok(value) => value
   }
-  let points = match glyf.glyph_simple_points(start, length) {
+  let simple_points = match glyf.glyph_simple_points(start, length) {
     Err(err) => return Err(Parse(err))
     Ok(value) => value
   }
-  match points {
-    None => Ok(None)
+  match simple_points {
+    None => {
+      let components = match glyf.glyph_composite_components(start, length) {
+        Err(err) => return Err(Parse(err))
+        Ok(value) => value
+      }
+      match components {
+        None => Ok(None)
+        Some(components) => {
+          let hmtx = match self.ensure_hmtx() {
+            Err(err) => return Err(err)
+            Ok(value) => value
+          }
+          let vmtx = match self.vmtx() {
+            Err(err) => return Err(err)
+            Ok(value) => value
+          }
+          let trans_points : Array[@sfnt.GlyphPoint] = []
+          for component in components {
+            trans_points.push(@sfnt.GlyphPoint::new(
+              component.tx,
+              component.ty,
+              0,
+              true,
+            ))
+          }
+          let phantoms = match build_phantom_points(bounds, hmtx, vmtx, index) {
+            Err(err) => return Err(err)
+            Ok(value) => value
+          }
+          let var_points : Array[@sfnt.GlyphPoint] = []
+          for point in trans_points {
+            var_points.push(point)
+          }
+          for phantom in phantoms {
+            var_points.push(phantom)
+          }
+          if !coords.is_empty() {
+            let gvar = match self.gvar() {
+              Err(err) => return Err(err)
+              Ok(value) => value
+            }
+            match gvar {
+              None => ()
+              Some(gvar) =>
+                match apply_gvar_deltas_to_points(var_points, coords, gvar, index) {
+                  Err(err) => return Err(Var(err))
+                  Ok(_) => ()
+                }
+            }
+          }
+          let mut parent_phantoms = ensure_four_phantoms(
+            var_points[var_points.length() - 4:var_points.length()].to_array(),
+          )
+          let all_points : Array[@sfnt.GlyphPoint] = []
+          let mut comp_index = 0
+          for component in components {
+            if comp_index >= var_points.length() {
+              break
+            }
+            let comp_gid = if component.glyph < 0 {
+              None
+            } else {
+              Some(component.glyph.reinterpret_as_uint())
+            }
+            match comp_gid {
+              None => ()
+              Some(comp_gid) => {
+                let comp_points = match self.glyph_points_with_gvar_depth(
+                  comp_gid,
+                  coords,
+                  depth - 1,
+                ) {
+                  Err(err) => return Err(err)
+                  Ok(value) => value
+                }
+                match comp_points {
+                  None => ()
+                  Some(comp_points) => {
+                    let (comp_outline, comp_phantoms) = split_phantoms(comp_points)
+                    if component.use_my_metrics && comp_phantoms.length() >= 4 {
+                      parent_phantoms = comp_phantoms
+                    }
+                    if !comp_outline.is_empty() {
+                      apply_component_transform(
+                        comp_outline,
+                        component,
+                        var_points[comp_index],
+                      )
+                      if component.is_anchored {
+                        let p1 = component.arg1
+                        let p2 = component.arg2
+                        if p1 >= 0 && p1 < all_points.length() &&
+                          p2 >= 0 && p2 < comp_outline.length() {
+                          let dx = all_points[p1].x - comp_outline[p2].x
+                          let dy = all_points[p1].y - comp_outline[p2].y
+                          translate_points(comp_outline, dx, dy)
+                        }
+                      }
+                      for point in comp_outline {
+                        all_points.push(point)
+                      }
+                    }
+                  }
+                }
+              }
+            }
+            comp_index = comp_index + 1
+          }
+          for phantom in parent_phantoms {
+            all_points.push(phantom)
+          }
+          Ok(Some(all_points))
+        }
+      }
+    }
     Some(points) => {
       let points = points
       let hmtx = match self.ensure_hmtx() {
@@ -341,6 +535,14 @@ fn Font::glyph_points_with_gvar(
       Ok(Some(points))
     }
   }
+}
+
+fn Font::glyph_points_with_gvar(
+  self : Font,
+  glyph : UInt,
+  coords : Array[Int],
+) -> Result[Array[@sfnt.GlyphPoint]?, FontError] {
+  self.glyph_points_with_gvar_depth(glyph, coords, 8)
 }
 
 fn glyph_bounds_from_points_for_font(
