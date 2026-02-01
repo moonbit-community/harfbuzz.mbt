@@ -106,4 +106,16 @@ test "cff1 seac bounds" {
       inspect((x_min, y_min, x_max, y_max), content="(0, 0, 20, 35)")
     }
   }
+
+  let components = match cff1.seac_components(3) {
+    Err(err) => fail("seac components error: \{err}")
+    Ok(value) => value
+  }
+  inspect(components, content="Some((1, 2))")
+
+  let components = match cff1.seac_components(4) {
+    Err(err) => fail("seac components error: \{err}")
+    Ok(value) => value
+  }
+  inspect(components, content="Some((1, 2))")
 }

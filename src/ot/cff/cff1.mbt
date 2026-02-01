@@ -159,6 +159,32 @@ pub fn Cff1Table::glyph_bounds(
   cff1_charstring_bounds(bytes[:], Some(self.global_subrs), self.local_subrs, seac)
 }
 
+///|
+pub fn Cff1Table::seac_components(
+  self : Cff1Table,
+  glyph : Int,
+) -> Result[(Int, Int)?, CffError] {
+  if glyph < 0 || glyph >= self.charstrings.count {
+    return Err(InvalidFormat)
+  }
+  let bytes = match self.charstrings.item_bytes(glyph) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  let seac = Cff1SeacContext::{
+    charstrings: self.charstrings,
+    charset_offset: self.charset_offset,
+    charset_map: self.charset_map,
+    glyph_count: self.charstrings.count,
+  }
+  cff1_charstring_seac_components(
+    bytes[:],
+    Some(self.global_subrs),
+    self.local_subrs,
+    seac,
+  )
+}
+
 fn parse_cff1_index_at(
   data : BytesView,
   offset : Int,

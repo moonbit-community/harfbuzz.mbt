@@ -234,6 +234,38 @@ fn cff1_charstring_bounds(
   }
 }
 
+fn cff1_charstring_seac_components(
+  data : BytesView,
+  global_subrs : CffIndex?,
+  local_subrs : CffIndex?,
+  seac : Cff1SeacContext,
+) -> Result[(Int, Int)?, CffError] {
+  let state = CffCharstringState::new()
+  let stack : Array[Double] = []
+  let records : Array[(Int, Int)] = []
+  let report = (base : Int, accent : Int) => {
+    if records.is_empty() {
+      records.push((base, accent))
+    }
+  }
+  match interpret_charstring(
+    data,
+    state,
+    stack,
+    global_subrs,
+    local_subrs,
+    0,
+    false,
+    Some(seac),
+    false,
+    seac_report=report,
+  ) {
+    Err(err) => Err(err)
+    Ok(_) =>
+      if records.is_empty() { Ok(None) } else { Ok(Some(records[0])) }
+  }
+}
+
 ///|
 pub fn cff2_charstring_bounds(
   data : BytesView,
@@ -281,6 +313,7 @@ fn interpret_charstring(
   allow_return : Bool,
   seac : Cff1SeacContext?,
   in_seac : Bool,
+  seac_report? : (Int, Int) -> Unit = (_, _) => (),
 ) -> Result[Unit, CffError] {
   if depth > 16 {
     return Err(InvalidFormat)
@@ -407,6 +440,7 @@ fn interpret_charstring(
           true,
           seac,
           in_seac,
+          seac_report~,
         ) {
           Err(err) => return Err(err)
           Ok(_) => ()
@@ -471,6 +505,7 @@ fn interpret_charstring(
             None => return Err(InvalidFormat)
             Some(value) => value
           }
+          seac_report(base_gid, accent_gid)
           let base_bytes = match seac_context.charstrings.item_bytes(base_gid) {
             Err(err) => return Err(err)
             Ok(value) => value
@@ -491,6 +526,7 @@ fn interpret_charstring(
             false,
             seac,
             true,
+            seac_report~,
           ) {
             Err(err) => return Err(err)
             Ok(_) => ()
@@ -507,6 +543,7 @@ fn interpret_charstring(
             false,
             seac,
             true,
+            seac_report~,
           ) {
             Err(err) => return Err(err)
             Ok(_) => ()
@@ -630,6 +667,7 @@ fn interpret_charstring(
           true,
           seac,
           in_seac,
+          seac_report~,
         ) {
           Err(err) => return Err(err)
           Ok(_) => ()
