@@ -1038,6 +1038,12 @@ pub fn Buffer::apply_morx(
     return Ok(())
   }
   let horizontal = self.direction.is_horizontal()
+  let cluster_unicode : Map[Int, UInt] = {}
+  for info in self.infos {
+    if !cluster_unicode.contains(info.cluster) {
+      cluster_unicode[info.cluster] = info.unicode
+    }
+  }
   let glyphs : Array[UInt] = []
   let clusters : Array[Int] = []
   for info in self.infos {
@@ -1069,7 +1075,10 @@ pub fn Buffer::apply_morx(
       Err(err) => return Err(err)
       Ok(value) => value
     }
-    let unicode = self.infos[i].unicode
+    let unicode = match cluster_unicode.get(cluster) {
+      None => 0U
+      Some(value) => value
+    }
     new_infos.push(GlyphInfo::{ codepoint: glyph, cluster, unicode })
     new_positions.push(pos)
   }
