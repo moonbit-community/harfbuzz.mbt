@@ -48,10 +48,19 @@ let tag_glyf : @common.Tag = @common.Tag::from_chars('g', 'l', 'y', 'f')
 let tag_cmap : @common.Tag = @common.Tag::from_chars('c', 'm', 'a', 'p')
 
 ///|
+let tag_cff : @common.Tag = @common.Tag::from_chars('C', 'F', 'F', ' ')
+
+///|
+let tag_cff2 : @common.Tag = @common.Tag::from_chars('C', 'F', 'F', '2')
+
+///|
 let tag_name : @common.Tag = @common.Tag::from_chars('n', 'a', 'm', 'e')
 
 ///|
 let tag_post : @common.Tag = @common.Tag::from_chars('p', 'o', 's', 't')
+
+///|
+let tag_ttcf : @common.Tag = @common.Tag::from_chars('t', 't', 'c', 'f')
 
 ///|
 fn read_u16(bytes : Array[Byte], offset : Int) -> Result[Int, SubsetError] {
@@ -80,6 +89,23 @@ fn read_u24(bytes : Array[Byte], offset : Int) -> Result[Int, SubsetError] {
   let b1 = bytes[offset + 1].to_int()
   let b2 = bytes[offset + 2].to_int()
   Ok((b0 << 16) | (b1 << 8) | b2)
+}
+
+///|
+fn read_u32_view(data : BytesView, offset : Int) -> Result[Int, SubsetError] {
+  if offset < 0 || offset + 4 > data.length() {
+    return Err(InvalidInput("unexpected eof"))
+  }
+  let b0 = data[offset].to_uint()
+  let b1 = data[offset + 1].to_uint()
+  let b2 = data[offset + 2].to_uint()
+  let b3 = data[offset + 3].to_uint()
+  let value = ((b0 << 24) | (b1 << 16) | (b2 << 8) | b3).reinterpret_as_int()
+  if value < 0 {
+    Err(InvalidInput("invalid u32"))
+  } else {
+    Ok(value)
+  }
 }
 
 ///|
@@ -359,6 +385,101 @@ fn remap_composite_glyph(
 }
 
 ///|
+fn ttc_font_offset(
+  data : BytesView,
+  index : Int,
+) -> Result[Int, SubsetError] {
+  let count = read_u32_view(data, 8)
+  let count = match count {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  if index < 0 || index >= count {
+    return Err(InvalidInput("face index out of range"))
+  }
+  let offset = 12 + index * 4
+  read_u32_view(data, offset)
+}
+
+///|
+fn sfnt_base_offset(face : @face.Face) -> Result[Int, SubsetError] {
+  let data = face.reference_blob().as_view()
+  if data.length() < 4 {
+    return Err(InvalidInput("unexpected eof"))
+  }
+  let tag = @common.Tag::from_bytes(data[0], data[1], data[2], data[3])
+  if tag == tag_ttcf {
+    ttc_font_offset(data, face.get_index())
+  } else {
+    Ok(0)
+  }
+}
+
+///|
+fn build_codepoint_map(
+  font : @font.Font,
+  input : SubsetInput,
+) -> Result[Array[(UInt, Int)], SubsetError] {
+  let codepoint_map : Array[(UInt, Int)] = []
+  for codepoint in input.codepoints {
+    let gid = match font.glyph_for_codepoint(codepoint) {
+      Err(err) => return Err(Font(err))
+      Ok(value) => value
+    }
+    match gid {
+      None => ()
+      Some(gid) => codepoint_map.push((codepoint, gid.reinterpret_as_int()))
+    }
+  }
+  Ok(codepoint_map)
+}
+
+///|
+fn subset_cmap_only(
+  font : @font.Font,
+  input : SubsetInput,
+) -> Result[Bytes, SubsetError] {
+  let codepoint_map = match build_codepoint_map(font, input) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  let cmap_bytes = build_cmap_from_pairs(codepoint_map)
+  let face = font.get_face()
+  let base = match sfnt_base_offset(face) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  let sfnt = match @sfnt.Sfnt::parse_at(face.reference_blob(), base) {
+    Err(err) => return Err(Sfnt(err))
+    Ok(value) => value
+  }
+  let tables : Array[(@common.Tag, Bytes)] = []
+  let mut added_cmap = false
+  for record in sfnt.tables() {
+    if record.tag == tag_cmap {
+      added_cmap = true
+      match cmap_bytes {
+        None => ()
+        Some(cmap) => tables.push((tag_cmap, cmap))
+      }
+      continue
+    }
+    let blob = match sfnt.table(record.tag) {
+      Err(err) => return Err(Sfnt(err))
+      Ok(value) => value
+    }
+    tables.push((record.tag, blob.as_view().to_bytes()))
+  }
+  if !added_cmap {
+    match cmap_bytes {
+      None => ()
+      Some(cmap) => tables.push((tag_cmap, cmap))
+    }
+  }
+  Ok(build_sfnt(tables))
+}
+
+///|
 pub fn build_plan(
   font : @font.Font,
   input : SubsetInput,
@@ -491,11 +612,35 @@ pub fn subset(
   font : @font.Font,
   input : SubsetInput,
 ) -> Result[Bytes, SubsetError] {
-  let plan = match build_plan(font, input) {
-    Err(err) => return Err(err)
+  let face = font.get_face()
+  let has_glyf = match face.reference_table_optional(tag_glyf) {
+    Err(err) => return Err(Face(err))
     Ok(value) => value
   }
-  subset_with_plan(font, plan)
+  match has_glyf {
+    Some(_) => {
+      let plan = match build_plan(font, input) {
+        Err(err) => return Err(err)
+        Ok(value) => value
+      }
+      subset_with_plan(font, plan)
+    }
+    None => {
+      let has_cff = match face.reference_table_optional(tag_cff) {
+        Err(err) => return Err(Face(err))
+        Ok(value) => value is Some(_)
+      }
+      let has_cff2 = match face.reference_table_optional(tag_cff2) {
+        Err(err) => return Err(Face(err))
+        Ok(value) => value is Some(_)
+      }
+      if has_cff || has_cff2 {
+        subset_cmap_only(font, input)
+      } else {
+        Err(Unsupported("missing outline table"))
+      }
+    }
+  }
 }
 
 ///|
