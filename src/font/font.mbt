@@ -975,6 +975,29 @@ pub fn Font::cvt(self : Font) -> Result[@sfnt.CvtTable?, FontError] {
 }
 
 ///|
+pub fn Font::cvt_values(self : Font) -> Result[Array[Int]?, FontError] {
+  let cvt = match self.cvt() {
+    Err(err) => return Err(err)
+    Ok(None) => return Ok(None)
+    Ok(Some(value)) => value
+  }
+  let base = cvt.values().to_array()
+  match self.var_coords_norm {
+    None => Ok(Some(base))
+    Some(coords) =>
+      match self.cvar() {
+        Err(err) => Err(err)
+        Ok(None) => Ok(Some(base))
+        Ok(Some(cvar)) =>
+          match cvar.apply_to_cvt(base, coords) {
+            Err(err) => Err(Var(err))
+            Ok(values) => Ok(Some(values))
+          }
+      }
+  }
+}
+
+///|
 /// Map a codepoint to a glyph id.
 pub fn Font::glyph_for_codepoint(
   self : Font,

@@ -214,10 +214,45 @@ fn build_avar_table() -> Bytes {
 }
 
 ///|
+fn build_cvt_table() -> Bytes {
+  let bytes : Array[Byte] = []
+  push_i16(bytes, 100)
+  push_i16(bytes, 200)
+  push_i16(bytes, 300)
+  Bytes::from_array(bytes)
+}
+
+///|
+fn build_cvar_table() -> Bytes {
+  let bytes : Array[Byte] = []
+  push_u32(bytes, 0x00010000) // version
+  push_u16(bytes, 1) // tuple var count
+  push_u16(bytes, 10) // data offset
+  push_u16(bytes, 4) // tuple data size
+  push_u16(bytes, 0x8000) // embedded peak
+  push_i16(bytes, 0x4000) // peak 1.0
+  bytes.push(2) // run length 3 (0x02)
+  bytes.push(10)
+  bytes.push(0)
+  bytes.push(0xfb)
+  Bytes::from_array(bytes)
+}
+
+///|
 fn build_font_bytes_variations() -> Bytes {
   let tables : Array[(@common.Tag, Bytes)] = [
     (@common.Tag::from_chars('f', 'v', 'a', 'r'), build_fvar_table()),
     (@common.Tag::from_chars('a', 'v', 'a', 'r'), build_avar_table()),
+  ]
+  build_sfnt(tables)
+}
+
+///|
+fn build_font_bytes_cvar() -> Bytes {
+  let tables : Array[(@common.Tag, Bytes)] = [
+    (@common.Tag::from_chars('f', 'v', 'a', 'r'), build_fvar_table()),
+    (@common.Tag::from_chars('c', 'v', 't', ' '), build_cvt_table()),
+    (@common.Tag::from_chars('c', 'v', 'a', 'r'), build_cvar_table()),
   ]
   build_sfnt(tables)
 }
@@ -427,6 +462,28 @@ test "font variation coords" {
     Ok(_) => ()
   }
   inspect(font.variation_coords(), content="[12288]")
+}
+
+///|
+test "font cvar cvt values" {
+  let font = Font::from_bytes(build_font_bytes_cvar())
+  let base = match font.cvt_values() {
+    Err(err) => fail("cvt error: \{err}")
+    Ok(value) => value
+  }
+  inspect(base, content="Some([100, 200, 300])")
+  let variations : Array[@ot_var.AxisCoord] = [
+    @ot_var.AxisCoord::new(@common.Tag::from_chars('w', 'g', 'h', 't'), 1.0),
+  ]
+  match font.set_variations(variations) {
+    Err(err) => fail("set variations failed: \{err}")
+    Ok(_) => ()
+  }
+  let applied = match font.cvt_values() {
+    Err(err) => fail("cvt error: \{err}")
+    Ok(value) => value
+  }
+  inspect(applied, content="Some([110, 200, 295])")
 }
 
 ///|
