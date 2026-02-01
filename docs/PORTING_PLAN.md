@@ -18,6 +18,8 @@ Unicode data, variations, color/paint, and subsetting.
   - GPOS: lookup types 1-8 and extension (single, pair, cursive, mark-to-*, contextual, chaining).
 - `ot/var`: variation tables + var store (fvar/gvar/avar/cvar/hvar/vvar/mvar/varc) with tests.
 - `ot/color` + `paint`: COLR/CPAL parsing + COLRv1 paint graph decoding (no rendering/backends yet).
+- `aat`: AAT layout tables + shaping (morx/mort/kerx/ankr/trak + bsln/feat/opbd/just/ltag).
+- `subset`: TrueType subsetting for glyf/loca/hmtx/head/hhea/maxp/cmap (composite remap; long loca).
 
 ## Package Map (current + planned)
 
@@ -37,9 +39,9 @@ Unicode data, variations, color/paint, and subsetting.
 | `ot/var` | Variation tables + var store | `hb-ot-var*` | done |
 | `ot/color` | COLR/CPAL + color utilities | `hb-ot-color.*` | partial |
 | `paint` | Paint API | `hb-paint.*` | partial |
-| `aat` | AAT layout + shaping | `hb-aat-*` | planned |
-| `graphite` | Graphite2 shaper | `hb-graphite2.*` | planned |
-| `subset` | Subsetting pipeline | `hb-subset*` | planned |
+| `aat` | AAT layout + shaping | `hb-aat-*` | done |
+| `graphite` | Graphite2 shaper | `hb-graphite2.*` | excluded (external dependency) |
+| `subset` | Subsetting pipeline | `hb-subset*` | done (TrueType glyf/loca) |
 | `draw` | Draw/outline helpers | `hb-draw.*`, `hb-outline.*` | planned |
 | `platform/*` | Platform backends | CoreText/DirectWrite/Uniscribe/etc. | excluded |
 
@@ -52,9 +54,7 @@ Unicode data, variations, color/paint, and subsetting.
   (most script shapers + normalization done; remaining: variation selector glyph lookup + any missing fallback passes).
 - OT map/feature selection: `hb-ot-map.*` -> `ot/map`.
 - CFF/CFF2 support: `hb-ot-cff*`, `hb-cff*` -> planned `sfnt/cff` or `ot/cff` package.
-- AAT shaping: `hb-aat-*` -> `aat`.
-- Graphite2 shaper: `hb-graphite2.*` -> `graphite`.
-- Subsetting: `hb-subset*` -> `subset`.
+- Graphite2 shaper: `hb-graphite2.*` -> `graphite` (excluded; requires external Graphite2 library).
 - Buffer serialization/verify: `hb-buffer-serialize.*`, `hb-buffer-verify.cc` -> `buffer`.
 - Utility data structures and helpers: `hb-set.*`, `hb-map.*`, `hb-serialize.*`, `hb-repacker.*`,
   `hb-number-parser.*` -> new support package (or fold into existing).
