@@ -193,7 +193,18 @@ pub fn cff_charstring_bounds(
   local_subrs : CffIndex?,
 ) -> Result[CffBounds?, CffError] {
   let state = CffCharstringState::new()
-  match interpret_charstring(data, state, global_subrs, local_subrs, 0, false, None, false) {
+  let stack : Array[Double] = []
+  match interpret_charstring(
+    data,
+    state,
+    stack,
+    global_subrs,
+    local_subrs,
+    0,
+    false,
+    None,
+    false,
+  ) {
     Err(err) => Err(err)
     Ok(_) => Ok(state.bounds.result())
   }
@@ -206,9 +217,11 @@ fn cff1_charstring_bounds(
   seac : Cff1SeacContext,
 ) -> Result[CffBounds?, CffError] {
   let state = CffCharstringState::new()
+  let stack : Array[Double] = []
   match interpret_charstring(
     data,
     state,
+    stack,
     global_subrs,
     local_subrs,
     0,
@@ -232,9 +245,11 @@ pub fn cff2_charstring_bounds(
 ) -> Result[CffBounds?, CffError] {
   let state = CffCharstringState::new()
   let blend_state = Cff2BlendState::new(var_store, ivs, coords)
+  let stack : Array[Double] = []
   match interpret_charstring_cff2(
     data,
     state,
+    stack,
     blend_state,
     global_subrs,
     local_subrs,
@@ -259,6 +274,7 @@ fn subr_bias(count : Int) -> Int {
 fn interpret_charstring(
   data : BytesView,
   state : CffCharstringState,
+  stack : Array[Double],
   global_subrs : CffIndex?,
   local_subrs : CffIndex?,
   depth : Int,
@@ -270,7 +286,6 @@ fn interpret_charstring(
     return Err(InvalidFormat)
   }
   let mut pos = 0
-  let mut stack : Array[Double] = []
   while pos < data.length() {
     let b0 = data[pos].to_int()
     if b0 >= 32 || b0 == 28 || b0 == 255 {
@@ -292,7 +307,7 @@ fn interpret_charstring(
           return Err(InvalidFormat)
         }
         state.stem_count = state.stem_count + (count / 2)
-        stack = []
+        stack.clear()
         pos = pos + 1
       }
       19 | 20 => {
@@ -302,7 +317,7 @@ fn interpret_charstring(
           return Err(InvalidFormat)
         }
         state.stem_count = state.stem_count + (count / 2)
-        stack = []
+        stack.clear()
         pos = pos + 1
         let mask_bytes = (state.stem_count + 7) / 8
         if pos + mask_bytes > data.length() {
@@ -318,7 +333,7 @@ fn interpret_charstring(
         let dy = stack[offset]
           let pt = state.current_point().offset(0.0, dy)
         state.moveto(pt)
-        stack = []
+        stack.clear()
         pos = pos + 1
       }
       5 => {
@@ -333,7 +348,7 @@ fn interpret_charstring(
           state.line_to(pt)
           i = i + 2
         }
-        stack = []
+        stack.clear()
         pos = pos + 1
       }
       6 | 7 => {
@@ -348,7 +363,7 @@ fn interpret_charstring(
           state.line_to(pt)
           horizontal = !horizontal
         }
-        stack = []
+        stack.clear()
         pos = pos + 1
       }
       8 => {
@@ -363,7 +378,7 @@ fn interpret_charstring(
           state.curve_to(pt1, pt2, pt3)
           i = i + 6
         }
-        stack = []
+        stack.clear()
         pos = pos + 1
       }
       10 => {
@@ -371,7 +386,7 @@ fn interpret_charstring(
           return Err(InvalidFormat)
         }
         let subr_index = stack[stack.length() - 1].round().to_int()
-        stack = []
+        stack.truncate(stack.length() - 1)
         let local_subrs_value = match local_subrs {
           None => return Err(InvalidFormat)
           Some(value) => value
@@ -385,6 +400,7 @@ fn interpret_charstring(
         match interpret_charstring(
           bytes[:],
           state,
+          stack,
           global_subrs,
           local_subrs,
           depth + 1,
@@ -420,7 +436,7 @@ fn interpret_charstring(
           Err(err) => return Err(err)
           Ok(_) => ()
         }
-        stack = []
+        stack.clear()
         pos = pos + 2
       }
       14 => {
@@ -464,9 +480,11 @@ fn interpret_charstring(
             Ok(value) => value
           }
           let base_state = CffCharstringState::new()
+          let base_stack : Array[Double] = []
           match interpret_charstring(
             base_bytes[:],
             base_state,
+            base_stack,
             global_subrs,
             local_subrs,
             depth + 1,
@@ -478,9 +496,11 @@ fn interpret_charstring(
             Ok(_) => ()
           }
           let accent_state = CffCharstringState::new()
+          let accent_stack : Array[Double] = []
           match interpret_charstring(
             accent_bytes[:],
             accent_state,
+            accent_stack,
             global_subrs,
             local_subrs,
             depth + 1,
@@ -501,7 +521,7 @@ fn interpret_charstring(
         } else if count != 0 {
           return Err(InvalidFormat)
         }
-        stack = []
+        stack.clear()
         pos = pos + 1
         return Ok(())
       }
@@ -514,7 +534,7 @@ fn interpret_charstring(
         let dy = stack[offset + 1]
         let pt = state.current_point().offset(dx, dy)
         state.moveto(pt)
-        stack = []
+        stack.clear()
         pos = pos + 1
       }
       22 => {
@@ -525,7 +545,7 @@ fn interpret_charstring(
         let dx = stack[offset]
         let pt = state.current_point().offset(dx, 0.0)
         state.moveto(pt)
-        stack = []
+        stack.clear()
         pos = pos + 1
       }
       24 => {
@@ -545,7 +565,7 @@ fn interpret_charstring(
         let dy = stack[line_index + 1]
         let pt = state.current_point().offset(dx, dy)
         state.line_to(pt)
-        stack = []
+        stack.clear()
         pos = pos + 1
       }
       25 => {
@@ -563,7 +583,7 @@ fn interpret_charstring(
         let pt2 = pt1.offset(stack[curve_index + 2], stack[curve_index + 3])
         let pt3 = pt2.offset(stack[curve_index + 4], stack[curve_index + 5])
         state.curve_to(pt1, pt2, pt3)
-        stack = []
+        stack.clear()
         pos = pos + 1
       }
       26 => {
@@ -572,7 +592,7 @@ fn interpret_charstring(
           Err(err) => return Err(err)
           Ok(_) => ()
         }
-        stack = []
+        stack.clear()
         pos = pos + 1
       }
       27 => {
@@ -581,7 +601,7 @@ fn interpret_charstring(
           Err(err) => return Err(err)
           Ok(_) => ()
         }
-        stack = []
+        stack.clear()
         pos = pos + 1
       }
       29 => {
@@ -589,7 +609,7 @@ fn interpret_charstring(
           return Err(InvalidFormat)
         }
         let subr_index = stack[stack.length() - 1].round().to_int()
-        stack = []
+        stack.truncate(stack.length() - 1)
         let global = match global_subrs {
           None => return Err(InvalidFormat)
           Some(value) => value
@@ -603,6 +623,7 @@ fn interpret_charstring(
         match interpret_charstring(
           bytes[:],
           state,
+          stack,
           global_subrs,
           local_subrs,
           depth + 1,
@@ -621,7 +642,7 @@ fn interpret_charstring(
           Err(err) => return Err(err)
           Ok(_) => ()
         }
-        stack = []
+        stack.clear()
         pos = pos + 1
       }
       31 => {
@@ -630,7 +651,7 @@ fn interpret_charstring(
           Err(err) => return Err(err)
           Ok(_) => ()
         }
-        stack = []
+        stack.clear()
         pos = pos + 1
       }
       _ => return Err(InvalidFormat)
@@ -642,6 +663,7 @@ fn interpret_charstring(
 fn interpret_charstring_cff2(
   data : BytesView,
   state : CffCharstringState,
+  stack : Array[Double],
   blend_state : Cff2BlendState,
   global_subrs : CffIndex?,
   local_subrs : CffIndex?,
@@ -652,7 +674,6 @@ fn interpret_charstring_cff2(
     return Err(InvalidFormat)
   }
   let mut pos = 0
-  let mut stack : Array[Double] = []
   while pos < data.length() {
     let b0 = data[pos].to_int()
     if b0 >= 32 || b0 == 28 || b0 == 255 {
@@ -672,7 +693,7 @@ fn interpret_charstring_cff2(
           return Err(InvalidFormat)
         }
         state.stem_count = state.stem_count + (stack.length() / 2)
-        stack = []
+        stack.clear()
         pos = pos + 1
       }
       19 | 20 => {
@@ -680,7 +701,7 @@ fn interpret_charstring_cff2(
           return Err(InvalidFormat)
         }
         state.stem_count = state.stem_count + (stack.length() / 2)
-        stack = []
+        stack.clear()
         pos = pos + 1
         let mask_bytes = (state.stem_count + 7) / 8
         if pos + mask_bytes > data.length() {
@@ -695,7 +716,7 @@ fn interpret_charstring_cff2(
         let dy = stack[0]
         let pt = state.current_point().offset(0.0, dy)
         state.moveto(pt)
-        stack = []
+        stack.clear()
         pos = pos + 1
       }
       5 => {
@@ -710,7 +731,7 @@ fn interpret_charstring_cff2(
           state.line_to(pt)
           i = i + 2
         }
-        stack = []
+        stack.clear()
         pos = pos + 1
       }
       6 | 7 => {
@@ -725,7 +746,7 @@ fn interpret_charstring_cff2(
           state.line_to(pt)
           horizontal = !horizontal
         }
-        stack = []
+        stack.clear()
         pos = pos + 1
       }
       8 => {
@@ -740,7 +761,7 @@ fn interpret_charstring_cff2(
           state.curve_to(pt1, pt2, pt3)
           i = i + 6
         }
-        stack = []
+        stack.clear()
         pos = pos + 1
       }
       10 => {
@@ -748,7 +769,7 @@ fn interpret_charstring_cff2(
           return Err(InvalidFormat)
         }
         let subr_index = stack[stack.length() - 1].round().to_int()
-        stack = []
+        stack.truncate(stack.length() - 1)
         let local_subrs_value = match local_subrs {
           None => return Err(InvalidFormat)
           Some(value) => value
@@ -762,6 +783,7 @@ fn interpret_charstring_cff2(
         match interpret_charstring_cff2(
           bytes[:],
           state,
+          stack,
           blend_state,
           global_subrs,
           local_subrs,
@@ -795,11 +817,11 @@ fn interpret_charstring_cff2(
           Err(err) => return Err(err)
           Ok(_) => ()
         }
-        stack = []
+        stack.clear()
         pos = pos + 2
       }
       14 => {
-        stack = []
+        stack.clear()
         pos = pos + 1
         return Ok(())
       }
@@ -817,7 +839,7 @@ fn interpret_charstring_cff2(
         }
         blend_state.ivs = ivs
         blend_state.seen_vsindex = true
-        stack = []
+        stack.clear()
         pos = pos + 1
       }
       16 => {
@@ -870,7 +892,7 @@ fn interpret_charstring_cff2(
         let dy = stack[1]
         let pt = state.current_point().offset(dx, dy)
         state.moveto(pt)
-        stack = []
+        stack.clear()
         pos = pos + 1
       }
       22 => {
@@ -880,7 +902,7 @@ fn interpret_charstring_cff2(
         let dx = stack[0]
         let pt = state.current_point().offset(dx, 0.0)
         state.moveto(pt)
-        stack = []
+        stack.clear()
         pos = pos + 1
       }
       24 => {
@@ -900,7 +922,7 @@ fn interpret_charstring_cff2(
         let dy = stack[line_index + 1]
         let pt = state.current_point().offset(dx, dy)
         state.line_to(pt)
-        stack = []
+        stack.clear()
         pos = pos + 1
       }
       25 => {
@@ -918,7 +940,7 @@ fn interpret_charstring_cff2(
         let pt2 = pt1.offset(stack[curve_index + 2], stack[curve_index + 3])
         let pt3 = pt2.offset(stack[curve_index + 4], stack[curve_index + 5])
         state.curve_to(pt1, pt2, pt3)
-        stack = []
+        stack.clear()
         pos = pos + 1
       }
       26 => {
@@ -927,7 +949,7 @@ fn interpret_charstring_cff2(
           Err(err) => return Err(err)
           Ok(_) => ()
         }
-        stack = []
+        stack.clear()
         pos = pos + 1
       }
       27 => {
@@ -936,7 +958,7 @@ fn interpret_charstring_cff2(
           Err(err) => return Err(err)
           Ok(_) => ()
         }
-        stack = []
+        stack.clear()
         pos = pos + 1
       }
       29 => {
@@ -944,7 +966,7 @@ fn interpret_charstring_cff2(
           return Err(InvalidFormat)
         }
         let subr_index = stack[stack.length() - 1].round().to_int()
-        stack = []
+        stack.truncate(stack.length() - 1)
         let global = match global_subrs {
           None => return Err(InvalidFormat)
           Some(value) => value
@@ -958,6 +980,7 @@ fn interpret_charstring_cff2(
         match interpret_charstring_cff2(
           bytes[:],
           state,
+          stack,
           blend_state,
           global_subrs,
           local_subrs,
@@ -975,7 +998,7 @@ fn interpret_charstring_cff2(
           Err(err) => return Err(err)
           Ok(_) => ()
         }
-        stack = []
+        stack.clear()
         pos = pos + 1
       }
       31 => {
@@ -984,7 +1007,7 @@ fn interpret_charstring_cff2(
           Err(err) => return Err(err)
           Ok(_) => ()
         }
-        stack = []
+        stack.clear()
         pos = pos + 1
       }
       _ => return Err(InvalidFormat)

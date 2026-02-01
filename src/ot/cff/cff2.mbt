@@ -73,7 +73,7 @@ pub fn Cff2Table::parse(data : BytesView) -> Result[Cff2Table, CffError] {
         Some(value) => value
       }
       let fdselect_offset = match top_dict.get_int(op_fdselect_cff2) {
-        None => return Err(InvalidFormat)
+        None => 0
         Some(value) => value
       }
       let vstore_offset = match top_dict.get_int(op_vstore_cff2) {
