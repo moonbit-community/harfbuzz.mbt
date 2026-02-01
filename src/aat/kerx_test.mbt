@@ -144,6 +144,54 @@ fn build_kerx_format4() -> Bytes {
 }
 
 ///|
+fn build_kerx_format4_control_points() -> Bytes {
+  let bytes : Array[Byte] = []
+  // kerx header
+  push_u16(bytes, 2)
+  push_u16(bytes, 0)
+  push_u32(bytes, 1)
+  // subtable header (length = 84)
+  push_u32(bytes, 84)
+  push_u32(bytes, 4)
+  push_u32(bytes, 0)
+  // state table header (extended)
+  push_u32(bytes, 5) // nClasses
+  push_u32(bytes, 58) // classTableOffset
+  push_u32(bytes, 20) // stateArrayOffset
+  push_u32(bytes, 40) // entryTableOffset
+  // flags (action type 0, offset 68)
+  push_u32(bytes, 0x00000044)
+  // state array
+  let state_values : Array[Int] = [0, 0, 0, 0, 1, 0, 0, 0, 0, 2]
+  for value in state_values {
+    push_u16(bytes, value)
+  }
+  // entry table
+  // entry 0
+  push_u16(bytes, 0)
+  push_u16(bytes, 0)
+  push_u16(bytes, 0xffff)
+  // entry 1
+  push_u16(bytes, 1)
+  push_u16(bytes, 0x8000) // mark
+  push_u16(bytes, 0xffff)
+  // entry 2
+  push_u16(bytes, 0)
+  push_u16(bytes, 0)
+  push_u16(bytes, 0) // action index
+  // class table (lookup format8)
+  push_u16(bytes, 8)
+  push_u16(bytes, 1)
+  push_u16(bytes, 2)
+  push_u16(bytes, 4)
+  push_u16(bytes, 4)
+  // action table (mark point, current point)
+  push_u16(bytes, 0)
+  push_u16(bytes, 1)
+  Bytes::from_array(bytes)
+}
+
+///|
 fn build_kerx_format6_long() -> Bytes {
   let bytes : Array[Byte] = []
   // kerx header
@@ -246,6 +294,36 @@ test "aat kerx format4 anchor" {
   let adjustments = kerx.apply_scaled(glyphs, true, 1, 1, 1, Some(ankr))
   inspect(adjustments[1].x_offset, content="-5")
   inspect(adjustments[1].y_offset, content="15")
+}
+
+///|
+test "aat kerx format4 control points" {
+  let data = build_kerx_format4_control_points()
+  let kerx = match KerxTable::parse(data[:], 10) {
+    Err(err) => fail("kerx parse failed: \{err}")
+    Ok(value) => value
+  }
+  let glyphs : Array[UInt] = [1U, 2U]
+  let contour_point = (glyph, point_index) => {
+    if glyph == 1U && point_index == 0 {
+      Some((0, 0))
+    } else if glyph == 2U && point_index == 1 {
+      Some((10, 5))
+    } else {
+      None
+    }
+  }
+  let adjustments = kerx.apply_scaled(
+    glyphs,
+    true,
+    1,
+    1,
+    1,
+    None,
+    contour_point=contour_point,
+  )
+  inspect(adjustments[1].x_offset, content="-10")
+  inspect(adjustments[1].y_offset, content="-5")
 }
 
 ///|

@@ -589,3 +589,50 @@ fn Font::glyph_gvar_advance(
     }
   }
 }
+
+///|
+/// Return glyph contour point in font units if available.
+pub fn Font::glyph_contour_point_for_origin(
+  self : Font,
+  glyph : UInt,
+  point_index : Int,
+) -> Result[(Int, Int)?, FontError] {
+  if point_index < 0 {
+    return Ok(None)
+  }
+  let loca_blob = match self.face.reference_table_optional(tag_loca) {
+    Err(err) => return Err(FaceTable(err))
+    Ok(value) => value
+  }
+  let glyf_blob = match self.face.reference_table_optional(tag_glyf) {
+    Err(err) => return Err(FaceTable(err))
+    Ok(value) => value
+  }
+  if loca_blob is None || glyf_blob is None {
+    return Ok(None)
+  }
+  let coords : Array[Int] = match self.var_coords_norm {
+    None => []
+    Some(value) => value
+  }
+  let points = match self.glyph_points_with_gvar(glyph, coords) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  match points {
+    None => Ok(None)
+    Some(points) => {
+      let mut outline_len = points.length()
+      if outline_len >= 4 {
+        outline_len = outline_len - 4
+      } else {
+        outline_len = 0
+      }
+      if point_index < 0 || point_index >= outline_len {
+        return Ok(None)
+      }
+      let point = points[point_index]
+      Ok(Some((point.x.round().to_int(), point.y.round().to_int())))
+    }
+  }
+}

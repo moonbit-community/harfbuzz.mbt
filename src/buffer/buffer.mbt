@@ -1118,8 +1118,21 @@ pub fn Buffer::apply_kerx(
   for info in self.infos {
     glyphs.push(info.codepoint)
   }
-  let adjustments =
-    kerx.apply_scaled(glyphs, horizontal, scale_x, scale_y, upem, ankr)
+  let contour_point = (glyph, point_index) => {
+    match font.glyph_contour_point_for_origin(glyph, point_index) {
+      Err(_) => None
+      Ok(value) => value
+    }
+  }
+  let adjustments = kerx.apply_scaled(
+    glyphs,
+    horizontal,
+    scale_x,
+    scale_y,
+    upem,
+    ankr,
+    contour_point=contour_point,
+  )
   if adjustments.length() != self.positions.length() {
     return Ok(())
   }

@@ -846,6 +846,26 @@ test "font hvar advance delta" {
 }
 
 ///|
+test "font contour points" {
+  let font = Font::from_bytes(build_font_bytes_gvar_iup())
+  let point0 = match font.glyph_contour_point_for_origin(1U, 0) {
+    Err(err) => fail("contour point error: \{err}")
+    Ok(value) => value
+  }
+  inspect(point0, content="Some((0, 0))")
+  let point2 = match font.glyph_contour_point_for_origin(1U, 2) {
+    Err(err) => fail("contour point error: \{err}")
+    Ok(value) => value
+  }
+  inspect(point2, content="Some((50, 50))")
+  let missing = match font.glyph_contour_point_for_origin(1U, 10) {
+    Err(err) => fail("contour point error: \{err}")
+    Ok(value) => value
+  }
+  inspect(missing, content="None")
+}
+
+///|
 test "font gvar outline deltas and phantom points" {
   let font = Font::from_bytes(build_font_bytes_gvar_iup())
   let variations : Array[@ot_var.AxisCoord] = [

@@ -787,6 +787,7 @@ fn apply_format4(
   upem : Int,
   adjustments : Array[KerxAdjustment],
   ankr : AnkrTable?,
+  contour_point : (UInt, Int) -> (Int, Int)?,
 ) -> Bool {
   if format4.table.n_classes <= 0 {
     return false
@@ -811,7 +812,34 @@ fn apply_format4(
     if mark_set && entry.data1 != 0xffff && idx < len {
       let actual = map_index(idx, len, backwards)
       if actual >= 0 && actual < adjustments.length() {
-        if action_type == 1 {
+        if action_type == 0 {
+          let base = entry.data1 * 2
+          if base >= 0 && base + 1 < format4.actions.length() {
+            let mark_point = format4.actions[base]
+            let curr_point = format4.actions[base + 1]
+            if mark_point >= 0 && curr_point >= 0 {
+              let mark = contour_point(glyphs[mark_index], mark_point)
+              let curr = contour_point(glyphs[actual], curr_point)
+              match (mark, curr) {
+                (Some((mark_x, mark_y)), Some((curr_x, curr_y))) => {
+                  let dx = mark_x - curr_x
+                  let dy = mark_y - curr_y
+                  let pos = adjustments[actual]
+                  let x_scaled = scale_value(dx, scale_x, upem)
+                  let y_scaled = scale_value(dy, scale_y, upem)
+                  adjustments[actual] = KerxAdjustment::{
+                    x_advance: pos.x_advance,
+                    y_advance: pos.y_advance,
+                    x_offset: pos.x_offset + x_scaled,
+                    y_offset: pos.y_offset + y_scaled,
+                  }
+                  changed = true
+                }
+                _ => ()
+              }
+            }
+          }
+        } else if action_type == 1 {
           let base = entry.data1 * 2
           if base >= 0 && base + 1 < format4.actions.length() {
             let mark_anchor = format4.actions[base]
@@ -890,6 +918,7 @@ pub fn KerxTable::apply_scaled(
   scale_y : Int,
   upem : Int,
   ankr : AnkrTable?,
+  contour_point? : (UInt, Int) -> (Int, Int)? = (_, _) => None,
 ) -> Array[KerxAdjustment] {
   let adjustments = make_adjustments(glyphs.length())
   if self.version == 0 || glyphs.is_empty() {
@@ -941,6 +970,7 @@ pub fn KerxTable::apply_scaled(
             upem,
             adjustments,
             ankr,
+            contour_point,
           ),
         )
     }
