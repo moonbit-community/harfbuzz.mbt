@@ -40,6 +40,12 @@ let tag_hhea : @common.Tag = @common.Tag::from_chars('h', 'h', 'e', 'a')
 let tag_hmtx : @common.Tag = @common.Tag::from_chars('h', 'm', 't', 'x')
 
 ///|
+let tag_vhea : @common.Tag = @common.Tag::from_chars('v', 'h', 'e', 'a')
+
+///|
+let tag_vmtx : @common.Tag = @common.Tag::from_chars('v', 'm', 't', 'x')
+
+///|
 let tag_loca : @common.Tag = @common.Tag::from_chars('l', 'o', 'c', 'a')
 
 ///|
@@ -493,6 +499,54 @@ pub fn build_plan(
   Ok(SubsetPlan::{ glyphs, old_to_new, codepoint_map })
 }
 
+fn build_vmetrics_subset(
+  face : @face.Face,
+  maxp : @sfnt.MaxpTable,
+  plan : SubsetPlan,
+) -> Result[(Bytes, Bytes)?, SubsetError] {
+  let vhea_blob = match face.reference_table_optional(tag_vhea) {
+    Err(err) => return Err(Face(err))
+    Ok(value) => value
+  }
+  let vmtx_blob = match face.reference_table_optional(tag_vmtx) {
+    Err(err) => return Err(Face(err))
+    Ok(value) => value
+  }
+  match (vhea_blob, vmtx_blob) {
+    (Some(vhea_blob), Some(vmtx_blob)) => {
+      let vhea = match @sfnt.VheaTable::parse(vhea_blob.as_view()) {
+        Err(err) => return Err(Sfnt(err))
+        Ok(value) => value
+      }
+      let vmtx = match @sfnt.VmtxTable::parse(
+        vmtx_blob.as_view(),
+        maxp.num_glyphs,
+        vhea.number_of_vmetrics,
+      ) {
+        Err(err) => return Err(Sfnt(err))
+        Ok(value) => value
+      }
+      let new_vmtx : Array[Byte] = []
+      for old_gid in plan.glyphs {
+        let gid = old_gid.reinterpret_as_int()
+        if gid < 0 || gid >= vmtx.advances.length() {
+          return Err(InvalidInput("glyph id out of range"))
+        }
+        let advance = vmtx.advances[gid]
+        let tsb = vmtx.tsbs[gid]
+        push_u16(new_vmtx, advance)
+        push_i16(new_vmtx, tsb)
+      }
+      let vhea_bytes = vhea_blob.as_view().to_bytes().to_array()
+      if vhea_bytes.length() >= 36 {
+        write_u16(vhea_bytes, 34, plan.glyphs.length())
+      }
+      Ok(Some((Bytes::from_array(vhea_bytes), Bytes::from_array(new_vmtx))))
+    }
+    _ => Ok(None)
+  }
+}
+
 fn build_plan_cff1(
   font : @font.Font,
   input : SubsetInput,
@@ -774,6 +828,10 @@ pub fn subset_with_plan(
     Err(err) => return Err(Sfnt(err))
     Ok(value) => value
   }
+  let vmetrics = match build_vmetrics_subset(face, maxp, plan) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
   let loca = match @sfnt.LocaTable::parse(
     loca_blob.as_view(),
     maxp.num_glyphs,
@@ -854,6 +912,13 @@ pub fn subset_with_plan(
     (tag_loca, Bytes::from_array(new_loca)),
     (tag_glyf, Bytes::from_array(glyf_bytes)),
   ]
+  match vmetrics {
+    None => ()
+    Some((vhea_bytes, vmtx_bytes)) => {
+      tables.push((tag_vhea, vhea_bytes))
+      tables.push((tag_vmtx, vmtx_bytes))
+    }
+  }
   match cmap_bytes {
     None => ()
     Some(cmap) => tables.push((tag_cmap, cmap))
@@ -909,6 +974,10 @@ fn subset_cff1_with_plan(
     Err(err) => return Err(Sfnt(err))
     Ok(value) => value
   }
+  let vmetrics = match build_vmetrics_subset(face, maxp, plan) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
 
   let new_hmtx : Array[Byte] = []
   for old_gid in plan.glyphs {
@@ -950,6 +1019,13 @@ fn subset_cff1_with_plan(
     (tag_hmtx, Bytes::from_array(new_hmtx)),
     (tag_cff, cff_bytes),
   ]
+  match vmetrics {
+    None => ()
+    Some((vhea_bytes, vmtx_bytes)) => {
+      tables.push((tag_vhea, vhea_bytes))
+      tables.push((tag_vmtx, vmtx_bytes))
+    }
+  }
   match cmap_bytes {
     None => ()
     Some(cmap) => tables.push((tag_cmap, cmap))
@@ -1005,6 +1081,10 @@ fn subset_cff2_with_plan(
     Err(err) => return Err(Sfnt(err))
     Ok(value) => value
   }
+  let vmetrics = match build_vmetrics_subset(face, maxp, plan) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
 
   let new_hmtx : Array[Byte] = []
   for old_gid in plan.glyphs {
@@ -1046,6 +1126,13 @@ fn subset_cff2_with_plan(
     (tag_hmtx, Bytes::from_array(new_hmtx)),
     (tag_cff2, cff_bytes),
   ]
+  match vmetrics {
+    None => ()
+    Some((vhea_bytes, vmtx_bytes)) => {
+      tables.push((tag_vhea, vhea_bytes))
+      tables.push((tag_vmtx, vmtx_bytes))
+    }
+  }
   match cmap_bytes {
     None => ()
     Some(cmap) => tables.push((tag_cmap, cmap))

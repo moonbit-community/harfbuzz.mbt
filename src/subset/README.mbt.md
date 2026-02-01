@@ -11,6 +11,8 @@ It fully subsets TrueType (glyf/loca) fonts and currently rebuilds these tables:
 - `maxp` (numGlyphs)
 - `hhea` (numberOfHMetrics)
 - `hmtx` (per-glyph metrics)
+- `vhea` (numberOfVMetrics, if present)
+- `vmtx` (per-glyph vertical metrics, if present)
 - `loca` (long format)
 - `glyf` (glyph data, with composite component remapping)
 - `cmap` (format 12 built from input codepoints)

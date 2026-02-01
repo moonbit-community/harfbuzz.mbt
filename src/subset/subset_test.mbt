@@ -102,11 +102,29 @@ fn build_hhea(number_of_hmetrics : Int) -> Bytes {
 }
 
 ///|
+fn build_vhea(number_of_vmetrics : Int) -> Bytes {
+  let bytes : Array[Byte] = Array::make(36, b'\x00')
+  bytes[34] = ((number_of_vmetrics >> 8) & 0xff).to_byte()
+  bytes[35] = (number_of_vmetrics & 0xff).to_byte()
+  Bytes::from_array(bytes)
+}
+
+///|
 fn build_hmtx(advances : Array[Int], lsbs : Array[Int]) -> Bytes {
   let bytes : Array[Byte] = []
   for i in 0..<advances.length() {
     push_u16(bytes, advances[i])
     push_i16(bytes, lsbs[i])
+  }
+  Bytes::from_array(bytes)
+}
+
+///|
+fn build_vmtx(advances : Array[Int], tsbs : Array[Int]) -> Bytes {
+  let bytes : Array[Byte] = []
+  for i in 0..<advances.length() {
+    push_u16(bytes, advances[i])
+    push_i16(bytes, tsbs[i])
   }
   Bytes::from_array(bytes)
 }
@@ -203,6 +221,8 @@ fn build_font_bytes_subset_fixture() -> Bytes {
     (@common.Tag::from_chars('m', 'a', 'x', 'p'), build_maxp(4)),
     (@common.Tag::from_chars('h', 'h', 'e', 'a'), build_hhea(4)),
     (@common.Tag::from_chars('h', 'm', 't', 'x'), build_hmtx([500, 600, 700, 800], [0, 10, 20, 30])),
+    (@common.Tag::from_chars('v', 'h', 'e', 'a'), build_vhea(4)),
+    (@common.Tag::from_chars('v', 'm', 't', 'x'), build_vmtx([900, 910, 920, 930], [5, 6, 7, 8])),
     (@common.Tag::from_chars('l', 'o', 'c', 'a'), loca),
     (@common.Tag::from_chars('g', 'l', 'y', 'f'), glyf),
     (@common.Tag::from_chars('c', 'm', 'a', 'p'), cmap),
@@ -240,6 +260,55 @@ test "subset drops unused glyphs" {
       }
   }
   inspect(maxp.num_glyphs, content="2")
+}
+
+///|
+test "subset rebuilds vmtx" {
+  let font = @font.Font::from_bytes(build_font_bytes_subset_fixture())
+  let bytes = match subset(font, SubsetInput::from_codepoints([0x41U])) {
+    Err(err) => fail("subset failed: \{err}")
+    Ok(value) => value
+  }
+  let subset_font = @font.Font::from_bytes(bytes)
+  let face = subset_font.get_face()
+  let maxp_blob = match face.reference_table_optional(@common.Tag::from_chars('m', 'a', 'x', 'p')) {
+    Err(err) => fail("maxp table missing: \{err}")
+    Ok(None) => fail("maxp table missing")
+    Ok(Some(blob)) => blob
+  }
+  let maxp = match @sfnt.MaxpTable::parse(maxp_blob.as_view()) {
+    Err(err) => fail("maxp parse error: \{err}")
+    Ok(value) => value
+  }
+  let vhea_blob = match face.reference_table_optional(@common.Tag::from_chars('v', 'h', 'e', 'a')) {
+    Err(err) => fail("vhea table missing: \{err}")
+    Ok(None) => fail("vhea table missing")
+    Ok(Some(blob)) => blob
+  }
+  let vhea = match @sfnt.VheaTable::parse(vhea_blob.as_view()) {
+    Err(err) => fail("vhea parse error: \{err}")
+    Ok(value) => value
+  }
+  inspect(vhea.number_of_vmetrics, content=maxp.num_glyphs.to_string())
+  let vmtx_blob = match face.reference_table_optional(@common.Tag::from_chars('v', 'm', 't', 'x')) {
+    Err(err) => fail("vmtx table missing: \{err}")
+    Ok(None) => fail("vmtx table missing")
+    Ok(Some(blob)) => blob
+  }
+  let vmtx = match @sfnt.VmtxTable::parse(
+    vmtx_blob.as_view(),
+    maxp.num_glyphs,
+    vhea.number_of_vmetrics,
+  ) {
+    Err(err) => fail("vmtx parse error: \{err}")
+    Ok(value) => value
+  }
+  inspect(vmtx.advances.length(), content="2")
+  inspect(vmtx.tsbs.length(), content="2")
+  inspect(vmtx.advances[0], content="900")
+  inspect(vmtx.advances[1], content="910")
+  inspect(vmtx.tsbs[0], content="5")
+  inspect(vmtx.tsbs[1], content="6")
 }
 
 ///|
