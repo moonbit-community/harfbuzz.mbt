@@ -3,6 +3,7 @@ suberror FontError {
   FaceTable(@face.FaceTableError)
   Parse(@sfnt.SfntError)
   Var(@ot_var.VarError)
+  Cff(@ot_cff.CffError)
   Layout(@ot_tables.OtLayoutError)
   GlyphOutOfRange
 } derive(Eq, Show, ToJson)
@@ -48,6 +49,7 @@ pub struct Font {
   mut gvar : @ot_var.GvarTable?
   mut cvar : @ot_var.CvarTable?
   mut varc : @ot_var.VarcTable?
+  mut cff1 : @ot_cff.Cff1Table?
   mut var_coords_design : Array[Double]?
   mut var_coords_norm : Array[Int]?
 } derive(Show, ToJson)
@@ -152,6 +154,9 @@ let tag_cvt : @common.Tag = @common.Tag::from_chars('c', 'v', 't', ' ')
 let tag_varc : @common.Tag = @common.Tag::from_chars('V', 'A', 'R', 'C')
 
 ///|
+let tag_cff : @common.Tag = @common.Tag::from_chars('C', 'F', 'F', ' ')
+
+///|
 /// Create a font from a face.
 pub fn Font::new(face : @face.Face) -> Font {
   Font::{
@@ -193,6 +198,7 @@ pub fn Font::new(face : @face.Face) -> Font {
     gvar: None,
     cvar: None,
     varc: None,
+    cff1: None,
     var_coords_design: None,
     var_coords_norm: None,
   }
@@ -947,6 +953,26 @@ pub fn Font::varc(self : Font) -> Result[@ot_var.VarcTable?, FontError] {
 }
 
 ///|
+pub fn Font::cff1(self : Font) -> Result[@ot_cff.Cff1Table?, FontError] {
+  match self.cff1 {
+    Some(cff1) => Ok(Some(cff1))
+    None =>
+      match self.face.reference_table_optional(tag_cff) {
+        Err(err) => Err(FaceTable(err))
+        Ok(None) => Ok(None)
+        Ok(Some(blob)) =>
+          match @ot_cff.Cff1Table::parse(blob.as_view()) {
+            Err(err) => Err(Cff(err))
+            Ok(cff1) => {
+              self.cff1 = Some(cff1)
+              Ok(Some(cff1))
+            }
+          }
+      }
+  }
+}
+
+///|
 pub fn Font::varc_components(
   self : Font,
   glyph : UInt,
@@ -1294,6 +1320,17 @@ fn Font::glyph_bounds_raw(
   if index < 0 || index >= maxp.num_glyphs {
     return Err(GlyphOutOfRange)
   }
+  let loca_blob = match self.face.reference_table_optional(tag_loca) {
+    Err(err) => return Err(FaceTable(err))
+    Ok(value) => value
+  }
+  let glyf_blob = match self.face.reference_table_optional(tag_glyf) {
+    Err(err) => return Err(FaceTable(err))
+    Ok(value) => value
+  }
+  if loca_blob is None || glyf_blob is None {
+    return self.glyph_bounds_cff1(index)
+  }
   let loca = match self.ensure_loca() {
     Err(err) => return Err(err)
     Ok(value) => value
@@ -1335,6 +1372,31 @@ fn Font::glyph_bounds_raw(
   match glyf.glyph_bounds(start, length) {
     Err(err) => Err(Parse(err))
     Ok(bounds) => Ok(bounds)
+  }
+}
+
+fn Font::glyph_bounds_cff1(
+  self : Font,
+  glyph : Int,
+) -> Result[@sfnt.GlyphBounds?, FontError] {
+  let cff1 = match self.cff1() {
+    Err(err) => return Err(err)
+    Ok(None) => return Ok(None)
+    Ok(Some(value)) => value
+  }
+  let bounds = match cff1.glyph_bounds(glyph) {
+    Err(err) => return Err(Cff(err))
+    Ok(value) => value
+  }
+  match bounds {
+    None => Ok(None)
+    Some(bounds) => {
+      let x_min = @math.floor(bounds.x_min).to_int()
+      let y_min = @math.floor(bounds.y_min).to_int()
+      let x_max = @math.ceil(bounds.x_max).to_int()
+      let y_max = @math.ceil(bounds.y_max).to_int()
+      Ok(Some(@sfnt.GlyphBounds::new(-1, x_min, y_min, x_max, y_max)))
+    }
   }
 }
 
