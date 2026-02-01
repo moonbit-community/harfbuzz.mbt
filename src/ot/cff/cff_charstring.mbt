@@ -409,6 +409,7 @@ fn interpret_charstring(
         }
         let op = data[pos + 1].to_int()
         let err = match op {
+          0 => Ok(())
           34 => handle_hflex(state, stack)
           35 => handle_flex(state, stack)
           36 => handle_hflex1(state, stack)

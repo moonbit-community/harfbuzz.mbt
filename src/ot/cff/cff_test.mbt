@@ -100,6 +100,25 @@ test "cff charstring bounds simple" {
 }
 
 ///|
+test "cff charstring dotsection" {
+  let bytes : Bytes = [139, 139, 21, 12, 0, 189, 139, 5, 14]
+  let bounds = match cff_charstring_bounds(bytes[:], None, None) {
+    Err(err) => fail("bounds error: \{err}")
+    Ok(value) => value
+  }
+  match bounds {
+    None => fail("missing bounds")
+    Some(bounds) => {
+      let x_min = bounds.x_min.round().to_int()
+      let y_min = bounds.y_min.round().to_int()
+      let x_max = bounds.x_max.round().to_int()
+      let y_max = bounds.y_max.round().to_int()
+      inspect((x_min, y_min, x_max, y_max), content="(0, 0, 50, 0)")
+    }
+  }
+}
+
+///|
 test "cff2 parse minimal" {
   let bytes : Bytes = [
     0x02,
