@@ -1,5 +1,5 @@
 ---
-description: Subset fonts to a codepoint set (TrueType glyf/loca; CFF/CFF2 cmap-only).
+description: Subset fonts to a codepoint set (TrueType glyf/loca; CFF1 charstrings/charset; CFF2 cmap-only).
 ---
 
 # Subsetting (subset package)
@@ -17,12 +17,15 @@ It fully subsets TrueType (glyf/loca) fonts and currently rebuilds these tables:
 
 Optional tables `name` and `post` are copied through unchanged if present.
 
-For CFF/CFF2 fonts, the subset path is **cmap-only**: it rebuilds `cmap`
-while copying all other tables unchanged (no outline reduction).
+For CFF1 fonts, the subset path rebuilds the `CFF ` table by slicing
+CharStrings/charset to the selected glyph set (CFF subrs are copied as-is).
+For CFF2 fonts, the subset path is **cmap-only**: it rebuilds `cmap`
+while copying all other tables unchanged.
 
 **Limitations**
 
-- CFF/CFF2 outlines are not reduced; only `cmap` is rebuilt.
+- CFF1 subrs are copied as-is; unused subroutines are not removed.
+- CFF2 outlines are not reduced; only `cmap` is rebuilt.
 - No subsetting of GSUB/GPOS/GDEF, color, variations, or AAT tables.
 - `loca` is always written in long format.
 - `cmap` is rebuilt only from the supplied codepoints.

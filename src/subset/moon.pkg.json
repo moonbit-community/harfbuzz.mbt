@@ -19,6 +19,10 @@
     {
       "path": "moonbit-community/harfbuzz/blob",
       "alias": "blob"
+    },
+    {
+      "path": "moonbit-community/harfbuzz/ot/cff",
+      "alias": "ot_cff"
     }
   ]
 }

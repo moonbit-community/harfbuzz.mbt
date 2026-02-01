@@ -3,6 +3,7 @@ suberror SubsetError {
   Face(@face.FaceTableError)
   Sfnt(@sfnt.SfntError)
   Font(@font.FontError)
+  Cff(@ot_cff.CffError)
   Unsupported(String)
   InvalidInput(String)
 } derive(Eq, Show, ToJson)
@@ -607,6 +608,102 @@ pub fn build_plan(
   Ok(SubsetPlan::{ glyphs, old_to_new, codepoint_map })
 }
 
+fn build_plan_cff1(
+  font : @font.Font,
+  input : SubsetInput,
+  cff : @ot_cff.Cff1Table,
+) -> Result[SubsetPlan, SubsetError] {
+  let face = font.get_face()
+  let maxp_blob = match table_blob(face, tag_maxp, "maxp") {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  let maxp = match @sfnt.MaxpTable::parse(maxp_blob.as_view()) {
+    Err(err) => return Err(Sfnt(err))
+    Ok(value) => value
+  }
+  if maxp.num_glyphs <= 0 {
+    return Err(InvalidInput("font has no glyphs"))
+  }
+  if cff.glyph_count() != maxp.num_glyphs {
+    return Err(InvalidInput("cff glyph count mismatch"))
+  }
+  let selected : Array[Bool] = Array::make(maxp.num_glyphs, false)
+  let queue : Array[Int] = []
+  let add_gid = (gid : Int) => {
+    if gid < 0 || gid >= selected.length() {
+      return
+    }
+    if !selected[gid] {
+      selected[gid] = true
+      queue.push(gid)
+    }
+  }
+  add_gid(0)
+  for codepoint in input.codepoints {
+    let gid = match font.glyph_for_codepoint(codepoint) {
+      Err(err) => return Err(Font(err))
+      Ok(value) => value
+    }
+    match gid {
+      None => ()
+      Some(gid) => add_gid(gid.reinterpret_as_int())
+    }
+  }
+  let mut idx = 0
+  while idx < queue.length() {
+    let gid = queue[idx]
+    idx = idx + 1
+    let components = match cff.seac_components(gid) {
+      Err(err) => return Err(Cff(err))
+      Ok(value) => value
+    }
+    match components {
+      None => ()
+      Some((base, accent)) => {
+        add_gid(base)
+        add_gid(accent)
+      }
+    }
+  }
+  let glyphs : Array[UInt] = []
+  for gid in 0..<selected.length() {
+    if selected[gid] {
+      glyphs.push(gid.reinterpret_as_uint())
+    }
+  }
+  if glyphs.is_empty() {
+    return Err(InvalidInput("empty subset"))
+  }
+  let old_to_new : Array[Int] = Array::make(maxp.num_glyphs, -1)
+  for i in 0..<glyphs.length() {
+    let old_gid = glyphs[i].reinterpret_as_int()
+    if old_gid >= 0 && old_gid < old_to_new.length() {
+      old_to_new[old_gid] = i
+    }
+  }
+  let codepoint_map : Array[(UInt, Int)] = []
+  for codepoint in input.codepoints {
+    let gid = match font.glyph_for_codepoint(codepoint) {
+      Err(err) => return Err(Font(err))
+      Ok(value) => value
+    }
+    match gid {
+      None => ()
+      Some(gid) => {
+        let old_gid = gid.reinterpret_as_int()
+        if old_gid >= 0 && old_gid < old_to_new.length() {
+          let new_gid = old_to_new[old_gid]
+          if new_gid >= 0 {
+            codepoint_map.push((codepoint, new_gid))
+          }
+        }
+      }
+    }
+  }
+  Ok(SubsetPlan::{ glyphs, old_to_new, codepoint_map })
+}
+
 ///|
 pub fn subset(
   font : @font.Font,
@@ -626,18 +723,31 @@ pub fn subset(
       subset_with_plan(font, plan)
     }
     None => {
-      let has_cff = match face.reference_table_optional(tag_cff) {
+      let cff_blob = match face.reference_table_optional(tag_cff) {
         Err(err) => return Err(Face(err))
-        Ok(value) => value is Some(_)
+        Ok(value) => value
       }
-      let has_cff2 = match face.reference_table_optional(tag_cff2) {
+      let cff2_blob = match face.reference_table_optional(tag_cff2) {
         Err(err) => return Err(Face(err))
-        Ok(value) => value is Some(_)
+        Ok(value) => value
       }
-      if has_cff || has_cff2 {
-        subset_cmap_only(font, input)
-      } else {
-        Err(Unsupported("missing outline table"))
+      match cff_blob {
+        Some(blob) => {
+          let cff = match @ot_cff.Cff1Table::parse(blob.as_view()) {
+            Err(err) => return Err(Cff(err))
+            Ok(value) => value
+          }
+          let plan = match build_plan_cff1(font, input, cff) {
+            Err(err) => return Err(err)
+            Ok(value) => value
+          }
+          subset_cff1_with_plan(font, plan, cff)
+        }
+        None =>
+          match cff2_blob {
+            Some(_) => subset_cmap_only(font, input)
+            None => Err(Unsupported("missing outline table"))
+          }
       }
     }
   }
@@ -651,6 +761,10 @@ pub fn subset_with_plan(
   let face = font.get_face()
   let head_blob = match table_blob(face, tag_head, "head") {
     Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  let head = match @sfnt.HeadTable::parse(head_blob.as_view()) {
+    Err(err) => return Err(Sfnt(err))
     Ok(value) => value
   }
   let maxp_blob = match table_blob(face, tag_maxp, "maxp") {
@@ -671,10 +785,6 @@ pub fn subset_with_plan(
   }
   let glyf_blob = match table_blob(face, tag_glyf, "glyf") {
     Err(err) => return Err(err)
-    Ok(value) => value
-  }
-  let head = match @sfnt.HeadTable::parse(head_blob.as_view()) {
-    Err(err) => return Err(Sfnt(err))
     Ok(value) => value
   }
   let maxp = match @sfnt.MaxpTable::parse(maxp_blob.as_view()) {
@@ -772,6 +882,102 @@ pub fn subset_with_plan(
     (tag_hmtx, Bytes::from_array(new_hmtx)),
     (tag_loca, Bytes::from_array(new_loca)),
     (tag_glyf, Bytes::from_array(glyf_bytes)),
+  ]
+  match cmap_bytes {
+    None => ()
+    Some(cmap) => tables.push((tag_cmap, cmap))
+  }
+  match face.reference_table_optional(tag_name) {
+    Err(err) => return Err(Face(err))
+    Ok(Some(blob)) => tables.push((tag_name, blob.as_view().to_bytes()))
+    Ok(None) => ()
+  }
+  match face.reference_table_optional(tag_post) {
+    Err(err) => return Err(Face(err))
+    Ok(Some(blob)) => tables.push((tag_post, blob.as_view().to_bytes()))
+    Ok(None) => ()
+  }
+  Ok(build_sfnt(tables))
+}
+
+fn subset_cff1_with_plan(
+  font : @font.Font,
+  plan : SubsetPlan,
+  cff : @ot_cff.Cff1Table,
+) -> Result[Bytes, SubsetError] {
+  let face = font.get_face()
+  let head_blob = match table_blob(face, tag_head, "head") {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  let maxp_blob = match table_blob(face, tag_maxp, "maxp") {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  let hhea_blob = match table_blob(face, tag_hhea, "hhea") {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  let hmtx_blob = match table_blob(face, tag_hmtx, "hmtx") {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  let maxp = match @sfnt.MaxpTable::parse(maxp_blob.as_view()) {
+    Err(err) => return Err(Sfnt(err))
+    Ok(value) => value
+  }
+  let hhea = match @sfnt.HheaTable::parse(hhea_blob.as_view()) {
+    Err(err) => return Err(Sfnt(err))
+    Ok(value) => value
+  }
+  let hmtx = match @sfnt.HmtxTable::parse(
+    hmtx_blob.as_view(),
+    maxp.num_glyphs,
+    hhea.number_of_hmetrics,
+  ) {
+    Err(err) => return Err(Sfnt(err))
+    Ok(value) => value
+  }
+
+  let new_hmtx : Array[Byte] = []
+  for old_gid in plan.glyphs {
+    let gid = old_gid.reinterpret_as_int()
+    if gid < 0 || gid >= hmtx.advances.length() {
+      return Err(InvalidInput("glyph id out of range"))
+    }
+    let advance = hmtx.advances[gid]
+    let lsb = hmtx.lsbs[gid]
+    push_u16(new_hmtx, advance)
+    push_i16(new_hmtx, lsb)
+  }
+
+  let head_bytes = head_blob.as_view().to_bytes().to_array()
+  let maxp_bytes = maxp_blob.as_view().to_bytes().to_array()
+  if maxp_bytes.length() >= 6 {
+    write_u16(maxp_bytes, 4, plan.glyphs.length())
+  }
+  let hhea_bytes = hhea_blob.as_view().to_bytes().to_array()
+  if hhea_bytes.length() >= 36 {
+    write_u16(hhea_bytes, 34, plan.glyphs.length())
+  }
+
+  let glyph_ids : Array[Int] = []
+  for gid in plan.glyphs {
+    glyph_ids.push(gid.reinterpret_as_int())
+  }
+  let cff_bytes = match cff.subset(glyph_ids) {
+    Err(err) => return Err(Cff(err))
+    Ok(value) => value
+  }
+
+  let cmap_bytes = build_cmap_from_pairs(plan.codepoint_map)
+
+  let tables : Array[(@common.Tag, Bytes)] = [
+    (tag_head, Bytes::from_array(head_bytes)),
+    (tag_maxp, Bytes::from_array(maxp_bytes)),
+    (tag_hhea, Bytes::from_array(hhea_bytes)),
+    (tag_hmtx, Bytes::from_array(new_hmtx)),
+    (tag_cff, cff_bytes),
   ]
   match cmap_bytes {
     None => ()

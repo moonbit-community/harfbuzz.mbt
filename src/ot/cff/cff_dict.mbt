@@ -51,6 +51,15 @@ pub fn CffDict::get_numbers(self : CffDict, op : Int) -> Array[CffNumber]? {
 }
 
 ///|
+pub fn CffDict::entries_map(self : CffDict) -> Map[Int, Array[CffNumber]] {
+  let next : Map[Int, Array[CffNumber]] = {}
+  self.entries.eachi((_, key, value) => {
+    next[key] = value.copy()
+  })
+  next
+}
+
+///|
 pub fn CffDict::get_int(self : CffDict, op : Int, index? : Int = 0) -> Int? {
   match self.entries.get(op) {
     None => None

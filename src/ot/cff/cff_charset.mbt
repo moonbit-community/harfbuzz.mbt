@@ -154,6 +154,64 @@ pub fn cff1_sid_to_gid(
   }
 }
 
+fn assign_gid_sids(
+  pairs : Array[SidGid],
+  glyph_count : Int,
+  gids : Array[Int],
+) -> Unit {
+  for entry in pairs {
+    if entry.gid >= 0 && entry.gid < glyph_count {
+      gids[entry.gid] = entry.sid
+    }
+  }
+}
+
+fn build_gid_to_sid_map(
+  charset_offset : Int,
+  charset_map : Map[Int, Int]?,
+  glyph_count : Int,
+) -> Result[Array[Int], CffError] {
+  if glyph_count < 0 {
+    return Err(InvalidFormat)
+  }
+  let gids : Array[Int] = Array::make(glyph_count, -1)
+  if glyph_count == 0 {
+    return Ok(gids)
+  }
+  gids[0] = 0
+  if glyph_count == 1 {
+    return Ok(gids)
+  }
+  if charset_offset == 0 {
+    for gid in 1..<glyph_count {
+      if gid > 228 {
+        return Err(InvalidFormat)
+      }
+      gids[gid] = gid
+    }
+    return Ok(gids)
+  }
+  if charset_offset == 1 {
+    assign_gid_sids(expert_charset_sid_to_gid, glyph_count, gids)
+    return Ok(gids)
+  }
+  if charset_offset == 2 {
+    assign_gid_sids(expert_subset_charset_sid_to_gid, glyph_count, gids)
+    return Ok(gids)
+  }
+  match charset_map {
+    None => Err(InvalidFormat)
+    Some(map) => {
+      map.eachi((_, sid, gid) => {
+        if gid >= 0 && gid < glyph_count {
+          gids[gid] = sid
+        }
+      })
+      Ok(gids)
+    }
+  }
+}
+
 ///|
 pub fn parse_cff1_charset(
   data : BytesView,

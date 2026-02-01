@@ -683,6 +683,107 @@ test "subset cmap-only cff1" {
 }
 
 ///|
+test "subset cff1 outlines" {
+  let font = @font.Font::from_bytes(build_font_bytes_cff1_seac_c0())
+  let keep = 0xC0U
+  let original_gid = match font.glyph_for_codepoint(keep) {
+    Err(err) => fail("glyph lookup error: \{err}")
+    Ok(None) => fail("missing glyph for U+00C0")
+    Ok(Some(value)) => value.reinterpret_as_int()
+  }
+  let original_face = font.get_face()
+  let original_cff_blob = match original_face.reference_table_optional(
+    @common.Tag::from_chars('C', 'F', 'F', ' ')
+  ) {
+    Err(err) => fail("cff missing: \{err}")
+    Ok(None) => fail("cff missing")
+    Ok(Some(blob)) => blob
+  }
+  let original_cff = match @ot_cff.Cff1Table::parse(original_cff_blob.as_view()) {
+    Err(err) => fail("cff parse error: \{err}")
+    Ok(value) => value
+  }
+  let original_components = match original_cff.seac_components(original_gid) {
+    Err(err) => fail("seac components error: \{err}")
+    Ok(value) => value
+  }
+  let bytes = match subset(font, SubsetInput::from_codepoints([keep])) {
+    Err(err) => fail("subset failed: \{err}")
+    Ok(value) => value
+  }
+  let subset_font = @font.Font::from_bytes(bytes)
+  let face = subset_font.get_face()
+  let maxp_blob = match face.reference_table_optional(@common.Tag::from_chars('m', 'a', 'x', 'p')) {
+    Err(err) => fail("maxp missing: \{err}")
+    Ok(None) => fail("maxp missing")
+    Ok(Some(blob)) => blob
+  }
+  let maxp = match @sfnt.MaxpTable::parse(maxp_blob.as_view()) {
+    Err(err) => fail("maxp parse error: \{err}")
+    Ok(value) => value
+  }
+  inspect(maxp.num_glyphs, content="4")
+
+  let cff_blob = match face.reference_table_optional(@common.Tag::from_chars('C', 'F', 'F', ' ')) {
+    Err(err) => fail("cff missing: \{err}")
+    Ok(None) => fail("cff missing")
+    Ok(Some(blob)) => blob
+  }
+  let cff = match @ot_cff.Cff1Table::parse(cff_blob.as_view()) {
+    Err(err) => fail("cff parse error: \{err}")
+    Ok(value) => value
+  }
+  let gid = match subset_font.glyph_for_codepoint(keep) {
+    Err(err) => fail("glyph lookup error: \{err}")
+    Ok(None) => fail("missing glyph for U+00C0")
+    Ok(Some(value)) => value
+  }
+  let components = match cff.seac_components(gid.reinterpret_as_int()) {
+    Err(err) => fail("seac components error: \{err}")
+    Ok(value) => value
+  }
+  let expected_components =
+    match original_components {
+      None => None
+      Some((base, accent)) => {
+        let selected : Array[Int] = [0, original_gid, base, accent]
+        let unique : Array[Int] = []
+        for gid in selected {
+          if !unique.contains(gid) {
+            unique.push(gid)
+          }
+        }
+        let n = unique.length()
+        for i in 1..<n {
+          let key = unique[i]
+          let mut j = i - 1
+          while j >= 0 && unique[j] > key {
+            unique[j + 1] = unique[j]
+            j = j - 1
+          }
+          unique[j + 1] = key
+        }
+        let mut base_new = -1
+        let mut accent_new = -1
+        for i in 0..<unique.length() {
+          if unique[i] == base {
+            base_new = i
+          }
+          if unique[i] == accent {
+            accent_new = i
+          }
+        }
+        if base_new < 0 || accent_new < 0 {
+          None
+        } else {
+          Some((base_new, accent_new))
+        }
+      }
+    }
+  assert_eq(components, expected_components)
+}
+
+///|
 test "subset cmap-only cff2" {
   let font = @font.Font::from_bytes(build_font_bytes_test_cff2_vf())
   let keep = 0x41U
