@@ -1009,6 +1009,76 @@ pub fn Buffer::apply_trak(
 }
 
 ///|
+/// Apply AAT morx/mort non-contextual substitutions if present.
+pub fn Buffer::apply_morx(
+  self : Buffer,
+  font : @font.Font,
+) -> Result[Unit, ShapeError] {
+  let morx = match font.morx() {
+    Err(err) => return Err(Font(err))
+    Ok(value) => value
+  }
+  let use_morx = match morx {
+    Some(morx) => morx.has_data()
+    None => false
+  }
+  let mort = if use_morx {
+    None
+  } else {
+    match font.mort() {
+      Err(err) => return Err(Font(err))
+      Ok(value) => value
+    }
+  }
+  let use_mort = match mort {
+    Some(mort) => mort.has_data()
+    None => false
+  }
+  if !use_morx && !use_mort {
+    return Ok(())
+  }
+  let horizontal = self.direction.is_horizontal()
+  let glyphs : Array[UInt] = []
+  let clusters : Array[Int] = []
+  for info in self.infos {
+    glyphs.push(info.codepoint)
+    clusters.push(info.cluster)
+  }
+  let changed = if use_morx {
+    let morx = match morx {
+      Some(morx) => morx
+      None => return Ok(())
+    }
+    morx.apply(glyphs, clusters, horizontal)
+  } else {
+    let mort = match mort {
+      Some(mort) => mort
+      None => return Ok(())
+    }
+    mort.apply(glyphs, clusters, horizontal)
+  }
+  if !changed {
+    return Ok(())
+  }
+  let new_infos : Array[GlyphInfo] = []
+  let new_positions : Array[GlyphPosition] = []
+  for i in 0..<glyphs.length() {
+    let glyph = glyphs[i]
+    let cluster = clusters[i]
+    let pos = match default_position(self, font, glyph) {
+      Err(err) => return Err(err)
+      Ok(value) => value
+    }
+    let unicode = self.infos[i].unicode
+    new_infos.push(GlyphInfo::{ codepoint: glyph, cluster, unicode })
+    new_positions.push(pos)
+  }
+  self.infos = new_infos
+  self.positions = new_positions
+  Ok(())
+}
+
+///|
 /// Shape with GSUB single substitution and GPOS pair adjustment.
 pub fn Buffer::shape_ot(
   self : Buffer,

@@ -10,5 +10,9 @@ pub fn shape(
     Err(err) => return Err(err)
     Ok(_) => ()
   }
+  match buffer.apply_morx(font) {
+    Err(err) => return Err(err)
+    Ok(_) => ()
+  }
   buffer.apply_trak(font)
 }

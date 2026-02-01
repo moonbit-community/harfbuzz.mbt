@@ -40,6 +40,8 @@ pub struct Font {
   mut math : @sfnt.MathTable?
   mut kern : @sfnt.KernTable?
   mut trak : @aat.TrakTable?
+  mut morx : @aat.MorxTable?
+  mut mort : @aat.MortTable?
   mut gsub : @ot_tables.GsubTable?
   mut gpos : @ot_tables.GposTable?
   mut gdef : @ot_tables.GdefTable?
@@ -175,6 +177,12 @@ let tag_colr : @common.Tag = @common.Tag::from_chars('C', 'O', 'L', 'R')
 let tag_trak : @common.Tag = @common.Tag::from_chars('t', 'r', 'a', 'k')
 
 ///|
+let tag_morx : @common.Tag = @common.Tag::from_chars('m', 'o', 'r', 'x')
+
+///|
+let tag_mort : @common.Tag = @common.Tag::from_chars('m', 'o', 'r', 't')
+
+///|
 /// Create a font from a face.
 pub fn Font::new(face : @face.Face) -> Font {
   Font::{
@@ -205,6 +213,8 @@ pub fn Font::new(face : @face.Face) -> Font {
     math: None,
     kern: None,
     trak: None,
+    morx: None,
+    mort: None,
     gsub: None,
     gpos: None,
     gdef: None,
@@ -802,6 +812,56 @@ pub fn Font::trak(self : Font) -> Result[@aat.TrakTable?, FontError] {
               Ok(Some(trak))
             }
           }
+      }
+  }
+}
+
+///|
+pub fn Font::morx(self : Font) -> Result[@aat.MorxTable?, FontError] {
+  match self.morx {
+    Some(morx) => Ok(Some(morx))
+    None =>
+      match self.face.reference_table_optional(tag_morx) {
+        Err(err) => Err(FaceTable(err))
+        Ok(None) => Ok(None)
+        Ok(Some(blob)) => {
+          let maxp = match self.ensure_maxp() {
+            Err(err) => return Err(err)
+            Ok(maxp) => maxp
+          }
+          match @aat.MorxTable::parse(blob.as_view(), maxp.num_glyphs) {
+            Err(err) => Err(Aat(err))
+            Ok(morx) => {
+              self.morx = Some(morx)
+              Ok(Some(morx))
+            }
+          }
+        }
+      }
+  }
+}
+
+///|
+pub fn Font::mort(self : Font) -> Result[@aat.MortTable?, FontError] {
+  match self.mort {
+    Some(mort) => Ok(Some(mort))
+    None =>
+      match self.face.reference_table_optional(tag_mort) {
+        Err(err) => Err(FaceTable(err))
+        Ok(None) => Ok(None)
+        Ok(Some(blob)) => {
+          let maxp = match self.ensure_maxp() {
+            Err(err) => return Err(err)
+            Ok(maxp) => maxp
+          }
+          match @aat.MortTable::parse(blob.as_view(), maxp.num_glyphs) {
+            Err(err) => Err(Aat(err))
+            Ok(mort) => {
+              self.mort = Some(mort)
+              Ok(Some(mort))
+            }
+          }
+        }
       }
   }
 }
