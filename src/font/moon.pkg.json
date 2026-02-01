@@ -1,5 +1,6 @@
 {
   "import": [
+    "moonbitlang/core/math",
     "moonbit-community/harfbuzz/face",
     {
       "path": "moonbit-community/harfbuzz/common",

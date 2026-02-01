@@ -159,6 +159,84 @@ fn build_cmap_format12(start : UInt, end : UInt, start_gid : UInt) -> Bytes {
   Bytes::from_array(bytes)
 }
 
+fn push_u32var(bytes : Array[Byte], value : UInt) -> Unit {
+  if value < 0x80U {
+    bytes.push(value.reinterpret_as_int().to_byte())
+    return
+  }
+  if value < 0x4000U {
+    let b0 = 0x80U | ((value >> 8) & 0x3FU)
+    bytes.push(b0.reinterpret_as_int().to_byte())
+    bytes.push((value & 0xFFU).reinterpret_as_int().to_byte())
+    return
+  }
+  if value < 0x200000U {
+    let b0 = 0xC0U | ((value >> 16) & 0x1FU)
+    bytes.push(b0.reinterpret_as_int().to_byte())
+    bytes.push(((value >> 8) & 0xFFU).reinterpret_as_int().to_byte())
+    bytes.push((value & 0xFFU).reinterpret_as_int().to_byte())
+    return
+  }
+  if value < 0x10000000U {
+    let b0 = 0xE0U | ((value >> 24) & 0x0FU)
+    bytes.push(b0.reinterpret_as_int().to_byte())
+    bytes.push(((value >> 16) & 0xFFU).reinterpret_as_int().to_byte())
+    bytes.push(((value >> 8) & 0xFFU).reinterpret_as_int().to_byte())
+    bytes.push((value & 0xFFU).reinterpret_as_int().to_byte())
+    return
+  }
+  bytes.push((0xF0).to_byte())
+  bytes.push(((value >> 24) & 0xFFU).reinterpret_as_int().to_byte())
+  bytes.push(((value >> 16) & 0xFFU).reinterpret_as_int().to_byte())
+  bytes.push(((value >> 8) & 0xFFU).reinterpret_as_int().to_byte())
+  bytes.push((value & 0xFFU).reinterpret_as_int().to_byte())
+}
+
+fn build_varc_table_bounds() -> Bytes {
+  let record : Array[Byte] = []
+  let flags = 16U // HAVE_TRANSLATE_X
+  push_u32var(record, flags)
+  push_u16(record, 1) // component glyph id
+  push_i16(record, 20) // translate x
+
+  let bytes : Array[Byte] = []
+  push_u32(bytes, 0x00010000)
+  push_u32(bytes, 24) // coverage offset
+  push_u32(bytes, 0) // var store offset
+  push_u32(bytes, 0) // condition list offset
+  push_u32(bytes, 0) // axis indices offset
+  push_u32(bytes, 30) // glyph records offset
+
+  // Coverage format 1 for glyph 2
+  push_u16(bytes, 1)
+  push_u16(bytes, 1)
+  push_u16(bytes, 2)
+
+  // Glyph records CFF2 INDEX
+  push_u32(bytes, 1)
+  bytes.push(1) // offSize
+  bytes.push(1)
+  bytes.push((1 + record.length()).to_byte())
+  for b in record {
+    bytes.push(b)
+  }
+  Bytes::from_array(bytes)
+}
+
+fn build_font_bytes_varc_bounds() -> Bytes {
+  let glyf = build_glyf_table()
+  let loca = build_loca_short([0, 0, glyf.length(), glyf.length()])
+  let varc = build_varc_table_bounds()
+  let tables : Array[(@common.Tag, Bytes)] = [
+    (@common.Tag::from_chars('h', 'e', 'a', 'd'), build_head(1000, 0)),
+    (@common.Tag::from_chars('m', 'a', 'x', 'p'), build_maxp(3)),
+    (@common.Tag::from_chars('l', 'o', 'c', 'a'), loca),
+    (@common.Tag::from_chars('g', 'l', 'y', 'f'), glyf),
+    (@common.Tag::from_chars('V', 'A', 'R', 'C'), varc),
+  ]
+  build_sfnt(tables)
+}
+
 ///|
 fn build_font_bytes() -> Bytes {
   let glyf = build_glyf_table()
@@ -604,4 +682,16 @@ test "font glyph bounds" {
   inspect(bounds1.y_min, content="-2")
   inspect(bounds1.x_max, content="50")
   inspect(bounds1.y_max, content="100")
+}
+
+///|
+test "font glyph bounds varc composite" {
+  let bytes = build_font_bytes_varc_bounds()
+  let font = Font::from_bytes(bytes)
+  let bounds = match font.glyph_bounds(2U) {
+    Err(err) => fail("bounds error: \{err}")
+    Ok(None) => fail("missing bounds")
+    Ok(Some(value)) => value
+  }
+  inspect((bounds.x_min, bounds.y_min, bounds.x_max, bounds.y_max), content="(25, -2, 70, 100)")
 }

@@ -1172,6 +1172,105 @@ pub fn Font::glyph_bounds(
   self : Font,
   glyph : UInt,
 ) -> Result[@sfnt.GlyphBounds?, FontError] {
+  let coords : Array[Int] = match self.var_coords_norm {
+    None => []
+    Some(value) => value
+  }
+  self.glyph_bounds_with_coords(glyph, coords, 8)
+}
+
+fn Font::glyph_bounds_with_coords(
+  self : Font,
+  glyph : UInt,
+  coords : Array[Int],
+  depth : Int,
+) -> Result[@sfnt.GlyphBounds?, FontError] {
+  if depth <= 0 {
+    return self.glyph_bounds_raw(glyph)
+  }
+  let varc = match self.varc() {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  match varc {
+    None => self.glyph_bounds_raw(glyph)
+    Some(varc) => {
+      let components = match varc.glyph_components(glyph.reinterpret_as_int(), coords, coords) {
+        Err(err) => return Err(Var(err))
+        Ok(value) => value
+      }
+      if components.is_empty() {
+        return self.glyph_bounds_raw(glyph)
+      }
+      let mut min_x : Double? = None
+      let mut min_y : Double? = None
+      let mut max_x : Double? = None
+      let mut max_y : Double? = None
+      for comp in components {
+        if !comp.visible {
+          continue
+        }
+        if comp.glyph < 0 {
+          continue
+        }
+        let bounds = match self.glyph_bounds_with_coords(
+          comp.glyph.reinterpret_as_uint(),
+          comp.coords,
+          depth - 1,
+        ) {
+          Err(err) => return Err(err)
+          Ok(value) => value
+        }
+        match bounds {
+          None => ()
+          Some(bounds) => {
+            let (x0, y0, x1, y1) = comp.transform.apply_to_bounds(
+              bounds.x_min.to_double(),
+              bounds.y_min.to_double(),
+              bounds.x_max.to_double(),
+              bounds.y_max.to_double(),
+            )
+            let next_min_x = match min_x {
+              None => x0
+              Some(v) => if x0 < v { x0 } else { v }
+            }
+            let next_min_y = match min_y {
+              None => y0
+              Some(v) => if y0 < v { y0 } else { v }
+            }
+            let next_max_x = match max_x {
+              None => x1
+              Some(v) => if x1 > v { x1 } else { v }
+            }
+            let next_max_y = match max_y {
+              None => y1
+              Some(v) => if y1 > v { y1 } else { v }
+            }
+            min_x = Some(next_min_x)
+            min_y = Some(next_min_y)
+            max_x = Some(next_max_x)
+            max_y = Some(next_max_y)
+          }
+        }
+      }
+      match (min_x, min_y, max_x, max_y) {
+        (Some(min_x), Some(min_y), Some(max_x), Some(max_y)) => {
+          let x_min = @math.floor(min_x).to_int()
+          let y_min = @math.floor(min_y).to_int()
+          let x_max = @math.ceil(max_x).to_int()
+          let y_max = @math.ceil(max_y).to_int()
+          Ok(Some(@sfnt.GlyphBounds::new(-1, x_min, y_min, x_max, y_max)))
+        }
+        _ => self.glyph_bounds_raw(glyph)
+      }
+    }
+  }
+}
+
+fn Font::glyph_bounds_raw(
+  self : Font,
+  glyph : UInt,
+) -> Result[@sfnt.GlyphBounds?, FontError] {
   let maxp = match self.ensure_maxp() {
     Err(err) => return Err(err)
     Ok(value) => value

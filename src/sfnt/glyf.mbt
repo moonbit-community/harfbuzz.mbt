@@ -9,6 +9,17 @@ pub struct GlyphBounds {
 } derive(Eq, Show, ToJson)
 
 ///|
+pub fn GlyphBounds::new(
+  contours : Int,
+  x_min : Int,
+  y_min : Int,
+  x_max : Int,
+  y_max : Int,
+) -> GlyphBounds {
+  GlyphBounds::{ contours, x_min, y_min, x_max, y_max }
+}
+
+///|
 /// Parsed glyf table (raw view).
 pub struct GlyfTable {
   data : BytesView
