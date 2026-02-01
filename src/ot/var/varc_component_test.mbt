@@ -141,4 +141,6 @@ test "varc component parse" {
   let sx = (comp.transform.scale_x * 1000.0).round().to_int()
   let sy = (comp.transform.scale_y * 1000.0).round().to_int()
   inspect((tx, sx, sy), content="(50, 1000, 1000)")
+  let (bx0, by0, bx1, by1) = comp.transform.apply_to_bounds(0.0, 0.0, 10.0, 20.0)
+  inspect((bx0.round().to_int(), by0.round().to_int(), bx1.round().to_int(), by1.round().to_int()), content="(50, 0, 60, 20)")
 }

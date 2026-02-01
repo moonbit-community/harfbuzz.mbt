@@ -12,6 +12,68 @@ pub struct VarcTransform {
 } derive(Show, ToJson)
 
 ///|
+pub fn VarcTransform::apply_to_point(
+  self : VarcTransform,
+  x : Double,
+  y : Double,
+) -> (Double, Double) {
+  let mut px = x + self.translate_x + self.tcenter_x
+  let mut py = y + self.translate_y + self.tcenter_y
+  if self.rotation != 0.0 {
+    let c = @math.cos(self.rotation)
+    let s = @math.sin(self.rotation)
+    let rx = px * c - py * s
+    let ry = px * s + py * c
+    px = rx
+    py = ry
+  }
+  px = px * self.scale_x
+  py = py * self.scale_y
+  if self.skew_x != 0.0 || self.skew_y != 0.0 {
+    let skew_x = if self.skew_x == 0.0 { 0.0 } else { @math.tan(-self.skew_x) }
+    let skew_y = if self.skew_y == 0.0 { 0.0 } else { @math.tan(self.skew_y) }
+    let sx = px + skew_x * py
+    let sy = skew_y * px + py
+    px = sx
+    py = sy
+  }
+  px = px - self.tcenter_x
+  py = py - self.tcenter_y
+  (px, py)
+}
+
+///|
+pub fn VarcTransform::apply_to_bounds(
+  self : VarcTransform,
+  x_min : Double,
+  y_min : Double,
+  x_max : Double,
+  y_max : Double,
+) -> (Double, Double, Double, Double) {
+  let (x0, y0) = self.apply_to_point(x_min, y_min)
+  let (x1, y1) = self.apply_to_point(x_min, y_max)
+  let (x2, y2) = self.apply_to_point(x_max, y_min)
+  let (x3, y3) = self.apply_to_point(x_max, y_max)
+  let min_x = min4(x0, x1, x2, x3)
+  let max_x = max4(x0, x1, x2, x3)
+  let min_y = min4(y0, y1, y2, y3)
+  let max_y = max4(y0, y1, y2, y3)
+  (min_x, min_y, max_x, max_y)
+}
+
+fn min4(a : Double, b : Double, c : Double, d : Double) -> Double {
+  let ab = if a < b { a } else { b }
+  let cd = if c < d { c } else { d }
+  if ab < cd { ab } else { cd }
+}
+
+fn max4(a : Double, b : Double, c : Double, d : Double) -> Double {
+  let ab = if a > b { a } else { b }
+  let cd = if c > d { c } else { d }
+  if ab > cd { ab } else { cd }
+}
+
+///|
 pub struct VarcComponent {
   glyph : Int
   visible : Bool
