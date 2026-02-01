@@ -47,6 +47,11 @@ fn CffBoundsBuilder::update(self : CffBoundsBuilder, x : Double, y : Double) -> 
   }
 }
 
+fn CffBoundsBuilder::merge(self : CffBoundsBuilder, bounds : CffBounds) -> Unit {
+  self.update(bounds.x_min, bounds.y_min)
+  self.update(bounds.x_max, bounds.y_max)
+}
+
 fn CffBoundsBuilder::result(self : CffBoundsBuilder) -> CffBounds? {
   if !self.has_bounds {
     return None
@@ -123,6 +128,17 @@ fn CffCharstringState::curve_to(
   self.y = pt3.y
 }
 
+priv struct Cff1SeacContext {
+  charstrings : CffIndex
+  charset_offset : Int
+  charset_map : Map[Int, Int]?
+  glyph_count : Int
+}
+
+fn Cff1SeacContext::sid_to_gid(self : Cff1SeacContext, sid : Int) -> Int? {
+  cff1_sid_to_gid(self.charset_offset, self.charset_map, sid, self.glyph_count)
+}
+
 priv struct Cff2BlendState {
   mut ivs : Int
   mut seen_vsindex : Bool
@@ -177,7 +193,29 @@ pub fn cff_charstring_bounds(
   local_subrs : CffIndex?,
 ) -> Result[CffBounds?, CffError] {
   let state = CffCharstringState::new()
-  match interpret_charstring(data, state, global_subrs, local_subrs, 0, false) {
+  match interpret_charstring(data, state, global_subrs, local_subrs, 0, false, None, false) {
+    Err(err) => Err(err)
+    Ok(_) => Ok(state.bounds.result())
+  }
+}
+
+fn cff1_charstring_bounds(
+  data : BytesView,
+  global_subrs : CffIndex?,
+  local_subrs : CffIndex?,
+  seac : Cff1SeacContext,
+) -> Result[CffBounds?, CffError] {
+  let state = CffCharstringState::new()
+  match interpret_charstring(
+    data,
+    state,
+    global_subrs,
+    local_subrs,
+    0,
+    false,
+    Some(seac),
+    false,
+  ) {
     Err(err) => Err(err)
     Ok(_) => Ok(state.bounds.result())
   }
@@ -225,6 +263,8 @@ fn interpret_charstring(
   local_subrs : CffIndex?,
   depth : Int,
   allow_return : Bool,
+  seac : Cff1SeacContext?,
+  in_seac : Bool,
 ) -> Result[Unit, CffError] {
   if depth > 16 {
     return Err(InvalidFormat)
@@ -342,7 +382,16 @@ fn interpret_charstring(
           Err(err) => return Err(err)
           Ok(value) => value
         }
-        match interpret_charstring(bytes[:], state, global_subrs, local_subrs, depth + 1, true) {
+        match interpret_charstring(
+          bytes[:],
+          state,
+          global_subrs,
+          local_subrs,
+          depth + 1,
+          true,
+          seac,
+          in_seac,
+        ) {
           Err(err) => return Err(err)
           Ok(_) => ()
         }
@@ -374,8 +423,81 @@ fn interpret_charstring(
         pos = pos + 2
       }
       14 => {
-        if !state.has_width {
-          ignore(width_offset(state, stack))
+        let offset = width_offset(state, stack)
+        let count = stack.length() - offset
+        if count == 4 {
+          let seac_context = match seac {
+            None => return Err(InvalidFormat)
+            Some(value) => value
+          }
+          if in_seac {
+            return Err(InvalidFormat)
+          }
+          let adx = stack[offset]
+          let ady = stack[offset + 1]
+          let bchar = stack[offset + 2].round().to_int()
+          let achar = stack[offset + 3].round().to_int()
+          let base_sid = match cff1_standard_sid(bchar) {
+            None => return Err(InvalidFormat)
+            Some(value) => value
+          }
+          let accent_sid = match cff1_standard_sid(achar) {
+            None => return Err(InvalidFormat)
+            Some(value) => value
+          }
+          let base_gid = match seac_context.sid_to_gid(base_sid) {
+            None => return Err(InvalidFormat)
+            Some(value) => value
+          }
+          let accent_gid = match seac_context.sid_to_gid(accent_sid) {
+            None => return Err(InvalidFormat)
+            Some(value) => value
+          }
+          let base_bytes = match seac_context.charstrings.item_bytes(base_gid) {
+            Err(err) => return Err(err)
+            Ok(value) => value
+          }
+          let accent_bytes = match seac_context.charstrings.item_bytes(accent_gid) {
+            Err(err) => return Err(err)
+            Ok(value) => value
+          }
+          let base_state = CffCharstringState::new()
+          match interpret_charstring(
+            base_bytes[:],
+            base_state,
+            global_subrs,
+            local_subrs,
+            depth + 1,
+            false,
+            seac,
+            true,
+          ) {
+            Err(err) => return Err(err)
+            Ok(_) => ()
+          }
+          let accent_state = CffCharstringState::new()
+          match interpret_charstring(
+            accent_bytes[:],
+            accent_state,
+            global_subrs,
+            local_subrs,
+            depth + 1,
+            false,
+            seac,
+            true,
+          ) {
+            Err(err) => return Err(err)
+            Ok(_) => ()
+          }
+          match (base_state.bounds.result(), accent_state.bounds.result()) {
+            (Some(base_bounds), Some(accent_bounds)) => {
+              state.bounds.merge(base_bounds)
+              state.bounds.merge(offset_bounds(accent_bounds, adx, ady))
+            }
+            _ => return Err(InvalidFormat)
+          }
+        } else if count != 0 {
+          return Err(InvalidFormat)
         }
         stack = []
         pos = pos + 1
@@ -476,7 +598,16 @@ fn interpret_charstring(
           Err(err) => return Err(err)
           Ok(value) => value
         }
-        match interpret_charstring(bytes[:], state, global_subrs, local_subrs, depth + 1, true) {
+        match interpret_charstring(
+          bytes[:],
+          state,
+          global_subrs,
+          local_subrs,
+          depth + 1,
+          true,
+          seac,
+          in_seac,
+        ) {
           Err(err) => return Err(err)
           Ok(_) => ()
         }
@@ -858,6 +989,15 @@ fn interpret_charstring_cff2(
     }
   }
   Ok(())
+}
+
+fn offset_bounds(bounds : CffBounds, dx : Double, dy : Double) -> CffBounds {
+  CffBounds::{
+    x_min: bounds.x_min + dx,
+    y_min: bounds.y_min + dy,
+    x_max: bounds.x_max + dx,
+    y_max: bounds.y_max + dy,
+  }
 }
 
 fn width_offset(state : CffCharstringState, stack : Array[Double]) -> Int {

@@ -8,6 +8,9 @@ let op_private : Int = 0x12
 let op_subrs : Int = 0x13
 
 ///|
+let op_charset : Int = 0x0F
+
+///|
 pub struct Cff1Table {
   data : Bytes
   name_index : CffIndex
@@ -20,6 +23,8 @@ pub struct Cff1Table {
   charstrings_offset : Int
   private_offset : Int
   private_size : Int
+  charset_offset : Int
+  charset_map : Map[Int, Int]?
 } derive(Eq, Show, ToJson)
 
 ///|
@@ -67,6 +72,10 @@ pub fn Cff1Table::parse(data : BytesView) -> Result[Cff1Table, CffError] {
     None => return Err(InvalidFormat)
     Some(value) => value
   }
+  let charset_offset = match top_dict.get_int(op_charset) {
+    None => 0
+    Some(value) => value
+  }
   let private_size_opt = top_dict.get_int(op_private, index=0)
   let private_offset_opt = top_dict.get_int(op_private, index=1)
   let (private_size, private_offset) =
@@ -79,6 +88,15 @@ pub fn Cff1Table::parse(data : BytesView) -> Result[Cff1Table, CffError] {
     Err(err) => return Err(err)
     Ok(value) => value
   }
+  let charset_map =
+    if charset_offset > 2 {
+      match parse_cff1_charset(data, charset_offset, charstrings.count) {
+        Err(err) => return Err(err)
+        Ok(value) => Some(value)
+      }
+    } else {
+      None
+    }
   let (private_dict, local_subrs) =
     if private_size > 0 {
       if private_offset < 0 || private_offset + private_size > data.length() {
@@ -115,6 +133,8 @@ pub fn Cff1Table::parse(data : BytesView) -> Result[Cff1Table, CffError] {
     charstrings_offset,
     private_offset,
     private_size,
+    charset_offset,
+    charset_map,
   })
 }
 
@@ -130,7 +150,13 @@ pub fn Cff1Table::glyph_bounds(
     Err(err) => return Err(err)
     Ok(value) => value
   }
-  cff_charstring_bounds(bytes[:], Some(self.global_subrs), self.local_subrs)
+  let seac = Cff1SeacContext::{
+    charstrings: self.charstrings,
+    charset_offset: self.charset_offset,
+    charset_map: self.charset_map,
+    glyph_count: self.charstrings.count,
+  }
+  cff1_charstring_bounds(bytes[:], Some(self.global_subrs), self.local_subrs, seac)
 }
 
 fn parse_cff1_index_at(
