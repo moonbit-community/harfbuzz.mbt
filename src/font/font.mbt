@@ -47,6 +47,7 @@ pub struct Font {
   mut cvt : @sfnt.CvtTable?
   mut gvar : @ot_var.GvarTable?
   mut cvar : @ot_var.CvarTable?
+  mut varc : @ot_var.VarcTable?
   mut var_coords_design : Array[Double]?
   mut var_coords_norm : Array[Int]?
 } derive(Show, ToJson)
@@ -148,6 +149,9 @@ let tag_cvar : @common.Tag = @common.Tag::from_chars('c', 'v', 'a', 'r')
 let tag_cvt : @common.Tag = @common.Tag::from_chars('c', 'v', 't', ' ')
 
 ///|
+let tag_varc : @common.Tag = @common.Tag::from_chars('V', 'A', 'R', 'C')
+
+///|
 /// Create a font from a face.
 pub fn Font::new(face : @face.Face) -> Font {
   Font::{
@@ -188,6 +192,7 @@ pub fn Font::new(face : @face.Face) -> Font {
     cvt: None,
     gvar: None,
     cvar: None,
+    varc: None,
     var_coords_design: None,
     var_coords_norm: None,
   }
@@ -918,6 +923,26 @@ pub fn Font::cvar(self : Font) -> Result[@ot_var.CvarTable?, FontError] {
           }
       }
     }
+  }
+}
+
+///|
+pub fn Font::varc(self : Font) -> Result[@ot_var.VarcTable?, FontError] {
+  match self.varc {
+    Some(varc) => Ok(Some(varc))
+    None =>
+      match self.face.reference_table_optional(tag_varc) {
+        Err(err) => Err(FaceTable(err))
+        Ok(None) => Ok(None)
+        Ok(Some(blob)) =>
+          match @ot_var.VarcTable::parse(blob.as_view()) {
+            Err(err) => Err(Var(err))
+            Ok(varc) => {
+              self.varc = Some(varc)
+              Ok(Some(varc))
+            }
+          }
+      }
   }
 }
 
