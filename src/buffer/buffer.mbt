@@ -1109,42 +1109,38 @@ pub fn Buffer::apply_kerx(
   }
   let horizontal = self.direction.is_horizontal()
   let (scale_x, scale_y) = font.get_scale()
-  let scale = if horizontal { scale_x } else { scale_y }
   let upem = font.get_face().get_upem()
-  let positions : Array[GlyphPosition] = []
-  for pos in self.positions {
-    positions.push(pos)
+  let ankr = match font.ankr() {
+    Err(err) => return Err(Font(err))
+    Ok(value) => value
   }
-  for i in 0..<(self.infos.length() - 1) {
-    let left = self.infos[i].codepoint
-    let right = self.infos[i + 1].codepoint
-    let kern = kerx.kern_value(left, right, horizontal)
-    if kern == 0 {
-      continue
-    }
-    let adjustment = if upem == 0 {
-      kern
+  let glyphs : Array[UInt] = []
+  for info in self.infos {
+    glyphs.push(info.codepoint)
+  }
+  let adjustments =
+    kerx.apply_scaled(glyphs, horizontal, scale_x, scale_y, upem, ankr)
+  if adjustments.length() != self.positions.length() {
+    return Ok(())
+  }
+  let positions : Array[GlyphPosition] = []
+  for i in 0..<self.positions.length() {
+    let pos = self.positions[i]
+    let adj = adjustments[i]
+    if adj.x_advance == 0 &&
+      adj.y_advance == 0 &&
+      adj.x_offset == 0 &&
+      adj.y_offset == 0 {
+      positions.push(pos)
     } else {
-      (kern * scale) / upem
-    }
-    if adjustment == 0 {
-      continue
-    }
-    let pos = positions[i]
-    positions[i] = if horizontal {
-      GlyphPosition::{
-        x_advance: pos.x_advance + adjustment,
-        y_advance: pos.y_advance,
-        x_offset: pos.x_offset,
-        y_offset: pos.y_offset,
-      }
-    } else {
-      GlyphPosition::{
-        x_advance: pos.x_advance,
-        y_advance: pos.y_advance + adjustment,
-        x_offset: pos.x_offset,
-        y_offset: pos.y_offset,
-      }
+      positions.push(
+        GlyphPosition::{
+          x_advance: pos.x_advance + adj.x_advance,
+          y_advance: pos.y_advance + adj.y_advance,
+          x_offset: pos.x_offset + adj.x_offset,
+          y_offset: pos.y_offset + adj.y_offset,
+        },
+      )
     }
   }
   self.positions = positions

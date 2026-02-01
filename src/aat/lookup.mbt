@@ -94,21 +94,36 @@ fn LookupTable::value_for(self : LookupTable, glyph : UInt) -> UInt? {
   }
 }
 
+fn read_lookup_value(
+  data : BytesView,
+  offset : Int,
+  value_size : Int,
+) -> Result[UInt, AatError] {
+  if value_size == 2 {
+    read_u16(data, offset)
+  } else if value_size == 4 {
+    read_u32(data, offset)
+  } else {
+    Err(InvalidFormat)
+  }
+}
+
 fn parse_format0(
   data : BytesView,
   offset : Int,
   num_glyphs : Int,
+  value_size : Int,
 ) -> Result[LookupTable, AatError] {
   if num_glyphs < 0 {
     return Err(InvalidFormat)
   }
   let start = offset + 2
-  if start < 0 || start + num_glyphs * 2 > data.length() {
+  if start < 0 || start + num_glyphs * value_size > data.length() {
     return Err(UnexpectedEof)
   }
   let values : Array[UInt] = []
   for i in 0..<num_glyphs {
-    let value = read_u16(data, start + i * 2)
+    let value = read_lookup_value(data, start + i * value_size, value_size)
     match value {
       Err(err) => return Err(err)
       Ok(value) => values.push(value)
@@ -144,12 +159,13 @@ fn parse_binsearch_header(
 fn parse_format2(
   data : BytesView,
   offset : Int,
+  value_size : Int,
 ) -> Result[LookupTable, AatError] {
   let header = parse_binsearch_header(data, offset + 2)
   match header {
     Err(err) => Err(err)
     Ok((unit_size, n_units, array_offset)) => {
-      if unit_size < 6 {
+      if unit_size < 4 + value_size {
         return Err(InvalidFormat)
       }
       if array_offset < 0 || array_offset + n_units * unit_size > data.length() {
@@ -160,7 +176,7 @@ fn parse_format2(
         let entry_offset = array_offset + i * unit_size
         let last = read_u16(data, entry_offset)
         let first = read_u16(data, entry_offset + 2)
-        let value = read_u16(data, entry_offset + 4)
+        let value = read_lookup_value(data, entry_offset + 4, value_size)
         match (last, first, value) {
           (Err(err), _, _) => return Err(err)
           (_, Err(err), _) => return Err(err)
@@ -181,6 +197,7 @@ fn parse_format2(
 fn parse_format4(
   data : BytesView,
   offset : Int,
+  value_size : Int,
 ) -> Result[LookupTable, AatError] {
   let header = parse_binsearch_header(data, offset + 2)
   match header {
@@ -211,12 +228,12 @@ fn parse_format4(
               return Err(InvalidFormat)
             }
             let values_start = offset + values_offset
-            if values_start < 0 || values_start + count * 2 > data.length() {
+            if values_start < 0 || values_start + count * value_size > data.length() {
               return Err(UnexpectedEof)
             }
             let values : Array[UInt] = []
             for j in 0..<count {
-              let value = read_u16(data, values_start + j * 2)
+              let value = read_lookup_value(data, values_start + j * value_size, value_size)
               match value {
                 Err(err) => return Err(err)
                 Ok(value) => values.push(value)
@@ -234,12 +251,13 @@ fn parse_format4(
 fn parse_format6(
   data : BytesView,
   offset : Int,
+  value_size : Int,
 ) -> Result[LookupTable, AatError] {
   let header = parse_binsearch_header(data, offset + 2)
   match header {
     Err(err) => Err(err)
     Ok((unit_size, n_units, array_offset)) => {
-      if unit_size < 4 {
+      if unit_size < 2 + value_size {
         return Err(InvalidFormat)
       }
       if array_offset < 0 || array_offset + n_units * unit_size > data.length() {
@@ -249,7 +267,7 @@ fn parse_format6(
       for i in 0..<n_units {
         let entry_offset = array_offset + i * unit_size
         let glyph = read_u16(data, entry_offset)
-        let value = read_u16(data, entry_offset + 2)
+        let value = read_lookup_value(data, entry_offset + 2, value_size)
         match (glyph, value) {
           (Err(err), _) => return Err(err)
           (_, Err(err)) => return Err(err)
@@ -269,6 +287,7 @@ fn parse_format6(
 fn parse_format8(
   data : BytesView,
   offset : Int,
+  value_size : Int,
 ) -> Result[LookupTable, AatError] {
   let first = read_u16(data, offset + 2)
   let glyph_count = read_u16_int(data, offset + 4)
@@ -280,12 +299,12 @@ fn parse_format8(
         return Err(InvalidFormat)
       }
       let start = offset + 6
-      if start < 0 || start + glyph_count * 2 > data.length() {
+      if start < 0 || start + glyph_count * value_size > data.length() {
         return Err(UnexpectedEof)
       }
       let values : Array[UInt] = []
       for i in 0..<glyph_count {
-        let value = read_u16(data, start + i * 2)
+        let value = read_lookup_value(data, start + i * value_size, value_size)
         match value {
           Err(err) => return Err(err)
           Ok(value) => values.push(value)
@@ -330,24 +349,34 @@ fn parse_format10(
 }
 
 ///|
-fn parse_lookup(
+fn parse_lookup_with_value_size(
   data : BytesView,
   offset : Int,
   num_glyphs : Int,
+  value_size : Int,
 ) -> Result[LookupTable, AatError] {
   let format = read_u16_int(data, offset)
   match format {
     Err(err) => Err(err)
     Ok(format) => {
       match format {
-        0 => parse_format0(data, offset, num_glyphs)
-        2 => parse_format2(data, offset)
-        4 => parse_format4(data, offset)
-        6 => parse_format6(data, offset)
-        8 => parse_format8(data, offset)
+        0 => parse_format0(data, offset, num_glyphs, value_size)
+        2 => parse_format2(data, offset, value_size)
+        4 => parse_format4(data, offset, value_size)
+        6 => parse_format6(data, offset, value_size)
+        8 => parse_format8(data, offset, value_size)
         10 => parse_format10(data, offset)
         _ => Err(InvalidFormat)
       }
     }
   }
+}
+
+///|
+fn parse_lookup(
+  data : BytesView,
+  offset : Int,
+  num_glyphs : Int,
+) -> Result[LookupTable, AatError] {
+  parse_lookup_with_value_size(data, offset, num_glyphs, 2)
 }
