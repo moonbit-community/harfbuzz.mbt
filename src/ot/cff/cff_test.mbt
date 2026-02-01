@@ -71,6 +71,16 @@ test "cff dict parse real" {
 }
 
 ///|
+test "cff dict parse vsindex op" {
+  let bytes : Bytes = [140, 22]
+  let dict = match parse_cff_dict(bytes[:]) {
+    Err(err) => fail("dict parse error: \{err}")
+    Ok(value) => value
+  }
+  inspect(dict.get_int(22), content="Some(1)")
+}
+
+///|
 test "cff charstring bounds simple" {
   let bytes : Bytes = [189, 139, 21, 239, 189, 5, 14]
   let bounds = match cff_charstring_bounds(bytes[:], None, None) {
