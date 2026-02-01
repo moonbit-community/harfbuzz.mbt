@@ -138,3 +138,61 @@ test "cff2 parse minimal" {
     Some(values) => inspect(values, content="[0]")
   }
 }
+
+fn push_u16(bytes : Array[Byte], value : Int) -> Unit {
+  bytes.push(((value >> 8) & 0xff).to_byte())
+  bytes.push((value & 0xff).to_byte())
+}
+
+fn push_u32(bytes : Array[Byte], value : Int) -> Unit {
+  bytes.push(((value >> 24) & 0xff).to_byte())
+  bytes.push(((value >> 16) & 0xff).to_byte())
+  bytes.push(((value >> 8) & 0xff).to_byte())
+  bytes.push((value & 0xff).to_byte())
+}
+
+fn push_i16(bytes : Array[Byte], value : Int) -> Unit {
+  let adjusted = if value < 0 { value + 0x10000 } else { value }
+  push_u16(bytes, adjusted)
+}
+
+fn build_item_variation_store_bytes() -> Bytes {
+  let bytes : Array[Byte] = []
+  push_u16(bytes, 1) // format
+  push_u32(bytes, 12) // region list offset
+  push_u16(bytes, 1) // data count
+  push_u32(bytes, 22) // data offset
+  push_u16(bytes, 1) // axis count
+  push_u16(bytes, 1) // region count
+  push_i16(bytes, 0) // start
+  push_i16(bytes, 0x4000) // peak 1.0
+  push_i16(bytes, 0x4000) // end 1.0
+  push_u16(bytes, 1) // item count
+  push_u16(bytes, 1) // word size count
+  push_u16(bytes, 1) // region index count
+  push_u16(bytes, 0) // region index
+  push_i16(bytes, 0) // delta
+  Bytes::from_array(bytes)
+}
+
+test "cff2 charstring blend bounds" {
+  let store = match @ot_var.ItemVariationStore::parse(build_item_variation_store_bytes()[:]) {
+    Err(err) => fail("var store parse error: \{err}")
+    Ok(value) => value
+  }
+  let bytes : Bytes = [149, 144, 140, 16, 139, 21, 14]
+  let bounds = match cff2_charstring_bounds(bytes[:], None, None, Some(store), 0, [16384]) {
+    Err(err) => fail("bounds error: \{err}")
+    Ok(value) => value
+  }
+  match bounds {
+    None => fail("missing bounds")
+    Some(bounds) => {
+      let x_min = bounds.x_min.round().to_int()
+      let y_min = bounds.y_min.round().to_int()
+      let x_max = bounds.x_max.round().to_int()
+      let y_max = bounds.y_max.round().to_int()
+      inspect((x_min, y_min, x_max, y_max), content="(15, 0, 15, 0)")
+    }
+  }
+}

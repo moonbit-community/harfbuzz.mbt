@@ -123,6 +123,53 @@ fn CffCharstringState::curve_to(
   self.y = pt3.y
 }
 
+priv struct Cff2BlendState {
+  mut ivs : Int
+  mut seen_vsindex : Bool
+  mut seen_blend : Bool
+  var_store : @ot_var.ItemVariationStore?
+  coords : Array[Int]
+}
+
+fn Cff2BlendState::new(
+  var_store : @ot_var.ItemVariationStore?,
+  ivs : Int,
+  coords : Array[Int],
+) -> Cff2BlendState {
+  Cff2BlendState::{
+    ivs,
+    seen_vsindex: false,
+    seen_blend: false,
+    var_store,
+    coords,
+  }
+}
+
+fn Cff2BlendState::region_count(self : Cff2BlendState) -> Result[Int, CffError] {
+  let store = match self.var_store {
+    None => return Err(InvalidFormat)
+    Some(value) => value
+  }
+  match store.region_count(self.ivs) {
+    None => Err(InvalidFormat)
+    Some(value) => Ok(value)
+  }
+}
+
+fn Cff2BlendState::region_scalars(self : Cff2BlendState) -> Result[Array[Double]?, CffError] {
+  if self.coords.is_empty() {
+    return Ok(None)
+  }
+  let store = match self.var_store {
+    None => return Err(InvalidFormat)
+    Some(value) => value
+  }
+  match store.region_scalars(self.ivs, self.coords) {
+    None => Err(InvalidFormat)
+    Some(values) => Ok(Some(values))
+  }
+}
+
 ///|
 pub fn cff_charstring_bounds(
   data : BytesView,
@@ -131,6 +178,31 @@ pub fn cff_charstring_bounds(
 ) -> Result[CffBounds?, CffError] {
   let state = CffCharstringState::new()
   match interpret_charstring(data, state, global_subrs, local_subrs, 0, false) {
+    Err(err) => Err(err)
+    Ok(_) => Ok(state.bounds.result())
+  }
+}
+
+///|
+pub fn cff2_charstring_bounds(
+  data : BytesView,
+  global_subrs : CffIndex?,
+  local_subrs : CffIndex?,
+  var_store : @ot_var.ItemVariationStore?,
+  ivs : Int,
+  coords : Array[Int],
+) -> Result[CffBounds?, CffError] {
+  let state = CffCharstringState::new()
+  let blend_state = Cff2BlendState::new(var_store, ivs, coords)
+  match interpret_charstring_cff2(
+    data,
+    state,
+    blend_state,
+    global_subrs,
+    local_subrs,
+    0,
+    false,
+  ) {
     Err(err) => Err(err)
     Ok(_) => Ok(state.bounds.result())
   }
@@ -405,6 +477,360 @@ fn interpret_charstring(
           Ok(value) => value
         }
         match interpret_charstring(bytes[:], state, global_subrs, local_subrs, depth + 1, true) {
+          Err(err) => return Err(err)
+          Ok(_) => ()
+        }
+        pos = pos + 1
+      }
+      30 => {
+        let err = handle_vhcurveto(state, stack)
+        match err {
+          Err(err) => return Err(err)
+          Ok(_) => ()
+        }
+        stack = []
+        pos = pos + 1
+      }
+      31 => {
+        let err = handle_hvcurveto(state, stack)
+        match err {
+          Err(err) => return Err(err)
+          Ok(_) => ()
+        }
+        stack = []
+        pos = pos + 1
+      }
+      _ => return Err(InvalidFormat)
+    }
+  }
+  Ok(())
+}
+
+fn interpret_charstring_cff2(
+  data : BytesView,
+  state : CffCharstringState,
+  blend_state : Cff2BlendState,
+  global_subrs : CffIndex?,
+  local_subrs : CffIndex?,
+  depth : Int,
+  allow_return : Bool,
+) -> Result[Unit, CffError] {
+  if depth > 16 {
+    return Err(InvalidFormat)
+  }
+  let mut pos = 0
+  let mut stack : Array[Double] = []
+  while pos < data.length() {
+    let b0 = data[pos].to_int()
+    if b0 >= 32 || b0 == 28 || b0 == 255 {
+      let parsed = parse_charstring_number(data, pos)
+      match parsed {
+        Err(err) => return Err(err)
+        Ok((value, next_pos)) => {
+          stack.push(value)
+          pos = next_pos
+          continue
+        }
+      }
+    }
+    match b0 {
+      1 | 3 | 18 | 23 => {
+        if (stack.length() % 2) != 0 {
+          return Err(InvalidFormat)
+        }
+        state.stem_count = state.stem_count + (stack.length() / 2)
+        stack = []
+        pos = pos + 1
+      }
+      19 | 20 => {
+        if (stack.length() % 2) != 0 {
+          return Err(InvalidFormat)
+        }
+        state.stem_count = state.stem_count + (stack.length() / 2)
+        stack = []
+        pos = pos + 1
+        let mask_bytes = (state.stem_count + 7) / 8
+        if pos + mask_bytes > data.length() {
+          return Err(UnexpectedEof)
+        }
+        pos = pos + mask_bytes
+      }
+      4 => {
+        if stack.length() < 1 {
+          return Err(InvalidFormat)
+        }
+        let dy = stack[0]
+        let pt = state.current_point().offset(0.0, dy)
+        state.moveto(pt)
+        stack = []
+        pos = pos + 1
+      }
+      5 => {
+        if (stack.length() % 2) != 0 {
+          return Err(InvalidFormat)
+        }
+        let mut i = 0
+        while i + 1 < stack.length() {
+          let dx = stack[i]
+          let dy = stack[i + 1]
+          let pt = state.current_point().offset(dx, dy)
+          state.line_to(pt)
+          i = i + 2
+        }
+        stack = []
+        pos = pos + 1
+      }
+      6 | 7 => {
+        let mut horizontal = b0 == 6
+        for value in stack {
+          let pt =
+            if horizontal {
+              state.current_point().offset(value, 0.0)
+            } else {
+              state.current_point().offset(0.0, value)
+            }
+          state.line_to(pt)
+          horizontal = !horizontal
+        }
+        stack = []
+        pos = pos + 1
+      }
+      8 => {
+        if (stack.length() % 6) != 0 {
+          return Err(InvalidFormat)
+        }
+        let mut i = 0
+        while i + 5 < stack.length() {
+          let pt1 = state.current_point().offset(stack[i], stack[i + 1])
+          let pt2 = pt1.offset(stack[i + 2], stack[i + 3])
+          let pt3 = pt2.offset(stack[i + 4], stack[i + 5])
+          state.curve_to(pt1, pt2, pt3)
+          i = i + 6
+        }
+        stack = []
+        pos = pos + 1
+      }
+      10 => {
+        if stack.is_empty() {
+          return Err(InvalidFormat)
+        }
+        let subr_index = stack[stack.length() - 1].round().to_int()
+        stack = []
+        let local_subrs_value = match local_subrs {
+          None => return Err(InvalidFormat)
+          Some(value) => value
+        }
+        let bias = subr_bias(local_subrs_value.count)
+        let idx = subr_index + bias
+        let bytes = match local_subrs_value.item_bytes(idx) {
+          Err(err) => return Err(err)
+          Ok(value) => value
+        }
+        match interpret_charstring_cff2(
+          bytes[:],
+          state,
+          blend_state,
+          global_subrs,
+          local_subrs,
+          depth + 1,
+          true,
+        ) {
+          Err(err) => return Err(err)
+          Ok(_) => ()
+        }
+        pos = pos + 1
+      }
+      11 => {
+        if allow_return {
+          return Ok(())
+        }
+        return Err(InvalidFormat)
+      }
+      12 => {
+        if pos + 1 >= data.length() {
+          return Err(UnexpectedEof)
+        }
+        let op = data[pos + 1].to_int()
+        let err = match op {
+          34 => handle_hflex(state, stack)
+          35 => handle_flex(state, stack)
+          36 => handle_hflex1(state, stack)
+          37 => handle_flex1(state, stack)
+          _ => Err(InvalidFormat)
+        }
+        match err {
+          Err(err) => return Err(err)
+          Ok(_) => ()
+        }
+        stack = []
+        pos = pos + 2
+      }
+      14 => {
+        stack = []
+        pos = pos + 1
+        return Ok(())
+      }
+      15 => {
+        if stack.is_empty() {
+          return Err(InvalidFormat)
+        }
+        if blend_state.seen_vsindex || blend_state.seen_blend {
+          return Err(InvalidFormat)
+        }
+        let ivs = stack[stack.length() - 1].round().to_int()
+        ignore(stack.pop())
+        if ivs < 0 {
+          return Err(InvalidFormat)
+        }
+        blend_state.ivs = ivs
+        blend_state.seen_vsindex = true
+        stack = []
+        pos = pos + 1
+      }
+      16 => {
+        if stack.is_empty() {
+          return Err(InvalidFormat)
+        }
+        let n = stack[stack.length() - 1].round().to_int()
+        ignore(stack.pop())
+        if n < 0 {
+          return Err(InvalidFormat)
+        }
+        let k = match blend_state.region_count() {
+          Err(err) => return Err(err)
+          Ok(value) => value
+        }
+        let start = stack.length() - (k + 1) * n
+        if start < 0 {
+          return Err(InvalidFormat)
+        }
+        let scalars = match blend_state.region_scalars() {
+          Err(err) => return Err(err)
+          Ok(value) => value
+        }
+        for i in 0..<n {
+          let mut value = stack[start + i]
+          match scalars {
+            None => ()
+            Some(values) => {
+              let base = start + n + (i * k)
+              for j in 0..<k {
+                value = value + values[j] * stack[base + j]
+              }
+            }
+          }
+          stack[start + i] = value
+        }
+        let mut to_pop = k * n
+        while to_pop > 0 {
+          ignore(stack.pop())
+          to_pop = to_pop - 1
+        }
+        blend_state.seen_blend = true
+        pos = pos + 1
+      }
+      21 => {
+        if stack.length() < 2 {
+          return Err(InvalidFormat)
+        }
+        let dx = stack[0]
+        let dy = stack[1]
+        let pt = state.current_point().offset(dx, dy)
+        state.moveto(pt)
+        stack = []
+        pos = pos + 1
+      }
+      22 => {
+        if stack.length() < 1 {
+          return Err(InvalidFormat)
+        }
+        let dx = stack[0]
+        let pt = state.current_point().offset(dx, 0.0)
+        state.moveto(pt)
+        stack = []
+        pos = pos + 1
+      }
+      24 => {
+        if stack.length() < 8 || ((stack.length() - 2) % 6) != 0 {
+          return Err(InvalidFormat)
+        }
+        let mut i = 0
+        let line_index = stack.length() - 2
+        while i + 5 < line_index {
+          let pt1 = state.current_point().offset(stack[i], stack[i + 1])
+          let pt2 = pt1.offset(stack[i + 2], stack[i + 3])
+          let pt3 = pt2.offset(stack[i + 4], stack[i + 5])
+          state.curve_to(pt1, pt2, pt3)
+          i = i + 6
+        }
+        let dx = stack[line_index]
+        let dy = stack[line_index + 1]
+        let pt = state.current_point().offset(dx, dy)
+        state.line_to(pt)
+        stack = []
+        pos = pos + 1
+      }
+      25 => {
+        if stack.length() < 8 || ((stack.length() - 6) % 2) != 0 {
+          return Err(InvalidFormat)
+        }
+        let mut i = 0
+        let curve_index = stack.length() - 6
+        while i + 1 < curve_index {
+          let pt = state.current_point().offset(stack[i], stack[i + 1])
+          state.line_to(pt)
+          i = i + 2
+        }
+        let pt1 = state.current_point().offset(stack[curve_index], stack[curve_index + 1])
+        let pt2 = pt1.offset(stack[curve_index + 2], stack[curve_index + 3])
+        let pt3 = pt2.offset(stack[curve_index + 4], stack[curve_index + 5])
+        state.curve_to(pt1, pt2, pt3)
+        stack = []
+        pos = pos + 1
+      }
+      26 => {
+        let err = handle_vvcurveto(state, stack)
+        match err {
+          Err(err) => return Err(err)
+          Ok(_) => ()
+        }
+        stack = []
+        pos = pos + 1
+      }
+      27 => {
+        let err = handle_hhcurveto(state, stack)
+        match err {
+          Err(err) => return Err(err)
+          Ok(_) => ()
+        }
+        stack = []
+        pos = pos + 1
+      }
+      29 => {
+        if stack.is_empty() {
+          return Err(InvalidFormat)
+        }
+        let subr_index = stack[stack.length() - 1].round().to_int()
+        stack = []
+        let global = match global_subrs {
+          None => return Err(InvalidFormat)
+          Some(value) => value
+        }
+        let bias = subr_bias(global.count)
+        let idx = subr_index + bias
+        let bytes = match global.item_bytes(idx) {
+          Err(err) => return Err(err)
+          Ok(value) => value
+        }
+        match interpret_charstring_cff2(
+          bytes[:],
+          state,
+          blend_state,
+          global_subrs,
+          local_subrs,
+          depth + 1,
+          true,
+        ) {
           Err(err) => return Err(err)
           Ok(_) => ()
         }

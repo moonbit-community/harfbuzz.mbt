@@ -25,7 +25,7 @@ pub(all) struct VarData {
 pub struct ItemVariationStore {
   region_list : VarRegionList
   data_sets : Array[VarData]
-} derive(Show, ToJson)
+} derive(Eq, Show, ToJson)
 
 fn VarRegionAxis::evaluate(self : VarRegionAxis, coord : Int) -> Double {
   let peak = self.peak_coord
@@ -306,4 +306,33 @@ pub fn ItemVariationStore::get_delta(
     return 0.0
   }
   self.data_sets[outer].get_delta(inner, coords[:], self.region_list)
+}
+
+///|
+pub fn ItemVariationStore::region_count(
+  self : ItemVariationStore,
+  outer : Int,
+) -> Int? {
+  if outer < 0 || outer >= self.data_sets.length() {
+    return None
+  }
+  Some(self.data_sets[outer].region_indices.length())
+}
+
+///|
+pub fn ItemVariationStore::region_scalars(
+  self : ItemVariationStore,
+  outer : Int,
+  coords : Array[Int],
+) -> Array[Double]? {
+  if outer < 0 || outer >= self.data_sets.length() {
+    return None
+  }
+  let var_data = self.data_sets[outer]
+  let count = var_data.region_indices.length()
+  let scalars : Array[Double] = Array::make(count, 0.0)
+  for i in 0..<count {
+    scalars[i] = self.region_list.evaluate(var_data.region_indices[i], coords[:])
+  }
+  Some(scalars)
 }

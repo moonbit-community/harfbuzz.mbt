@@ -1354,7 +1354,14 @@ fn Font::glyph_bounds_raw(
     Ok(value) => value
   }
   if loca_blob is None || glyf_blob is None {
-    return self.glyph_bounds_cff1(index)
+    let cff2_bounds = match self.glyph_bounds_cff2(index, coords) {
+      Err(err) => return Err(err)
+      Ok(value) => value
+    }
+    match cff2_bounds {
+      Some(value) => return Ok(Some(value))
+      None => return self.glyph_bounds_cff1(index)
+    }
   }
   let loca = match self.ensure_loca() {
     Err(err) => return Err(err)
@@ -1410,6 +1417,32 @@ fn Font::glyph_bounds_cff1(
     Ok(Some(value)) => value
   }
   let bounds = match cff1.glyph_bounds(glyph) {
+    Err(err) => return Err(Cff(err))
+    Ok(value) => value
+  }
+  match bounds {
+    None => Ok(None)
+    Some(bounds) => {
+      let x_min = @math.floor(bounds.x_min).to_int()
+      let y_min = @math.floor(bounds.y_min).to_int()
+      let x_max = @math.ceil(bounds.x_max).to_int()
+      let y_max = @math.ceil(bounds.y_max).to_int()
+      Ok(Some(@sfnt.GlyphBounds::new(-1, x_min, y_min, x_max, y_max)))
+    }
+  }
+}
+
+fn Font::glyph_bounds_cff2(
+  self : Font,
+  glyph : Int,
+  coords : Array[Int],
+) -> Result[@sfnt.GlyphBounds?, FontError] {
+  let cff2 = match self.cff2() {
+    Err(err) => return Err(err)
+    Ok(None) => return Ok(None)
+    Ok(Some(value)) => value
+  }
+  let bounds = match cff2.glyph_bounds(glyph, coords) {
     Err(err) => return Err(Cff(err))
     Ok(value) => value
   }
