@@ -44,6 +44,8 @@ pub struct Font {
   mut mvar : @ot_var.MvarTable?
   mut fvar : @ot_var.FvarTable?
   mut avar : @ot_var.AvarTable?
+  mut gvar : @ot_var.GvarTable?
+  mut cvar : @ot_var.CvarTable?
   mut var_coords_design : Array[Double]?
   mut var_coords_norm : Array[Int]?
 } derive(Show, ToJson)
@@ -136,6 +138,12 @@ let tag_vvar : @common.Tag = @common.Tag::from_chars('V', 'V', 'A', 'R')
 let tag_mvar : @common.Tag = @common.Tag::from_chars('M', 'V', 'A', 'R')
 
 ///|
+let tag_gvar : @common.Tag = @common.Tag::from_chars('g', 'v', 'a', 'r')
+
+///|
+let tag_cvar : @common.Tag = @common.Tag::from_chars('c', 'v', 'a', 'r')
+
+///|
 /// Create a font from a face.
 pub fn Font::new(face : @face.Face) -> Font {
   Font::{
@@ -173,6 +181,8 @@ pub fn Font::new(face : @face.Face) -> Font {
     mvar: None,
     fvar: None,
     avar: None,
+    gvar: None,
+    cvar: None,
     var_coords_design: None,
     var_coords_norm: None,
   }
@@ -854,6 +864,55 @@ pub fn Font::mvar(self : Font) -> Result[@ot_var.MvarTable?, FontError] {
             }
           }
       }
+  }
+}
+
+///|
+pub fn Font::gvar(self : Font) -> Result[@ot_var.GvarTable?, FontError] {
+  match self.gvar {
+    Some(gvar) => Ok(Some(gvar))
+    None =>
+      match self.face.reference_table_optional(tag_gvar) {
+        Err(err) => Err(FaceTable(err))
+        Ok(None) => Ok(None)
+        Ok(Some(blob)) =>
+          match @ot_var.GvarTable::parse(blob.as_view()) {
+            Err(err) => Err(Var(err))
+            Ok(gvar) => {
+              self.gvar = Some(gvar)
+              Ok(Some(gvar))
+            }
+          }
+      }
+  }
+}
+
+///|
+pub fn Font::cvar(self : Font) -> Result[@ot_var.CvarTable?, FontError] {
+  match self.cvar {
+    Some(cvar) => Ok(Some(cvar))
+    None => {
+      let fvar = match self.fvar() {
+        Err(err) => return Err(err)
+        Ok(value) => value
+      }
+      let axis_count = match fvar {
+        None => return Ok(None)
+        Some(value) => value.axes().length()
+      }
+      match self.face.reference_table_optional(tag_cvar) {
+        Err(err) => Err(FaceTable(err))
+        Ok(None) => Ok(None)
+        Ok(Some(blob)) =>
+          match @ot_var.CvarTable::parse(blob.as_view(), axis_count) {
+            Err(err) => Err(Var(err))
+            Ok(cvar) => {
+              self.cvar = Some(cvar)
+              Ok(Some(cvar))
+            }
+          }
+      }
+    }
   }
 }
 
