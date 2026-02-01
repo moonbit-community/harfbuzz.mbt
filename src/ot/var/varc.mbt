@@ -9,6 +9,15 @@ pub struct VarcTable {
   data : Bytes
 } derive(Show, ToJson)
 
+///|
+pub enum VarcCondition {
+  AxisRange(Int, Int, Int)
+  Value(Int, Int)
+  And(Array[VarcCondition])
+  Or(Array[VarcCondition])
+  Not(VarcCondition)
+} derive(Show, ToJson)
+
 struct CffIndex {
   count : Int
   off_size : Int
@@ -21,6 +30,136 @@ fn validate_offset(offset : Int, length : Int) -> Result[Unit, VarError] {
     return Err(UnexpectedEof)
   }
   Ok(())
+}
+
+fn parse_condition_at(
+  data : BytesView,
+  base : Int,
+  offset : Int,
+  depth : Int,
+) -> Result[VarcCondition, VarError] {
+  if depth > 32 {
+    return Err(InvalidFormat)
+  }
+  if offset <= 0 {
+    return Err(InvalidFormat)
+  }
+  let pos = base + offset
+  if pos < 0 || pos + 2 > data.length() {
+    return Err(UnexpectedEof)
+  }
+  let format = read_u16_int(data, pos)
+  match format {
+    Err(err) => Err(err)
+    Ok(format) => {
+      if format == 1 {
+        let axis_index = read_u16_int(data, pos + 2)
+        let min_value = read_i16(data, pos + 4)
+        let max_value = read_i16(data, pos + 6)
+        match (axis_index, min_value, max_value) {
+          (Err(err), _, _) => Err(err)
+          (_, Err(err), _) => Err(err)
+          (_, _, Err(err)) => Err(err)
+          (Ok(axis_index), Ok(min_value), Ok(max_value)) =>
+            Ok(VarcCondition::AxisRange(axis_index, min_value, max_value))
+        }
+      } else if format == 2 {
+        let default_value = read_i16(data, pos + 2)
+        let var_idx = read_u32_int(data, pos + 4)
+        match (default_value, var_idx) {
+          (Err(err), _) => Err(err)
+          (_, Err(err)) => Err(err)
+          (Ok(default_value), Ok(var_idx)) =>
+            Ok(VarcCondition::Value(default_value, var_idx))
+        }
+      } else if format == 3 || format == 4 {
+        let count = read_u8_int(data, pos + 2)
+        match count {
+          Err(err) => Err(err)
+          Ok(count) => {
+            let list_base = pos + 3
+            let total = count * 3
+            if list_base < 0 || list_base + total > data.length() {
+              return Err(UnexpectedEof)
+            }
+            let conditions : Array[VarcCondition] = []
+            for i in 0..<count {
+              let child_offset = read_cff_offset(data, list_base + i * 3, 3)
+              match child_offset {
+                Err(err) => return Err(err)
+                Ok(child_offset) => {
+                  let child = match parse_condition_at(data, pos, child_offset, depth + 1) {
+                    Err(err) => return Err(err)
+                    Ok(value) => value
+                  }
+                  conditions.push(child)
+                }
+              }
+            }
+            if format == 3 {
+              Ok(VarcCondition::And(conditions))
+            } else {
+              Ok(VarcCondition::Or(conditions))
+            }
+          }
+        }
+      } else if format == 5 {
+        let child_offset = read_cff_offset(data, pos + 2, 3)
+        match child_offset {
+          Err(err) => Err(err)
+          Ok(child_offset) =>
+            match parse_condition_at(data, pos, child_offset, depth + 1) {
+              Err(err) => Err(err)
+              Ok(value) => Ok(VarcCondition::Not(value))
+            }
+        }
+      } else {
+        Err(InvalidFormat)
+      }
+    }
+  }
+}
+
+///|
+pub fn VarcCondition::evaluate(
+  self : VarcCondition,
+  coords : Array[Int],
+  var_delta : ((Int) -> Int)?,
+) -> Bool {
+  match self {
+    AxisRange(axis_index, min_value, max_value) => {
+      let coord = if axis_index >= 0 && axis_index < coords.length() {
+        coords[axis_index]
+      } else {
+        0
+      }
+      min_value <= coord && coord <= max_value
+    }
+    Value(default_value, var_idx) => {
+      let delta = match var_delta {
+        None => 0
+        Some(f) => f(var_idx)
+      }
+      (default_value + delta) > 0
+    }
+    And(conditions) => {
+      for condition in conditions {
+        if !condition.evaluate(coords, var_delta) {
+          return false
+        }
+      }
+      true
+    }
+    Or(conditions) => {
+      for condition in conditions {
+        if condition.evaluate(coords, var_delta) {
+          return true
+        }
+      }
+      false
+    }
+    Not(condition) => !condition.evaluate(coords, var_delta)
+  }
 }
 
 fn read_cff_offset(data : BytesView, offset : Int, size : Int) -> Result[Int, VarError] {
@@ -228,4 +367,41 @@ pub fn VarcTable::axis_indices(self : VarcTable, index : Int) -> Result[Array[In
     Ok(value) => value
   }
   decode_tuple_values(bytes[:])
+}
+
+///|
+pub fn VarcTable::conditions(self : VarcTable) -> Result[Array[VarcCondition], VarError] {
+  if self.condition_list_offset == 0 {
+    return Ok([])
+  }
+  let base = self.condition_list_offset
+  let count = read_u32_int(self.data[:], base)
+  match count {
+    Err(err) => Err(err)
+    Ok(count) => {
+      if count < 0 {
+        return Err(InvalidFormat)
+      }
+      let offsets_base = base + 4
+      let total = count * 4
+      if offsets_base < 0 || offsets_base + total > self.data.length() {
+        return Err(UnexpectedEof)
+      }
+      let conditions : Array[VarcCondition] = []
+      for i in 0..<count {
+        let offset = read_u32_int(self.data[:], offsets_base + i * 4)
+        match offset {
+          Err(err) => return Err(err)
+          Ok(offset) => {
+            let condition = match parse_condition_at(self.data[:], base, offset, 0) {
+              Err(err) => return Err(err)
+              Ok(value) => value
+            }
+            conditions.push(condition)
+          }
+        }
+      }
+      Ok(conditions)
+    }
+  }
 }

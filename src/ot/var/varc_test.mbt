@@ -7,6 +7,18 @@ fn push_u32_varc(bytes : Array[Byte], value : Int) -> Unit {
 }
 
 ///|
+fn push_u16_varc(bytes : Array[Byte], value : Int) -> Unit {
+  bytes.push(((value >> 8) & 0xff).to_byte())
+  bytes.push((value & 0xff).to_byte())
+}
+
+///|
+fn push_i16_varc(bytes : Array[Byte], value : Int) -> Unit {
+  let adjusted = if value < 0 { value + 0x10000 } else { value }
+  push_u16_varc(bytes, adjusted)
+}
+
+///|
 fn build_varc_bytes() -> Bytes {
   let bytes : Array[Byte] = []
   push_u32_varc(bytes, 0x00010000) // version
@@ -31,6 +43,26 @@ fn build_varc_bytes() -> Bytes {
 }
 
 ///|
+fn build_varc_bytes_with_condition() -> Bytes {
+  let bytes : Array[Byte] = []
+  push_u32_varc(bytes, 0x00010000) // version
+  push_u32_varc(bytes, 0) // coverage offset
+  push_u32_varc(bytes, 0) // var store offset
+  push_u32_varc(bytes, 24) // condition list offset
+  push_u32_varc(bytes, 0) // axis indices offset
+  push_u32_varc(bytes, 0) // glyph records offset
+  // ConditionList: count=1, offset=8
+  push_u32_varc(bytes, 1)
+  push_u32_varc(bytes, 8)
+  // ConditionAxisRange format1
+  push_u16_varc(bytes, 1)
+  push_u16_varc(bytes, 0) // axis index
+  push_i16_varc(bytes, -0x4000)
+  push_i16_varc(bytes, 0x4000)
+  Bytes::from_array(bytes)
+}
+
+///|
 test "varc parse" {
   let varc = match VarcTable::parse(build_varc_bytes()[:]) {
     Err(err) => fail("parse failed: \{err}")
@@ -50,4 +82,20 @@ test "varc axis indices list" {
     Ok(value) => value
   }
   inspect(indices, content="[1, 2, 3]")
+}
+
+///|
+test "varc condition list" {
+  let varc = match VarcTable::parse(build_varc_bytes_with_condition()[:]) {
+    Err(err) => fail("parse failed: \{err}")
+    Ok(value) => value
+  }
+  let conditions = match varc.conditions() {
+    Err(err) => fail("conditions failed: \{err}")
+    Ok(value) => value
+  }
+  inspect(conditions.length(), content="1")
+  let cond = conditions[0]
+  inspect(cond.evaluate([0], None), content="true")
+  inspect(cond.evaluate([20000], None), content="false")
 }
