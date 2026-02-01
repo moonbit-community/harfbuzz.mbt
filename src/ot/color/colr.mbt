@@ -318,6 +318,57 @@ pub fn ColrTable::layer_paint(
   }
 }
 
+///|
+/// Get COLRv1 clip box for a glyph, if present.
+pub fn ColrTable::clip_box_for_glyph(
+  self : ColrTable,
+  glyph_id : Int,
+) -> ClipBox? {
+  match self.clip_list {
+    None => None
+    Some(list) => {
+      for record in list.records {
+        if glyph_id >= record.start_glyph_id && glyph_id <= record.end_glyph_id {
+          return Some(record.clip_box)
+        }
+      }
+      None
+    }
+  }
+}
+
+///|
+/// Get COLRv1 clip extents for a glyph, applying variation if available.
+pub fn ColrTable::clip_extents_for_glyph(
+  self : ColrTable,
+  glyph_id : Int,
+  coords? : Array[Int] = [],
+) -> ClipExtents? {
+  let clip_box = self.clip_box_for_glyph(glyph_id)
+  match clip_box {
+    None => None
+    Some(box) => {
+      let mut x_min = box.x_min
+      let mut y_min = box.y_min
+      let mut x_max = box.x_max
+      let mut y_max = box.y_max
+      if coords.length() > 0 {
+        let instancer = self.var_instancer(coords)
+        x_min = x_min + instancer.delta(box.var_idx_base, 0).round().to_int()
+        y_min = y_min + instancer.delta(box.var_idx_base, 1).round().to_int()
+        x_max = x_max + instancer.delta(box.var_idx_base, 2).round().to_int()
+        y_max = y_max + instancer.delta(box.var_idx_base, 3).round().to_int()
+      }
+      Some(ClipExtents::{
+        x_bearing: x_min,
+        y_bearing: y_max,
+        width: x_max - x_min,
+        height: y_min - y_max,
+      })
+    }
+  }
+}
+
 fn parse_clip_box(data : BytesView, offset : Int) -> Result[ClipBox, ColorError] {
   let format = read_u8_int(data, offset)
   match format {

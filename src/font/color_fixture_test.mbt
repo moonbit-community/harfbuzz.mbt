@@ -651,3 +651,36 @@ test "colr v1 parse" {
     Ok(_) => ()
   }
 }
+
+///|
+test "colr v1 walk paint" {
+  let font = Font::from_bytes(build_font_bytes_noto_handwriting_colr1())
+  let colr = match font.colr() {
+    Err(err) => fail("colr v1 parse failed: \{err}")
+    Ok(None) => fail("colr table missing")
+    Ok(Some(colr)) => colr
+  }
+  let record = colr.base_glyph_paints[0]
+  let paint = match colr.paint_at(record.paint_offset) {
+    Err(err) => fail("paint parse failed: \{err}")
+    Ok(value) => value
+  }
+  let count = match colr.walk_paint(paint, (_, _) => true) {
+    Err(err) => fail("walk paint failed: \{err}")
+    Ok(value) => value
+  }
+  assert_true(count > 0)
+}
+
+///|
+test "colr clip extents none for v0" {
+  let font = Font::from_bytes(build_font_bytes_chromacheck_colr())
+  let colr = match font.colr() {
+    Err(err) => fail("colr v0 parse failed: \{err}")
+    Ok(None) => fail("colr table missing")
+    Ok(Some(colr)) => colr
+  }
+  let record = colr.base_glyphs[0]
+  let extents = colr.clip_extents_for_glyph(record.glyph_id)
+  assert_true(extents is None)
+}

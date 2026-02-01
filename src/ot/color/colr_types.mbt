@@ -45,3 +45,12 @@ pub struct ClipList {
   format : Int
   records : Array[ClipRecord]
 } derive(Eq, Show, ToJson)
+
+///|
+/// Clip extents for a glyph (y-bearing is y_max).
+pub struct ClipExtents {
+  x_bearing : Int
+  y_bearing : Int
+  width : Int
+  height : Int
+} derive(Eq, Show, ToJson)
