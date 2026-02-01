@@ -17,6 +17,7 @@ pub struct Cff2Table {
   global_subrs : CffIndex
   charstrings : CffIndex
   fd_array : CffIndex
+  fd_select : Array[Int]?
   fdselect_offset : Int
   vstore_offset : Int
   top_dict_offset : Int
@@ -87,17 +88,100 @@ pub fn Cff2Table::parse(data : BytesView) -> Result[Cff2Table, CffError] {
         Err(err) => return Err(err)
         Ok(value) => value
       }
+      let fd_select =
+        if fdselect_offset == 0 || charstrings.count == 0 {
+          None
+        } else {
+          match parse_fdselect(data, fdselect_offset, charstrings.count) {
+            Err(err) => return Err(err)
+            Ok(value) => Some(value)
+          }
+        }
       Ok(Cff2Table::{
         data: data.to_bytes(),
         top_dict,
         global_subrs,
         charstrings,
         fd_array,
+        fd_select,
         fdselect_offset,
         vstore_offset,
         top_dict_offset: offset,
         top_dict_size: size,
       })
     }
+  }
+}
+
+fn parse_fdselect(
+  data : BytesView,
+  offset : Int,
+  glyph_count : Int,
+) -> Result[Array[Int], CffError] {
+  if glyph_count < 0 {
+    return Err(InvalidFormat)
+  }
+  let format = read_u8_int(data, offset)
+  match format {
+    Err(err) => Err(err)
+    Ok(format) =>
+      if format == 0 {
+        if offset + 1 + glyph_count > data.length() {
+          return Err(UnexpectedEof)
+        }
+        let values : Array[Int] = []
+        for i in 0..<glyph_count {
+          values.push(data[offset + 1 + i].to_int())
+        }
+        Ok(values)
+      } else if format == 3 {
+        let range_count = read_u16_int(data, offset + 1)
+        match range_count {
+          Err(err) => Err(err)
+          Ok(range_count) => {
+            if range_count < 0 {
+              return Err(InvalidFormat)
+            }
+            let mut pos = offset + 3
+            let starts : Array[Int] = []
+            let fds : Array[Int] = []
+            for _ in 0..<range_count {
+              let start = read_u16_int(data, pos)
+              let fd = read_u8_int(data, pos + 2)
+              match (start, fd) {
+                (Err(err), _) => return Err(err)
+                (_, Err(err)) => return Err(err)
+                (Ok(start), Ok(fd)) => {
+                  starts.push(start)
+                  fds.push(fd)
+                }
+              }
+              pos = pos + 3
+            }
+            let sentinel = read_u16_int(data, pos)
+            let sentinel = match sentinel {
+              Err(err) => return Err(err)
+              Ok(value) => value
+            }
+            let values : Array[Int] = Array::make(glyph_count, 0)
+            for i in 0..<starts.length() {
+              let start = starts[i]
+              let end =
+                if i + 1 < starts.length() { starts[i + 1] } else { sentinel }
+              if start < 0 || end < start {
+                return Err(InvalidFormat)
+              }
+              let mut g = start
+              while g < end && g < glyph_count {
+                values[g] = fds[i]
+                g = g + 1
+              }
+            }
+            Ok(values)
+          }
+        }
+      } else {
+        Err(InvalidFormat)
+      }
   }
 }

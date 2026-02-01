@@ -124,6 +124,7 @@ test "cff2 parse minimal" {
     0x01,
     0x01,
     0x00,
+    0x00,
   ]
   let cff2 = match Cff2Table::parse(bytes[:]) {
     Err(err) => fail("cff2 parse error: \{err}")
@@ -132,4 +133,8 @@ test "cff2 parse minimal" {
   inspect((cff2.top_dict_offset, cff2.top_dict_size), content="(5, 8)")
   inspect((cff2.charstrings.count, cff2.fd_array.count), content="(1, 1)")
   inspect((cff2.fdselect_offset, cff2.vstore_offset), content="(31, 0)")
+  match cff2.fd_select {
+    None => fail("missing fd select")
+    Some(values) => inspect(values, content="[0]")
+  }
 }
