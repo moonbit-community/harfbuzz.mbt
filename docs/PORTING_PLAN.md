@@ -17,6 +17,7 @@ Unicode data, variations, color/paint, and subsetting.
   - GSUB: lookup types 1-8 and extension.
   - GPOS: lookup types 1-8 and extension (single, pair, cursive, mark-to-*, contextual, chaining).
 - `ot/var`: variation tables + var store (fvar/gvar/avar/cvar/hvar/vvar/mvar/varc) with tests.
+- `ot/color` + `paint`: COLR/CPAL parsing + COLRv1 paint graph decoding (no rendering/backends yet).
 
 ## Package Map (current + planned)
 
@@ -34,8 +35,8 @@ Unicode data, variations, color/paint, and subsetting.
 | `ot/map` | Feature/lookup mapping | `hb-ot-map.*` | partial (lookup selection + feature allowlists) |
 | `shape` | Generic shaper registry + plan | `hb-shape.*`, `hb-shape-plan.*`, `hb-shaper.*` | partial (plan + registry scaffold) |
 | `ot/var` | Variation tables + var store | `hb-ot-var*` | done |
-| `ot/color` | COLR/CPAL + color utilities | `hb-ot-color.*` | planned |
-| `paint` | Paint API | `hb-paint.*` | planned |
+| `ot/color` | COLR/CPAL + color utilities | `hb-ot-color.*` | partial |
+| `paint` | Paint API | `hb-paint.*` | partial |
 | `aat` | AAT layout + shaping | `hb-aat-*` | planned |
 | `graphite` | Graphite2 shaper | `hb-graphite2.*` | planned |
 | `subset` | Subsetting pipeline | `hb-subset*` | planned |
@@ -50,9 +51,7 @@ Unicode data, variations, color/paint, and subsetting.
   `hb-ot-shaper-*.cc` (arabic/indic/khmer/myanmar/use/hangul/hebrew/thai/syllabic) -> `ot/shape`
   (most script shapers + normalization done; remaining: variation selector glyph lookup + any missing fallback passes).
 - OT map/feature selection: `hb-ot-map.*` -> `ot/map`.
-- OT tables not yet parsed: `color` tables (COLR/CPAL/etc.) -> `ot/color`.
 - CFF/CFF2 support: `hb-ot-cff*`, `hb-cff*` -> planned `sfnt/cff` or `ot/cff` package.
-- Color + paint APIs: `hb-ot-color.*`, `hb-paint.*` -> `ot/color`, `paint`.
 - AAT shaping: `hb-aat-*` -> `aat`.
 - Graphite2 shaper: `hb-graphite2.*` -> `graphite`.
 - Subsetting: `hb-subset*` -> `subset`.

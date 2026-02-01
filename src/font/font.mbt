@@ -5,6 +5,7 @@ suberror FontError {
   Var(@ot_var.VarError)
   Cff(@ot_cff.CffError)
   Layout(@ot_tables.OtLayoutError)
+  Color(@ot_color.ColorError)
   GlyphOutOfRange
 } derive(Eq, Show, ToJson)
 
@@ -40,6 +41,8 @@ pub struct Font {
   mut gsub : @ot_tables.GsubTable?
   mut gpos : @ot_tables.GposTable?
   mut gdef : @ot_tables.GdefTable?
+  mut cpal : @ot_color.CpalTable?
+  mut colr : @ot_color.ColrTable?
   mut hvar : @ot_var.HvarTable?
   mut vvar : @ot_var.HvarTable?
   mut mvar : @ot_var.MvarTable?
@@ -161,6 +164,12 @@ let tag_cff : @common.Tag = @common.Tag::from_chars('C', 'F', 'F', ' ')
 let tag_cff2 : @common.Tag = @common.Tag::from_chars('C', 'F', 'F', '2')
 
 ///|
+let tag_cpal : @common.Tag = @common.Tag::from_chars('C', 'P', 'A', 'L')
+
+///|
+let tag_colr : @common.Tag = @common.Tag::from_chars('C', 'O', 'L', 'R')
+
+///|
 /// Create a font from a face.
 pub fn Font::new(face : @face.Face) -> Font {
   Font::{
@@ -193,6 +202,8 @@ pub fn Font::new(face : @face.Face) -> Font {
     gsub: None,
     gpos: None,
     gdef: None,
+    cpal: None,
+    colr: None,
     hvar: None,
     vvar: None,
     mvar: None,
@@ -803,6 +814,46 @@ pub fn Font::gdef(self : Font) -> Result[@ot_tables.GdefTable?, FontError] {
             Ok(gdef) => {
               self.gdef = Some(gdef)
               Ok(Some(gdef))
+            }
+          }
+      }
+  }
+}
+
+///|
+pub fn Font::cpal(self : Font) -> Result[@ot_color.CpalTable?, FontError] {
+  match self.cpal {
+    Some(cpal) => Ok(Some(cpal))
+    None =>
+      match self.face.reference_table_optional(tag_cpal) {
+        Err(err) => Err(FaceTable(err))
+        Ok(None) => Ok(None)
+        Ok(Some(blob)) =>
+          match @ot_color.CpalTable::parse(blob.as_view()) {
+            Err(err) => Err(Color(err))
+            Ok(cpal) => {
+              self.cpal = Some(cpal)
+              Ok(Some(cpal))
+            }
+          }
+      }
+  }
+}
+
+///|
+pub fn Font::colr(self : Font) -> Result[@ot_color.ColrTable?, FontError] {
+  match self.colr {
+    Some(colr) => Ok(Some(colr))
+    None =>
+      match self.face.reference_table_optional(tag_colr) {
+        Err(err) => Err(FaceTable(err))
+        Ok(None) => Ok(None)
+        Ok(Some(blob)) =>
+          match @ot_color.ColrTable::parse(blob.as_view()) {
+            Err(err) => Err(Color(err))
+            Ok(colr) => {
+              self.colr = Some(colr)
+              Ok(Some(colr))
             }
           }
       }

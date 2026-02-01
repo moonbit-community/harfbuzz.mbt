@@ -1,0 +1,12 @@
+{
+  "import": [
+    {
+      "path": "moonbit-community/harfbuzz/ot/var",
+      "alias": "ot_var"
+    },
+    {
+      "path": "moonbit-community/harfbuzz/paint",
+      "alias": "paint"
+    }
+  ]
+}
