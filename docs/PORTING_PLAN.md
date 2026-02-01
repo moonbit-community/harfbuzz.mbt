@@ -5,7 +5,7 @@ Full HarfBuzz port in MoonBit while excluding platform-specific backends.
 This includes the non-platform shaping stack (OT/AAT/Graphite), table parsing,
 Unicode data, variations, color/paint, and subsetting.
 
-## Current Implementation (as of 2026-01-31)
+## Current Implementation (as of 2026-02-01)
 - `common`: tags, direction, script/language helpers (expanded list; may not be exhaustive).
 - `blob`: blob data holder + slicing.
 - `face`: face holder + table map (TTC index aware).
@@ -16,6 +16,7 @@ Unicode data, variations, color/paint, and subsetting.
 - `ot/tables`: coverage, layout, lookup parsing; GSUB/GPOS apply; GDEF parsing; lookup flag filtering.
   - GSUB: lookup types 1-8 and extension.
   - GPOS: lookup types 1-8 and extension (single, pair, cursive, mark-to-*, contextual, chaining).
+- `ot/var`: variation tables + var store (fvar/gvar/avar/cvar/hvar/vvar/mvar/varc) with tests.
 
 ## Package Map (current + planned)
 
@@ -32,7 +33,7 @@ Unicode data, variations, color/paint, and subsetting.
 | `ot/shape` | OT shaping + normalization | `hb-ot-shape.*`, `hb-ot-shaper-*.cc` | partial (normalization + script shapers in buffer; OT fallback gaps + variation selector glyph lookup pending) |
 | `ot/map` | Feature/lookup mapping | `hb-ot-map.*` | partial (lookup selection + feature allowlists) |
 | `shape` | Generic shaper registry + plan | `hb-shape.*`, `hb-shape-plan.*`, `hb-shaper.*` | partial (plan + registry scaffold) |
-| `ot/var` | Variation tables + var store | `hb-ot-var*` | planned |
+| `ot/var` | Variation tables + var store | `hb-ot-var*` | done |
 | `ot/color` | COLR/CPAL + color utilities | `hb-ot-color.*` | planned |
 | `paint` | Paint API | `hb-paint.*` | planned |
 | `aat` | AAT layout + shaping | `hb-aat-*` | planned |
@@ -50,7 +51,6 @@ Unicode data, variations, color/paint, and subsetting.
   (most script shapers + normalization done; remaining: variation selector glyph lookup + any missing fallback passes).
 - OT map/feature selection: `hb-ot-map.*` -> `ot/map`.
 - OT tables not yet parsed: `color` tables (COLR/CPAL/etc.) -> `ot/color`.
-- Variations: `fvar`, `gvar`, `avar`, `cvar`, `hvar`, `mvar`, `varc`, tuple var store -> `ot/var`.
 - CFF/CFF2 support: `hb-ot-cff*`, `hb-cff*` -> planned `sfnt/cff` or `ot/cff` package.
 - Color + paint APIs: `hb-ot-color.*`, `hb-paint.*` -> `ot/color`, `paint`.
 - AAT shaping: `hb-aat-*` -> `aat`.
