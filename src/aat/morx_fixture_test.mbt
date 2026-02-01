@@ -550,3 +550,26 @@ test "aat morx fixture MORXTwentyeight" {
   ]
   assert_shaped(buffer, name_map, expected)
 }
+
+///|
+test "aat morx fixture Tamil" {
+  let font = @font.Font::from_bytes(build_font_bytes_morx_tamil())
+  let buffer = shape_with_aat(
+    font,
+    [0x0B95U, 0x0BCDU, 0x0020U, 0x0B9AU, 0x0BCDU],
+  )
+  let post = match font.post() {
+    Err(err) => fail("post error: \{err}")
+    Ok(None) => fail("missing post table")
+    Ok(Some(value)) => value
+  }
+  let name_map = build_glyph_name_map(post)
+  let expected : Array[ExpectedGlyph] = [
+    ExpectedGlyph::{ name: "ka-tamil", cluster: 0, x_advance: 825, x_offset: 0, y_offset: 0 },
+    ExpectedGlyph::{ name: "pulli-tamil", cluster: 1, x_advance: 0, x_offset: 0, y_offset: 0 },
+    ExpectedGlyph::{ name: "space", cluster: 2, x_advance: 260, x_offset: 0, y_offset: 0 },
+    ExpectedGlyph::{ name: "ca-tamil", cluster: 3, x_advance: 723, x_offset: 0, y_offset: 0 },
+    ExpectedGlyph::{ name: "pulli-tamil", cluster: 4, x_advance: 0, x_offset: 0, y_offset: 0 },
+  ]
+  assert_shaped(buffer, name_map, expected)
+}

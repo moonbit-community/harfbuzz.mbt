@@ -983,7 +983,11 @@ fn parse_contextual_subtable(
     let count = if max_index < 0 { 0 } else { max_index + 1 }
     let lookups : Array[LookupTable] = []
     for i in 0..<count {
-      let offset = read_u16_int(data, subs_offset + i * 2)
+      let offset = if extended {
+        read_u32_non_negative(data, subs_offset + i * 4)
+      } else {
+        read_u16_int(data, subs_offset + i * 2)
+      }
       match offset {
         Err(err) => return Err(err)
         Ok(offset) => {
