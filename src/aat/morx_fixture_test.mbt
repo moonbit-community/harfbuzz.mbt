@@ -566,10 +566,10 @@ test "aat morx fixture Tamil" {
   let name_map = build_glyph_name_map(post)
   let expected : Array[ExpectedGlyph] = [
     ExpectedGlyph::{ name: "ka-tamil", cluster: 0, x_advance: 825, x_offset: 0, y_offset: 0 },
-    ExpectedGlyph::{ name: "pulli-tamil", cluster: 1, x_advance: 0, x_offset: 0, y_offset: 0 },
+    ExpectedGlyph::{ name: "pulli-tamil", cluster: 0, x_advance: 0, x_offset: -392, y_offset: 0 },
     ExpectedGlyph::{ name: "space", cluster: 2, x_advance: 260, x_offset: 0, y_offset: 0 },
     ExpectedGlyph::{ name: "ca-tamil", cluster: 3, x_advance: 723, x_offset: 0, y_offset: 0 },
-    ExpectedGlyph::{ name: "pulli-tamil", cluster: 4, x_advance: 0, x_offset: 0, y_offset: 0 },
+    ExpectedGlyph::{ name: "pulli-tamil", cluster: 3, x_advance: 0, x_offset: -320, y_offset: 0 },
   ]
   assert_shaped(buffer, name_map, expected)
 }

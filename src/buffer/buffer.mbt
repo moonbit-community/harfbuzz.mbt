@@ -193,6 +193,30 @@ pub fn Buffer::merge_clusters(self : Buffer, start : Int, end : Int) -> Unit {
 }
 
 ///|
+/// Merge clusters for base + combining-mark sequences.
+pub fn Buffer::merge_combining_mark_clusters(self : Buffer) -> Unit {
+  let len = self.infos.length()
+  if len <= 1 {
+    return ()
+  }
+  let mut start = 0
+  while start < len {
+    let mut end = start + 1
+    while end < len {
+      let klass = @unicode.combining_class(self.infos[end].unicode)
+      if klass == 0U {
+        break
+      }
+      end = end + 1
+    }
+    if end - start > 1 {
+      self.merge_clusters(start, end)
+    }
+    start = end
+  }
+}
+
+///|
 /// Set direction.
 pub fn Buffer::set_direction(
   self : Buffer,
@@ -1158,6 +1182,140 @@ pub fn Buffer::apply_kerx(
   }
   self.positions = positions
   Ok(())
+}
+
+///|
+/// Return true if kerx data is present.
+pub fn Buffer::has_kerx(self : Buffer, font : @font.Font) -> Result[Bool, ShapeError] {
+  ignore(self)
+  let kerx = match font.kerx() {
+    Err(err) => return Err(Font(err))
+    Ok(value) => value
+  }
+  Ok(
+    match kerx {
+      None => false
+      Some(value) => value.has_data()
+    },
+  )
+}
+
+///|
+/// Apply GPOS positioning to the current glyph sequence. Returns true when GPOS was present.
+pub fn Buffer::apply_gpos(
+  self : Buffer,
+  font : @font.Font,
+  include_all_features? : Bool = false,
+) -> Result[Bool, ShapeError] {
+  let gpos = match font.gpos() {
+    Err(err) => return Err(Font(err))
+    Ok(value) => value
+  }
+  let gpos = match gpos {
+    None => return Ok(false)
+    Some(value) => value
+  }
+  let gdef = match font.gdef() {
+    Err(err) => return Err(Font(err))
+    Ok(value) => value
+  }
+  let glyphs : Array[UInt] = []
+  for info in self.infos {
+    glyphs.push(info.codepoint)
+  }
+  let script_tag = self.script.to_tag()
+  let lang_tag = language_to_ot_tag(self.language)
+  let feature_tags : Array[@common.Tag] =
+    if include_all_features {
+      [
+        @common.Tag::from_chars('a', 'b', 'v', 'm'),
+        @common.Tag::from_chars('b', 'l', 'w', 'm'),
+        @common.Tag::from_chars('c', 'c', 'm', 'p'),
+        @common.Tag::from_chars('l', 'o', 'c', 'l'),
+        @common.Tag::from_chars('m', 'a', 'r', 'k'),
+        @common.Tag::from_chars('m', 'k', 'm', 'k'),
+        @common.Tag::from_chars('r', 'l', 'i', 'g'),
+        @common.Tag::from_chars('c', 'a', 'l', 't'),
+        @common.Tag::from_chars('c', 'l', 'i', 'g'),
+        @common.Tag::from_chars('c', 'u', 'r', 's'),
+        @common.Tag::from_chars('d', 'i', 's', 't'),
+        @common.Tag::from_chars('k', 'e', 'r', 'n'),
+        @common.Tag::from_chars('l', 'i', 'g', 'a'),
+        @common.Tag::from_chars('r', 'c', 'l', 't'),
+      ]
+    } else {
+      self.gpos_features
+    }
+  let lookup_offsets = match gpos.layout().select_lookup_offsets_with_features(
+    script_tag,
+    language_tag=lang_tag,
+    feature_tags=feature_tags,
+  ) {
+    Err(err) => return Err(Layout(err))
+    Ok(value) => value
+  }
+  let deltas = match gdef {
+    None =>
+      match gpos.position_deltas_with_lookups(
+        glyphs[:],
+        lookup_offsets[:],
+      ) {
+        Err(err) => return Err(Layout(err))
+        Ok(value) => value
+      }
+    Some(gdef) =>
+      match gpos.position_deltas_with_lookups(
+        glyphs[:],
+        lookup_offsets[:],
+        gdef=gdef,
+      ) {
+        Err(err) => return Err(Layout(err))
+        Ok(value) => value
+      }
+  }
+  if deltas.length() != self.positions.length() {
+    return Ok(true)
+  }
+  let new_positions : Array[GlyphPosition] = []
+  for i in 0..<self.positions.length() {
+    let pos = self.positions[i]
+    let delta = deltas[i]
+    new_positions.push(GlyphPosition::{
+      x_advance: pos.x_advance + delta.x_advance,
+      y_advance: pos.y_advance + delta.y_advance,
+      x_offset: pos.x_offset + delta.x_placement,
+      y_offset: pos.y_offset + delta.y_placement,
+    })
+  }
+  self.positions = new_positions
+  let unicode_mark_flags : Array[Bool] = []
+  for info in self.infos {
+    unicode_mark_flags.push(is_zero_width_mark(info.unicode))
+  }
+  match zero_marks_by_gdef_or_unicode(font, self, unicode_mark_flags, true) {
+    Err(err) => return Err(err)
+    Ok(_) => ()
+  }
+  if include_all_features && unicode_mark_flags.length() == self.positions.length() {
+    let mut advance_since_base = 0
+    let mut has_base = false
+    for i in 0..<self.positions.length() {
+      if !unicode_mark_flags[i] {
+        has_base = true
+        advance_since_base = self.positions[i].x_advance
+      } else if has_base {
+        let pos = self.positions[i]
+        self.positions[i] = GlyphPosition::{
+          x_advance: pos.x_advance,
+          y_advance: pos.y_advance,
+          x_offset: pos.x_offset - advance_since_base,
+          y_offset: pos.y_offset,
+        }
+        advance_since_base = advance_since_base + pos.x_advance
+      }
+    }
+  }
+  Ok(true)
 }
 
 ///|

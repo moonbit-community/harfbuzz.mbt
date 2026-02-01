@@ -14,9 +14,21 @@ pub fn shape(
     Err(err) => return Err(err)
     Ok(_) => ()
   }
-  match buffer.apply_kerx(font) {
+  buffer.merge_combining_mark_clusters()
+  let has_kerx = match buffer.has_kerx(font) {
     Err(err) => return Err(err)
-    Ok(_) => ()
+    Ok(value) => value
+  }
+  if has_kerx {
+    match buffer.apply_kerx(font) {
+      Err(err) => return Err(err)
+      Ok(_) => ()
+    }
+  } else {
+    match buffer.apply_gpos(font, include_all_features=true) {
+      Err(err) => return Err(err)
+      Ok(_) => ()
+    }
   }
   buffer.apply_trak(font)
 }
