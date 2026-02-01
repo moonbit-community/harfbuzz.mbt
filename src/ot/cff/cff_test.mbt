@@ -101,11 +101,24 @@ test "cff1 charset format1" {
 }
 
 ///|
+test "cff1 charset format2" {
+  let bytes : Bytes = [0x02, 0x01, 0x2C, 0x00, 0x02]
+  let map = match parse_cff1_charset(bytes[:], 0, 4) {
+    Err(err) => fail("charset parse error: \{err}")
+    Ok(value) => value
+  }
+  inspect((map.get(300), map.get(301), map.get(302)), content="(Some(1), Some(2), Some(3))")
+}
+
+///|
 test "cff1 sid mapping helpers" {
   inspect(cff1_standard_sid(32), content="Some(1)")
   inspect(cff1_standard_sid(0), content="None")
   inspect(cff1_sid_to_gid(0, None, 5, 10), content="Some(5)")
   inspect(cff1_sid_to_gid(1, None, 229, 400), content="Some(2)")
+  let map : Map[Int, Int] = {}
+  map[99] = 7
+  inspect(cff1_sid_to_gid(3, Some(map), 99, 20), content="Some(7)")
 }
 
 ///|
