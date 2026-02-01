@@ -16,7 +16,7 @@ pub struct GlyphPosition {
 } derive(Eq, Show, ToJson)
 
 ///|
-suberror ShapeError {
+pub suberror ShapeError {
   Font(@font.FontError)
   Layout(@ot_tables.OtLayoutError)
 } derive(Eq, Show, ToJson)
@@ -115,6 +115,39 @@ pub fn Buffer::infos(self : Buffer) -> ArrayView[GlyphInfo] {
 /// Access glyph positions.
 pub fn Buffer::positions(self : Buffer) -> ArrayView[GlyphPosition] {
   self.positions[:]
+}
+
+///|
+/// Add tracking adjustment to advances.
+pub fn Buffer::add_tracking(
+  self : Buffer,
+  adjustment : Int,
+  horizontal : Bool,
+) -> Unit {
+  if adjustment == 0 {
+    return ()
+  }
+  if horizontal {
+    for i in 0..<self.positions.length() {
+      let pos = self.positions[i]
+      self.positions[i] = GlyphPosition::{
+        x_advance: pos.x_advance + adjustment,
+        y_advance: pos.y_advance,
+        x_offset: pos.x_offset,
+        y_offset: pos.y_offset,
+      }
+    }
+  } else {
+    for i in 0..<self.positions.length() {
+      let pos = self.positions[i]
+      self.positions[i] = GlyphPosition::{
+        x_advance: pos.x_advance,
+        y_advance: pos.y_advance + adjustment,
+        x_offset: pos.x_offset,
+        y_offset: pos.y_offset,
+      }
+    }
+  }
 }
 
 ///|
@@ -935,6 +968,44 @@ pub fn Buffer::shape_basic(
   self.infos = new_infos
   self.positions = new_positions
   Ok(())
+}
+
+///|
+/// Apply AAT trak tracking adjustments if present.
+pub fn Buffer::apply_trak(
+  self : Buffer,
+  font : @font.Font,
+) -> Result[Unit, ShapeError] {
+  let trak = match font.trak() {
+    Err(err) => return Err(Font(err))
+    Ok(value) => value
+  }
+  match trak {
+    None => Ok(())
+    Some(trak) => {
+      if !trak.has_data() {
+        return Ok(())
+      }
+      let horizontal = self.direction.is_horizontal()
+      let (ppem_x, ppem_y) = font.get_ppem()
+      let ptem = if horizontal {
+        if ppem_x > 0 { ppem_x.to_double() } else { 12.0 }
+      } else {
+        if ppem_y > 0 { ppem_y.to_double() } else { 12.0 }
+      }
+      let tracking = trak.tracking(ptem, horizontal)
+      let (scale_x, scale_y) = font.get_scale()
+      let scale = if horizontal { scale_x } else { scale_y }
+      let upem = font.get_face().get_upem()
+      let adjustment = if upem == 0 {
+        tracking.round().to_int()
+      } else {
+        (tracking * scale.to_double() / upem.to_double()).round().to_int()
+      }
+      self.add_tracking(adjustment, horizontal)
+      Ok(())
+    }
+  }
 }
 
 ///|

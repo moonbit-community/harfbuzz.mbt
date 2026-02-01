@@ -6,6 +6,7 @@ suberror FontError {
   Cff(@ot_cff.CffError)
   Layout(@ot_tables.OtLayoutError)
   Color(@ot_color.ColorError)
+  Aat(@aat.AatError)
   GlyphOutOfRange
 } derive(Eq, Show, ToJson)
 
@@ -38,6 +39,7 @@ pub struct Font {
   mut jstf : @sfnt.JstfTable?
   mut math : @sfnt.MathTable?
   mut kern : @sfnt.KernTable?
+  mut trak : @aat.TrakTable?
   mut gsub : @ot_tables.GsubTable?
   mut gpos : @ot_tables.GposTable?
   mut gdef : @ot_tables.GdefTable?
@@ -170,6 +172,9 @@ let tag_cpal : @common.Tag = @common.Tag::from_chars('C', 'P', 'A', 'L')
 let tag_colr : @common.Tag = @common.Tag::from_chars('C', 'O', 'L', 'R')
 
 ///|
+let tag_trak : @common.Tag = @common.Tag::from_chars('t', 'r', 'a', 'k')
+
+///|
 /// Create a font from a face.
 pub fn Font::new(face : @face.Face) -> Font {
   Font::{
@@ -199,6 +204,7 @@ pub fn Font::new(face : @face.Face) -> Font {
     jstf: None,
     math: None,
     kern: None,
+    trak: None,
     gsub: None,
     gpos: None,
     gdef: None,
@@ -774,6 +780,26 @@ pub fn Font::kern(self : Font) -> Result[@sfnt.KernTable?, FontError] {
             Ok(kern) => {
               self.kern = Some(kern)
               Ok(Some(kern))
+            }
+          }
+      }
+  }
+}
+
+///|
+pub fn Font::trak(self : Font) -> Result[@aat.TrakTable?, FontError] {
+  match self.trak {
+    Some(trak) => Ok(Some(trak))
+    None =>
+      match self.face.reference_table_optional(tag_trak) {
+        Err(err) => Err(FaceTable(err))
+        Ok(None) => Ok(None)
+        Ok(Some(blob)) =>
+          match @aat.TrakTable::parse(blob.as_view()) {
+            Err(err) => Err(Aat(err))
+            Ok(trak) => {
+              self.trak = Some(trak)
+              Ok(Some(trak))
             }
           }
       }

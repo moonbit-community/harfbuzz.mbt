@@ -29,6 +29,10 @@
     {
       "path": "moonbit-community/harfbuzz/ot/color",
       "alias": "ot_color"
+    },
+    {
+      "path": "moonbit-community/harfbuzz/aat",
+      "alias": "aat"
     }
   ]
 }

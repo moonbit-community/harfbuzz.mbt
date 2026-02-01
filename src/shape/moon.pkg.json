@@ -15,6 +15,10 @@
     {
       "path": "moonbit-community/harfbuzz/ot/shape",
       "alias": "ot_shape"
+    },
+    {
+      "path": "moonbit-community/harfbuzz/aat/shape",
+      "alias": "aat_shape"
     }
   ]
 }

@@ -7,7 +7,7 @@ fn default_shapers() -> Array[String] {
 ///|
 /// Return the names of available shapers.
 pub fn available_shapers() -> Array[String] {
-  default_shapers()
+  ["aat", "ot", "fallback"]
 }
 
 ///|
@@ -28,7 +28,7 @@ pub fn ShapePlan::from_buffer(
   let names = if shapers.is_empty() { default_shapers() } else { shapers }
   let mut selected = "fallback"
   for name in names {
-    if name == "ot" || name == "fallback" {
+    if name == "ot" || name == "fallback" || name == "aat" {
       selected = name
       break
     }
@@ -49,6 +49,7 @@ pub fn ShapePlan::shape(
   buffer : @buffer.Buffer,
 ) -> Result[Unit, @buffer.ShapeError] {
   match self.shaper {
+    "aat" => @aat_shape.shape(font, buffer)
     "ot" => @ot_shape.shape(font, buffer)
     "fallback" => buffer.shape_basic(font)
     _ => buffer.shape_basic(font)
