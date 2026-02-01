@@ -44,6 +44,11 @@ pub struct Font {
   mut mort : @aat.MortTable?
   mut kerx : @aat.KerxTable?
   mut ankr : @aat.AnkrTable?
+  mut bsln : @aat.BslnTable?
+  mut feat : @aat.FeatTable?
+  mut just : @aat.JustTable?
+  mut ltag : @aat.LtagTable?
+  mut opbd : @aat.OpbdTable?
   mut gsub : @ot_tables.GsubTable?
   mut gpos : @ot_tables.GposTable?
   mut gdef : @ot_tables.GdefTable?
@@ -191,6 +196,21 @@ let tag_kerx : @common.Tag = @common.Tag::from_chars('k', 'e', 'r', 'x')
 let tag_ankr : @common.Tag = @common.Tag::from_chars('a', 'n', 'k', 'r')
 
 ///|
+let tag_bsln : @common.Tag = @common.Tag::from_chars('b', 's', 'l', 'n')
+
+///|
+let tag_feat : @common.Tag = @common.Tag::from_chars('f', 'e', 'a', 't')
+
+///|
+let tag_just : @common.Tag = @common.Tag::from_chars('j', 'u', 's', 't')
+
+///|
+let tag_ltag : @common.Tag = @common.Tag::from_chars('l', 't', 'a', 'g')
+
+///|
+let tag_opbd : @common.Tag = @common.Tag::from_chars('o', 'p', 'b', 'd')
+
+///|
 /// Create a font from a face.
 pub fn Font::new(face : @face.Face) -> Font {
   Font::{
@@ -225,6 +245,11 @@ pub fn Font::new(face : @face.Face) -> Font {
     mort: None,
     kerx: None,
     ankr: None,
+    bsln: None,
+    feat: None,
+    just: None,
+    ltag: None,
+    opbd: None,
     gsub: None,
     gpos: None,
     gdef: None,
@@ -919,6 +944,121 @@ pub fn Font::ankr(self : Font) -> Result[@aat.AnkrTable?, FontError] {
             Ok(ankr) => {
               self.ankr = Some(ankr)
               Ok(Some(ankr))
+            }
+          }
+        }
+      }
+  }
+}
+
+///|
+pub fn Font::bsln(self : Font) -> Result[@aat.BslnTable?, FontError] {
+  match self.bsln {
+    Some(bsln) => Ok(Some(bsln))
+    None =>
+      match self.face.reference_table_optional(tag_bsln) {
+        Err(err) => Err(FaceTable(err))
+        Ok(None) => Ok(None)
+        Ok(Some(blob)) => {
+          let maxp = match self.ensure_maxp() {
+            Err(err) => return Err(err)
+            Ok(maxp) => maxp
+          }
+          match @aat.BslnTable::parse(blob.as_view(), maxp.num_glyphs) {
+            Err(err) => Err(Aat(err))
+            Ok(bsln) => {
+              self.bsln = Some(bsln)
+              Ok(Some(bsln))
+            }
+          }
+        }
+      }
+  }
+}
+
+///|
+pub fn Font::feat(self : Font) -> Result[@aat.FeatTable?, FontError] {
+  match self.feat {
+    Some(feat) => Ok(Some(feat))
+    None =>
+      match self.face.reference_table_optional(tag_feat) {
+        Err(err) => Err(FaceTable(err))
+        Ok(None) => Ok(None)
+        Ok(Some(blob)) =>
+          match @aat.FeatTable::parse(blob.as_view()) {
+            Err(err) => Err(Aat(err))
+            Ok(feat) => {
+              self.feat = Some(feat)
+              Ok(Some(feat))
+            }
+          }
+      }
+  }
+}
+
+///|
+pub fn Font::just(self : Font) -> Result[@aat.JustTable?, FontError] {
+  match self.just {
+    Some(just) => Ok(Some(just))
+    None =>
+      match self.face.reference_table_optional(tag_just) {
+        Err(err) => Err(FaceTable(err))
+        Ok(None) => Ok(None)
+        Ok(Some(blob)) => {
+          let maxp = match self.ensure_maxp() {
+            Err(err) => return Err(err)
+            Ok(maxp) => maxp
+          }
+          match @aat.JustTable::parse(blob.as_view(), maxp.num_glyphs) {
+            Err(err) => Err(Aat(err))
+            Ok(just) => {
+              self.just = Some(just)
+              Ok(Some(just))
+            }
+          }
+        }
+      }
+  }
+}
+
+///|
+pub fn Font::ltag(self : Font) -> Result[@aat.LtagTable?, FontError] {
+  match self.ltag {
+    Some(ltag) => Ok(Some(ltag))
+    None =>
+      match self.face.reference_table_optional(tag_ltag) {
+        Err(err) => Err(FaceTable(err))
+        Ok(None) => Ok(None)
+        Ok(Some(blob)) =>
+          match @aat.LtagTable::parse(blob.as_view()) {
+            Err(err) => Err(Aat(err))
+            Ok(ltag) => {
+              self.ltag = Some(ltag)
+              Ok(Some(ltag))
+            }
+          }
+      }
+  }
+}
+
+///|
+pub fn Font::opbd(self : Font) -> Result[@aat.OpbdTable?, FontError] {
+  match self.opbd {
+    Some(opbd) => Ok(Some(opbd))
+    None =>
+      match self.face.reference_table_optional(tag_opbd) {
+        Err(err) => Err(FaceTable(err))
+        Ok(None) => Ok(None)
+        Ok(Some(blob)) => {
+          let maxp = match self.ensure_maxp() {
+            Err(err) => return Err(err)
+            Ok(maxp) => maxp
+          }
+          match @aat.OpbdTable::parse(blob.as_view(), maxp.num_glyphs) {
+            Err(err) => Err(Aat(err))
+            Ok(opbd) => {
+              self.opbd = Some(opbd)
+              Ok(Some(opbd))
             }
           }
         }
