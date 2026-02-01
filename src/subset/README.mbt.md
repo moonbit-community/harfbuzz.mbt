@@ -1,5 +1,5 @@
 ---
-description: Subset fonts to a codepoint set (TrueType glyf/loca only).
+description: Subset fonts to a codepoint set (TrueType glyf/loca; CFF/CFF2 cmap-only).
 ---
 
 # Subsetting (subset package)
