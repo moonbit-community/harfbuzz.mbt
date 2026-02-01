@@ -67,6 +67,27 @@ let tag_name : @common.Tag = @common.Tag::from_chars('n', 'a', 'm', 'e')
 let tag_post : @common.Tag = @common.Tag::from_chars('p', 'o', 's', 't')
 
 ///|
+let tag_os2 : @common.Tag = @common.Tag::from_chars('O', 'S', '/', '2')
+
+///|
+let tag_cvt : @common.Tag = @common.Tag::from_chars('c', 'v', 't', ' ')
+
+///|
+let tag_fpgm : @common.Tag = @common.Tag::from_chars('f', 'p', 'g', 'm')
+
+///|
+let tag_prep : @common.Tag = @common.Tag::from_chars('p', 'r', 'e', 'p')
+
+///|
+let tag_gasp : @common.Tag = @common.Tag::from_chars('g', 'a', 's', 'p')
+
+///|
+let tag_vdmx : @common.Tag = @common.Tag::from_chars('V', 'D', 'M', 'X')
+
+///|
+let tag_dsig : @common.Tag = @common.Tag::from_chars('D', 'S', 'I', 'G')
+
+///|
 fn read_u16(bytes : Array[Byte], offset : Int) -> Result[Int, SubsetError] {
   if offset < 0 || offset + 2 > bytes.length() {
     return Err(InvalidInput("unexpected eof"))
@@ -270,6 +291,45 @@ fn table_blob(
     Ok(None) => Err(Unsupported("missing \{name} table"))
     Ok(Some(blob)) => Ok(blob)
   }
+}
+
+fn add_optional_table(
+  face : @face.Face,
+  tag : @common.Tag,
+  tables : Array[(@common.Tag, Bytes)],
+) -> Result[Unit, SubsetError] {
+  match face.reference_table_optional(tag) {
+    Err(err) => Err(Face(err))
+    Ok(None) => Ok(())
+    Ok(Some(blob)) => {
+      tables.push((tag, blob.as_view().to_bytes()))
+      Ok(())
+    }
+  }
+}
+
+fn add_passthrough_tables(
+  face : @face.Face,
+  tables : Array[(@common.Tag, Bytes)],
+) -> Result[Unit, SubsetError] {
+  let tags : Array[@common.Tag] = [
+    tag_name,
+    tag_post,
+    tag_os2,
+    tag_cvt,
+    tag_fpgm,
+    tag_prep,
+    tag_gasp,
+    tag_vdmx,
+    tag_dsig,
+  ]
+  for tag in tags {
+    match add_optional_table(face, tag, tables) {
+      Err(err) => return Err(err)
+      Ok(_) => ()
+    }
+  }
+  Ok(())
 }
 
 ///|
@@ -923,15 +983,9 @@ pub fn subset_with_plan(
     None => ()
     Some(cmap) => tables.push((tag_cmap, cmap))
   }
-  match face.reference_table_optional(tag_name) {
-    Err(err) => return Err(Face(err))
-    Ok(Some(blob)) => tables.push((tag_name, blob.as_view().to_bytes()))
-    Ok(None) => ()
-  }
-  match face.reference_table_optional(tag_post) {
-    Err(err) => return Err(Face(err))
-    Ok(Some(blob)) => tables.push((tag_post, blob.as_view().to_bytes()))
-    Ok(None) => ()
+  match add_passthrough_tables(face, tables) {
+    Err(err) => return Err(err)
+    Ok(_) => ()
   }
   Ok(build_sfnt(tables))
 }
@@ -1030,15 +1084,9 @@ fn subset_cff1_with_plan(
     None => ()
     Some(cmap) => tables.push((tag_cmap, cmap))
   }
-  match face.reference_table_optional(tag_name) {
-    Err(err) => return Err(Face(err))
-    Ok(Some(blob)) => tables.push((tag_name, blob.as_view().to_bytes()))
-    Ok(None) => ()
-  }
-  match face.reference_table_optional(tag_post) {
-    Err(err) => return Err(Face(err))
-    Ok(Some(blob)) => tables.push((tag_post, blob.as_view().to_bytes()))
-    Ok(None) => ()
+  match add_passthrough_tables(face, tables) {
+    Err(err) => return Err(err)
+    Ok(_) => ()
   }
   Ok(build_sfnt(tables))
 }
@@ -1137,15 +1185,9 @@ fn subset_cff2_with_plan(
     None => ()
     Some(cmap) => tables.push((tag_cmap, cmap))
   }
-  match face.reference_table_optional(tag_name) {
-    Err(err) => return Err(Face(err))
-    Ok(Some(blob)) => tables.push((tag_name, blob.as_view().to_bytes()))
-    Ok(None) => ()
-  }
-  match face.reference_table_optional(tag_post) {
-    Err(err) => return Err(Face(err))
-    Ok(Some(blob)) => tables.push((tag_post, blob.as_view().to_bytes()))
-    Ok(None) => ()
+  match add_passthrough_tables(face, tables) {
+    Err(err) => return Err(err)
+    Ok(_) => ()
   }
   Ok(build_sfnt(tables))
 }

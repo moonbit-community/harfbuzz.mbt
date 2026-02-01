@@ -102,6 +102,12 @@ fn build_hhea(number_of_hmetrics : Int) -> Bytes {
 }
 
 ///|
+fn build_os2() -> Bytes {
+  let bytes : Array[Byte] = Array::make(78, b'\x00')
+  Bytes::from_array(bytes)
+}
+
+///|
 fn build_vhea(number_of_vmetrics : Int) -> Bytes {
   let bytes : Array[Byte] = Array::make(36, b'\x00')
   bytes[34] = ((number_of_vmetrics >> 8) & 0xff).to_byte()
@@ -220,6 +226,7 @@ fn build_font_bytes_subset_fixture() -> Bytes {
     (@common.Tag::from_chars('h', 'e', 'a', 'd'), build_head(1000, 1)),
     (@common.Tag::from_chars('m', 'a', 'x', 'p'), build_maxp(4)),
     (@common.Tag::from_chars('h', 'h', 'e', 'a'), build_hhea(4)),
+    (@common.Tag::from_chars('O', 'S', '/', '2'), build_os2()),
     (@common.Tag::from_chars('h', 'm', 't', 'x'), build_hmtx([500, 600, 700, 800], [0, 10, 20, 30])),
     (@common.Tag::from_chars('v', 'h', 'e', 'a'), build_vhea(4)),
     (@common.Tag::from_chars('v', 'm', 't', 'x'), build_vmtx([900, 910, 920, 930], [5, 6, 7, 8])),
@@ -260,6 +267,27 @@ test "subset drops unused glyphs" {
       }
   }
   inspect(maxp.num_glyphs, content="2")
+}
+
+///|
+test "subset preserves os2" {
+  let font = @font.Font::from_bytes(build_font_bytes_subset_fixture())
+  let bytes = match subset(font, SubsetInput::from_codepoints([0x41U])) {
+    Err(err) => fail("subset failed: \{err}")
+    Ok(value) => value
+  }
+  let subset_font = @font.Font::from_bytes(bytes)
+  let os2_blob = match subset_font.get_face().reference_table_optional(
+    @common.Tag::from_chars('O', 'S', '/', '2'),
+  ) {
+    Err(err) => fail("OS/2 table missing: \{err}")
+    Ok(None) => fail("OS/2 table missing")
+    Ok(Some(blob)) => blob
+  }
+  match @sfnt.Os2Table::parse(os2_blob.as_view()) {
+    Err(err) => fail("OS/2 parse failed: \{err}")
+    Ok(_) => ()
+  }
 }
 
 ///|

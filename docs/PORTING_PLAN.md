@@ -20,7 +20,7 @@ Unicode data, variations, color/paint, and subsetting.
 - `ot/var`: variation tables + var store (fvar/gvar/avar/cvar/hvar/vvar/mvar/varc) with tests.
 - `ot/color` + `paint`: COLR/CPAL parsing + COLRv1 paint graph decoding (no rendering/backends yet).
 - `aat`: AAT layout tables + shaping (morx/mort/kerx/ankr/trak + bsln/feat/opbd/just/ltag).
-- `subset`: TrueType subsetting for glyf/loca/hmtx/vmtx/head/hhea/vhea/maxp/cmap (composite remap; long loca) + CFF1 charstrings/charset subsetting + CFF2 outline subsetting.
+- `subset`: TrueType subsetting for glyf/loca/hmtx/vmtx/head/hhea/vhea/maxp/cmap (composite remap; long loca) + CFF1 charstrings/charset subsetting + CFF2 outline subsetting + passthrough metadata tables (OS/2, gasp, cvt, fpgm, prep, VDMX, DSIG).
 
 ## Package Map (current + planned)
 
@@ -43,7 +43,7 @@ Unicode data, variations, color/paint, and subsetting.
 | `paint` | Paint API | `hb-paint.*` | partial |
 | `aat` | AAT layout + shaping | `hb-aat-*` | done |
 | `graphite` | Graphite2 shaper | `hb-graphite2.*` | excluded (external dependency) |
-| `subset` | Subsetting pipeline | `hb-subset*` | done (TrueType glyf/loca + vertical metrics + CFF1 charstrings/charset + CFF2 outlines) |
+| `subset` | Subsetting pipeline | `hb-subset*` | done (TrueType glyf/loca + vertical metrics + CFF1 charstrings/charset + CFF2 outlines + metadata passthrough tables) |
 | `draw` | Draw/outline helpers | `hb-draw.*`, `hb-outline.*` | planned |
 | `platform/*` | Platform backends | CoreText/DirectWrite/Uniscribe/etc. | excluded |
 
