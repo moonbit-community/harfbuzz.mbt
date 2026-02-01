@@ -27,7 +27,7 @@ pub fn parse_cff_dict(data : BytesView) -> Result[CffDict, CffError] {
       pos = pos + 2
       continue
     }
-    if b0 <= 21 {
+    if b0 <= 27 {
       entries[b0] = operands.copy()
       operands = []
       pos = pos + 1
