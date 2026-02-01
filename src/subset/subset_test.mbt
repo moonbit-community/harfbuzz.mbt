@@ -634,7 +634,7 @@ fn build_font_bytes_test_cff2_vf() -> Bytes {
 }
 
 ///|
-test "subset cmap-only cff1" {
+test "subset cff1 cmap" {
   let font = @font.Font::from_bytes(build_font_bytes_cff1_seac_c0())
   let keep = 0xC0U
   let bytes = match subset(font, SubsetInput::from_codepoints([keep])) {
@@ -784,7 +784,7 @@ test "subset cff1 outlines" {
 }
 
 ///|
-test "subset cmap-only cff2" {
+test "subset cff2 outlines" {
   let font = @font.Font::from_bytes(build_font_bytes_test_cff2_vf())
   let keep = 0x41U
   let bytes = match subset(font, SubsetInput::from_codepoints([keep])) {
@@ -798,6 +798,25 @@ test "subset cmap-only cff2" {
     Ok(Some(_)) => ()
   }
   let face = subset_font.get_face()
+  let maxp_blob = match face.reference_table_optional(@common.Tag::from_chars('m', 'a', 'x', 'p')) {
+    Err(err) => fail("maxp table missing: \{err}")
+    Ok(None) => fail("maxp table missing")
+    Ok(Some(blob)) => blob
+  }
+  let maxp = match @sfnt.MaxpTable::parse(maxp_blob.as_view()) {
+    Err(err) => fail("maxp parse error: \{err}")
+    Ok(value) => value
+  }
+  let cff2_blob = match face.reference_table_optional(@common.Tag::from_chars('C', 'F', 'F', '2')) {
+    Err(err) => fail("cff2 table missing: \{err}")
+    Ok(None) => fail("cff2 table missing")
+    Ok(Some(blob)) => blob
+  }
+  let cff2 = match @ot_cff.Cff2Table::parse(cff2_blob.as_view()) {
+    Err(err) => fail("cff2 parse error: \{err}")
+    Ok(value) => value
+  }
+  inspect(cff2.glyph_count(), content=maxp.num_glyphs.to_string())
   let cmap_blob = match face.reference_table_optional(@common.Tag::from_chars('c', 'm', 'a', 'p')) {
     Err(err) => fail("cmap table missing: \{err}")
     Ok(None) => fail("cmap table missing")

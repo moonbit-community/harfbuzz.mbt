@@ -61,9 +61,6 @@ let tag_name : @common.Tag = @common.Tag::from_chars('n', 'a', 'm', 'e')
 let tag_post : @common.Tag = @common.Tag::from_chars('p', 'o', 's', 't')
 
 ///|
-let tag_ttcf : @common.Tag = @common.Tag::from_chars('t', 't', 'c', 'f')
-
-///|
 fn read_u16(bytes : Array[Byte], offset : Int) -> Result[Int, SubsetError] {
   if offset < 0 || offset + 2 > bytes.length() {
     return Err(InvalidInput("unexpected eof"))
@@ -90,23 +87,6 @@ fn read_u24(bytes : Array[Byte], offset : Int) -> Result[Int, SubsetError] {
   let b1 = bytes[offset + 1].to_int()
   let b2 = bytes[offset + 2].to_int()
   Ok((b0 << 16) | (b1 << 8) | b2)
-}
-
-///|
-fn read_u32_view(data : BytesView, offset : Int) -> Result[Int, SubsetError] {
-  if offset < 0 || offset + 4 > data.length() {
-    return Err(InvalidInput("unexpected eof"))
-  }
-  let b0 = data[offset].to_uint()
-  let b1 = data[offset + 1].to_uint()
-  let b2 = data[offset + 2].to_uint()
-  let b3 = data[offset + 3].to_uint()
-  let value = ((b0 << 24) | (b1 << 16) | (b2 << 8) | b3).reinterpret_as_int()
-  if value < 0 {
-    Err(InvalidInput("invalid u32"))
-  } else {
-    Ok(value)
-  }
 }
 
 ///|
@@ -386,101 +366,6 @@ fn remap_composite_glyph(
 }
 
 ///|
-fn ttc_font_offset(
-  data : BytesView,
-  index : Int,
-) -> Result[Int, SubsetError] {
-  let count = read_u32_view(data, 8)
-  let count = match count {
-    Err(err) => return Err(err)
-    Ok(value) => value
-  }
-  if index < 0 || index >= count {
-    return Err(InvalidInput("face index out of range"))
-  }
-  let offset = 12 + index * 4
-  read_u32_view(data, offset)
-}
-
-///|
-fn sfnt_base_offset(face : @face.Face) -> Result[Int, SubsetError] {
-  let data = face.reference_blob().as_view()
-  if data.length() < 4 {
-    return Err(InvalidInput("unexpected eof"))
-  }
-  let tag = @common.Tag::from_bytes(data[0], data[1], data[2], data[3])
-  if tag == tag_ttcf {
-    ttc_font_offset(data, face.get_index())
-  } else {
-    Ok(0)
-  }
-}
-
-///|
-fn build_codepoint_map(
-  font : @font.Font,
-  input : SubsetInput,
-) -> Result[Array[(UInt, Int)], SubsetError] {
-  let codepoint_map : Array[(UInt, Int)] = []
-  for codepoint in input.codepoints {
-    let gid = match font.glyph_for_codepoint(codepoint) {
-      Err(err) => return Err(Font(err))
-      Ok(value) => value
-    }
-    match gid {
-      None => ()
-      Some(gid) => codepoint_map.push((codepoint, gid.reinterpret_as_int()))
-    }
-  }
-  Ok(codepoint_map)
-}
-
-///|
-fn subset_cmap_only(
-  font : @font.Font,
-  input : SubsetInput,
-) -> Result[Bytes, SubsetError] {
-  let codepoint_map = match build_codepoint_map(font, input) {
-    Err(err) => return Err(err)
-    Ok(value) => value
-  }
-  let cmap_bytes = build_cmap_from_pairs(codepoint_map)
-  let face = font.get_face()
-  let base = match sfnt_base_offset(face) {
-    Err(err) => return Err(err)
-    Ok(value) => value
-  }
-  let sfnt = match @sfnt.Sfnt::parse_at(face.reference_blob(), base) {
-    Err(err) => return Err(Sfnt(err))
-    Ok(value) => value
-  }
-  let tables : Array[(@common.Tag, Bytes)] = []
-  let mut added_cmap = false
-  for record in sfnt.tables() {
-    if record.tag == tag_cmap {
-      added_cmap = true
-      match cmap_bytes {
-        None => ()
-        Some(cmap) => tables.push((tag_cmap, cmap))
-      }
-      continue
-    }
-    let blob = match sfnt.table(record.tag) {
-      Err(err) => return Err(Sfnt(err))
-      Ok(value) => value
-    }
-    tables.push((record.tag, blob.as_view().to_bytes()))
-  }
-  if !added_cmap {
-    match cmap_bytes {
-      None => ()
-      Some(cmap) => tables.push((tag_cmap, cmap))
-    }
-  }
-  Ok(build_sfnt(tables))
-}
-
-///|
 pub fn build_plan(
   font : @font.Font,
   input : SubsetInput,
@@ -704,6 +589,82 @@ fn build_plan_cff1(
   Ok(SubsetPlan::{ glyphs, old_to_new, codepoint_map })
 }
 
+fn build_plan_cff2(
+  font : @font.Font,
+  input : SubsetInput,
+  cff : @ot_cff.Cff2Table,
+) -> Result[SubsetPlan, SubsetError] {
+  let face = font.get_face()
+  let maxp_blob = match table_blob(face, tag_maxp, "maxp") {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  let maxp = match @sfnt.MaxpTable::parse(maxp_blob.as_view()) {
+    Err(err) => return Err(Sfnt(err))
+    Ok(value) => value
+  }
+  if maxp.num_glyphs <= 0 {
+    return Err(InvalidInput("font has no glyphs"))
+  }
+  if cff.glyph_count() != maxp.num_glyphs {
+    return Err(InvalidInput("cff2 glyph count mismatch"))
+  }
+  let selected : Array[Bool] = Array::make(maxp.num_glyphs, false)
+  let add_gid = (gid : Int) => {
+    if gid < 0 || gid >= selected.length() {
+      return
+    }
+    selected[gid] = true
+  }
+  add_gid(0)
+  for codepoint in input.codepoints {
+    let gid = match font.glyph_for_codepoint(codepoint) {
+      Err(err) => return Err(Font(err))
+      Ok(value) => value
+    }
+    match gid {
+      None => ()
+      Some(gid) => add_gid(gid.reinterpret_as_int())
+    }
+  }
+  let glyphs : Array[UInt] = []
+  for gid in 0..<selected.length() {
+    if selected[gid] {
+      glyphs.push(gid.reinterpret_as_uint())
+    }
+  }
+  if glyphs.is_empty() {
+    return Err(InvalidInput("empty subset"))
+  }
+  let old_to_new : Array[Int] = Array::make(maxp.num_glyphs, -1)
+  for i in 0..<glyphs.length() {
+    let old_gid = glyphs[i].reinterpret_as_int()
+    if old_gid >= 0 && old_gid < old_to_new.length() {
+      old_to_new[old_gid] = i
+    }
+  }
+  let codepoint_map : Array[(UInt, Int)] = []
+  for codepoint in input.codepoints {
+    let gid = match font.glyph_for_codepoint(codepoint) {
+      Err(err) => return Err(Font(err))
+      Ok(value) => value
+    }
+    match gid {
+      None => ()
+      Some(gid) => {
+        let old_gid = gid.reinterpret_as_int()
+        if old_gid >= 0 && old_gid < old_to_new.length() {
+          let new_gid = old_to_new[old_gid]
+          if new_gid >= 0 {
+            codepoint_map.push((codepoint, new_gid))
+          }
+        }
+      }
+    }
+  }
+  Ok(SubsetPlan::{ glyphs, old_to_new, codepoint_map })
+}
+
 ///|
 pub fn subset(
   font : @font.Font,
@@ -745,7 +706,17 @@ pub fn subset(
         }
         None =>
           match cff2_blob {
-            Some(_) => subset_cmap_only(font, input)
+            Some(blob) => {
+              let cff = match @ot_cff.Cff2Table::parse(blob.as_view()) {
+                Err(err) => return Err(Cff(err))
+                Ok(value) => value
+              }
+              let plan = match build_plan_cff2(font, input, cff) {
+                Err(err) => return Err(err)
+                Ok(value) => value
+              }
+              subset_cff2_with_plan(font, plan, cff)
+            }
             None => Err(Unsupported("missing outline table"))
           }
       }
@@ -978,6 +949,102 @@ fn subset_cff1_with_plan(
     (tag_hhea, Bytes::from_array(hhea_bytes)),
     (tag_hmtx, Bytes::from_array(new_hmtx)),
     (tag_cff, cff_bytes),
+  ]
+  match cmap_bytes {
+    None => ()
+    Some(cmap) => tables.push((tag_cmap, cmap))
+  }
+  match face.reference_table_optional(tag_name) {
+    Err(err) => return Err(Face(err))
+    Ok(Some(blob)) => tables.push((tag_name, blob.as_view().to_bytes()))
+    Ok(None) => ()
+  }
+  match face.reference_table_optional(tag_post) {
+    Err(err) => return Err(Face(err))
+    Ok(Some(blob)) => tables.push((tag_post, blob.as_view().to_bytes()))
+    Ok(None) => ()
+  }
+  Ok(build_sfnt(tables))
+}
+
+fn subset_cff2_with_plan(
+  font : @font.Font,
+  plan : SubsetPlan,
+  cff : @ot_cff.Cff2Table,
+) -> Result[Bytes, SubsetError] {
+  let face = font.get_face()
+  let head_blob = match table_blob(face, tag_head, "head") {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  let maxp_blob = match table_blob(face, tag_maxp, "maxp") {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  let hhea_blob = match table_blob(face, tag_hhea, "hhea") {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  let hmtx_blob = match table_blob(face, tag_hmtx, "hmtx") {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  let maxp = match @sfnt.MaxpTable::parse(maxp_blob.as_view()) {
+    Err(err) => return Err(Sfnt(err))
+    Ok(value) => value
+  }
+  let hhea = match @sfnt.HheaTable::parse(hhea_blob.as_view()) {
+    Err(err) => return Err(Sfnt(err))
+    Ok(value) => value
+  }
+  let hmtx = match @sfnt.HmtxTable::parse(
+    hmtx_blob.as_view(),
+    maxp.num_glyphs,
+    hhea.number_of_hmetrics,
+  ) {
+    Err(err) => return Err(Sfnt(err))
+    Ok(value) => value
+  }
+
+  let new_hmtx : Array[Byte] = []
+  for old_gid in plan.glyphs {
+    let gid = old_gid.reinterpret_as_int()
+    if gid < 0 || gid >= hmtx.advances.length() {
+      return Err(InvalidInput("glyph id out of range"))
+    }
+    let advance = hmtx.advances[gid]
+    let lsb = hmtx.lsbs[gid]
+    push_u16(new_hmtx, advance)
+    push_i16(new_hmtx, lsb)
+  }
+
+  let head_bytes = head_blob.as_view().to_bytes().to_array()
+  let maxp_bytes = maxp_blob.as_view().to_bytes().to_array()
+  if maxp_bytes.length() >= 6 {
+    write_u16(maxp_bytes, 4, plan.glyphs.length())
+  }
+  let hhea_bytes = hhea_blob.as_view().to_bytes().to_array()
+  if hhea_bytes.length() >= 36 {
+    write_u16(hhea_bytes, 34, plan.glyphs.length())
+  }
+
+  let glyph_ids : Array[Int] = []
+  for gid in plan.glyphs {
+    glyph_ids.push(gid.reinterpret_as_int())
+  }
+  let cff_bytes = match cff.subset(glyph_ids) {
+    Err(err) => return Err(Cff(err))
+    Ok(value) => value
+  }
+
+  let cmap_bytes = build_cmap_from_pairs(plan.codepoint_map)
+
+  let tables : Array[(@common.Tag, Bytes)] = [
+    (tag_head, Bytes::from_array(head_bytes)),
+    (tag_maxp, Bytes::from_array(maxp_bytes)),
+    (tag_hhea, Bytes::from_array(hhea_bytes)),
+    (tag_hmtx, Bytes::from_array(new_hmtx)),
+    (tag_cff2, cff_bytes),
   ]
   match cmap_bytes {
     None => ()
