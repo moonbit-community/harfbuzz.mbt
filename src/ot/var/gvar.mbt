@@ -163,3 +163,28 @@ pub fn GvarTable::glyph_tuple_variations(
     }
   }
 }
+
+///|
+pub fn GvarTable::glyph_deltas(
+  self : GvarTable,
+  glyph : Int,
+  coords : Array[Int],
+  point_count : Int,
+) -> Result[(Array[Double], Array[Double]?), VarError] {
+  let tuple_data = match self.glyph_tuple_variations(glyph) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  match tuple_data {
+    Some(value) => value.apply(coords, point_count, true)
+    None => {
+      let deltas_x : Array[Double] = []
+      let deltas_y : Array[Double] = []
+      for _ in 0..<point_count {
+        deltas_x.push(0.0)
+        deltas_y.push(0.0)
+      }
+      Ok((deltas_x, Some(deltas_y)))
+    }
+  }
+}
