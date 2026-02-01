@@ -124,7 +124,7 @@ fn parse_condition_at(
 pub fn VarcCondition::evaluate(
   self : VarcCondition,
   coords : Array[Int],
-  var_delta : ((Int) -> Int)?,
+  var_delta : ((Int) -> Double)?,
 ) -> Bool {
   match self {
     AxisRange(axis_index, min_value, max_value) => {
@@ -137,10 +137,10 @@ pub fn VarcCondition::evaluate(
     }
     Value(default_value, var_idx) => {
       let delta = match var_delta {
-        None => 0
+        None => 0.0
         Some(f) => f(var_idx)
       }
-      (default_value + delta) > 0
+      (default_value.to_double() + delta) > 0.0
     }
     And(conditions) => {
       for condition in conditions {
@@ -292,6 +292,93 @@ fn decode_tuple_values(data : BytesView) -> Result[Array[Int], VarError] {
   Ok(values)
 }
 
+fn coverage_index_varc(
+  data : BytesView,
+  offset : Int,
+  glyph : Int,
+) -> Result[Int?, VarError] {
+  if glyph < 0 || glyph > 0xFFFF {
+    return Ok(None)
+  }
+  let format = read_u16_int(data, offset)
+  match format {
+    Err(err) => Err(err)
+    Ok(format) =>
+      if format == 1 {
+        coverage_format1_varc(data, offset, glyph)
+      } else if format == 2 {
+        coverage_format2_varc(data, offset, glyph)
+      } else {
+        Err(InvalidFormat)
+      }
+  }
+}
+
+fn coverage_format1_varc(
+  data : BytesView,
+  offset : Int,
+  glyph : Int,
+) -> Result[Int?, VarError] {
+  if offset < 0 || offset + 4 > data.length() {
+    return Err(UnexpectedEof)
+  }
+  let count = read_u16_int(data, offset + 2)
+  match count {
+    Err(err) => Err(err)
+    Ok(count) => {
+      let list_offset = offset + 4
+      if list_offset < 0 || list_offset + count * 2 > data.length() {
+        return Err(UnexpectedEof)
+      }
+      for i in 0..<count {
+        let value = read_u16_int(data, list_offset + i * 2)
+        match value {
+          Err(err) => return Err(err)
+          Ok(value) => if value == glyph { return Ok(Some(i)) }
+        }
+      }
+      Ok(None)
+    }
+  }
+}
+
+fn coverage_format2_varc(
+  data : BytesView,
+  offset : Int,
+  glyph : Int,
+) -> Result[Int?, VarError] {
+  if offset < 0 || offset + 4 > data.length() {
+    return Err(UnexpectedEof)
+  }
+  let count = read_u16_int(data, offset + 2)
+  match count {
+    Err(err) => Err(err)
+    Ok(count) => {
+      let record_offset = offset + 4
+      let record_size = 6
+      if record_offset < 0 || record_offset + count * record_size > data.length() {
+        return Err(UnexpectedEof)
+      }
+      for i in 0..<count {
+        let base = record_offset + i * record_size
+        let start = read_u16_int(data, base)
+        let end = read_u16_int(data, base + 2)
+        let start_index = read_u16_int(data, base + 4)
+        match (start, end, start_index) {
+          (Err(err), _, _) => return Err(err)
+          (_, Err(err), _) => return Err(err)
+          (_, _, Err(err)) => return Err(err)
+          (Ok(start), Ok(end), Ok(start_index)) =>
+            if glyph >= start && glyph <= end {
+              return Ok(Some(start_index + (glyph - start)))
+            }
+        }
+      }
+      Ok(None)
+    }
+  }
+}
+
 ///|
 pub fn VarcTable::parse(data : BytesView) -> Result[VarcTable, VarError] {
   let version = read_u32(data, 0)
@@ -354,6 +441,20 @@ pub fn VarcTable::parse(data : BytesView) -> Result[VarcTable, VarError] {
 }
 
 ///|
+pub fn VarcTable::var_store(self : VarcTable) -> Result[MultiItemVariationStore?, VarError] {
+  if self.var_store_offset == 0 {
+    return Ok(None)
+  }
+  if self.var_store_offset < 0 || self.var_store_offset >= self.data.length() {
+    return Err(UnexpectedEof)
+  }
+  match MultiItemVariationStore::parse(self.data[self.var_store_offset:]) {
+    Err(err) => Err(err)
+    Ok(value) => Ok(Some(value))
+  }
+}
+
+///|
 pub fn VarcTable::axis_indices(self : VarcTable, index : Int) -> Result[Array[Int], VarError] {
   if self.axis_indices_offset == 0 {
     return Err(InvalidFormat)
@@ -367,6 +468,33 @@ pub fn VarcTable::axis_indices(self : VarcTable, index : Int) -> Result[Array[In
     Ok(value) => value
   }
   decode_tuple_values(bytes[:])
+}
+
+///|
+pub fn VarcTable::glyph_record(
+  self : VarcTable,
+  glyph : Int,
+) -> Result[Bytes?, VarError] {
+  if self.coverage_offset == 0 || self.glyph_records_offset == 0 {
+    return Ok(None)
+  }
+  let index = match coverage_index_varc(self.data[:], self.coverage_offset, glyph) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  match index {
+    None => Ok(None)
+    Some(index) => {
+      let records = match parse_cff2_index(self.data[:], self.glyph_records_offset) {
+        Err(err) => return Err(err)
+        Ok(value) => value
+      }
+      match records.item_bytes(index) {
+        Err(err) => Err(err)
+        Ok(value) => Ok(Some(value))
+      }
+    }
+  }
 }
 
 ///|

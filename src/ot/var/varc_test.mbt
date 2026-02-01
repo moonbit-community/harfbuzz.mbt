@@ -63,6 +63,28 @@ fn build_varc_bytes_with_condition() -> Bytes {
 }
 
 ///|
+fn build_varc_bytes_with_glyph_record() -> Bytes {
+  let bytes : Array[Byte] = []
+  push_u32_varc(bytes, 0x00010000) // version
+  push_u32_varc(bytes, 24) // coverage offset
+  push_u32_varc(bytes, 0) // var store offset
+  push_u32_varc(bytes, 0) // condition list offset
+  push_u32_varc(bytes, 0) // axis indices offset
+  push_u32_varc(bytes, 30) // glyph records offset
+  // Coverage format 1 for glyph 5
+  push_u16_varc(bytes, 1)
+  push_u16_varc(bytes, 1)
+  push_u16_varc(bytes, 5)
+  // CFF2 INDEX with one record: [0xAA]
+  push_u32_varc(bytes, 1)
+  bytes.push(1) // offSize
+  bytes.push(1) // offset[0]
+  bytes.push(2) // offset[1]
+  bytes.push((170).to_byte())
+  Bytes::from_array(bytes)
+}
+
+///|
 test "varc parse" {
   let varc = match VarcTable::parse(build_varc_bytes()[:]) {
     Err(err) => fail("parse failed: \{err}")
@@ -98,4 +120,22 @@ test "varc condition list" {
   let cond = conditions[0]
   inspect(cond.evaluate([0], None), content="true")
   inspect(cond.evaluate([20000], None), content="false")
+}
+
+///|
+test "varc glyph record" {
+  let varc = match VarcTable::parse(build_varc_bytes_with_glyph_record()[:]) {
+    Err(err) => fail("parse failed: \{err}")
+    Ok(value) => value
+  }
+  let record = match varc.glyph_record(5) {
+    Err(err) => fail("glyph record failed: \{err}")
+    Ok(value) => value
+  }
+  inspect(record.map(bytes => bytes.to_array().map(b => b.to_int())), content="Some([170])")
+  let missing = match varc.glyph_record(6) {
+    Err(err) => fail("glyph record missing failed: \{err}")
+    Ok(value) => value
+  }
+  inspect(missing, content="None")
 }
