@@ -81,6 +81,34 @@ test "cff dict parse vsindex op" {
 }
 
 ///|
+test "cff1 charset format0" {
+  let bytes : Bytes = [0x00, 0x00, 0x64, 0x00, 0x65]
+  let map = match parse_cff1_charset(bytes[:], 0, 3) {
+    Err(err) => fail("charset parse error: \{err}")
+    Ok(value) => value
+  }
+  inspect((map.get(100), map.get(101)), content="(Some(1), Some(2))")
+}
+
+///|
+test "cff1 charset format1" {
+  let bytes : Bytes = [0x01, 0x00, 0xC8, 0x02]
+  let map = match parse_cff1_charset(bytes[:], 0, 4) {
+    Err(err) => fail("charset parse error: \{err}")
+    Ok(value) => value
+  }
+  inspect((map.get(200), map.get(201), map.get(202)), content="(Some(1), Some(2), Some(3))")
+}
+
+///|
+test "cff1 sid mapping helpers" {
+  inspect(cff1_standard_sid(32), content="Some(1)")
+  inspect(cff1_standard_sid(0), content="None")
+  inspect(cff1_sid_to_gid(0, None, 5, 10), content="Some(5)")
+  inspect(cff1_sid_to_gid(1, None, 229, 400), content="Some(2)")
+}
+
+///|
 test "cff charstring bounds simple" {
   let bytes : Bytes = [189, 139, 21, 239, 189, 5, 14]
   let bounds = match cff_charstring_bounds(bytes[:], None, None) {
