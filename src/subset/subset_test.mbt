@@ -108,6 +108,22 @@ fn build_os2() -> Bytes {
 }
 
 ///|
+fn build_cpal() -> Bytes {
+  let bytes : Array[Byte] = []
+  push_u16(bytes, 0)
+  push_u16(bytes, 1)
+  push_u16(bytes, 1)
+  push_u16(bytes, 1)
+  push_u32(bytes, 14)
+  push_u16(bytes, 0)
+  bytes.push(b'\x10')
+  bytes.push(b'\x20')
+  bytes.push(b'\x30')
+  bytes.push(b'\x40')
+  Bytes::from_array(bytes)
+}
+
+///|
 fn build_vhea(number_of_vmetrics : Int) -> Bytes {
   let bytes : Array[Byte] = Array::make(36, b'\x00')
   bytes[34] = ((number_of_vmetrics >> 8) & 0xff).to_byte()
@@ -227,6 +243,7 @@ fn build_font_bytes_subset_fixture() -> Bytes {
     (@common.Tag::from_chars('m', 'a', 'x', 'p'), build_maxp(4)),
     (@common.Tag::from_chars('h', 'h', 'e', 'a'), build_hhea(4)),
     (@common.Tag::from_chars('O', 'S', '/', '2'), build_os2()),
+    (@common.Tag::from_chars('C', 'P', 'A', 'L'), build_cpal()),
     (@common.Tag::from_chars('h', 'm', 't', 'x'), build_hmtx([500, 600, 700, 800], [0, 10, 20, 30])),
     (@common.Tag::from_chars('v', 'h', 'e', 'a'), build_vhea(4)),
     (@common.Tag::from_chars('v', 'm', 't', 'x'), build_vmtx([900, 910, 920, 930], [5, 6, 7, 8])),
@@ -288,6 +305,24 @@ test "subset preserves os2" {
     Err(err) => fail("OS/2 parse failed: \{err}")
     Ok(_) => ()
   }
+}
+
+///|
+test "subset preserves cpal" {
+  let font = @font.Font::from_bytes(build_font_bytes_subset_fixture())
+  let bytes = match subset(font, SubsetInput::from_codepoints([0x41U])) {
+    Err(err) => fail("subset failed: \{err}")
+    Ok(value) => value
+  }
+  let subset_font = @font.Font::from_bytes(bytes)
+  let cpal_blob = match subset_font.get_face().reference_table_optional(
+    @common.Tag::from_chars('C', 'P', 'A', 'L'),
+  ) {
+    Err(err) => fail("CPAL table missing: \{err}")
+    Ok(None) => fail("CPAL table missing")
+    Ok(Some(blob)) => blob
+  }
+  inspect(cpal_blob.as_view().length(), content="18")
 }
 
 ///|

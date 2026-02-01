@@ -88,6 +88,27 @@ let tag_vdmx : @common.Tag = @common.Tag::from_chars('V', 'D', 'M', 'X')
 let tag_dsig : @common.Tag = @common.Tag::from_chars('D', 'S', 'I', 'G')
 
 ///|
+let tag_fvar : @common.Tag = @common.Tag::from_chars('f', 'v', 'a', 'r')
+
+///|
+let tag_avar : @common.Tag = @common.Tag::from_chars('a', 'v', 'a', 'r')
+
+///|
+let tag_stat : @common.Tag = @common.Tag::from_chars('S', 'T', 'A', 'T')
+
+///|
+let tag_mvar : @common.Tag = @common.Tag::from_chars('M', 'V', 'A', 'R')
+
+///|
+let tag_cvar : @common.Tag = @common.Tag::from_chars('c', 'v', 'a', 'r')
+
+///|
+let tag_cpal : @common.Tag = @common.Tag::from_chars('C', 'P', 'A', 'L')
+
+///|
+let tag_meta : @common.Tag = @common.Tag::from_chars('m', 'e', 't', 'a')
+
+///|
 fn read_u16(bytes : Array[Byte], offset : Int) -> Result[Int, SubsetError] {
   if offset < 0 || offset + 2 > bytes.length() {
     return Err(InvalidInput("unexpected eof"))
@@ -322,6 +343,13 @@ fn add_passthrough_tables(
     tag_gasp,
     tag_vdmx,
     tag_dsig,
+    tag_fvar,
+    tag_avar,
+    tag_stat,
+    tag_mvar,
+    tag_cvar,
+    tag_cpal,
+    tag_meta,
   ]
   for tag in tags {
     match add_optional_table(face, tag, tables) {
