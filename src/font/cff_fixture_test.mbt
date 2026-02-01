@@ -386,6 +386,19 @@ test "font glyph bounds cff2 vf fixture" {
     Ok(None) => fail("missing bounds")
     Ok(Some(value)) => value
   }
+  let variations_min : Array[@ot_var.AxisCoord] = [
+    @ot_var.AxisCoord::new(axis.tag, axis.min_value),
+  ]
+  match font.set_variations(variations_min) {
+    Err(err) => fail("set variations failed: \{err}")
+    Ok(_) => ()
+  }
+  let min_bounds = match font.glyph_bounds(gid) {
+    Err(err) => fail("bounds error: \{err}")
+    Ok(None) => fail("missing bounds")
+    Ok(Some(value)) => value
+  }
   inspect((default_bounds.x_min, default_bounds.y_min, default_bounds.x_max, default_bounds.y_max), content="(31, 0, 569, 656)")
   inspect((max_bounds.x_min, max_bounds.y_min, max_bounds.x_max, max_bounds.y_max), content="(0, 0, 600, 650)")
+  inspect((min_bounds.x_min, min_bounds.y_min, min_bounds.x_max, min_bounds.y_max), content="(50, 0, 550, 660)")
 }
