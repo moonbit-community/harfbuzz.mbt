@@ -44,6 +44,7 @@ pub struct Font {
   mut mvar : @ot_var.MvarTable?
   mut fvar : @ot_var.FvarTable?
   mut avar : @ot_var.AvarTable?
+  mut cvt : @sfnt.CvtTable?
   mut gvar : @ot_var.GvarTable?
   mut cvar : @ot_var.CvarTable?
   mut var_coords_design : Array[Double]?
@@ -144,6 +145,9 @@ let tag_gvar : @common.Tag = @common.Tag::from_chars('g', 'v', 'a', 'r')
 let tag_cvar : @common.Tag = @common.Tag::from_chars('c', 'v', 'a', 'r')
 
 ///|
+let tag_cvt : @common.Tag = @common.Tag::from_chars('c', 'v', 't', ' ')
+
+///|
 /// Create a font from a face.
 pub fn Font::new(face : @face.Face) -> Font {
   Font::{
@@ -181,6 +185,7 @@ pub fn Font::new(face : @face.Face) -> Font {
     mvar: None,
     fvar: None,
     avar: None,
+    cvt: None,
     gvar: None,
     cvar: None,
     var_coords_design: None,
@@ -943,6 +948,26 @@ pub fn Font::avar(self : Font) -> Result[@ot_var.AvarTable?, FontError] {
             Ok(avar) => {
               self.avar = Some(avar)
               Ok(Some(avar))
+            }
+          }
+      }
+  }
+}
+
+///|
+pub fn Font::cvt(self : Font) -> Result[@sfnt.CvtTable?, FontError] {
+  match self.cvt {
+    Some(cvt) => Ok(Some(cvt))
+    None =>
+      match self.face.reference_table_optional(tag_cvt) {
+        Err(err) => Err(FaceTable(err))
+        Ok(None) => Ok(None)
+        Ok(Some(blob)) =>
+          match @sfnt.CvtTable::parse(blob.as_view()) {
+            Err(err) => Err(Parse(err))
+            Ok(cvt) => {
+              self.cvt = Some(cvt)
+              Ok(Some(cvt))
             }
           }
       }
