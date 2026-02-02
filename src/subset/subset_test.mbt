@@ -665,19 +665,60 @@ fn build_gsub_single() -> Bytes {
     contextual_lookup.push(b)
   }
 
+  let chaining_rule : Array[Byte] = []
+  push_u16(chaining_rule, 1)
+  push_u16(chaining_rule, 2)
+  push_u16(chaining_rule, 2)
+  push_u16(chaining_rule, 2)
+  push_u16(chaining_rule, 1)
+  push_u16(chaining_rule, 2)
+  push_u16(chaining_rule, 1)
+  push_u16(chaining_rule, 1)
+  push_u16(chaining_rule, 0)
+  let chaining_set : Array[Byte] = []
+  push_u16(chaining_set, 1)
+  push_u16(chaining_set, 4)
+  for b in chaining_rule {
+    chaining_set.push(b)
+  }
+  let chaining_coverage = build_coverage_format1([2])
+  let chaining_subtable : Array[Byte] = []
+  push_u16(chaining_subtable, 1)
+  let chaining_header_len = 8
+  let chaining_coverage_offset = chaining_header_len + chaining_set.length()
+  push_u16(chaining_subtable, chaining_coverage_offset)
+  push_u16(chaining_subtable, 1)
+  push_u16(chaining_subtable, chaining_header_len)
+  for b in chaining_set {
+    chaining_subtable.push(b)
+  }
+  for b in chaining_coverage {
+    chaining_subtable.push(b)
+  }
+  let chaining_lookup : Array[Byte] = []
+  push_u16(chaining_lookup, 6)
+  push_u16(chaining_lookup, 0)
+  push_u16(chaining_lookup, 1)
+  push_u16(chaining_lookup, 8)
+  for b in chaining_subtable {
+    chaining_lookup.push(b)
+  }
+
   let lookup_list : Array[Byte] = []
-  let lookup_count = 5
+  let lookup_count = 6
   let lookup_header_len = 2 + lookup_count * 2
   push_u16(lookup_list, lookup_count)
   let second_offset = lookup_header_len + single_lookup.length()
   let third_offset = second_offset + multiple_lookup.length()
   let fourth_offset = third_offset + alternate_lookup.length()
   let fifth_offset = fourth_offset + ligature_lookup.length()
+  let sixth_offset = fifth_offset + contextual_lookup.length()
   push_u16(lookup_list, lookup_header_len)
   push_u16(lookup_list, second_offset)
   push_u16(lookup_list, third_offset)
   push_u16(lookup_list, fourth_offset)
   push_u16(lookup_list, fifth_offset)
+  push_u16(lookup_list, sixth_offset)
   for b in single_lookup {
     lookup_list.push(b)
   }
@@ -693,15 +734,19 @@ fn build_gsub_single() -> Bytes {
   for b in contextual_lookup {
     lookup_list.push(b)
   }
+  for b in chaining_lookup {
+    lookup_list.push(b)
+  }
 
   let feature : Array[Byte] = []
   push_u16(feature, 0)
-  push_u16(feature, 5)
+  push_u16(feature, 6)
   push_u16(feature, 0)
   push_u16(feature, 1)
   push_u16(feature, 2)
   push_u16(feature, 3)
   push_u16(feature, 4)
+  push_u16(feature, 5)
   let feature_list : Array[Byte] = []
   push_u16(feature_list, 1)
   feature_list.push(b'l')
@@ -1185,9 +1230,9 @@ test "subset rebuilds gsub single" {
     None => fail("GSUB coverage glyph missing")
     Some(value) => value
   }
-  inspect((lookup_count, lookup_type, sub_count, sub_format), content="(5, 1, 1, 2)")
+  inspect((lookup_count, lookup_type, sub_count, sub_format), content="(6, 1, 1, 2)")
   inspect((glyph_count, cov_format, cov_count, cov_glyph, substitute), content="(1, 1, 1, 1, 2)")
-  inspect(lookup1_offset, content="34")
+  inspect(lookup1_offset, content="36")
 }
 
 ///|
@@ -1355,7 +1400,7 @@ test "subset rebuilds gsub alternate" {
     None => fail("GSUB coverage glyph missing")
     Some(value) => value
   }
-  inspect(lookup_count, content="5")
+  inspect(lookup_count, content="6")
   inspect((lookup_type, sub_count, sub_format), content="(3, 1, 1)")
   inspect((alt_count, alt_glyph_count, alt_glyph), content="(1, 1, 2)")
   inspect((cov_format, cov_count, cov_glyph), content="(1, 1, 1)")
@@ -1555,6 +1600,129 @@ test "subset rebuilds gsub contextual" {
   inspect((lookup_type, sub_count, sub_format), content="(5, 1, 1)")
   inspect((set_count, rule_count, glyph_count, subst_count), content="(1, 1, 2, 1)")
   inspect((input_glyph, seq_index, lookup_index), content="(2, 1, 0)")
+  inspect((cov_format, cov_count, cov_glyph), content="(1, 1, 1)")
+}
+
+///|
+test "subset rebuilds gsub chaining" {
+  let font = @font.Font::from_bytes(build_font_bytes_subset_fixture())
+  let bytes = match subset(font, SubsetInput::from_codepoints([0x42U])) {
+    Err(err) => fail("subset failed: \{err}")
+    Ok(value) => value
+  }
+  let subset_font = @font.Font::from_bytes(bytes)
+  let gsub_blob = match subset_font.get_face().reference_table_optional(
+    @common.Tag::from_chars('G', 'S', 'U', 'B'),
+  ) {
+    Err(err) => fail("GSUB lookup failed: \{err}")
+    Ok(None) => fail("GSUB table missing from subset")
+    Ok(Some(blob)) => blob
+  }
+  let data = gsub_blob.as_view()
+  let lookup_offset = match read_u16(data, 8) {
+    None => fail("GSUB lookup offset missing")
+    Some(value) => value
+  }
+  let lookup5_offset = match read_u16(data, lookup_offset + 12) {
+    None => fail("GSUB lookup offset missing")
+    Some(value) => value
+  }
+  let lookup5_base = lookup_offset + lookup5_offset
+  let lookup_type = match read_u16(data, lookup5_base) {
+    None => fail("GSUB lookup type missing")
+    Some(value) => value
+  }
+  let sub_count = match read_u16(data, lookup5_base + 4) {
+    None => fail("GSUB subtable count missing")
+    Some(value) => value
+  }
+  let sub_offset = match read_u16(data, lookup5_base + 6) {
+    None => fail("GSUB subtable offset missing")
+    Some(value) => value
+  }
+  let sub_base = lookup5_base + sub_offset
+  let sub_format = match read_u16(data, sub_base) {
+    None => fail("GSUB subtable format missing")
+    Some(value) => value
+  }
+  let coverage_offset = match read_u16(data, sub_base + 2) {
+    None => fail("GSUB coverage offset missing")
+    Some(value) => value
+  }
+  let set_count = match read_u16(data, sub_base + 4) {
+    None => fail("GSUB chaining set count missing")
+    Some(value) => value
+  }
+  let set_offset = match read_u16(data, sub_base + 6) {
+    None => fail("GSUB chaining set offset missing")
+    Some(value) => value
+  }
+  let set_base = sub_base + set_offset
+  let rule_count = match read_u16(data, set_base) {
+    None => fail("GSUB chaining rule count missing")
+    Some(value) => value
+  }
+  let rule_offset = match read_u16(data, set_base + 2) {
+    None => fail("GSUB chaining rule offset missing")
+    Some(value) => value
+  }
+  let rule_base = set_base + rule_offset
+  let backtrack_count = match read_u16(data, rule_base) {
+    None => fail("GSUB chaining backtrack count missing")
+    Some(value) => value
+  }
+  let backtrack_glyph = match read_u16(data, rule_base + 2) {
+    None => fail("GSUB chaining backtrack glyph missing")
+    Some(value) => value
+  }
+  let input_count = match read_u16(data, rule_base + 4) {
+    None => fail("GSUB chaining input count missing")
+    Some(value) => value
+  }
+  let input_glyph = match read_u16(data, rule_base + 6) {
+    None => fail("GSUB chaining input glyph missing")
+    Some(value) => value
+  }
+  let lookahead_count = match read_u16(data, rule_base + 8) {
+    None => fail("GSUB chaining lookahead count missing")
+    Some(value) => value
+  }
+  let lookahead_glyph = match read_u16(data, rule_base + 10) {
+    None => fail("GSUB chaining lookahead glyph missing")
+    Some(value) => value
+  }
+  let subst_count = match read_u16(data, rule_base + 12) {
+    None => fail("GSUB chaining subst count missing")
+    Some(value) => value
+  }
+  let seq_index = match read_u16(data, rule_base + 14) {
+    None => fail("GSUB chaining sequence index missing")
+    Some(value) => value
+  }
+  let lookup_index = match read_u16(data, rule_base + 16) {
+    None => fail("GSUB chaining lookup index missing")
+    Some(value) => value
+  }
+  let cov_base = sub_base + coverage_offset
+  let cov_format = match read_u16(data, cov_base) {
+    None => fail("GSUB coverage format missing")
+    Some(value) => value
+  }
+  let cov_count = match read_u16(data, cov_base + 2) {
+    None => fail("GSUB coverage count missing")
+    Some(value) => value
+  }
+  let cov_glyph = match read_u16(data, cov_base + 4) {
+    None => fail("GSUB coverage glyph missing")
+    Some(value) => value
+  }
+  inspect((lookup_type, sub_count, sub_format), content="(6, 1, 1)")
+  inspect(
+    (set_count, rule_count, backtrack_count, input_count, lookahead_count, subst_count),
+    content="(1, 1, 1, 2, 1, 1)",
+  )
+  inspect((backtrack_glyph, input_glyph, lookahead_glyph), content="(1, 1, 1)")
+  inspect((seq_index, lookup_index), content="(1, 0)")
   inspect((cov_format, cov_count, cov_glyph), content="(1, 1, 1)")
 }
 
@@ -1945,7 +2113,7 @@ test "subset preserves layout tables for identity subset" {
     Some(value) => value
   }
   inspect(version, content="65536")
-  inspect(gsub_view.length(), content="208")
+  inspect(gsub_view.length(), content="256")
 }
 
 ///|
