@@ -654,8 +654,78 @@ fn add_optional_os2(
   }
 }
 
+fn build_post_subset(
+  blob : @blob.Blob,
+  post : @sfnt.PostTable,
+  plan : SubsetPlan,
+) -> Bytes? {
+  let indices = match post.glyph_name_indices {
+    None => return None
+    Some(value) => value
+  }
+  let names = match post.custom_names {
+    None => return None
+    Some(value) => value
+  }
+  if plan.glyphs.is_empty() {
+    return None
+  }
+  let header = blob.as_view().to_bytes().to_array()
+  if header.length() < 32 {
+    return None
+  }
+  let new_custom : Array[Bytes] = []
+  let old_to_new : Array[Int] = Array::make(names.length(), -1)
+  let new_indices : Array[Int] = []
+  for old_gid in plan.glyphs {
+    let gid = old_gid.reinterpret_as_int()
+    if gid < 0 || gid >= indices.length() {
+      return None
+    }
+    let index = indices[gid]
+    if index < 0 {
+      return None
+    }
+    if index < 258 {
+      new_indices.push(index)
+    } else {
+      let custom_index = index - 258
+      if custom_index < 0 || custom_index >= names.length() {
+        return None
+      }
+      let mut mapped = old_to_new[custom_index]
+      if mapped < 0 {
+        mapped = new_custom.length()
+        old_to_new[custom_index] = mapped
+        new_custom.push(names[custom_index])
+      }
+      new_indices.push(258 + mapped)
+    }
+  }
+  let out : Array[Byte] = []
+  for i in 0..<32 {
+    out.push(header[i])
+  }
+  push_u16(out, plan.glyphs.length())
+  for index in new_indices {
+    push_u16(out, index)
+  }
+  for name in new_custom {
+    let length = name.length()
+    if length > 255 {
+      return None
+    }
+    out.push(length.to_byte())
+    for b in name {
+      out.push(b)
+    }
+  }
+  Some(Bytes::from_array(out))
+}
+
 fn add_optional_post(
   face : @face.Face,
+  plan : SubsetPlan,
   tables : Array[(@common.Tag, Bytes)],
   identity : Bool,
 ) -> Result[Unit, SubsetError] {
@@ -675,6 +745,13 @@ fn add_optional_post(
         Ok(post) => {
           if post.version == 0x00030000 {
             tables.push((tag_post, blob.as_view().to_bytes()))
+            return Ok(())
+          }
+          if post.version == 0x00020000 {
+            match build_post_subset(blob, post, plan) {
+              None => ()
+              Some(bytes) => tables.push((tag_post, bytes))
+            }
           }
           Ok(())
         }
@@ -1427,7 +1504,7 @@ pub fn subset_with_plan(
     Err(err) => return Err(err)
     Ok(_) => ()
   }
-  match add_optional_post(face, tables, identity) {
+  match add_optional_post(face, plan, tables, identity) {
     Err(err) => return Err(err)
     Ok(_) => ()
   }
@@ -1541,7 +1618,7 @@ fn subset_cff1_with_plan(
     Err(err) => return Err(err)
     Ok(_) => ()
   }
-  match add_optional_post(face, tables, identity) {
+  match add_optional_post(face, plan, tables, identity) {
     Err(err) => return Err(err)
     Ok(_) => ()
   }
@@ -1655,7 +1732,7 @@ fn subset_cff2_with_plan(
     Err(err) => return Err(err)
     Ok(_) => ()
   }
-  match add_optional_post(face, tables, identity) {
+  match add_optional_post(face, plan, tables, identity) {
     Err(err) => return Err(err)
     Ok(_) => ()
   }

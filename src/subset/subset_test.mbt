@@ -170,8 +170,11 @@ fn build_post_table_v2() -> Bytes {
   push_u32(bytes, 0)
   push_u32(bytes, 0)
   push_u32(bytes, 0)
+  push_u16(bytes, 4)
+  push_u16(bytes, 0)
   push_u16(bytes, 1)
   push_u16(bytes, 258)
+  push_u16(bytes, 2)
   bytes.push(3)
   bytes.push(b'f')
   bytes.push(b'o')
@@ -404,20 +407,34 @@ test "subset preserves cpal" {
 }
 
 ///|
-test "subset drops post table when remapped" {
+test "subset rebuilds post table when remapped" {
   let font = @font.Font::from_bytes(build_font_bytes_subset_fixture())
-  let bytes = match subset(font, SubsetInput::from_codepoints([0x41U])) {
+  let bytes = match subset(font, SubsetInput::from_codepoints([0x42U])) {
     Err(err) => fail("subset failed: \{err}")
     Ok(value) => value
   }
   let subset_font = @font.Font::from_bytes(bytes)
-  match subset_font.get_face().reference_table_optional(
+  let post_blob = match subset_font.get_face().reference_table_optional(
     @common.Tag::from_chars('p', 'o', 's', 't'),
   ) {
     Err(err) => fail("post lookup failed: \{err}")
-    Ok(None) => ()
-    Ok(Some(_)) => fail("post should be dropped for remapped subsets")
+    Ok(None) => fail("post table missing from remapped subset")
+    Ok(Some(blob)) => blob
   }
+  let post = match @sfnt.PostTable::parse(post_blob.as_view()) {
+    Err(err) => fail("post parse failed: \{err}")
+    Ok(value) => value
+  }
+  let indices = match post.glyph_name_indices {
+    None => fail("missing name indices")
+    Some(value) => value
+  }
+  let names = match post.custom_names {
+    None => fail("missing custom names")
+    Some(value) => value
+  }
+  inspect(indices, content="[0, 258, 2]")
+  inspect(names, content="[b\"foo\"]")
 }
 
 ///|
