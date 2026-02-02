@@ -167,17 +167,62 @@ fn push_u32(bytes : Array[Byte], value : Int) -> Unit {
   bytes.push((value & 0xff).to_byte())
 }
 
+fn sfnt_search_params(num_tables : Int) -> (Int, Int, Int) {
+  let mut max_power = 1
+  let mut entry_selector = 0
+  while max_power * 2 <= num_tables {
+    max_power = max_power * 2
+    entry_selector = entry_selector + 1
+  }
+  let search_range = if num_tables > 0 { max_power * 16 } else { 0 }
+  let range_shift = num_tables * 16 - search_range
+  (search_range, entry_selector, range_shift)
+}
+
+fn compare_tags(a : @common.Tag, b : @common.Tag) -> Int {
+  let (a1, a2, a3, a4) = a.bytes()
+  let (b1, b2, b3, b4) = b.bytes()
+  let ai1 = a1.to_int()
+  let bi1 = b1.to_int()
+  if ai1 != bi1 {
+    return ai1 - bi1
+  }
+  let ai2 = a2.to_int()
+  let bi2 = b2.to_int()
+  if ai2 != bi2 {
+    return ai2 - bi2
+  }
+  let ai3 = a3.to_int()
+  let bi3 = b3.to_int()
+  if ai3 != bi3 {
+    return ai3 - bi3
+  }
+  let ai4 = a4.to_int()
+  let bi4 = b4.to_int()
+  ai4 - bi4
+}
+
 ///|
 fn build_sfnt(tables : Array[(@common.Tag, Bytes)]) -> Bytes {
+  let sorted : Array[(@common.Tag, Bytes)] = []
+  for entry in tables {
+    sorted.push(entry)
+  }
+  sorted.sort_by((a, b) => {
+    let (tag_a, _) = a
+    let (tag_b, _) = b
+    compare_tags(tag_a, tag_b)
+  })
   let bytes : Array[Byte] = []
   push_u32(bytes, 0x00010000)
-  push_u16(bytes, tables.length())
-  push_u16(bytes, 0)
-  push_u16(bytes, 0)
-  push_u16(bytes, 0)
-  let mut offset = 12 + tables.length() * 16
+  push_u16(bytes, sorted.length())
+  let (search_range, entry_selector, range_shift) = sfnt_search_params(sorted.length())
+  push_u16(bytes, search_range)
+  push_u16(bytes, entry_selector)
+  push_u16(bytes, range_shift)
+  let mut offset = 12 + sorted.length() * 16
   let records : Array[(@common.Tag, Int, Int)] = []
-  for entry in tables {
+  for entry in sorted {
     let (tag, table) = entry
     records.push((tag, offset, table.length()))
     offset = offset + table.length()
@@ -193,7 +238,7 @@ fn build_sfnt(tables : Array[(@common.Tag, Bytes)]) -> Bytes {
     push_u32(bytes, table_offset)
     push_u32(bytes, length)
   }
-  for entry in tables {
+  for entry in sorted {
     let (_, table) = entry
     for b in table {
       bytes.push(b)
