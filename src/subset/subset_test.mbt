@@ -183,6 +183,20 @@ fn build_post_table_v2() -> Bytes {
 }
 
 ///|
+fn build_vorg_table() -> Bytes {
+  let bytes : Array[Byte] = []
+  push_u16(bytes, 1)
+  push_u16(bytes, 0)
+  push_i16(bytes, 800)
+  push_u16(bytes, 2)
+  push_u16(bytes, 2)
+  push_i16(bytes, 700)
+  push_u16(bytes, 3)
+  push_i16(bytes, 750)
+  Bytes::from_array(bytes)
+}
+
+///|
 fn build_gsub_stub() -> Bytes {
   let bytes : Array[Byte] = []
   push_u32(bytes, 0x00010000)
@@ -314,6 +328,7 @@ fn build_font_bytes_subset_fixture() -> Bytes {
     (@common.Tag::from_chars('O', 'S', '/', '2'), build_os2()),
     (@common.Tag::from_chars('C', 'P', 'A', 'L'), build_cpal()),
     (@common.Tag::from_chars('p', 'o', 's', 't'), build_post_table_v2()),
+    (@common.Tag::from_chars('V', 'O', 'R', 'G'), build_vorg_table()),
     (@common.Tag::from_chars('G', 'S', 'U', 'B'), build_gsub_stub()),
     (@common.Tag::from_chars('h', 'm', 't', 'x'), build_hmtx([500, 600, 700, 800], [0, 10, 20, 30])),
     (@common.Tag::from_chars('v', 'h', 'e', 'a'), build_vhea(4)),
@@ -457,6 +472,30 @@ test "subset preserves post table for identity subset" {
     Ok(value) => value
   }
   inspect(post.version, content="131072")
+}
+
+///|
+test "subset rebuilds vorg" {
+  let font = @font.Font::from_bytes(build_font_bytes_subset_fixture())
+  let bytes = match subset(font, SubsetInput::from_codepoints([0x42U])) {
+    Err(err) => fail("subset failed: \{err}")
+    Ok(value) => value
+  }
+  let subset_font = @font.Font::from_bytes(bytes)
+  let vorg_blob = match subset_font.get_face().reference_table_optional(
+    @common.Tag::from_chars('V', 'O', 'R', 'G'),
+  ) {
+    Err(err) => fail("vorg lookup failed: \{err}")
+    Ok(None) => fail("VORG table missing from subset")
+    Ok(Some(blob)) => blob
+  }
+  let vorg = match @sfnt.VorgTable::parse(vorg_blob.as_view()) {
+    Err(err) => fail("vorg parse failed: \{err}")
+    Ok(value) => value
+  }
+  inspect(vorg.origin_y_override(0), content="None")
+  inspect(vorg.origin_y_override(1), content="Some(700)")
+  inspect(vorg.origin_y_override(2), content="Some(750)")
 }
 
 ///|

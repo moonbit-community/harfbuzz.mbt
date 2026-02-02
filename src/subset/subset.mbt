@@ -805,7 +805,6 @@ fn add_identity_passthrough_tables(
     tag_gvar,
     tag_hvar,
     tag_vvar,
-    tag_vorg,
     tag_varc,
   ]
   for tag in tags {
@@ -1120,6 +1119,52 @@ fn build_vmetrics_subset(
   }
 }
 
+fn build_vorg_subset(
+  face : @face.Face,
+  plan : SubsetPlan,
+) -> Result[Bytes?, SubsetError] {
+  let blob = match face.reference_table_optional(tag_vorg) {
+    Err(err) => return Err(Face(err))
+    Ok(value) => value
+  }
+  match blob {
+    None => Ok(None)
+    Some(blob) => {
+      let vorg = match @sfnt.VorgTable::parse(blob.as_view()) {
+        Err(err) => return Err(Sfnt(err))
+        Ok(value) => value
+      }
+      let entries : Array[(Int, Int)] = []
+      for metric in vorg.metrics {
+        let gid = metric.glyph
+        if gid < 0 || gid >= plan.old_to_new.length() {
+          return Err(InvalidInput("glyph id out of range"))
+        }
+        let new_gid = plan.old_to_new[gid]
+        if new_gid >= 0 {
+          entries.push((new_gid, metric.origin_y))
+        }
+      }
+      entries.sort_by((a, b) => {
+        let (ga, _) = a
+        let (gb, _) = b
+        ga - gb
+      })
+      let out : Array[Byte] = []
+      push_u16(out, vorg.major_version)
+      push_u16(out, vorg.minor_version)
+      push_i16(out, vorg.default_origin_y)
+      push_u16(out, entries.length())
+      for entry in entries {
+        let (gid, origin) = entry
+        push_u16(out, gid)
+        push_i16(out, origin)
+      }
+      Ok(Some(Bytes::from_array(out)))
+    }
+  }
+}
+
 fn build_plan_cff1(
   font : @font.Font,
   input : SubsetInput,
@@ -1405,6 +1450,10 @@ pub fn subset_with_plan(
     Err(err) => return Err(err)
     Ok(value) => value
   }
+  let vorg_bytes = match build_vorg_subset(face, plan) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
   let loca = match @sfnt.LocaTable::parse(
     loca_blob.as_view(),
     maxp.num_glyphs,
@@ -1496,6 +1545,10 @@ pub fn subset_with_plan(
       tables.push((tag_vmtx, vmtx_bytes))
     }
   }
+  match vorg_bytes {
+    None => ()
+    Some(vorg) => tables.push((tag_vorg, vorg))
+  }
   match cmap_bytes {
     None => ()
     Some(cmap) => tables.push((tag_cmap, cmap))
@@ -1561,6 +1614,10 @@ fn subset_cff1_with_plan(
     Err(err) => return Err(err)
     Ok(value) => value
   }
+  let vorg_bytes = match build_vorg_subset(face, plan) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
 
   let new_hmtx : Array[Byte] = []
   for old_gid in plan.glyphs {
@@ -1609,6 +1666,10 @@ fn subset_cff1_with_plan(
       tables.push((tag_vhea, vhea_bytes))
       tables.push((tag_vmtx, vmtx_bytes))
     }
+  }
+  match vorg_bytes {
+    None => ()
+    Some(vorg) => tables.push((tag_vorg, vorg))
   }
   match cmap_bytes {
     None => ()
@@ -1675,6 +1736,10 @@ fn subset_cff2_with_plan(
     Err(err) => return Err(err)
     Ok(value) => value
   }
+  let vorg_bytes = match build_vorg_subset(face, plan) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
 
   let new_hmtx : Array[Byte] = []
   for old_gid in plan.glyphs {
@@ -1723,6 +1788,10 @@ fn subset_cff2_with_plan(
       tables.push((tag_vhea, vhea_bytes))
       tables.push((tag_vmtx, vmtx_bytes))
     }
+  }
+  match vorg_bytes {
+    None => ()
+    Some(vorg) => tables.push((tag_vorg, vorg))
   }
   match cmap_bytes {
     None => ()

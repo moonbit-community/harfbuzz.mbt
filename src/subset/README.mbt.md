@@ -24,9 +24,10 @@ unchanged if present.
 The `post` table is copied through unchanged for identity subsets; for remapped
 subsets format 2.0 is rebuilt and format 3.0 is preserved.
 Layout/color/variation tables that reference glyph IDs (GSUB/GPOS/GDEF,
-BASE/JSTF, AAT tables, COLR/CBDT/CBLC/SVG/sbix, gvar/HVAR/VVAR/VORG/VARC)
+BASE/JSTF, AAT tables, COLR/CBDT/CBLC/SVG/sbix, gvar/HVAR/VVAR/VARC)
 are copied through only when the subset preserves all glyphs (identity);
 otherwise they are dropped.
+`VORG` is rebuilt from the glyph subset when present.
 
 For CFF1 fonts, the subset path rebuilds the `CFF ` table by slicing
 CharStrings/charset to the selected glyph set (CFF subrs are copied as-is).
