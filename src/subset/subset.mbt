@@ -301,6 +301,18 @@ fn sfnt_search_params(num_tables : Int) -> (Int, Int, Int) {
   (search_range, entry_selector, range_shift)
 }
 
+fn kern_search_params(pair_count : Int) -> (Int, Int, Int) {
+  let mut max_power = 1
+  let mut entry_selector = 0
+  while max_power * 2 <= pair_count {
+    max_power = max_power * 2
+    entry_selector = entry_selector + 1
+  }
+  let search_range = if pair_count > 0 { max_power * 6 } else { 0 }
+  let range_shift = pair_count * 6 - search_range
+  (search_range, entry_selector, range_shift)
+}
+
 fn compare_tags(a : @common.Tag, b : @common.Tag) -> Int {
   let (a1, a2, a3, a4) = a.bytes()
   let (b1, b2, b3, b4) = b.bytes()
@@ -760,6 +772,28 @@ fn add_optional_post(
   }
 }
 
+fn add_optional_kern(
+  face : @face.Face,
+  plan : SubsetPlan,
+  tables : Array[(@common.Tag, Bytes)],
+  identity : Bool,
+) -> Result[Unit, SubsetError] {
+  if identity {
+    return Ok(())
+  }
+  let bytes = match build_kern_subset(face, plan) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  match bytes {
+    None => Ok(())
+    Some(bytes) => {
+      tables.push((tag_kern, bytes))
+      Ok(())
+    }
+  }
+}
+
 fn is_identity_subset(plan : SubsetPlan, total_glyphs : Int) -> Bool {
   if total_glyphs <= 0 || plan.glyphs.length() != total_glyphs {
     return false
@@ -1165,6 +1199,102 @@ fn build_vorg_subset(
   }
 }
 
+fn build_kern_subset(
+  face : @face.Face,
+  plan : SubsetPlan,
+) -> Result[Bytes?, SubsetError] {
+  let blob = match face.reference_table_optional(tag_kern) {
+    Err(err) => return Err(Face(err))
+    Ok(value) => value
+  }
+  match blob {
+    None => Ok(None)
+    Some(blob) => {
+      let kern = match @sfnt.KernTable::parse(blob.as_view()) {
+        Err(err) => return Err(Sfnt(err))
+        Ok(value) => value
+      }
+      let subtables : Array[Bytes] = []
+      for subtable in kern.subtables {
+        if subtable.format != 0 {
+          continue
+        }
+        let pairs : Array[(Int, Int, Int)] = []
+        for pair in subtable.pairs {
+          let left = pair.left.reinterpret_as_int()
+          let right = pair.right.reinterpret_as_int()
+          if left < 0 || left >= plan.old_to_new.length() {
+            return Err(InvalidInput("glyph id out of range"))
+          }
+          if right < 0 || right >= plan.old_to_new.length() {
+            return Err(InvalidInput("glyph id out of range"))
+          }
+          let new_left = plan.old_to_new[left]
+          let new_right = plan.old_to_new[right]
+          if new_left >= 0 && new_right >= 0 {
+            pairs.push((new_left, new_right, pair.value))
+          }
+        }
+        if pairs.is_empty() {
+          continue
+        }
+        pairs.sort_by((a, b) => {
+          let (left_a, right_a, _) = a
+          let (left_b, right_b, _) = b
+          if left_a != left_b {
+            left_a - left_b
+          } else {
+            right_a - right_b
+          }
+        })
+        let pair_count = pairs.length()
+        let (search_range, entry_selector, range_shift) = kern_search_params(pair_count)
+        let mut flags = 0
+        if subtable.horizontal {
+          flags = flags | 0x01
+        }
+        if subtable.minimum {
+          flags = flags | 0x02
+        }
+        if subtable.cross_stream {
+          flags = flags | 0x04
+        }
+        if subtable.override_flag {
+          flags = flags | 0x08
+        }
+        let length = 14 + pair_count * 6
+        let bytes : Array[Byte] = []
+        push_u16(bytes, 0)
+        push_u16(bytes, length)
+        push_u16(bytes, flags)
+        push_u16(bytes, pair_count)
+        push_u16(bytes, search_range)
+        push_u16(bytes, entry_selector)
+        push_u16(bytes, range_shift)
+        for pair in pairs {
+          let (left, right, value) = pair
+          push_u16(bytes, left)
+          push_u16(bytes, right)
+          push_i16(bytes, value)
+        }
+        subtables.push(Bytes::from_array(bytes))
+      }
+      if subtables.is_empty() {
+        return Ok(None)
+      }
+      let out : Array[Byte] = []
+      push_u16(out, 0)
+      push_u16(out, subtables.length())
+      for subtable in subtables {
+        for b in subtable {
+          out.push(b)
+        }
+      }
+      Ok(Some(Bytes::from_array(out)))
+    }
+  }
+}
+
 fn build_plan_cff1(
   font : @font.Font,
   input : SubsetInput,
@@ -1561,6 +1691,10 @@ pub fn subset_with_plan(
     Err(err) => return Err(err)
     Ok(_) => ()
   }
+  match add_optional_kern(face, plan, tables, identity) {
+    Err(err) => return Err(err)
+    Ok(_) => ()
+  }
   match add_optional_os2(face, plan, tables) {
     Err(err) => return Err(err)
     Ok(_) => ()
@@ -1683,6 +1817,10 @@ fn subset_cff1_with_plan(
     Err(err) => return Err(err)
     Ok(_) => ()
   }
+  match add_optional_kern(face, plan, tables, identity) {
+    Err(err) => return Err(err)
+    Ok(_) => ()
+  }
   match add_optional_os2(face, plan, tables) {
     Err(err) => return Err(err)
     Ok(_) => ()
@@ -1802,6 +1940,10 @@ fn subset_cff2_with_plan(
     Ok(_) => ()
   }
   match add_optional_post(face, plan, tables, identity) {
+    Err(err) => return Err(err)
+    Ok(_) => ()
+  }
+  match add_optional_kern(face, plan, tables, identity) {
     Err(err) => return Err(err)
     Ok(_) => ()
   }

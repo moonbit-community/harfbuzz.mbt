@@ -197,6 +197,32 @@ fn build_vorg_table() -> Bytes {
 }
 
 ///|
+fn build_kern_table() -> Bytes {
+  let bytes : Array[Byte] = []
+  let pair_count = 3
+  let length = 14 + pair_count * 6
+  push_u16(bytes, 0)
+  push_u16(bytes, 1)
+  push_u16(bytes, 0)
+  push_u16(bytes, length)
+  push_u16(bytes, 0x0001)
+  push_u16(bytes, pair_count)
+  push_u16(bytes, 12)
+  push_u16(bytes, 1)
+  push_u16(bytes, 6)
+  push_u16(bytes, 0)
+  push_u16(bytes, 1)
+  push_i16(bytes, -20)
+  push_u16(bytes, 1)
+  push_u16(bytes, 2)
+  push_i16(bytes, -30)
+  push_u16(bytes, 2)
+  push_u16(bytes, 3)
+  push_i16(bytes, -50)
+  Bytes::from_array(bytes)
+}
+
+///|
 fn build_gsub_stub() -> Bytes {
   let bytes : Array[Byte] = []
   push_u32(bytes, 0x00010000)
@@ -329,6 +355,7 @@ fn build_font_bytes_subset_fixture() -> Bytes {
     (@common.Tag::from_chars('C', 'P', 'A', 'L'), build_cpal()),
     (@common.Tag::from_chars('p', 'o', 's', 't'), build_post_table_v2()),
     (@common.Tag::from_chars('V', 'O', 'R', 'G'), build_vorg_table()),
+    (@common.Tag::from_chars('k', 'e', 'r', 'n'), build_kern_table()),
     (@common.Tag::from_chars('G', 'S', 'U', 'B'), build_gsub_stub()),
     (@common.Tag::from_chars('h', 'm', 't', 'x'), build_hmtx([500, 600, 700, 800], [0, 10, 20, 30])),
     (@common.Tag::from_chars('v', 'h', 'e', 'a'), build_vhea(4)),
@@ -496,6 +523,40 @@ test "subset rebuilds vorg" {
   inspect(vorg.origin_y_override(0), content="None")
   inspect(vorg.origin_y_override(1), content="Some(700)")
   inspect(vorg.origin_y_override(2), content="Some(750)")
+}
+
+///|
+test "subset rebuilds kern" {
+  let font = @font.Font::from_bytes(build_font_bytes_subset_fixture())
+  let bytes = match subset(font, SubsetInput::from_codepoints([0x42U])) {
+    Err(err) => fail("subset failed: \{err}")
+    Ok(value) => value
+  }
+  let subset_font = @font.Font::from_bytes(bytes)
+  let kern_blob = match subset_font.get_face().reference_table_optional(
+    @common.Tag::from_chars('k', 'e', 'r', 'n'),
+  ) {
+    Err(err) => fail("kern lookup failed: \{err}")
+    Ok(None) => fail("kern table missing from subset")
+    Ok(Some(blob)) => blob
+  }
+  let kern = match @sfnt.KernTable::parse(kern_blob.as_view()) {
+    Err(err) => fail("kern parse failed: \{err}")
+    Ok(value) => value
+  }
+  inspect(kern.subtables.length(), content="1")
+  let subtable = kern.subtables[0]
+  inspect(subtable.format, content="0")
+  inspect(subtable.pairs.length(), content="1")
+  let pair = subtable.pairs[0]
+  inspect(
+    (
+      pair.left.reinterpret_as_int(),
+      pair.right.reinterpret_as_int(),
+      pair.value,
+    ),
+    content="(1, 2, -50)",
+  )
 }
 
 ///|
