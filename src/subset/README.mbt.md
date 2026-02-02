@@ -34,8 +34,9 @@ COLR v0 tables are rebuilt for remapped subsets.
 GDEF is rebuilt with glyph/mark class definitions, attach lists, ligature caret
 lists, and mark glyph sets.
 GSUB lookup types 1/2/3/4/5/6/7/8 (single/multiple/alternate/ligature/contextual/
-chaining/extension/reverse chaining substitution) are rebuilt for remapped
-subsets; other GSUB/GPOS lookups are dropped.
+chaining/extension/reverse chaining substitution) and GPOS lookup type 1
+(single adjustment) are rebuilt for remapped subsets; other GSUB/GPOS lookups
+are dropped.
 
 For CFF1 fonts, the subset path rebuilds the `CFF ` table by slicing
 CharStrings/charset to the selected glyph set (CFF subrs are copied as-is).
@@ -49,7 +50,8 @@ The ItemVariationStore bytes are copied through unchanged if present.
 - CFF2 private subrs and var store bytes are copied as-is; unused subroutines are not removed.
 - Layout/color/variation tables that reference glyph IDs are not subset yet
   (except `VORG`, COLR v0, GDEF class defs/attach/lig caret/mark sets, GSUB
-  lookup types 1/2/3/4/5/6/7/8, and `kern` format 0/2/3); they are only preserved when the
+  lookup types 1/2/3/4/5/6/7/8, GPOS lookup type 1, and `kern` format 0/2/3);
+  they are only preserved when the subset keeps all glyphs.
   subset keeps all glyphs.
 - `loca` is always written in long format.
 - `cmap` is rebuilt only from the supplied codepoints.

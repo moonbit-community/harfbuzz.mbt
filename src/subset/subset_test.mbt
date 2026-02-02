@@ -861,6 +861,86 @@ fn build_gsub_single() -> Bytes {
 }
 
 ///|
+fn build_gpos_single() -> Bytes {
+  let single_subtable : Array[Byte] = []
+  push_u16(single_subtable, 1)
+  let single_coverage = build_coverage_format1([2])
+  push_u16(single_subtable, 8)
+  push_u16(single_subtable, 4)
+  push_i16(single_subtable, 50)
+  for b in single_coverage {
+    single_subtable.push(b)
+  }
+  let single_lookup : Array[Byte] = []
+  push_u16(single_lookup, 1)
+  push_u16(single_lookup, 0)
+  push_u16(single_lookup, 1)
+  push_u16(single_lookup, 8)
+  for b in single_subtable {
+    single_lookup.push(b)
+  }
+  let lookup_list : Array[Byte] = []
+  push_u16(lookup_list, 1)
+  push_u16(lookup_list, 4)
+  for b in single_lookup {
+    lookup_list.push(b)
+  }
+  let feature : Array[Byte] = []
+  push_u16(feature, 0)
+  push_u16(feature, 1)
+  push_u16(feature, 0)
+  let feature_list : Array[Byte] = []
+  push_u16(feature_list, 1)
+  feature_list.push(b'k')
+  feature_list.push(b'e')
+  feature_list.push(b'r')
+  feature_list.push(b'n')
+  push_u16(feature_list, 8)
+  for b in feature {
+    feature_list.push(b)
+  }
+  let lang_sys : Array[Byte] = []
+  push_u16(lang_sys, 0)
+  push_u16(lang_sys, 0xFFFF)
+  push_u16(lang_sys, 1)
+  push_u16(lang_sys, 0)
+  let script : Array[Byte] = []
+  push_u16(script, 4)
+  push_u16(script, 0)
+  for b in lang_sys {
+    script.push(b)
+  }
+  let script_list : Array[Byte] = []
+  push_u16(script_list, 1)
+  script_list.push(b'D')
+  script_list.push(b'F')
+  script_list.push(b'L')
+  script_list.push(b'T')
+  push_u16(script_list, 8)
+  for b in script {
+    script_list.push(b)
+  }
+  let bytes : Array[Byte] = []
+  push_u32(bytes, 0x00010000)
+  let script_offset = 10
+  let feature_offset = script_offset + script_list.length()
+  let lookup_offset = feature_offset + feature_list.length()
+  push_u16(bytes, script_offset)
+  push_u16(bytes, feature_offset)
+  push_u16(bytes, lookup_offset)
+  for b in script_list {
+    bytes.push(b)
+  }
+  for b in feature_list {
+    bytes.push(b)
+  }
+  for b in lookup_list {
+    bytes.push(b)
+  }
+  Bytes::from_array(bytes)
+}
+
+///|
 fn build_vhea(number_of_vmetrics : Int) -> Bytes {
   let bytes : Array[Byte] = Array::make(36, b'\x00')
   bytes[34] = ((number_of_vmetrics >> 8) & 0xff).to_byte()
@@ -987,6 +1067,7 @@ fn build_font_bytes_subset_fixture() -> Bytes {
     (@common.Tag::from_chars('C', 'O', 'L', 'R'), build_colr_table()),
     (@common.Tag::from_chars('G', 'D', 'E', 'F'), build_gdef_table()),
     (@common.Tag::from_chars('G', 'S', 'U', 'B'), build_gsub_single()),
+    (@common.Tag::from_chars('G', 'P', 'O', 'S'), build_gpos_single()),
     (@common.Tag::from_chars('h', 'm', 't', 'x'), build_hmtx([500, 600, 700, 800], [0, 10, 20, 30])),
     (@common.Tag::from_chars('v', 'h', 'e', 'a'), build_vhea(4)),
     (@common.Tag::from_chars('v', 'm', 't', 'x'), build_vmtx([900, 910, 920, 930], [5, 6, 7, 8])),
@@ -1980,6 +2061,81 @@ test "subset rebuilds gsub reverse chaining" {
   inspect((cov_format, cov_count, cov_glyph), content="(1, 1, 1)")
   inspect((backtrack_format, backtrack_glyph), content="(1, 1)")
   inspect((lookahead_format, lookahead_glyph), content="(1, 1)")
+}
+
+///|
+test "subset rebuilds gpos single" {
+  let font = @font.Font::from_bytes(build_font_bytes_subset_fixture())
+  let bytes = match subset(font, SubsetInput::from_codepoints([0x42U])) {
+    Err(err) => fail("subset failed: \{err}")
+    Ok(value) => value
+  }
+  let subset_font = @font.Font::from_bytes(bytes)
+  let gpos_blob = match subset_font.get_face().reference_table_optional(
+    @common.Tag::from_chars('G', 'P', 'O', 'S'),
+  ) {
+    Err(err) => fail("GPOS lookup failed: \{err}")
+    Ok(None) => fail("GPOS table missing from subset")
+    Ok(Some(blob)) => blob
+  }
+  let data = gpos_blob.as_view()
+  let lookup_offset = match read_u16(data, 8) {
+    None => fail("GPOS lookup offset missing")
+    Some(value) => value
+  }
+  let lookup_count = match read_u16(data, lookup_offset) {
+    None => fail("GPOS lookup count missing")
+    Some(value) => value
+  }
+  let lookup0_offset = match read_u16(data, lookup_offset + 2) {
+    None => fail("GPOS lookup offset missing")
+    Some(value) => value
+  }
+  let lookup0_base = lookup_offset + lookup0_offset
+  let lookup_type = match read_u16(data, lookup0_base) {
+    None => fail("GPOS lookup type missing")
+    Some(value) => value
+  }
+  let sub_count = match read_u16(data, lookup0_base + 4) {
+    None => fail("GPOS subtable count missing")
+    Some(value) => value
+  }
+  let sub_offset = match read_u16(data, lookup0_base + 6) {
+    None => fail("GPOS subtable offset missing")
+    Some(value) => value
+  }
+  let sub_base = lookup0_base + sub_offset
+  let pos_format = match read_u16(data, sub_base) {
+    None => fail("GPOS subtable format missing")
+    Some(value) => value
+  }
+  let coverage_offset = match read_u16(data, sub_base + 2) {
+    None => fail("GPOS coverage offset missing")
+    Some(value) => value
+  }
+  let value_format = match read_u16(data, sub_base + 4) {
+    None => fail("GPOS value format missing")
+    Some(value) => value
+  }
+  let value = match read_i16(data, sub_base + 6) {
+    None => fail("GPOS value record missing")
+    Some(value) => value
+  }
+  let cov_base = sub_base + coverage_offset
+  let cov_format = match read_u16(data, cov_base) {
+    None => fail("GPOS coverage format missing")
+    Some(value) => value
+  }
+  let cov_count = match read_u16(data, cov_base + 2) {
+    None => fail("GPOS coverage count missing")
+    Some(value) => value
+  }
+  let cov_glyph = match read_u16(data, cov_base + 4) {
+    None => fail("GPOS coverage glyph missing")
+    Some(value) => value
+  }
+  inspect((lookup_count, lookup_type, sub_count, pos_format), content="(1, 1, 1, 1)")
+  inspect((value_format, value, cov_format, cov_count, cov_glyph), content="(4, 50, 1, 1, 1)")
 }
 
 ///|
