@@ -388,6 +388,42 @@ fn add_optional_table(
   }
 }
 
+fn add_optional_os2(
+  face : @face.Face,
+  plan : SubsetPlan,
+  tables : Array[(@common.Tag, Bytes)],
+) -> Result[Unit, SubsetError] {
+  let blob = match face.reference_table_optional(tag_os2) {
+    Err(err) => return Err(Face(err))
+    Ok(value) => value
+  }
+  match blob {
+    None => Ok(())
+    Some(blob) => {
+      let bytes = blob.as_view().to_bytes().to_array()
+      if bytes.length() >= 68 && !plan.codepoint_map.is_empty() {
+        let mut min_cp = plan.codepoint_map[0].0
+        let mut max_cp = plan.codepoint_map[0].0
+        for pair in plan.codepoint_map {
+          let cp = pair.0
+          if cp < min_cp {
+            min_cp = cp
+          }
+          if cp > max_cp {
+            max_cp = cp
+          }
+        }
+        let min_val = if min_cp > 0xFFFFU { 0xFFFF } else { min_cp.reinterpret_as_int() }
+        let max_val = if max_cp > 0xFFFFU { 0xFFFF } else { max_cp.reinterpret_as_int() }
+        write_u16(bytes, 64, min_val)
+        write_u16(bytes, 66, max_val)
+      }
+      tables.push((tag_os2, Bytes::from_array(bytes)))
+      Ok(())
+    }
+  }
+}
+
 fn add_passthrough_tables(
   face : @face.Face,
   tables : Array[(@common.Tag, Bytes)],
@@ -395,7 +431,6 @@ fn add_passthrough_tables(
   let tags : Array[@common.Tag] = [
     tag_name,
     tag_post,
-    tag_os2,
     tag_cvt,
     tag_fpgm,
     tag_prep,
@@ -1069,6 +1104,10 @@ pub fn subset_with_plan(
     None => ()
     Some(cmap) => tables.push((tag_cmap, cmap))
   }
+  match add_optional_os2(face, plan, tables) {
+    Err(err) => return Err(err)
+    Ok(_) => ()
+  }
   match add_passthrough_tables(face, tables) {
     Err(err) => return Err(err)
     Ok(_) => ()
@@ -1170,6 +1209,10 @@ fn subset_cff1_with_plan(
     None => ()
     Some(cmap) => tables.push((tag_cmap, cmap))
   }
+  match add_optional_os2(face, plan, tables) {
+    Err(err) => return Err(err)
+    Ok(_) => ()
+  }
   match add_passthrough_tables(face, tables) {
     Err(err) => return Err(err)
     Ok(_) => ()
@@ -1270,6 +1313,10 @@ fn subset_cff2_with_plan(
   match cmap_bytes {
     None => ()
     Some(cmap) => tables.push((tag_cmap, cmap))
+  }
+  match add_optional_os2(face, plan, tables) {
+    Err(err) => return Err(err)
+    Ok(_) => ()
   }
   match add_passthrough_tables(face, tables) {
     Err(err) => return Err(err)

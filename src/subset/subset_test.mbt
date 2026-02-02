@@ -104,6 +104,10 @@ fn build_hhea(number_of_hmetrics : Int) -> Bytes {
 ///|
 fn build_os2() -> Bytes {
   let bytes : Array[Byte] = Array::make(78, b'\x00')
+  bytes[64] = 0x00
+  bytes[65] = 0x41
+  bytes[66] = 0x00
+  bytes[67] = 0x42
   Bytes::from_array(bytes)
 }
 
@@ -305,6 +309,16 @@ test "subset preserves os2" {
     Err(err) => fail("OS/2 parse failed: \{err}")
     Ok(_) => ()
   }
+  let os2_data = os2_blob.as_view()
+  let first = match read_u16(os2_data, 64) {
+    None => fail("OS/2 firstCharIndex missing")
+    Some(value) => value
+  }
+  let last = match read_u16(os2_data, 66) {
+    None => fail("OS/2 lastCharIndex missing")
+    Some(value) => value
+  }
+  inspect((first, last), content="(65, 65)")
 }
 
 ///|

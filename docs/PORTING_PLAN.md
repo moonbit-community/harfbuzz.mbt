@@ -20,7 +20,7 @@ Unicode data, variations, color/paint, and subsetting.
 - `ot/var`: variation tables + var store (fvar/gvar/avar/cvar/hvar/vvar/mvar/varc) with tests.
 - `ot/color` + `paint`: COLR/CPAL parsing + COLRv1 paint graph decoding (no rendering/backends yet).
 - `aat`: AAT layout tables + shaping (morx/mort/kerx/ankr/trak + bsln/feat/opbd/just/ltag).
-- `subset`: TrueType subsetting for glyf/loca/hmtx/vmtx/head/hhea/vhea/maxp/cmap (composite remap; long loca) + CFF1 charstrings/charset subsetting + CFF2 outline subsetting + passthrough metadata/axis tables (OS/2, gasp, cvt, fpgm, prep, VDMX, fvar, avar, STAT, MVAR, cvar, CPAL, meta).
+- `subset`: TrueType subsetting for glyf/loca/hmtx/vmtx/head/hhea/vhea/maxp/cmap (composite remap; long loca) + CFF1 charstrings/charset subsetting + CFF2 outline subsetting + passthrough metadata/axis tables (OS/2 with updated first/last char indices, gasp, cvt, fpgm, prep, VDMX, fvar, avar, STAT, MVAR, cvar, CPAL, meta).
 
 ## Package Map (current + planned)
 

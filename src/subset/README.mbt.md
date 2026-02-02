@@ -17,7 +17,8 @@ It fully subsets TrueType (glyf/loca) fonts and currently rebuilds these tables:
 - `glyf` (glyph data, with composite component remapping)
 - `cmap` (format 12 built from input codepoints)
 
-Optional tables `name`, `post`, `OS/2`, `gasp`, `cvt `, `fpgm`, `prep`, `VDMX`,
+Optional tables `name`, `post`, `OS/2` (first/last char indices updated),
+`gasp`, `cvt `, `fpgm`, `prep`, `VDMX`,
 `fvar`, `avar`, `STAT`, `MVAR`, `cvar`, `CPAL`, and `meta` are copied through
 unchanged if present.
 
