@@ -167,6 +167,19 @@ fn push_u32(bytes : Array[Byte], value : Int) -> Unit {
   bytes.push((value & 0xff).to_byte())
 }
 
+fn align4(value : Int) -> Int {
+  let rem = value % 4
+  if rem == 0 { value } else { value + (4 - rem) }
+}
+
+fn pad_to(bytes : Array[Byte], target : Int) -> Unit {
+  let mut count = target - bytes.length()
+  while count > 0 {
+    bytes.push(b'\x00')
+    count = count - 1
+  }
+}
+
 fn sfnt_search_params(num_tables : Int) -> (Int, Int, Int) {
   let mut max_power = 1
   let mut entry_selector = 0
@@ -224,6 +237,7 @@ fn build_sfnt(tables : Array[(@common.Tag, Bytes)]) -> Bytes {
   let records : Array[(@common.Tag, Int, Int)] = []
   for entry in sorted {
     let (tag, table) = entry
+    offset = align4(offset)
     records.push((tag, offset, table.length()))
     offset = offset + table.length()
   }
@@ -238,12 +252,15 @@ fn build_sfnt(tables : Array[(@common.Tag, Bytes)]) -> Bytes {
     push_u32(bytes, table_offset)
     push_u32(bytes, length)
   }
-  for entry in sorted {
-    let (_, table) = entry
+  for i in 0..<sorted.length() {
+    let (_, table) = sorted[i]
+    let (_, table_offset, _) = records[i]
+    pad_to(bytes, table_offset)
     for b in table {
       bytes.push(b)
     }
   }
+  pad_to(bytes, align4(bytes.length()))
   Bytes::from_array(bytes)
 }
 
