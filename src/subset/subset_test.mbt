@@ -223,6 +223,34 @@ fn build_kern_table() -> Bytes {
 }
 
 ///|
+fn build_colr_table() -> Bytes {
+  let bytes : Array[Byte] = []
+  push_u16(bytes, 0)
+  push_u16(bytes, 3)
+  push_u32(bytes, 14)
+  push_u32(bytes, 32)
+  push_u16(bytes, 4)
+  push_u16(bytes, 1)
+  push_u16(bytes, 0)
+  push_u16(bytes, 1)
+  push_u16(bytes, 2)
+  push_u16(bytes, 1)
+  push_u16(bytes, 2)
+  push_u16(bytes, 3)
+  push_u16(bytes, 3)
+  push_u16(bytes, 1)
+  push_u16(bytes, 1)
+  push_u16(bytes, 2)
+  push_u16(bytes, 2)
+  push_u16(bytes, 0)
+  push_u16(bytes, 3)
+  push_u16(bytes, 1)
+  push_u16(bytes, 1)
+  push_u16(bytes, 3)
+  Bytes::from_array(bytes)
+}
+
+///|
 fn build_gsub_stub() -> Bytes {
   let bytes : Array[Byte] = []
   push_u32(bytes, 0x00010000)
@@ -356,6 +384,7 @@ fn build_font_bytes_subset_fixture() -> Bytes {
     (@common.Tag::from_chars('p', 'o', 's', 't'), build_post_table_v2()),
     (@common.Tag::from_chars('V', 'O', 'R', 'G'), build_vorg_table()),
     (@common.Tag::from_chars('k', 'e', 'r', 'n'), build_kern_table()),
+    (@common.Tag::from_chars('C', 'O', 'L', 'R'), build_colr_table()),
     (@common.Tag::from_chars('G', 'S', 'U', 'B'), build_gsub_stub()),
     (@common.Tag::from_chars('h', 'm', 't', 'x'), build_hmtx([500, 600, 700, 800], [0, 10, 20, 30])),
     (@common.Tag::from_chars('v', 'h', 'e', 'a'), build_vhea(4)),
@@ -557,6 +586,77 @@ test "subset rebuilds kern" {
     ),
     content="(1, 2, -50)",
   )
+}
+
+///|
+test "subset rebuilds colr v0" {
+  let font = @font.Font::from_bytes(build_font_bytes_subset_fixture())
+  let bytes = match subset(font, SubsetInput::from_codepoints([0x42U])) {
+    Err(err) => fail("subset failed: \{err}")
+    Ok(value) => value
+  }
+  let subset_font = @font.Font::from_bytes(bytes)
+  let colr_blob = match subset_font.get_face().reference_table_optional(
+    @common.Tag::from_chars('C', 'O', 'L', 'R'),
+  ) {
+    Err(err) => fail("colr lookup failed: \{err}")
+    Ok(None) => fail("COLR table missing from subset")
+    Ok(Some(blob)) => blob
+  }
+  let data = colr_blob.as_view()
+  let version = match read_u16(data, 0) {
+    None => fail("COLR version missing")
+    Some(value) => value
+  }
+  let num_base = match read_u16(data, 2) {
+    None => fail("COLR numBase missing")
+    Some(value) => value
+  }
+  let base_offset = match read_u32(data, 4) {
+    None => fail("COLR base offset missing")
+    Some(value) => value
+  }
+  let layer_offset = match read_u32(data, 8) {
+    None => fail("COLR layer offset missing")
+    Some(value) => value
+  }
+  let num_layers = match read_u16(data, 12) {
+    None => fail("COLR numLayers missing")
+    Some(value) => value
+  }
+  inspect((version, num_base, num_layers), content="(0, 1, 2)")
+  inspect((base_offset, layer_offset), content="(14, 20)")
+  let base_gid = match read_u16(data, base_offset) {
+    None => fail("COLR base glyph missing")
+    Some(value) => value
+  }
+  let first_layer = match read_u16(data, base_offset + 2) {
+    None => fail("COLR base first layer missing")
+    Some(value) => value
+  }
+  let layer_count = match read_u16(data, base_offset + 4) {
+    None => fail("COLR base layer count missing")
+    Some(value) => value
+  }
+  inspect((base_gid, first_layer, layer_count), content="(1, 0, 2)")
+  let layer0_gid = match read_u16(data, layer_offset) {
+    None => fail("COLR layer0 gid missing")
+    Some(value) => value
+  }
+  let layer0_color = match read_u16(data, layer_offset + 2) {
+    None => fail("COLR layer0 color missing")
+    Some(value) => value
+  }
+  let layer1_gid = match read_u16(data, layer_offset + 4) {
+    None => fail("COLR layer1 gid missing")
+    Some(value) => value
+  }
+  let layer1_color = match read_u16(data, layer_offset + 6) {
+    None => fail("COLR layer1 color missing")
+    Some(value) => value
+  }
+  inspect((layer0_gid, layer0_color), content="(1, 0)")
+  inspect((layer1_gid, layer1_color), content="(2, 1)")
 }
 
 ///|

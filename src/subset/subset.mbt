@@ -213,6 +213,18 @@ fn read_u24(bytes : Array[Byte], offset : Int) -> Result[Int, SubsetError] {
 }
 
 ///|
+fn read_u32(bytes : Array[Byte], offset : Int) -> Result[Int, SubsetError] {
+  if offset < 0 || offset + 4 > bytes.length() {
+    return Err(InvalidInput("unexpected eof"))
+  }
+  let b0 = bytes[offset].to_int()
+  let b1 = bytes[offset + 1].to_int()
+  let b2 = bytes[offset + 2].to_int()
+  let b3 = bytes[offset + 3].to_int()
+  Ok((b0 << 24) | (b1 << 16) | (b2 << 8) | b3)
+}
+
+///|
 fn write_u16(bytes : Array[Byte], offset : Int, value : Int) -> Unit {
   bytes[offset] = ((value >> 8) & 0xff).to_byte()
   bytes[offset + 1] = (value & 0xff).to_byte()
@@ -794,6 +806,28 @@ fn add_optional_kern(
   }
 }
 
+fn add_optional_colr(
+  face : @face.Face,
+  plan : SubsetPlan,
+  tables : Array[(@common.Tag, Bytes)],
+  identity : Bool,
+) -> Result[Unit, SubsetError] {
+  if identity {
+    return Ok(())
+  }
+  let bytes = match build_colr_subset(face, plan) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  match bytes {
+    None => Ok(())
+    Some(bytes) => {
+      tables.push((tag_colr, bytes))
+      Ok(())
+    }
+  }
+}
+
 fn is_identity_subset(plan : SubsetPlan, total_glyphs : Int) -> Bool {
   if total_glyphs <= 0 || plan.glyphs.length() != total_glyphs {
     return false
@@ -1295,6 +1329,148 @@ fn build_kern_subset(
   }
 }
 
+fn build_colr_subset(
+  face : @face.Face,
+  plan : SubsetPlan,
+) -> Result[Bytes?, SubsetError] {
+  let blob = match face.reference_table_optional(tag_colr) {
+    Err(err) => return Err(Face(err))
+    Ok(value) => value
+  }
+  match blob {
+    None => Ok(None)
+    Some(blob) => {
+      let bytes = blob.as_view().to_bytes().to_array()
+      if bytes.length() < 14 {
+        return Err(InvalidInput("invalid COLR table"))
+      }
+      let version = match read_u16(bytes, 0) {
+        Err(err) => return Err(err)
+        Ok(value) => value
+      }
+      if version != 0 {
+        return Ok(None)
+      }
+      let num_base = match read_u16(bytes, 2) {
+        Err(err) => return Err(err)
+        Ok(value) => value
+      }
+      let base_offset = match read_u32(bytes, 4) {
+        Err(err) => return Err(err)
+        Ok(value) => value
+      }
+      let layer_offset = match read_u32(bytes, 8) {
+        Err(err) => return Err(err)
+        Ok(value) => value
+      }
+      let num_layers = match read_u16(bytes, 12) {
+        Err(err) => return Err(err)
+        Ok(value) => value
+      }
+      if num_base < 0 || num_layers < 0 {
+        return Err(InvalidInput("invalid COLR counts"))
+      }
+      if base_offset < 0 || layer_offset < 0 {
+        return Err(InvalidInput("invalid COLR offsets"))
+      }
+      let base_end = base_offset + num_base * 6
+      let layer_end = layer_offset + num_layers * 4
+      if base_end > bytes.length() || layer_end > bytes.length() {
+        return Err(InvalidInput("invalid COLR table"))
+      }
+      let base_records : Array[(Int, Int, Int)] = []
+      for i in 0..<num_base {
+        let rec_offset = base_offset + i * 6
+        let gid = match read_u16(bytes, rec_offset) {
+          Err(err) => return Err(err)
+          Ok(value) => value
+        }
+        let first_layer = match read_u16(bytes, rec_offset + 2) {
+          Err(err) => return Err(err)
+          Ok(value) => value
+        }
+        let layer_count = match read_u16(bytes, rec_offset + 4) {
+          Err(err) => return Err(err)
+          Ok(value) => value
+        }
+        base_records.push((gid, first_layer, layer_count))
+      }
+      base_records.sort_by((a, b) => {
+        let (ga, _, _) = a
+        let (gb, _, _) = b
+        ga - gb
+      })
+      let layers : Array[(Int, Int)] = []
+      for i in 0..<num_layers {
+        let rec_offset = layer_offset + i * 4
+        let gid = match read_u16(bytes, rec_offset) {
+          Err(err) => return Err(err)
+          Ok(value) => value
+        }
+        let color_index = match read_u16(bytes, rec_offset + 2) {
+          Err(err) => return Err(err)
+          Ok(value) => value
+        }
+        layers.push((gid, color_index))
+      }
+      let new_layers : Array[(Int, Int)] = []
+      let new_base : Array[(Int, Int, Int)] = []
+      for base in base_records {
+        let (gid, first_layer, layer_count) = base
+        if gid < 0 || gid >= plan.old_to_new.length() {
+          return Err(InvalidInput("glyph id out of range"))
+        }
+        let new_gid = plan.old_to_new[gid]
+        if new_gid < 0 {
+          continue
+        }
+        if first_layer < 0 || layer_count < 0 || first_layer + layer_count > layers.length() {
+          return Err(InvalidInput("invalid COLR layer range"))
+        }
+        let new_first = new_layers.length()
+        let mut new_count = 0
+        for i in 0..<layer_count {
+          let (layer_gid, color_index) = layers[first_layer + i]
+          if layer_gid < 0 || layer_gid >= plan.old_to_new.length() {
+            return Err(InvalidInput("glyph id out of range"))
+          }
+          let new_layer_gid = plan.old_to_new[layer_gid]
+          if new_layer_gid >= 0 {
+            new_layers.push((new_layer_gid, color_index))
+            new_count = new_count + 1
+          }
+        }
+        if new_count > 0 {
+          new_base.push((new_gid, new_first, new_count))
+        }
+      }
+      if new_base.is_empty() {
+        return Ok(None)
+      }
+      let out : Array[Byte] = []
+      push_u16(out, 0)
+      push_u16(out, new_base.length())
+      let base_records_offset = 14
+      let layer_records_offset = base_records_offset + new_base.length() * 6
+      push_u32(out, base_records_offset)
+      push_u32(out, layer_records_offset)
+      push_u16(out, new_layers.length())
+      for base in new_base {
+        let (gid, first_layer, layer_count) = base
+        push_u16(out, gid)
+        push_u16(out, first_layer)
+        push_u16(out, layer_count)
+      }
+      for layer in new_layers {
+        let (gid, color_index) = layer
+        push_u16(out, gid)
+        push_u16(out, color_index)
+      }
+      Ok(Some(Bytes::from_array(out)))
+    }
+  }
+}
+
 fn build_plan_cff1(
   font : @font.Font,
   input : SubsetInput,
@@ -1695,6 +1871,10 @@ pub fn subset_with_plan(
     Err(err) => return Err(err)
     Ok(_) => ()
   }
+  match add_optional_colr(face, plan, tables, identity) {
+    Err(err) => return Err(err)
+    Ok(_) => ()
+  }
   match add_optional_os2(face, plan, tables) {
     Err(err) => return Err(err)
     Ok(_) => ()
@@ -1821,6 +2001,10 @@ fn subset_cff1_with_plan(
     Err(err) => return Err(err)
     Ok(_) => ()
   }
+  match add_optional_colr(face, plan, tables, identity) {
+    Err(err) => return Err(err)
+    Ok(_) => ()
+  }
   match add_optional_os2(face, plan, tables) {
     Err(err) => return Err(err)
     Ok(_) => ()
@@ -1944,6 +2128,10 @@ fn subset_cff2_with_plan(
     Ok(_) => ()
   }
   match add_optional_kern(face, plan, tables, identity) {
+    Err(err) => return Err(err)
+    Ok(_) => ()
+  }
+  match add_optional_colr(face, plan, tables, identity) {
     Err(err) => return Err(err)
     Ok(_) => ()
   }
