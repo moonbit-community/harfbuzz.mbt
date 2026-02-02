@@ -3016,6 +3016,76 @@ fn build_gsub_chaining_subtable(
   Ok(Some(Bytes::from_array(out)))
 }
 
+fn build_gsub_extension_subtable(
+  bytes : Array[Byte],
+  plan : SubsetPlan,
+) -> Result[(Int, Bytes)?, SubsetError] {
+  if bytes.length() < 8 {
+    return Err(InvalidInput("invalid GSUB extension subtable"))
+  }
+  let format = match read_u16(bytes, 0) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  if format != 1 {
+    return Ok(None)
+  }
+  let extension_type = match read_u16(bytes, 2) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  let extension_offset = match read_u32(bytes, 4) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  if extension_offset <= 0 {
+    return Err(InvalidInput("invalid GSUB extension offset"))
+  }
+  if extension_offset >= bytes.length() {
+    return Err(InvalidInput("invalid GSUB extension bounds"))
+  }
+  let ext_base = extension_offset
+  let ext_bytes = bytes[ext_base:bytes.length()].to_array()
+  let mut new_sub : Bytes? = None
+  if extension_type == 1 {
+    new_sub = match build_gsub_single_subtable(ext_bytes, plan) {
+      Err(err) => return Err(err)
+      Ok(value) => value
+    }
+  } else if extension_type == 2 {
+    new_sub = match build_gsub_multiple_subtable(ext_bytes, plan) {
+      Err(err) => return Err(err)
+      Ok(value) => value
+    }
+  } else if extension_type == 3 {
+    new_sub = match build_gsub_alternate_subtable(ext_bytes, plan) {
+      Err(err) => return Err(err)
+      Ok(value) => value
+    }
+  } else if extension_type == 4 {
+    new_sub = match build_gsub_ligature_subtable(ext_bytes, plan) {
+      Err(err) => return Err(err)
+      Ok(value) => value
+    }
+  } else if extension_type == 5 {
+    new_sub = match build_gsub_contextual_subtable(ext_bytes, plan) {
+      Err(err) => return Err(err)
+      Ok(value) => value
+    }
+  } else if extension_type == 6 {
+    new_sub = match build_gsub_chaining_subtable(ext_bytes, plan) {
+      Err(err) => return Err(err)
+      Ok(value) => value
+    }
+  } else {
+    return Ok(None)
+  }
+  match new_sub {
+    None => Ok(None)
+    Some(value) => Ok(Some((extension_type, value)))
+  }
+}
+
 fn parse_lookup_header(
   bytes : Array[Byte],
   offset : Int,
@@ -3326,6 +3396,38 @@ fn build_gsub_subset(
               Some(value) => {
                 kept_subtables = kept_subtables + 1
                 subtables.push(value)
+              }
+            }
+          }
+        } else if lookup_type == 7 {
+          for j in 0..<sub_offsets.length() {
+            let sub_base = base + sub_offsets[j]
+            let sub_end = if j + 1 < sub_offsets.length() {
+              base + sub_offsets[j + 1]
+            } else {
+              end
+            }
+            if sub_base < 0 || sub_base >= end || sub_end <= sub_base || sub_end > end {
+              return Err(InvalidInput("invalid GSUB subtable bounds"))
+            }
+            let sub_bytes = bytes[sub_base:sub_end].to_array()
+            let result = match build_gsub_extension_subtable(sub_bytes, plan) {
+              Err(err) => return Err(err)
+              Ok(value) => value
+            }
+            match result {
+              None => ()
+              Some((extension_type, new_sub)) => {
+                let ext_bytes : Array[Byte] = []
+                push_u16(ext_bytes, 1)
+                push_u16(ext_bytes, extension_type)
+                let extension_offset = 8
+                push_u32(ext_bytes, extension_offset)
+                for b in new_sub {
+                  ext_bytes.push(b)
+                }
+                kept_subtables = kept_subtables + 1
+                subtables.push(Bytes::from_array(ext_bytes))
               }
             }
           }
