@@ -15,7 +15,7 @@ It fully subsets TrueType (glyf/loca) fonts and currently rebuilds these tables:
 - `vmtx` (per-glyph vertical metrics, if present)
 - `loca` (long format)
 - `glyf` (glyph data, with composite component remapping)
-- `cmap` (format 12 built from input codepoints)
+- `cmap` (format 12 built from input codepoints; format 4 for BMP-only subsets)
 
 Optional tables `name`, `post`, `OS/2` (first/last char indices updated),
 `gasp`, `cvt `, `fpgm`, `prep`, `VDMX`,
