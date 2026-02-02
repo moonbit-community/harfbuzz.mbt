@@ -3086,6 +3086,184 @@ fn build_gsub_extension_subtable(
   }
 }
 
+fn build_gsub_reverse_chaining_subtable(
+  bytes : Array[Byte],
+  plan : SubsetPlan,
+) -> Result[Bytes?, SubsetError] {
+  if bytes.length() < 12 {
+    return Err(InvalidInput("invalid GSUB reverse chaining subtable"))
+  }
+  let format = match read_u16(bytes, 0) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  if format != 1 {
+    return Ok(None)
+  }
+  let coverage_offset = match read_u16(bytes, 2) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  let backtrack_count = match read_u16(bytes, 4) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  if coverage_offset <= 0 || backtrack_count < 0 {
+    return Err(InvalidInput("invalid GSUB reverse chaining header"))
+  }
+  let backtrack_base = 6
+  let lookahead_count_offset = backtrack_base + backtrack_count * 2
+  if lookahead_count_offset + 2 > bytes.length() {
+    return Err(InvalidInput("invalid GSUB reverse chaining backtrack offsets"))
+  }
+  let lookahead_count = match read_u16(bytes, lookahead_count_offset) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  let lookahead_base = lookahead_count_offset + 2
+  let glyph_count_offset = lookahead_base + lookahead_count * 2
+  if glyph_count_offset + 2 > bytes.length() {
+    return Err(InvalidInput("invalid GSUB reverse chaining lookahead offsets"))
+  }
+  let glyph_count = match read_u16(bytes, glyph_count_offset) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  let substitute_base = glyph_count_offset + 2
+  if substitute_base + glyph_count * 2 > bytes.length() {
+    return Err(InvalidInput("invalid GSUB reverse chaining substitutes"))
+  }
+  let coverage = match parse_coverage_subset(bytes, coverage_offset) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  if coverage.length() != glyph_count {
+    return Err(InvalidInput("GSUB reverse chaining coverage count mismatch"))
+  }
+  let mut ok = true
+  let new_coverage : Array[Int] = []
+  let new_subs : Array[Int] = []
+  for i in 0..<glyph_count {
+    let glyph = coverage[i]
+    let sub = match read_u16(bytes, substitute_base + i * 2) {
+      Err(err) => return Err(err)
+      Ok(value) => value
+    }
+    if glyph < 0 || glyph >= plan.old_to_new.length() ||
+        sub < 0 || sub >= plan.old_to_new.length() {
+      ok = false
+      break
+    }
+    let new_glyph = plan.old_to_new[glyph]
+    let new_sub = plan.old_to_new[sub]
+    if new_glyph < 0 || new_sub < 0 {
+      ok = false
+      break
+    }
+    new_coverage.push(new_glyph)
+    new_subs.push(new_sub)
+  }
+  if !ok || new_coverage.is_empty() {
+    return Ok(None)
+  }
+  let new_backtrack : Array[Bytes] = []
+  for i in 0..<backtrack_count {
+    let offset = match read_u16(bytes, backtrack_base + i * 2) {
+      Err(err) => return Err(err)
+      Ok(value) => value
+    }
+    if offset <= 0 || offset >= bytes.length() {
+      return Err(InvalidInput("invalid GSUB reverse chaining backtrack offset"))
+    }
+    let coverage = match parse_coverage_subset(bytes, offset) {
+      Err(err) => return Err(err)
+      Ok(value) => value
+    }
+    let mapped : Array[Int] = []
+    for glyph in coverage {
+      if glyph < 0 || glyph >= plan.old_to_new.length() {
+        ok = false
+        break
+      }
+      let new_gid = plan.old_to_new[glyph]
+      if new_gid < 0 {
+        ok = false
+        break
+      }
+      mapped.push(new_gid)
+    }
+    if !ok || mapped.is_empty() {
+      return Ok(None)
+    }
+    new_backtrack.push(build_coverage_subset(mapped))
+  }
+  let new_lookahead : Array[Bytes] = []
+  for i in 0..<lookahead_count {
+    let offset = match read_u16(bytes, lookahead_base + i * 2) {
+      Err(err) => return Err(err)
+      Ok(value) => value
+    }
+    if offset <= 0 || offset >= bytes.length() {
+      return Err(InvalidInput("invalid GSUB reverse chaining lookahead offset"))
+    }
+    let coverage = match parse_coverage_subset(bytes, offset) {
+      Err(err) => return Err(err)
+      Ok(value) => value
+    }
+    let mapped : Array[Int] = []
+    for glyph in coverage {
+      if glyph < 0 || glyph >= plan.old_to_new.length() {
+        ok = false
+        break
+      }
+      let new_gid = plan.old_to_new[glyph]
+      if new_gid < 0 {
+        ok = false
+        break
+      }
+      mapped.push(new_gid)
+    }
+    if !ok || mapped.is_empty() {
+      return Ok(None)
+    }
+    new_lookahead.push(build_coverage_subset(mapped))
+  }
+  let coverage_bytes = build_coverage_subset(new_coverage)
+  let out : Array[Byte] = []
+  push_u16(out, 1)
+  let header_len = 8 + new_backtrack.length() * 2 + new_lookahead.length() * 2 + new_subs.length() * 2
+  let mut cursor = header_len
+  push_u16(out, cursor)
+  push_u16(out, new_backtrack.length())
+  for coverage in new_backtrack {
+    push_u16(out, cursor)
+    cursor = cursor + coverage.length()
+  }
+  push_u16(out, new_lookahead.length())
+  for coverage in new_lookahead {
+    push_u16(out, cursor)
+    cursor = cursor + coverage.length()
+  }
+  push_u16(out, new_subs.length())
+  for sub in new_subs {
+    push_u16(out, sub)
+  }
+  for b in coverage_bytes {
+    out.push(b)
+  }
+  for coverage in new_backtrack {
+    for b in coverage {
+      out.push(b)
+    }
+  }
+  for coverage in new_lookahead {
+    for b in coverage {
+      out.push(b)
+    }
+  }
+  Ok(Some(Bytes::from_array(out)))
+}
+
 fn parse_lookup_header(
   bytes : Array[Byte],
   offset : Int,
@@ -3428,6 +3606,30 @@ fn build_gsub_subset(
                 }
                 kept_subtables = kept_subtables + 1
                 subtables.push(Bytes::from_array(ext_bytes))
+              }
+            }
+          }
+        } else if lookup_type == 8 {
+          for j in 0..<sub_offsets.length() {
+            let sub_base = base + sub_offsets[j]
+            let sub_end = if j + 1 < sub_offsets.length() {
+              base + sub_offsets[j + 1]
+            } else {
+              end
+            }
+            if sub_base < 0 || sub_base >= end || sub_end <= sub_base || sub_end > end {
+              return Err(InvalidInput("invalid GSUB subtable bounds"))
+            }
+            let sub_bytes = bytes[sub_base:sub_end].to_array()
+            let new_sub = match build_gsub_reverse_chaining_subtable(sub_bytes, plan) {
+              Err(err) => return Err(err)
+              Ok(value) => value
+            }
+            match new_sub {
+              None => ()
+              Some(value) => {
+                kept_subtables = kept_subtables + 1
+                subtables.push(value)
               }
             }
           }
