@@ -180,6 +180,37 @@ fn pad_to(bytes : Array[Byte], target : Int) -> Unit {
   }
 }
 
+fn write_u32_uint(bytes : Array[Byte], offset : Int, value : UInt) -> Unit {
+  bytes[offset] = ((value >> 24) & 0xffU).reinterpret_as_int().to_byte()
+  bytes[offset + 1] = ((value >> 16) & 0xffU).reinterpret_as_int().to_byte()
+  bytes[offset + 2] = ((value >> 8) & 0xffU).reinterpret_as_int().to_byte()
+  bytes[offset + 3] = (value & 0xffU).reinterpret_as_int().to_byte()
+}
+
+fn push_u32_uint(bytes : Array[Byte], value : UInt) -> Unit {
+  bytes.push(((value >> 24) & 0xffU).reinterpret_as_int().to_byte())
+  bytes.push(((value >> 16) & 0xffU).reinterpret_as_int().to_byte())
+  bytes.push(((value >> 8) & 0xffU).reinterpret_as_int().to_byte())
+  bytes.push((value & 0xffU).reinterpret_as_int().to_byte())
+}
+
+fn checksum_bytes(bytes : Array[Byte]) -> UInt {
+  let length = bytes.length()
+  let padded = align4(length)
+  let mut sum : UInt = 0U
+  let mut i = 0
+  while i < padded {
+    let b0 = if i < length { bytes[i].to_uint() } else { 0U }
+    let b1 = if i + 1 < length { bytes[i + 1].to_uint() } else { 0U }
+    let b2 = if i + 2 < length { bytes[i + 2].to_uint() } else { 0U }
+    let b3 = if i + 3 < length { bytes[i + 3].to_uint() } else { 0U }
+    let word = (b0 << 24) | (b1 << 16) | (b2 << 8) | b3
+    sum = sum + word
+    i = i + 4
+  }
+  sum
+}
+
 fn sfnt_search_params(num_tables : Int) -> (Int, Int, Int) {
   let mut max_power = 1
   let mut entry_selector = 0
@@ -227,6 +258,40 @@ fn cmap_search_params(seg_count : Int) -> (Int, Int, Int) {
   (search_range, entry_selector, range_shift)
 }
 
+fn build_sfnt_bytes(
+  tags : Array[@common.Tag],
+  table_bytes : Array[Array[Byte]],
+  offsets : Array[Int],
+  checksums : Array[UInt],
+) -> Bytes {
+  let bytes : Array[Byte] = []
+  push_u32(bytes, 0x00010000)
+  push_u16(bytes, tags.length())
+  let (search_range, entry_selector, range_shift) = sfnt_search_params(tags.length())
+  push_u16(bytes, search_range)
+  push_u16(bytes, entry_selector)
+  push_u16(bytes, range_shift)
+  for i in 0..<tags.length() {
+    let tag = tags[i]
+    let (b1, b2, b3, b4) = tag.bytes()
+    bytes.push(b1)
+    bytes.push(b2)
+    bytes.push(b3)
+    bytes.push(b4)
+    push_u32_uint(bytes, checksums[i])
+    push_u32(bytes, offsets[i])
+    push_u32(bytes, table_bytes[i].length())
+  }
+  for i in 0..<table_bytes.length() {
+    pad_to(bytes, offsets[i])
+    for b in table_bytes[i] {
+      bytes.push(b)
+    }
+  }
+  pad_to(bytes, align4(bytes.length()))
+  Bytes::from_array(bytes)
+}
+
 ///|
 fn build_sfnt(tables : Array[(@common.Tag, Bytes)]) -> Bytes {
   let sorted : Array[(@common.Tag, Bytes)] = []
@@ -238,42 +303,43 @@ fn build_sfnt(tables : Array[(@common.Tag, Bytes)]) -> Bytes {
     let (tag_b, _) = b
     compare_tags(tag_a, tag_b)
   })
-  let bytes : Array[Byte] = []
-  push_u32(bytes, 0x00010000)
-  push_u16(bytes, sorted.length())
-  let (search_range, entry_selector, range_shift) = sfnt_search_params(sorted.length())
-  push_u16(bytes, search_range)
-  push_u16(bytes, entry_selector)
-  push_u16(bytes, range_shift)
-  let mut offset = 12 + sorted.length() * 16
-  let records : Array[(@common.Tag, Int, Int)] = []
+  let tags : Array[@common.Tag] = []
+  let table_bytes : Array[Array[Byte]] = []
   for entry in sorted {
     let (tag, table) = entry
+    tags.push(tag)
+    table_bytes.push(table.to_array())
+  }
+  let mut offset = 12 + tags.length() * 16
+  let offsets : Array[Int] = []
+  for i in 0..<table_bytes.length() {
     offset = align4(offset)
-    records.push((tag, offset, table.length()))
-    offset = offset + table.length()
+    offsets.push(offset)
+    offset = offset + table_bytes[i].length()
   }
-  for entry in records {
-    let (tag, table_offset, length) = entry
-    let (b1, b2, b3, b4) = tag.bytes()
-    bytes.push(b1)
-    bytes.push(b2)
-    bytes.push(b3)
-    bytes.push(b4)
-    push_u32(bytes, 0)
-    push_u32(bytes, table_offset)
-    push_u32(bytes, length)
-  }
-  for i in 0..<sorted.length() {
-    let (_, table) = sorted[i]
-    let (_, table_offset, _) = records[i]
-    pad_to(bytes, table_offset)
-    for b in table {
-      bytes.push(b)
+  let mut head_index = -1
+  for i in 0..<tags.length() {
+    if tags[i] == tag_head {
+      head_index = i
+      break
     }
   }
-  pad_to(bytes, align4(bytes.length()))
-  Bytes::from_array(bytes)
+  if head_index >= 0 && table_bytes[head_index].length() >= 12 {
+    write_u32_uint(table_bytes[head_index], 8, 0U)
+  }
+  let checksums : Array[UInt] = []
+  for table in table_bytes {
+    checksums.push(checksum_bytes(table))
+  }
+  let mut bytes = build_sfnt_bytes(tags, table_bytes, offsets, checksums)
+  if head_index >= 0 && table_bytes[head_index].length() >= 12 {
+    let total = checksum_bytes(bytes.to_array())
+    let adjust = 0xB1B0AFBAU - total
+    write_u32_uint(table_bytes[head_index], 8, adjust)
+    checksums[head_index] = checksum_bytes(table_bytes[head_index])
+    bytes = build_sfnt_bytes(tags, table_bytes, offsets, checksums)
+  }
+  bytes
 }
 
 fn build_cmap_table_multi(subtables : Array[(Int, Int, Bytes)]) -> Bytes {
