@@ -85,9 +85,6 @@ let tag_gasp : @common.Tag = @common.Tag::from_chars('g', 'a', 's', 'p')
 let tag_vdmx : @common.Tag = @common.Tag::from_chars('V', 'D', 'M', 'X')
 
 ///|
-let tag_dsig : @common.Tag = @common.Tag::from_chars('D', 'S', 'I', 'G')
-
-///|
 let tag_fvar : @common.Tag = @common.Tag::from_chars('f', 'v', 'a', 'r')
 
 ///|
@@ -342,7 +339,6 @@ fn add_passthrough_tables(
     tag_prep,
     tag_gasp,
     tag_vdmx,
-    tag_dsig,
     tag_fvar,
     tag_avar,
     tag_stat,

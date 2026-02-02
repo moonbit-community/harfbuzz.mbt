@@ -18,8 +18,8 @@ It fully subsets TrueType (glyf/loca) fonts and currently rebuilds these tables:
 - `cmap` (format 12 built from input codepoints)
 
 Optional tables `name`, `post`, `OS/2`, `gasp`, `cvt `, `fpgm`, `prep`, `VDMX`,
-`DSIG`, `fvar`, `avar`, `STAT`, `MVAR`, `cvar`, `CPAL`, and `meta` are copied
-through unchanged if present.
+`fvar`, `avar`, `STAT`, `MVAR`, `cvar`, `CPAL`, and `meta` are copied through
+unchanged if present.
 
 For CFF1 fonts, the subset path rebuilds the `CFF ` table by slicing
 CharStrings/charset to the selected glyph set (CFF subrs are copied as-is).
