@@ -27,6 +27,37 @@ fn read_u32(data : BytesView, offset : Int) -> Int? {
 }
 
 ///|
+fn find_cmap_subtable(
+  data : BytesView,
+  platform : Int,
+  encoding : Int,
+) -> Int? {
+  let count = read_u16(data, 2)
+  match count {
+    None => None
+    Some(count) => {
+      let mut i = 0
+      while i < count {
+        let base = 4 + i * 8
+        let plat = read_u16(data, base)
+        let enc = read_u16(data, base + 2)
+        let offset = read_u32(data, base + 4)
+        match (plat, enc, offset) {
+          (Some(plat), Some(enc), Some(offset)) => {
+            if plat == platform && enc == encoding {
+              return Some(offset)
+            }
+          }
+          _ => ()
+        }
+        i = i + 1
+      }
+      None
+    }
+  }
+}
+
+///|
 fn push_i16(bytes : Array[Byte], value : Int) -> Unit {
   let adjusted = if value < 0 { value + 0x10000 } else { value }
   push_u16(bytes, adjusted)
@@ -800,19 +831,23 @@ test "subset cff1 cmap" {
     Ok(Some(blob)) => blob
   }
   let cmap_data = cmap_blob.as_view()
-  let format = match read_u16(cmap_data, 12) {
+  let subtable_offset = match find_cmap_subtable(cmap_data, 3, 10) {
+    None => fail("cmap format 12 subtable missing")
+    Some(value) => value
+  }
+  let format = match read_u16(cmap_data, subtable_offset) {
     None => fail("unexpected eof")
     Some(value) => value
   }
-  let group_count = match read_u32(cmap_data, 24) {
+  let group_count = match read_u32(cmap_data, subtable_offset + 12) {
     None => fail("unexpected eof")
     Some(value) => value
   }
-  let start = match read_u32(cmap_data, 28) {
+  let start = match read_u32(cmap_data, subtable_offset + 16) {
     None => fail("unexpected eof")
     Some(value) => value
   }
-  let end = match read_u32(cmap_data, 32) {
+  let end = match read_u32(cmap_data, subtable_offset + 20) {
     None => fail("unexpected eof")
     Some(value) => value
   }
@@ -969,19 +1004,23 @@ test "subset cff2 outlines" {
     Ok(Some(blob)) => blob
   }
   let cmap_data = cmap_blob.as_view()
-  let format = match read_u16(cmap_data, 12) {
+  let subtable_offset = match find_cmap_subtable(cmap_data, 3, 10) {
+    None => fail("cmap format 12 subtable missing")
+    Some(value) => value
+  }
+  let format = match read_u16(cmap_data, subtable_offset) {
     None => fail("unexpected eof")
     Some(value) => value
   }
-  let group_count = match read_u32(cmap_data, 24) {
+  let group_count = match read_u32(cmap_data, subtable_offset + 12) {
     None => fail("unexpected eof")
     Some(value) => value
   }
-  let start = match read_u32(cmap_data, 28) {
+  let start = match read_u32(cmap_data, subtable_offset + 16) {
     None => fail("unexpected eof")
     Some(value) => value
   }
-  let end = match read_u32(cmap_data, 32) {
+  let end = match read_u32(cmap_data, subtable_offset + 20) {
     None => fail("unexpected eof")
     Some(value) => value
   }

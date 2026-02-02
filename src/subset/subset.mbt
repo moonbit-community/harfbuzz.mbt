@@ -215,6 +215,18 @@ fn compare_tags(a : @common.Tag, b : @common.Tag) -> Int {
   ai4 - bi4
 }
 
+fn cmap_search_params(seg_count : Int) -> (Int, Int, Int) {
+  let mut max_power = 1
+  let mut entry_selector = 0
+  while max_power * 2 <= seg_count {
+    max_power = max_power * 2
+    entry_selector = entry_selector + 1
+  }
+  let search_range = max_power * 2
+  let range_shift = seg_count * 2 - search_range
+  (search_range, entry_selector, range_shift)
+}
+
 ///|
 fn build_sfnt(tables : Array[(@common.Tag, Bytes)]) -> Bytes {
   let sorted : Array[(@common.Tag, Bytes)] = []
@@ -264,18 +276,77 @@ fn build_sfnt(tables : Array[(@common.Tag, Bytes)]) -> Bytes {
   Bytes::from_array(bytes)
 }
 
-///|
-fn build_cmap_table(subtable : Bytes) -> Bytes {
+fn build_cmap_table_multi(subtables : Array[(Int, Int, Bytes)]) -> Bytes {
   let bytes : Array[Byte] = []
   push_u16(bytes, 0)
-  push_u16(bytes, 1)
-  push_u16(bytes, 3)
-  push_u16(bytes, 10)
-  push_u32(bytes, 12)
-  for b in subtable {
-    bytes.push(b)
+  push_u16(bytes, subtables.length())
+  let mut offset = 4 + subtables.length() * 8
+  let offsets : Array[Int] = []
+  for entry in subtables {
+    let (_, _, table) = entry
+    offsets.push(offset)
+    offset = offset + table.length()
+  }
+  for i in 0..<subtables.length() {
+    let (platform, encoding, _) = subtables[i]
+    push_u16(bytes, platform)
+    push_u16(bytes, encoding)
+    push_u32(bytes, offsets[i])
+  }
+  for entry in subtables {
+    let (_, _, table) = entry
+    for b in table {
+      bytes.push(b)
+    }
   }
   Bytes::from_array(bytes)
+}
+
+fn build_cmap_format4(groups : Array[(UInt, UInt, UInt)]) -> Bytes? {
+  let seg_count = groups.length() + 1
+  if seg_count <= 0 || seg_count > 0xFFFF {
+    return None
+  }
+  let bytes : Array[Byte] = []
+  push_u16(bytes, 4)
+  push_u16(bytes, 0)
+  push_u16(bytes, 0)
+  push_u16(bytes, seg_count * 2)
+  let (search_range, entry_selector, range_shift) = cmap_search_params(seg_count)
+  push_u16(bytes, search_range)
+  push_u16(bytes, entry_selector)
+  push_u16(bytes, range_shift)
+  for group in groups {
+    let end = group.1
+    if end > 0xFFFFU {
+      return None
+    }
+    push_u16(bytes, end.reinterpret_as_int())
+  }
+  push_u16(bytes, 0xFFFF)
+  push_u16(bytes, 0)
+  for group in groups {
+    let start = group.0
+    if start > 0xFFFFU {
+      return None
+    }
+    push_u16(bytes, start.reinterpret_as_int())
+  }
+  push_u16(bytes, 0xFFFF)
+  for group in groups {
+    let delta = group.2.reinterpret_as_int() - group.0.reinterpret_as_int()
+    push_i16(bytes, delta)
+  }
+  push_i16(bytes, 1)
+  for _ in 0..<seg_count {
+    push_u16(bytes, 0)
+  }
+  let length = bytes.length()
+  if length > 0xFFFF {
+    return None
+  }
+  write_u16(bytes, 2, length)
+  Some(Bytes::from_array(bytes))
 }
 
 ///|
@@ -357,7 +428,22 @@ fn build_cmap_from_pairs(pairs : Array[(UInt, Int)]) -> Bytes? {
     }
   }
   let groups = build_format12_groups(dedup)
-  Some(build_cmap_table(build_cmap_format12(groups)))
+  let mut bmp_only = true
+  for pair in dedup {
+    if pair.0 > 0xFFFFU {
+      bmp_only = false
+      break
+    }
+  }
+  let subtables : Array[(Int, Int, Bytes)] = []
+  if bmp_only {
+    match build_cmap_format4(groups) {
+      None => ()
+      Some(table) => subtables.push((3, 1, table))
+    }
+  }
+  subtables.push((3, 10, build_cmap_format12(groups)))
+  Some(build_cmap_table_multi(subtables))
 }
 
 ///|
