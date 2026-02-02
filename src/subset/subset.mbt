@@ -3440,6 +3440,269 @@ fn build_gpos_single_subtable(
   }
 }
 
+fn value_record_is_zero(record : Array[Byte]) -> Bool {
+  for b in record {
+    if b != 0 {
+      return false
+    }
+  }
+  true
+}
+
+fn build_gpos_pair_format1(
+  value_format1 : Int,
+  value_format2 : Int,
+  records : Array[(Int, Array[(Int, Bytes)])],
+) -> Bytes {
+  let sorted : Array[(Int, Array[(Int, Bytes)])] = []
+  for record in records {
+    sorted.push(record)
+  }
+  sorted.sort_by((a, b) => a.0 - b.0)
+  let glyphs : Array[Int] = []
+  let pair_sets : Array[Bytes] = []
+  for record in sorted {
+    let (first_gid, pairs) = record
+    glyphs.push(first_gid)
+    let sorted_pairs : Array[(Int, Bytes)] = []
+    for pair in pairs {
+      sorted_pairs.push(pair)
+    }
+    sorted_pairs.sort_by((a, b) => a.0 - b.0)
+    let set_bytes : Array[Byte] = []
+    push_u16(set_bytes, sorted_pairs.length())
+    for pair in sorted_pairs {
+      let (second_gid, record_bytes) = pair
+      push_u16(set_bytes, second_gid)
+      for b in record_bytes {
+        set_bytes.push(b)
+      }
+    }
+    pair_sets.push(Bytes::from_array(set_bytes))
+  }
+  let coverage_bytes = build_coverage_subset(glyphs)
+  let out : Array[Byte] = []
+  push_u16(out, 1)
+  let header_len = 10 + pair_sets.length() * 2
+  let mut cursor = header_len
+  let offsets : Array[Int] = []
+  for set_bytes in pair_sets {
+    offsets.push(cursor)
+    cursor = cursor + set_bytes.length()
+  }
+  let coverage_offset = cursor
+  push_u16(out, coverage_offset)
+  push_u16(out, value_format1)
+  push_u16(out, value_format2)
+  push_u16(out, pair_sets.length())
+  for offset in offsets {
+    push_u16(out, offset)
+  }
+  for set_bytes in pair_sets {
+    for b in set_bytes {
+      out.push(b)
+    }
+  }
+  for b in coverage_bytes {
+    out.push(b)
+  }
+  Bytes::from_array(out)
+}
+
+fn build_gpos_pair_subtable(
+  bytes : Array[Byte],
+  plan : SubsetPlan,
+) -> Result[Bytes?, SubsetError] {
+  if bytes.length() < 10 {
+    return Err(InvalidInput("invalid GPOS pair subtable"))
+  }
+  let format = match read_u16(bytes, 0) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  let coverage_offset = match read_u16(bytes, 2) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  let value_format1 = match read_u16(bytes, 4) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  let value_format2 = match read_u16(bytes, 6) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  if ((value_format1 | value_format2) & 0x00f0) != 0 {
+    return Ok(None)
+  }
+  let value_size1 = gpos_value_record_size(value_format1)
+  let value_size2 = gpos_value_record_size(value_format2)
+  let record_size = value_size1 + value_size2
+  if record_size == 0 {
+    return Ok(None)
+  }
+  if coverage_offset <= 0 {
+    return Err(InvalidInput("invalid GPOS coverage offset"))
+  }
+  let coverage = match parse_coverage_subset(bytes, coverage_offset) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  if format == 1 {
+    if bytes.length() < 10 {
+      return Err(InvalidInput("invalid GPOS pair format1 header"))
+    }
+    let pair_set_count = match read_u16(bytes, 8) {
+      Err(err) => return Err(err)
+      Ok(value) => value
+    }
+    if pair_set_count < 0 || pair_set_count != coverage.length() {
+      return Err(InvalidInput("GPOS pair set count mismatch"))
+    }
+    let offsets_base = 10
+    if offsets_base + pair_set_count * 2 > bytes.length() {
+      return Err(InvalidInput("invalid GPOS pair set offsets"))
+    }
+    let records : Array[(Int, Array[(Int, Bytes)])] = []
+    let pair_record_size = 2 + record_size
+    for i in 0..<pair_set_count {
+      let glyph = coverage[i]
+      if glyph < 0 || glyph >= plan.old_to_new.length() {
+        return Err(InvalidInput("glyph id out of range"))
+      }
+      let new_first = plan.old_to_new[glyph]
+      let pair_set_offset = match read_u16(bytes, offsets_base + i * 2) {
+        Err(err) => return Err(err)
+        Ok(value) => value
+      }
+      if pair_set_offset <= 0 {
+        continue
+      }
+      let pair_set_base = pair_set_offset
+      if pair_set_base < 0 || pair_set_base + 2 > bytes.length() {
+        return Err(InvalidInput("invalid GPOS pair set offset"))
+      }
+      let pair_value_count = match read_u16(bytes, pair_set_base) {
+        Err(err) => return Err(err)
+        Ok(value) => value
+      }
+      if pair_value_count < 0 {
+        return Err(InvalidInput("invalid GPOS pair value count"))
+      }
+      let record_base = pair_set_base + 2
+      if record_base + pair_value_count * pair_record_size > bytes.length() {
+        return Err(InvalidInput("invalid GPOS pair value records"))
+      }
+      let pairs : Array[(Int, Bytes)] = []
+      for j in 0..<pair_value_count {
+        let entry_base = record_base + j * pair_record_size
+        let second_gid = match read_u16(bytes, entry_base) {
+          Err(err) => return Err(err)
+          Ok(value) => value
+        }
+        if second_gid < 0 || second_gid >= plan.old_to_new.length() {
+          return Err(InvalidInput("glyph id out of range"))
+        }
+        let new_second = plan.old_to_new[second_gid]
+        if new_second < 0 {
+          continue
+        }
+        let value_start = entry_base + 2
+        let value_end = value_start + record_size
+        let record_bytes = bytes[value_start:value_end].to_array()
+        pairs.push((new_second, Bytes::from_array(record_bytes)))
+      }
+      if new_first >= 0 && !pairs.is_empty() {
+        records.push((new_first, pairs))
+      }
+    }
+    if records.is_empty() {
+      return Ok(None)
+    }
+    return Ok(Some(build_gpos_pair_format1(value_format1, value_format2, records)))
+  } else if format == 2 {
+    if bytes.length() < 16 {
+      return Err(InvalidInput("invalid GPOS pair format2 header"))
+    }
+    let class_def1_offset = match read_u16(bytes, 8) {
+      Err(err) => return Err(err)
+      Ok(value) => value
+    }
+    let class_def2_offset = match read_u16(bytes, 10) {
+      Err(err) => return Err(err)
+      Ok(value) => value
+    }
+    let class1_count = match read_u16(bytes, 12) {
+      Err(err) => return Err(err)
+      Ok(value) => value
+    }
+    let class2_count = match read_u16(bytes, 14) {
+      Err(err) => return Err(err)
+      Ok(value) => value
+    }
+    if class_def1_offset <= 0 || class_def2_offset <= 0 {
+      return Ok(None)
+    }
+    if class1_count <= 0 || class2_count <= 0 {
+      return Ok(None)
+    }
+    let class1_base = class_def1_offset
+    let class2_base = class_def2_offset
+    let matrix_base = 16
+    let class_record_size = record_size
+    let class1_record_size = class2_count * class_record_size
+    if matrix_base + class1_count * class1_record_size > bytes.length() {
+      return Err(InvalidInput("invalid GPOS class pair records"))
+    }
+    let records : Array[(Int, Array[(Int, Bytes)])] = []
+    for glyph in coverage {
+      if glyph < 0 || glyph >= plan.old_to_new.length() {
+        return Err(InvalidInput("glyph id out of range"))
+      }
+      let new_first = plan.old_to_new[glyph]
+      if new_first < 0 {
+        continue
+      }
+      let class1 = match class_def_value_subset(bytes, class1_base, glyph) {
+        Err(err) => return Err(err)
+        Ok(value) => value
+      }
+      let class1_index = if class1 >= class1_count { 0 } else { class1 }
+      let pairs : Array[(Int, Bytes)] = []
+      for old_second in plan.glyphs {
+        let second_gid = old_second.reinterpret_as_int()
+        let class2 = match class_def_value_subset(bytes, class2_base, second_gid) {
+          Err(err) => return Err(err)
+          Ok(value) => value
+        }
+        let class2_index = if class2 >= class2_count { 0 } else { class2 }
+        let record_index = class1_index * class2_count + class2_index
+        let record_offset = matrix_base + record_index * class_record_size
+        if record_offset < 0 || record_offset + class_record_size > bytes.length() {
+          return Err(InvalidInput("invalid GPOS class pair record"))
+        }
+        let record_bytes = bytes[record_offset:record_offset + class_record_size].to_array()
+        if value_record_is_zero(record_bytes) {
+          continue
+        }
+        let new_second = plan.old_to_new[second_gid]
+        if new_second >= 0 {
+          pairs.push((new_second, Bytes::from_array(record_bytes)))
+        }
+      }
+      if !pairs.is_empty() {
+        records.push((new_first, pairs))
+      }
+    }
+    if records.is_empty() {
+      return Ok(None)
+    }
+    return Ok(Some(build_gpos_pair_format1(value_format1, value_format2, records)))
+  } else {
+    Ok(None)
+  }
+}
+
 fn parse_lookup_header(
   bytes : Array[Byte],
   offset : Int,
@@ -3952,6 +4215,30 @@ fn build_gpos_subset(
             }
             let sub_bytes = bytes[sub_base:sub_end].to_array()
             let new_sub = match build_gpos_single_subtable(sub_bytes, plan) {
+              Err(err) => return Err(err)
+              Ok(value) => value
+            }
+            match new_sub {
+              None => ()
+              Some(value) => {
+                kept_subtables = kept_subtables + 1
+                subtables.push(value)
+              }
+            }
+          }
+        } else if lookup_type == 2 {
+          for j in 0..<sub_offsets.length() {
+            let sub_base = base + sub_offsets[j]
+            let sub_end = if j + 1 < sub_offsets.length() {
+              base + sub_offsets[j + 1]
+            } else {
+              end
+            }
+            if sub_base < 0 || sub_base >= end || sub_end <= sub_base || sub_end > end {
+              return Err(InvalidInput("invalid GPOS subtable bounds"))
+            }
+            let sub_bytes = bytes[sub_base:sub_end].to_array()
+            let new_sub = match build_gpos_pair_subtable(sub_bytes, plan) {
               Err(err) => return Err(err)
               Ok(value) => value
             }

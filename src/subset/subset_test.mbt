@@ -941,6 +941,95 @@ fn build_gpos_single() -> Bytes {
 }
 
 ///|
+fn build_gpos_pair() -> Bytes {
+  let pair_subtable : Array[Byte] = []
+  let pair_set_offset = 12
+  let pair_set_length = 8
+  let coverage_offset = pair_set_offset + pair_set_length
+  push_u16(pair_subtable, 1)
+  push_u16(pair_subtable, coverage_offset)
+  push_u16(pair_subtable, 1)
+  push_u16(pair_subtable, 4)
+  push_u16(pair_subtable, 1)
+  push_u16(pair_subtable, pair_set_offset)
+  push_u16(pair_subtable, 1)
+  push_u16(pair_subtable, 2)
+  push_i16(pair_subtable, 20)
+  push_i16(pair_subtable, -30)
+  let pair_coverage = build_coverage_format1([2])
+  for b in pair_coverage {
+    pair_subtable.push(b)
+  }
+  let pair_lookup : Array[Byte] = []
+  push_u16(pair_lookup, 2)
+  push_u16(pair_lookup, 0)
+  push_u16(pair_lookup, 1)
+  push_u16(pair_lookup, 8)
+  for b in pair_subtable {
+    pair_lookup.push(b)
+  }
+  let lookup_list : Array[Byte] = []
+  push_u16(lookup_list, 1)
+  push_u16(lookup_list, 4)
+  for b in pair_lookup {
+    lookup_list.push(b)
+  }
+  let feature : Array[Byte] = []
+  push_u16(feature, 0)
+  push_u16(feature, 1)
+  push_u16(feature, 0)
+  let feature_list : Array[Byte] = []
+  push_u16(feature_list, 1)
+  feature_list.push(b'k')
+  feature_list.push(b'e')
+  feature_list.push(b'r')
+  feature_list.push(b'n')
+  push_u16(feature_list, 8)
+  for b in feature {
+    feature_list.push(b)
+  }
+  let lang_sys : Array[Byte] = []
+  push_u16(lang_sys, 0)
+  push_u16(lang_sys, 0xFFFF)
+  push_u16(lang_sys, 1)
+  push_u16(lang_sys, 0)
+  let script : Array[Byte] = []
+  push_u16(script, 4)
+  push_u16(script, 0)
+  for b in lang_sys {
+    script.push(b)
+  }
+  let script_list : Array[Byte] = []
+  push_u16(script_list, 1)
+  script_list.push(b'D')
+  script_list.push(b'F')
+  script_list.push(b'L')
+  script_list.push(b'T')
+  push_u16(script_list, 8)
+  for b in script {
+    script_list.push(b)
+  }
+  let bytes : Array[Byte] = []
+  push_u32(bytes, 0x00010000)
+  let script_offset = 10
+  let feature_offset = script_offset + script_list.length()
+  let lookup_offset = feature_offset + feature_list.length()
+  push_u16(bytes, script_offset)
+  push_u16(bytes, feature_offset)
+  push_u16(bytes, lookup_offset)
+  for b in script_list {
+    bytes.push(b)
+  }
+  for b in feature_list {
+    bytes.push(b)
+  }
+  for b in lookup_list {
+    bytes.push(b)
+  }
+  Bytes::from_array(bytes)
+}
+
+///|
 fn build_vhea(number_of_vmetrics : Int) -> Bytes {
   let bytes : Array[Byte] = Array::make(36, b'\x00')
   bytes[34] = ((number_of_vmetrics >> 8) & 0xff).to_byte()
@@ -1068,6 +1157,34 @@ fn build_font_bytes_subset_fixture() -> Bytes {
     (@common.Tag::from_chars('G', 'D', 'E', 'F'), build_gdef_table()),
     (@common.Tag::from_chars('G', 'S', 'U', 'B'), build_gsub_single()),
     (@common.Tag::from_chars('G', 'P', 'O', 'S'), build_gpos_single()),
+    (@common.Tag::from_chars('h', 'm', 't', 'x'), build_hmtx([500, 600, 700, 800], [0, 10, 20, 30])),
+    (@common.Tag::from_chars('v', 'h', 'e', 'a'), build_vhea(4)),
+    (@common.Tag::from_chars('v', 'm', 't', 'x'), build_vmtx([900, 910, 920, 930], [5, 6, 7, 8])),
+    (@common.Tag::from_chars('l', 'o', 'c', 'a'), loca),
+    (@common.Tag::from_chars('g', 'l', 'y', 'f'), glyf),
+    (@common.Tag::from_chars('c', 'm', 'a', 'p'), cmap),
+  ]
+  build_sfnt(tables)
+}
+
+///|
+fn build_font_bytes_subset_gpos_pair_fixture() -> Bytes {
+  let glyf = build_glyf_table()
+  let loca = build_loca_long([0, 0, 12, 30, 42])
+  let cmap = build_cmap_table(build_cmap_format12(0x41U, 0x42U, 1U))
+  let tables : Array[(@common.Tag, Bytes)] = [
+    (@common.Tag::from_chars('h', 'e', 'a', 'd'), build_head(1000, 1)),
+    (@common.Tag::from_chars('m', 'a', 'x', 'p'), build_maxp(4)),
+    (@common.Tag::from_chars('h', 'h', 'e', 'a'), build_hhea(4)),
+    (@common.Tag::from_chars('O', 'S', '/', '2'), build_os2()),
+    (@common.Tag::from_chars('C', 'P', 'A', 'L'), build_cpal()),
+    (@common.Tag::from_chars('p', 'o', 's', 't'), build_post_table_v2()),
+    (@common.Tag::from_chars('V', 'O', 'R', 'G'), build_vorg_table()),
+    (@common.Tag::from_chars('k', 'e', 'r', 'n'), build_kern_table()),
+    (@common.Tag::from_chars('C', 'O', 'L', 'R'), build_colr_table()),
+    (@common.Tag::from_chars('G', 'D', 'E', 'F'), build_gdef_table()),
+    (@common.Tag::from_chars('G', 'S', 'U', 'B'), build_gsub_single()),
+    (@common.Tag::from_chars('G', 'P', 'O', 'S'), build_gpos_pair()),
     (@common.Tag::from_chars('h', 'm', 't', 'x'), build_hmtx([500, 600, 700, 800], [0, 10, 20, 30])),
     (@common.Tag::from_chars('v', 'h', 'e', 'a'), build_vhea(4)),
     (@common.Tag::from_chars('v', 'm', 't', 'x'), build_vmtx([900, 910, 920, 930], [5, 6, 7, 8])),
@@ -2136,6 +2253,97 @@ test "subset rebuilds gpos single" {
   }
   inspect((lookup_count, lookup_type, sub_count, pos_format), content="(1, 1, 1, 1)")
   inspect((value_format, value, cov_format, cov_count, cov_glyph), content="(4, 50, 1, 1, 1)")
+}
+
+///|
+test "subset rebuilds gpos pair" {
+  let font = @font.Font::from_bytes(build_font_bytes_subset_gpos_pair_fixture())
+  let bytes = match subset(font, SubsetInput::from_codepoints([0x42U])) {
+    Err(err) => fail("subset failed: \{err}")
+    Ok(value) => value
+  }
+  let subset_font = @font.Font::from_bytes(bytes)
+  let gpos_blob = match subset_font.get_face().reference_table_optional(
+    @common.Tag::from_chars('G', 'P', 'O', 'S'),
+  ) {
+    Err(err) => fail("GPOS lookup failed: \{err}")
+    Ok(None) => fail("GPOS table missing from subset")
+    Ok(Some(blob)) => blob
+  }
+  let data = gpos_blob.as_view()
+  let lookup_offset = match read_u16(data, 8) {
+    None => fail("GPOS lookup offset missing")
+    Some(value) => value
+  }
+  let lookup_count = match read_u16(data, lookup_offset) {
+    None => fail("GPOS lookup count missing")
+    Some(value) => value
+  }
+  let lookup0_offset = match read_u16(data, lookup_offset + 2) {
+    None => fail("GPOS lookup offset missing")
+    Some(value) => value
+  }
+  let lookup0_base = lookup_offset + lookup0_offset
+  let lookup_type = match read_u16(data, lookup0_base) {
+    None => fail("GPOS lookup type missing")
+    Some(value) => value
+  }
+  let sub_count = match read_u16(data, lookup0_base + 4) {
+    None => fail("GPOS subtable count missing")
+    Some(value) => value
+  }
+  let sub_offset = match read_u16(data, lookup0_base + 6) {
+    None => fail("GPOS subtable offset missing")
+    Some(value) => value
+  }
+  let sub_base = lookup0_base + sub_offset
+  let pos_format = match read_u16(data, sub_base) {
+    None => fail("GPOS subtable format missing")
+    Some(value) => value
+  }
+  let coverage_offset = match read_u16(data, sub_base + 2) {
+    None => fail("GPOS coverage offset missing")
+    Some(value) => value
+  }
+  let value_format1 = match read_u16(data, sub_base + 4) {
+    None => fail("GPOS value format1 missing")
+    Some(value) => value
+  }
+  let value_format2 = match read_u16(data, sub_base + 6) {
+    None => fail("GPOS value format2 missing")
+    Some(value) => value
+  }
+  let pair_set_count = match read_u16(data, sub_base + 8) {
+    None => fail("GPOS pair set count missing")
+    Some(value) => value
+  }
+  let pair_set_offset = match read_u16(data, sub_base + 10) {
+    None => fail("GPOS pair set offset missing")
+    Some(value) => value
+  }
+  let pair_set_base = sub_base + pair_set_offset
+  let pair_value_count = match read_u16(data, pair_set_base) {
+    None => fail("GPOS pair value count missing")
+    Some(value) => value
+  }
+  let second_gid = match read_u16(data, pair_set_base + 2) {
+    None => fail("GPOS pair second glyph missing")
+    Some(value) => value
+  }
+  let cov_base = sub_base + coverage_offset
+  let cov_format = match read_u16(data, cov_base) {
+    None => fail("GPOS coverage format missing")
+    Some(value) => value
+  }
+  let cov_glyph = match read_u16(data, cov_base + 4) {
+    None => fail("GPOS coverage glyph missing")
+    Some(value) => value
+  }
+  inspect(lookup_count, content="1")
+  inspect((lookup_type, sub_count, pos_format), content="(2, 1, 1)")
+  inspect((value_format1, value_format2, pair_set_count), content="(1, 4, 1)")
+  inspect((pair_value_count, second_gid), content="(1, 1)")
+  inspect((cov_format, cov_glyph), content="(1, 1)")
 }
 
 ///|
