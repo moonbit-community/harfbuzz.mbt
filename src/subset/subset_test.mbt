@@ -587,23 +587,51 @@ fn build_gsub_single() -> Bytes {
     multiple_lookup.push(b)
   }
 
+  let alternate_subtable : Array[Byte] = []
+  push_u16(alternate_subtable, 1)
+  push_u16(alternate_subtable, 12)
+  push_u16(alternate_subtable, 1)
+  push_u16(alternate_subtable, 8)
+  push_u16(alternate_subtable, 1)
+  push_u16(alternate_subtable, 3)
+  let alternate_coverage = build_coverage_format1([2])
+  for b in alternate_coverage {
+    alternate_subtable.push(b)
+  }
+  let alternate_lookup : Array[Byte] = []
+  push_u16(alternate_lookup, 3)
+  push_u16(alternate_lookup, 0)
+  push_u16(alternate_lookup, 1)
+  push_u16(alternate_lookup, 8)
+  for b in alternate_subtable {
+    alternate_lookup.push(b)
+  }
+
   let lookup_list : Array[Byte] = []
-  push_u16(lookup_list, 2)
-  let second_offset = 6 + single_lookup.length()
-  push_u16(lookup_list, 6)
+  let lookup_count = 3
+  let lookup_header_len = 2 + lookup_count * 2
+  push_u16(lookup_list, lookup_count)
+  let second_offset = lookup_header_len + single_lookup.length()
+  let third_offset = second_offset + multiple_lookup.length()
+  push_u16(lookup_list, lookup_header_len)
   push_u16(lookup_list, second_offset)
+  push_u16(lookup_list, third_offset)
   for b in single_lookup {
     lookup_list.push(b)
   }
   for b in multiple_lookup {
     lookup_list.push(b)
   }
+  for b in alternate_lookup {
+    lookup_list.push(b)
+  }
 
   let feature : Array[Byte] = []
   push_u16(feature, 0)
-  push_u16(feature, 2)
+  push_u16(feature, 3)
   push_u16(feature, 0)
   push_u16(feature, 1)
+  push_u16(feature, 2)
   let feature_list : Array[Byte] = []
   push_u16(feature_list, 1)
   feature_list.push(b'l')
@@ -1087,9 +1115,9 @@ test "subset rebuilds gsub single" {
     None => fail("GSUB coverage glyph missing")
     Some(value) => value
   }
-  inspect((lookup_count, lookup_type, sub_count, sub_format), content="(2, 1, 1, 2)")
+  inspect((lookup_count, lookup_type, sub_count, sub_format), content="(3, 1, 1, 2)")
   inspect((glyph_count, cov_format, cov_count, cov_glyph, substitute), content="(1, 1, 1, 1, 2)")
-  inspect(lookup1_offset, content="28")
+  inspect(lookup1_offset, content="30")
 }
 
 ///|
@@ -1174,6 +1202,92 @@ test "subset rebuilds gsub multiple" {
   }
   inspect((lookup_type, sub_count, sub_format, seq_count), content="(2, 1, 1, 1)")
   inspect((seq_glyph_count, seq_glyph1, seq_glyph2), content="(2, 2, 1)")
+  inspect((cov_format, cov_count, cov_glyph), content="(1, 1, 1)")
+}
+
+///|
+test "subset rebuilds gsub alternate" {
+  let font = @font.Font::from_bytes(build_font_bytes_subset_fixture())
+  let bytes = match subset(font, SubsetInput::from_codepoints([0x42U])) {
+    Err(err) => fail("subset failed: \{err}")
+    Ok(value) => value
+  }
+  let subset_font = @font.Font::from_bytes(bytes)
+  let gsub_blob = match subset_font.get_face().reference_table_optional(
+    @common.Tag::from_chars('G', 'S', 'U', 'B'),
+  ) {
+    Err(err) => fail("GSUB lookup failed: \{err}")
+    Ok(None) => fail("GSUB table missing from subset")
+    Ok(Some(blob)) => blob
+  }
+  let data = gsub_blob.as_view()
+  let lookup_offset = match read_u16(data, 8) {
+    None => fail("GSUB lookup offset missing")
+    Some(value) => value
+  }
+  let lookup_count = match read_u16(data, lookup_offset) {
+    None => fail("GSUB lookup count missing")
+    Some(value) => value
+  }
+  let lookup2_offset = match read_u16(data, lookup_offset + 6) {
+    None => fail("GSUB lookup offset missing")
+    Some(value) => value
+  }
+  let lookup2_base = lookup_offset + lookup2_offset
+  let lookup_type = match read_u16(data, lookup2_base) {
+    None => fail("GSUB lookup type missing")
+    Some(value) => value
+  }
+  let sub_count = match read_u16(data, lookup2_base + 4) {
+    None => fail("GSUB subtable count missing")
+    Some(value) => value
+  }
+  let sub_offset = match read_u16(data, lookup2_base + 6) {
+    None => fail("GSUB subtable offset missing")
+    Some(value) => value
+  }
+  let sub_base = lookup2_base + sub_offset
+  let sub_format = match read_u16(data, sub_base) {
+    None => fail("GSUB subtable format missing")
+    Some(value) => value
+  }
+  let coverage_offset = match read_u16(data, sub_base + 2) {
+    None => fail("GSUB coverage offset missing")
+    Some(value) => value
+  }
+  let alt_count = match read_u16(data, sub_base + 4) {
+    None => fail("GSUB alternate count missing")
+    Some(value) => value
+  }
+  let alt_offset = match read_u16(data, sub_base + 6) {
+    None => fail("GSUB alternate offset missing")
+    Some(value) => value
+  }
+  let alt_base = sub_base + alt_offset
+  let alt_glyph_count = match read_u16(data, alt_base) {
+    None => fail("GSUB alternate glyph count missing")
+    Some(value) => value
+  }
+  let alt_glyph = match read_u16(data, alt_base + 2) {
+    None => fail("GSUB alternate glyph missing")
+    Some(value) => value
+  }
+  let cov_base = sub_base + coverage_offset
+  let cov_format = match read_u16(data, cov_base) {
+    None => fail("GSUB coverage format missing")
+    Some(value) => value
+  }
+  let cov_count = match read_u16(data, cov_base + 2) {
+    None => fail("GSUB coverage count missing")
+    Some(value) => value
+  }
+  let cov_glyph = match read_u16(data, cov_base + 4) {
+    None => fail("GSUB coverage glyph missing")
+    Some(value) => value
+  }
+  inspect(lookup_count, content="3")
+  inspect((lookup_type, sub_count, sub_format), content="(3, 1, 1)")
+  inspect((alt_count, alt_glyph_count, alt_glyph), content="(1, 1, 2)")
   inspect((cov_format, cov_count, cov_glyph), content="(1, 1, 1)")
 }
 
@@ -1564,7 +1678,7 @@ test "subset preserves layout tables for identity subset" {
     Some(value) => value
   }
   inspect(version, content="65536")
-  inspect(gsub_view.length(), content="102")
+  inspect(gsub_view.length(), content="132")
 }
 
 ///|

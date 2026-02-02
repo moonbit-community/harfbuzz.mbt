@@ -2229,6 +2229,134 @@ fn build_gsub_multiple_subtable(
   Ok(Some(Bytes::from_array(out)))
 }
 
+fn build_gsub_alternate_subtable(
+  bytes : Array[Byte],
+  plan : SubsetPlan,
+) -> Result[Bytes?, SubsetError] {
+  if bytes.length() < 8 {
+    return Err(InvalidInput("invalid GSUB alternate subtable"))
+  }
+  let format = match read_u16(bytes, 0) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  if format != 1 {
+    return Ok(None)
+  }
+  let coverage_offset = match read_u16(bytes, 2) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  let alt_count = match read_u16(bytes, 4) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  if coverage_offset <= 0 || alt_count < 0 {
+    return Err(InvalidInput("invalid GSUB alternate header"))
+  }
+  let offsets_base = 6
+  if offsets_base + alt_count * 2 > bytes.length() {
+    return Err(InvalidInput("invalid GSUB alternate offsets"))
+  }
+  let coverage = match parse_coverage_subset(bytes, coverage_offset) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  if coverage.length() != alt_count {
+    return Err(InvalidInput("GSUB alternate coverage count mismatch"))
+  }
+  let pairs : Array[(Int, Array[Int])] = []
+  for i in 0..<alt_count {
+    let glyph = coverage[i]
+    if glyph < 0 || glyph >= plan.old_to_new.length() {
+      return Err(InvalidInput("glyph id out of range"))
+    }
+    let new_in = plan.old_to_new[glyph]
+    if new_in < 0 {
+      continue
+    }
+    let alt_offset = match read_u16(bytes, offsets_base + i * 2) {
+      Err(err) => return Err(err)
+      Ok(value) => value
+    }
+    if alt_offset <= 0 {
+      continue
+    }
+    let alt_base = alt_offset
+    if alt_base < 0 || alt_base + 2 > bytes.length() {
+      return Err(InvalidInput("invalid GSUB alternate set offset"))
+    }
+    let glyph_count = match read_u16(bytes, alt_base) {
+      Err(err) => return Err(err)
+      Ok(value) => value
+    }
+    if glyph_count <= 0 {
+      continue
+    }
+    if alt_base + 2 + glyph_count * 2 > bytes.length() {
+      return Err(InvalidInput("invalid GSUB alternate set length"))
+    }
+    let alternates : Array[Int] = []
+    for j in 0..<glyph_count {
+      let alt = match read_u16(bytes, alt_base + 2 + j * 2) {
+        Err(err) => return Err(err)
+        Ok(value) => value
+      }
+      if alt < 0 || alt >= plan.old_to_new.length() {
+        return Err(InvalidInput("glyph id out of range"))
+      }
+      let new_alt = plan.old_to_new[alt]
+      if new_alt >= 0 {
+        alternates.push(new_alt)
+      }
+    }
+    if !alternates.is_empty() {
+      pairs.push((new_in, alternates))
+    }
+  }
+  if pairs.is_empty() {
+    return Ok(None)
+  }
+  pairs.sort_by((a, b) => a.0 - b.0)
+  let glyphs : Array[Int] = []
+  let alt_sets : Array[Bytes] = []
+  for pair in pairs {
+    let (gid, alternates) = pair
+    glyphs.push(gid)
+    let alt_bytes : Array[Byte] = []
+    push_u16(alt_bytes, alternates.length())
+    for value in alternates {
+      push_u16(alt_bytes, value)
+    }
+    alt_sets.push(Bytes::from_array(alt_bytes))
+  }
+  let coverage_bytes = build_coverage_subset(glyphs)
+  let out : Array[Byte] = []
+  push_u16(out, 1)
+  let header_len = 6 + alt_sets.length() * 2
+  let mut cursor = header_len
+  let offsets : Array[Int] = []
+  for alt_set in alt_sets {
+    offsets.push(cursor)
+    cursor = cursor + alt_set.length()
+  }
+  let coverage_offset = cursor
+  push_u16(out, coverage_offset)
+  push_u16(out, alt_sets.length())
+  for offset in offsets {
+    push_u16(out, offset)
+  }
+  for alt_set in alt_sets {
+    for b in alt_set {
+      out.push(b)
+    }
+  }
+  for b in coverage_bytes {
+    out.push(b)
+  }
+  Ok(Some(Bytes::from_array(out)))
+}
+
 fn parse_lookup_header(
   bytes : Array[Byte],
   offset : Int,
@@ -2435,6 +2563,30 @@ fn build_gsub_subset(
             }
             let sub_bytes = bytes[sub_base:sub_end].to_array()
             let new_sub = match build_gsub_multiple_subtable(sub_bytes, plan) {
+              Err(err) => return Err(err)
+              Ok(value) => value
+            }
+            match new_sub {
+              None => ()
+              Some(value) => {
+                kept_subtables = kept_subtables + 1
+                subtables.push(value)
+              }
+            }
+          }
+        } else if lookup_type == 3 {
+          for j in 0..<sub_offsets.length() {
+            let sub_base = base + sub_offsets[j]
+            let sub_end = if j + 1 < sub_offsets.length() {
+              base + sub_offsets[j + 1]
+            } else {
+              end
+            }
+            if sub_base < 0 || sub_base >= end || sub_end <= sub_base || sub_end > end {
+              return Err(InvalidInput("invalid GSUB subtable bounds"))
+            }
+            let sub_bytes = bytes[sub_base:sub_end].to_array()
+            let new_sub = match build_gsub_alternate_subtable(sub_bytes, plan) {
               Err(err) => return Err(err)
               Ok(value) => value
             }
