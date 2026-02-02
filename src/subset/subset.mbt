@@ -654,6 +654,35 @@ fn add_optional_os2(
   }
 }
 
+fn add_optional_post(
+  face : @face.Face,
+  tables : Array[(@common.Tag, Bytes)],
+  identity : Bool,
+) -> Result[Unit, SubsetError] {
+  let blob = match face.reference_table_optional(tag_post) {
+    Err(err) => return Err(Face(err))
+    Ok(value) => value
+  }
+  match blob {
+    None => Ok(())
+    Some(blob) => {
+      if identity {
+        tables.push((tag_post, blob.as_view().to_bytes()))
+        return Ok(())
+      }
+      match @sfnt.PostTable::parse(blob.as_view()) {
+        Err(_) => Ok(())
+        Ok(post) => {
+          if post.version == 0x00030000 {
+            tables.push((tag_post, blob.as_view().to_bytes()))
+          }
+          Ok(())
+        }
+      }
+    }
+  }
+}
+
 fn is_identity_subset(plan : SubsetPlan, total_glyphs : Int) -> Bool {
   if total_glyphs <= 0 || plan.glyphs.length() != total_glyphs {
     return false
@@ -717,7 +746,6 @@ fn add_passthrough_tables(
 ) -> Result[Unit, SubsetError] {
   let tags : Array[@common.Tag] = [
     tag_name,
-    tag_post,
     tag_cvt,
     tag_fpgm,
     tag_prep,
@@ -1399,6 +1427,10 @@ pub fn subset_with_plan(
     Err(err) => return Err(err)
     Ok(_) => ()
   }
+  match add_optional_post(face, tables, identity) {
+    Err(err) => return Err(err)
+    Ok(_) => ()
+  }
   match add_optional_os2(face, plan, tables) {
     Err(err) => return Err(err)
     Ok(_) => ()
@@ -1509,6 +1541,10 @@ fn subset_cff1_with_plan(
     Err(err) => return Err(err)
     Ok(_) => ()
   }
+  match add_optional_post(face, tables, identity) {
+    Err(err) => return Err(err)
+    Ok(_) => ()
+  }
   match add_optional_os2(face, plan, tables) {
     Err(err) => return Err(err)
     Ok(_) => ()
@@ -1616,6 +1652,10 @@ fn subset_cff2_with_plan(
     Some(cmap) => tables.push((tag_cmap, cmap))
   }
   match add_identity_passthrough_tables(face, tables, identity) {
+    Err(err) => return Err(err)
+    Ok(_) => ()
+  }
+  match add_optional_post(face, tables, identity) {
     Err(err) => return Err(err)
     Ok(_) => ()
   }

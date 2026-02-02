@@ -17,10 +17,12 @@ It fully subsets TrueType (glyf/loca) fonts and currently rebuilds these tables:
 - `glyf` (glyph data, with composite component remapping)
 - `cmap` (format 12 built from input codepoints; format 4 for BMP-only subsets)
 
-Optional tables `name`, `post`, `OS/2` (first/last char indices updated),
+Optional tables `name`, `OS/2` (first/last char indices updated),
 `gasp`, `cvt `, `fpgm`, `prep`, `VDMX`,
 `fvar`, `avar`, `STAT`, `MVAR`, `cvar`, `CPAL`, and `meta` are copied through
 unchanged if present.
+The `post` table is copied through unchanged for identity subsets; for remapped
+subsets only format 3.0 is preserved.
 Layout/color/variation tables that reference glyph IDs (GSUB/GPOS/GDEF,
 BASE/JSTF, AAT tables, COLR/CBDT/CBLC/SVG/sbix, gvar/HVAR/VVAR/VORG/VARC)
 are copied through only when the subset preserves all glyphs (identity);

@@ -159,6 +159,27 @@ fn build_cpal() -> Bytes {
 }
 
 ///|
+fn build_post_table_v2() -> Bytes {
+  let bytes : Array[Byte] = []
+  push_u32(bytes, 0x00020000)
+  push_u32(bytes, 0)
+  push_i16(bytes, -50)
+  push_i16(bytes, 20)
+  push_u32(bytes, 0)
+  push_u32(bytes, 0)
+  push_u32(bytes, 0)
+  push_u32(bytes, 0)
+  push_u32(bytes, 0)
+  push_u16(bytes, 1)
+  push_u16(bytes, 258)
+  bytes.push(3)
+  bytes.push(b'f')
+  bytes.push(b'o')
+  bytes.push(b'o')
+  Bytes::from_array(bytes)
+}
+
+///|
 fn build_gsub_stub() -> Bytes {
   let bytes : Array[Byte] = []
   push_u32(bytes, 0x00010000)
@@ -289,6 +310,7 @@ fn build_font_bytes_subset_fixture() -> Bytes {
     (@common.Tag::from_chars('h', 'h', 'e', 'a'), build_hhea(4)),
     (@common.Tag::from_chars('O', 'S', '/', '2'), build_os2()),
     (@common.Tag::from_chars('C', 'P', 'A', 'L'), build_cpal()),
+    (@common.Tag::from_chars('p', 'o', 's', 't'), build_post_table_v2()),
     (@common.Tag::from_chars('G', 'S', 'U', 'B'), build_gsub_stub()),
     (@common.Tag::from_chars('h', 'm', 't', 'x'), build_hmtx([500, 600, 700, 800], [0, 10, 20, 30])),
     (@common.Tag::from_chars('v', 'h', 'e', 'a'), build_vhea(4)),
@@ -379,6 +401,45 @@ test "subset preserves cpal" {
     Ok(Some(blob)) => blob
   }
   inspect(cpal_blob.as_view().length(), content="18")
+}
+
+///|
+test "subset drops post table when remapped" {
+  let font = @font.Font::from_bytes(build_font_bytes_subset_fixture())
+  let bytes = match subset(font, SubsetInput::from_codepoints([0x41U])) {
+    Err(err) => fail("subset failed: \{err}")
+    Ok(value) => value
+  }
+  let subset_font = @font.Font::from_bytes(bytes)
+  match subset_font.get_face().reference_table_optional(
+    @common.Tag::from_chars('p', 'o', 's', 't'),
+  ) {
+    Err(err) => fail("post lookup failed: \{err}")
+    Ok(None) => ()
+    Ok(Some(_)) => fail("post should be dropped for remapped subsets")
+  }
+}
+
+///|
+test "subset preserves post table for identity subset" {
+  let font = @font.Font::from_bytes(build_font_bytes_subset_fixture())
+  let bytes = match subset(font, SubsetInput::from_codepoints([0x41U, 0x42U])) {
+    Err(err) => fail("subset failed: \{err}")
+    Ok(value) => value
+  }
+  let subset_font = @font.Font::from_bytes(bytes)
+  let post_blob = match subset_font.get_face().reference_table_optional(
+    @common.Tag::from_chars('p', 'o', 's', 't'),
+  ) {
+    Err(err) => fail("post lookup failed: \{err}")
+    Ok(None) => fail("post table missing from identity subset")
+    Ok(Some(blob)) => blob
+  }
+  let post = match @sfnt.PostTable::parse(post_blob.as_view()) {
+    Err(err) => fail("post parse failed: \{err}")
+    Ok(value) => value
+  }
+  inspect(post.version, content="131072")
 }
 
 ///|
