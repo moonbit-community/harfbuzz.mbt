@@ -325,6 +325,143 @@ fn kern_search_params(pair_count : Int) -> (Int, Int, Int) {
   (search_range, entry_selector, range_shift)
 }
 
+fn kern_class_for_glyph(
+  table : @sfnt.KernClassTable,
+  glyph : Int,
+) -> Int {
+  let start = table.first_glyph
+  let index = glyph - start
+  if index < 0 || index >= table.classes.length() {
+    return 0
+  }
+  let value = table.classes[index]
+  if value < 0 { 0 } else { value }
+}
+
+fn build_kern_format0_subtable(
+  pairs : Array[(Int, Int, Int)],
+  horizontal : Bool,
+  minimum : Bool,
+  cross_stream : Bool,
+  override_flag : Bool,
+) -> Result[Bytes?, SubsetError] {
+  if pairs.is_empty() {
+    return Ok(None)
+  }
+  pairs.sort_by((a, b) => {
+    let (left_a, right_a, _) = a
+    let (left_b, right_b, _) = b
+    if left_a != left_b {
+      left_a - left_b
+    } else {
+      right_a - right_b
+    }
+  })
+  let pair_count = pairs.length()
+  if pair_count > 0xFFFF {
+    return Err(Unsupported("kern pair count exceeds 65535"))
+  }
+  let (search_range, entry_selector, range_shift) = kern_search_params(pair_count)
+  let mut flags = 0
+  if horizontal {
+    flags = flags | 0x01
+  }
+  if minimum {
+    flags = flags | 0x02
+  }
+  if cross_stream {
+    flags = flags | 0x04
+  }
+  if override_flag {
+    flags = flags | 0x08
+  }
+  let length = 14 + pair_count * 6
+  let bytes : Array[Byte] = []
+  push_u16(bytes, 0)
+  push_u16(bytes, length)
+  push_u16(bytes, flags)
+  push_u16(bytes, pair_count)
+  push_u16(bytes, search_range)
+  push_u16(bytes, entry_selector)
+  push_u16(bytes, range_shift)
+  for pair in pairs {
+    let (left, right, value) = pair
+    push_u16(bytes, left)
+    push_u16(bytes, right)
+    push_i16(bytes, value)
+  }
+  Ok(Some(Bytes::from_array(bytes)))
+}
+
+fn kern_pairs_from_format2(
+  format2 : @sfnt.KernSubtableFormat2,
+  plan : SubsetPlan,
+) -> Result[Array[(Int, Int, Int)], SubsetError] {
+  let left_class_count = format2.left.class_count
+  let right_class_count = format2.right_class_count
+  if left_class_count <= 0 || right_class_count <= 0 {
+    return Ok([])
+  }
+  let total_values = left_class_count * right_class_count
+  if total_values < 0 || total_values > format2.values.length() {
+    return Err(InvalidInput("kern format2 value count out of range"))
+  }
+  let left_classes : Array[Array[Int]] = []
+  for _ in 0..<left_class_count {
+    left_classes.push([])
+  }
+  let right_classes : Array[Array[Int]] = []
+  for _ in 0..<right_class_count {
+    right_classes.push([])
+  }
+  for old_gid_u in plan.glyphs {
+    let old_gid = old_gid_u.reinterpret_as_int()
+    if old_gid < 0 || old_gid >= plan.old_to_new.length() {
+      return Err(InvalidInput("glyph id out of range"))
+    }
+    let new_gid = plan.old_to_new[old_gid]
+    if new_gid < 0 {
+      continue
+    }
+    let left_class = kern_class_for_glyph(format2.left, old_gid)
+    if left_class >= 0 && left_class < left_class_count {
+      left_classes[left_class].push(new_gid)
+    }
+    let right_class = kern_class_for_glyph(format2.right, old_gid)
+    if right_class >= 0 && right_class < right_class_count {
+      right_classes[right_class].push(new_gid)
+    }
+  }
+  let pairs : Array[(Int, Int, Int)] = []
+  for left_class in 0..<left_class_count {
+    let left_glyphs = left_classes[left_class]
+    if left_glyphs.is_empty() {
+      continue
+    }
+    let base = left_class * right_class_count
+    for right_class in 0..<right_class_count {
+      let right_glyphs = right_classes[right_class]
+      if right_glyphs.is_empty() {
+        continue
+      }
+      let idx = base + right_class
+      if idx < 0 || idx >= format2.values.length() {
+        return Err(InvalidInput("kern format2 value index out of range"))
+      }
+      let value = format2.values[idx]
+      if value == 0 {
+        continue
+      }
+      for left_gid in left_glyphs {
+        for right_gid in right_glyphs {
+          pairs.push((left_gid, right_gid, value))
+        }
+      }
+    }
+  }
+  Ok(pairs)
+}
+
 fn compare_tags(a : @common.Tag, b : @common.Tag) -> Int {
   let (a1, a2, a3, a4) = a.bytes()
   let (b1, b2, b3, b4) = b.bytes()
@@ -1271,68 +1408,68 @@ fn build_kern_subset(
       }
       let subtables : Array[Bytes] = []
       for subtable in kern.subtables {
-        if subtable.format != 0 {
+        let horizontal = subtable.horizontal
+        let minimum = subtable.minimum
+        let cross_stream = subtable.cross_stream
+        let override_flag = subtable.override_flag
+        if subtable.format == 0 {
+          let pairs : Array[(Int, Int, Int)] = []
+          for pair in subtable.pairs {
+            let left = pair.left.reinterpret_as_int()
+            let right = pair.right.reinterpret_as_int()
+            if left < 0 || left >= plan.old_to_new.length() {
+              return Err(InvalidInput("glyph id out of range"))
+            }
+            if right < 0 || right >= plan.old_to_new.length() {
+              return Err(InvalidInput("glyph id out of range"))
+            }
+            let new_left = plan.old_to_new[left]
+            let new_right = plan.old_to_new[right]
+            if new_left >= 0 && new_right >= 0 {
+              pairs.push((new_left, new_right, pair.value))
+            }
+          }
+          let bytes = match build_kern_format0_subtable(
+            pairs,
+            horizontal,
+            minimum,
+            cross_stream,
+            override_flag,
+          ) {
+            Err(err) => return Err(err)
+            Ok(value) => value
+          }
+          match bytes {
+            None => ()
+            Some(bytes) => subtables.push(bytes)
+          }
           continue
         }
-        let pairs : Array[(Int, Int, Int)] = []
-        for pair in subtable.pairs {
-          let left = pair.left.reinterpret_as_int()
-          let right = pair.right.reinterpret_as_int()
-          if left < 0 || left >= plan.old_to_new.length() {
-            return Err(InvalidInput("glyph id out of range"))
+        if subtable.format == 2 {
+          let format2 = match subtable.format2 {
+            None => continue
+            Some(value) => value
           }
-          if right < 0 || right >= plan.old_to_new.length() {
-            return Err(InvalidInput("glyph id out of range"))
+          let pairs = match kern_pairs_from_format2(format2, plan) {
+            Err(err) => return Err(err)
+            Ok(value) => value
           }
-          let new_left = plan.old_to_new[left]
-          let new_right = plan.old_to_new[right]
-          if new_left >= 0 && new_right >= 0 {
-            pairs.push((new_left, new_right, pair.value))
+          let bytes = match build_kern_format0_subtable(
+            pairs,
+            horizontal,
+            minimum,
+            cross_stream,
+            override_flag,
+          ) {
+            Err(err) => return Err(err)
+            Ok(value) => value
           }
-        }
-        if pairs.is_empty() {
+          match bytes {
+            None => ()
+            Some(bytes) => subtables.push(bytes)
+          }
           continue
         }
-        pairs.sort_by((a, b) => {
-          let (left_a, right_a, _) = a
-          let (left_b, right_b, _) = b
-          if left_a != left_b {
-            left_a - left_b
-          } else {
-            right_a - right_b
-          }
-        })
-        let pair_count = pairs.length()
-        let (search_range, entry_selector, range_shift) = kern_search_params(pair_count)
-        let mut flags = 0
-        if subtable.horizontal {
-          flags = flags | 0x01
-        }
-        if subtable.minimum {
-          flags = flags | 0x02
-        }
-        if subtable.cross_stream {
-          flags = flags | 0x04
-        }
-        if subtable.override_flag {
-          flags = flags | 0x08
-        }
-        let length = 14 + pair_count * 6
-        let bytes : Array[Byte] = []
-        push_u16(bytes, 0)
-        push_u16(bytes, length)
-        push_u16(bytes, flags)
-        push_u16(bytes, pair_count)
-        push_u16(bytes, search_range)
-        push_u16(bytes, entry_selector)
-        push_u16(bytes, range_shift)
-        for pair in pairs {
-          let (left, right, value) = pair
-          push_u16(bytes, left)
-          push_u16(bytes, right)
-          push_i16(bytes, value)
-        }
-        subtables.push(Bytes::from_array(bytes))
       }
       if subtables.is_empty() {
         return Ok(None)
