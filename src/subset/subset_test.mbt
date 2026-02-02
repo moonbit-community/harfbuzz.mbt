@@ -5,6 +5,12 @@ fn push_u16(bytes : Array[Byte], value : Int) -> Unit {
 }
 
 ///|
+fn push_i16(bytes : Array[Byte], value : Int) -> Unit {
+  let adjusted = if value < 0 { value + 0x10000 } else { value }
+  push_u16(bytes, adjusted)
+}
+
+///|
 fn read_u16(data : BytesView, offset : Int) -> Int? {
   if offset + 2 > data.length() {
     return None
@@ -12,6 +18,14 @@ fn read_u16(data : BytesView, offset : Int) -> Int? {
   let b0 = data[offset].to_int()
   let b1 = data[offset + 1].to_int()
   Some((b0 << 8) | b1)
+}
+
+///|
+fn read_i16(data : BytesView, offset : Int) -> Int? {
+  match read_u16(data, offset) {
+    None => None
+    Some(value) => if value >= 0x8000 { Some(value - 0x10000) } else { Some(value) }
+  }
 }
 
 ///|
@@ -55,12 +69,6 @@ fn find_cmap_subtable(
       None
     }
   }
-}
-
-///|
-fn push_i16(bytes : Array[Byte], value : Int) -> Unit {
-  let adjusted = if value < 0 { value + 0x10000 } else { value }
-  push_u16(bytes, adjusted)
 }
 
 ///|
@@ -302,38 +310,196 @@ fn build_colr_table() -> Bytes {
 }
 
 ///|
-fn build_gdef_table() -> Bytes {
+fn build_class_def_format1(start_glyph : Int, classes : Array[Int]) -> Bytes {
   let bytes : Array[Byte] = []
-  let glyph_class_offset = 14
-  let mark_attach_offset = glyph_class_offset + 14
-  let mark_sets_offset = mark_attach_offset + 14
-  push_u32(bytes, 0x00010002)
-  push_u16(bytes, glyph_class_offset)
-  push_u16(bytes, 0)
-  push_u16(bytes, 0)
-  push_u16(bytes, mark_attach_offset)
-  push_u16(bytes, mark_sets_offset)
   push_u16(bytes, 1)
-  push_u16(bytes, 0)
-  push_u16(bytes, 4)
-  push_u16(bytes, 0)
+  push_u16(bytes, start_glyph)
+  push_u16(bytes, classes.length())
+  for value in classes {
+    push_u16(bytes, value)
+  }
+  Bytes::from_array(bytes)
+}
+
+///|
+fn build_coverage_format1(glyphs : Array[Int]) -> Bytes {
+  let bytes : Array[Byte] = []
   push_u16(bytes, 1)
+  push_u16(bytes, glyphs.length())
+  for glyph in glyphs {
+    push_u16(bytes, glyph)
+  }
+  Bytes::from_array(bytes)
+}
+
+///|
+fn build_attach_list() -> Bytes {
+  let coverage = build_coverage_format1([1, 3])
+  let attach1 : Array[Byte] = []
+  push_u16(attach1, 1)
+  push_u16(attach1, 7)
+  let attach2 : Array[Byte] = []
+  push_u16(attach2, 2)
+  push_u16(attach2, 3)
+  push_u16(attach2, 4)
+  let header_len = 4 + 2 * 2
+  let cursor = header_len + coverage.length()
+  let offsets : Array[Int] = [cursor, cursor + attach1.length()]
+  let bytes : Array[Byte] = []
+  push_u16(bytes, header_len)
   push_u16(bytes, 2)
+  for offset in offsets {
+    push_u16(bytes, offset)
+  }
+  for b in coverage {
+    bytes.push(b)
+  }
+  for b in attach1 {
+    bytes.push(b)
+  }
+  for b in attach2 {
+    bytes.push(b)
+  }
+  Bytes::from_array(bytes)
+}
+
+///|
+fn build_device_table() -> Bytes {
+  let bytes : Array[Byte] = []
+  push_u16(bytes, 0)
   push_u16(bytes, 0)
   push_u16(bytes, 1)
   push_u16(bytes, 0)
-  push_u16(bytes, 4)
-  push_u16(bytes, 0)
-  push_u16(bytes, 0)
+  Bytes::from_array(bytes)
+}
+
+///|
+fn build_caret_value_format1(coord : Int) -> Bytes {
+  let bytes : Array[Byte] = []
   push_u16(bytes, 1)
+  push_i16(bytes, coord)
+  Bytes::from_array(bytes)
+}
+
+///|
+fn build_caret_value_format2(point : Int) -> Bytes {
+  let bytes : Array[Byte] = []
   push_u16(bytes, 2)
+  push_u16(bytes, point)
+  Bytes::from_array(bytes)
+}
+
+///|
+fn build_caret_value_format3(coord : Int) -> Bytes {
+  let device = build_device_table()
+  let bytes : Array[Byte] = []
+  push_u16(bytes, 3)
+  push_i16(bytes, coord)
+  push_u16(bytes, 6)
+  for b in device {
+    bytes.push(b)
+  }
+  Bytes::from_array(bytes)
+}
+
+///|
+fn build_lig_glyph(carets : Array[Bytes]) -> Bytes {
+  let bytes : Array[Byte] = []
+  push_u16(bytes, carets.length())
+  let mut cursor = 2 + carets.length() * 2
+  let offsets : Array[Int] = []
+  for caret in carets {
+    offsets.push(cursor)
+    cursor = cursor + caret.length()
+  }
+  for offset in offsets {
+    push_u16(bytes, offset)
+  }
+  for caret in carets {
+    for b in caret {
+      bytes.push(b)
+    }
+  }
+  Bytes::from_array(bytes)
+}
+
+///|
+fn build_lig_caret_list() -> Bytes {
+  let coverage = build_coverage_format1([2, 3])
+  let lig1 = build_lig_glyph([build_caret_value_format1(100)])
+  let lig2 = build_lig_glyph([
+    build_caret_value_format2(5),
+    build_caret_value_format3(200),
+  ])
+  let header_len = 4 + 2 * 2
+  let cursor = header_len + coverage.length()
+  let offsets : Array[Int] = [cursor, cursor + lig1.length()]
+  let bytes : Array[Byte] = []
+  push_u16(bytes, header_len)
+  push_u16(bytes, 2)
+  for offset in offsets {
+    push_u16(bytes, offset)
+  }
+  for b in coverage {
+    bytes.push(b)
+  }
+  for b in lig1 {
+    bytes.push(b)
+  }
+  for b in lig2 {
+    bytes.push(b)
+  }
+  Bytes::from_array(bytes)
+}
+
+///|
+fn build_mark_glyph_sets() -> Bytes {
+  let coverage = build_coverage_format1([2, 3])
+  let bytes : Array[Byte] = []
   push_u16(bytes, 1)
   push_u16(bytes, 1)
   push_u16(bytes, 6)
-  push_u16(bytes, 1)
-  push_u16(bytes, 2)
-  push_u16(bytes, 2)
-  push_u16(bytes, 3)
+  for b in coverage {
+    bytes.push(b)
+  }
+  Bytes::from_array(bytes)
+}
+
+///|
+fn build_gdef_table() -> Bytes {
+  let bytes : Array[Byte] = []
+  let glyph_class = build_class_def_format1(0, [0, 1, 2, 0])
+  let attach_list = build_attach_list()
+  let lig_caret_list = build_lig_caret_list()
+  let mark_attach = build_class_def_format1(0, [0, 0, 1, 2])
+  let mark_sets = build_mark_glyph_sets()
+  let header_len = 14
+  let glyph_class_offset = header_len
+  let attach_list_offset = glyph_class_offset + glyph_class.length()
+  let lig_caret_list_offset = attach_list_offset + attach_list.length()
+  let mark_attach_offset = lig_caret_list_offset + lig_caret_list.length()
+  let mark_sets_offset = mark_attach_offset + mark_attach.length()
+  push_u32(bytes, 0x00010002)
+  push_u16(bytes, glyph_class_offset)
+  push_u16(bytes, attach_list_offset)
+  push_u16(bytes, lig_caret_list_offset)
+  push_u16(bytes, mark_attach_offset)
+  push_u16(bytes, mark_sets_offset)
+  for b in glyph_class {
+    bytes.push(b)
+  }
+  for b in attach_list {
+    bytes.push(b)
+  }
+  for b in lig_caret_list {
+    bytes.push(b)
+  }
+  for b in mark_attach {
+    bytes.push(b)
+  }
+  for b in mark_sets {
+    bytes.push(b)
+  }
   Bytes::from_array(bytes)
 }
 
@@ -785,6 +951,14 @@ test "subset rebuilds gdef" {
     None => fail("GDEF class offset missing")
     Some(value) => value
   }
+  let attach_list_offset = match read_u16(data, 6) {
+    None => fail("GDEF attach list offset missing")
+    Some(value) => value
+  }
+  let lig_caret_offset = match read_u16(data, 8) {
+    None => fail("GDEF lig caret offset missing")
+    Some(value) => value
+  }
   let mark_attach_offset = match read_u16(data, 10) {
     None => fail("GDEF mark attach offset missing")
     Some(value) => value
@@ -793,7 +967,17 @@ test "subset rebuilds gdef" {
     None => fail("GDEF mark sets offset missing")
     Some(value) => value
   }
-  inspect((version, glyph_class_offset, mark_attach_offset, mark_sets_offset), content="(65538, 14, 26, 38)")
+  inspect(
+    (
+      version,
+      glyph_class_offset,
+      attach_list_offset,
+      lig_caret_offset,
+      mark_attach_offset,
+      mark_sets_offset,
+    ),
+    content="(65538, 14, 26, 44, 92, 104)",
+  )
   let class_format = match read_u16(data, glyph_class_offset) {
     None => fail("GDEF class format missing")
     Some(value) => value
@@ -866,6 +1050,159 @@ test "subset rebuilds gdef" {
     Some(value) => value
   }
   inspect((sets_format, sets_count, cov_format, cov_count, cov1, cov2), content="(1, 1, 1, 2, 1, 2)")
+
+  let attach_cov_offset = match read_u16(data, attach_list_offset) {
+    None => fail("GDEF attach coverage offset missing")
+    Some(value) => value
+  }
+  let attach_count = match read_u16(data, attach_list_offset + 2) {
+    None => fail("GDEF attach count missing")
+    Some(value) => value
+  }
+  let attach_cov_base = attach_list_offset + attach_cov_offset
+  let attach_cov_format = match read_u16(data, attach_cov_base) {
+    None => fail("GDEF attach coverage format missing")
+    Some(value) => value
+  }
+  let attach_cov_count = match read_u16(data, attach_cov_base + 2) {
+    None => fail("GDEF attach coverage count missing")
+    Some(value) => value
+  }
+  let attach_cov_glyph = match read_u16(data, attach_cov_base + 4) {
+    None => fail("GDEF attach coverage glyph missing")
+    Some(value) => value
+  }
+  let attach_point_offset = match read_u16(data, attach_list_offset + 4) {
+    None => fail("GDEF attach point offset missing")
+    Some(value) => value
+  }
+  let attach_point_base = attach_list_offset + attach_point_offset
+  let attach_point_count = match read_u16(data, attach_point_base) {
+    None => fail("GDEF attach point count missing")
+    Some(value) => value
+  }
+  let attach_point1 = match read_u16(data, attach_point_base + 2) {
+    None => fail("GDEF attach point missing")
+    Some(value) => value
+  }
+  let attach_point2 = match read_u16(data, attach_point_base + 4) {
+    None => fail("GDEF attach point missing")
+    Some(value) => value
+  }
+  inspect(
+    (
+      attach_cov_format,
+      attach_count,
+      attach_cov_count,
+      attach_cov_glyph,
+      attach_point_count,
+      attach_point1,
+      attach_point2,
+    ),
+    content="(1, 1, 1, 2, 2, 3, 4)",
+  )
+
+  let lig_cov_offset = match read_u16(data, lig_caret_offset) {
+    None => fail("GDEF lig caret coverage offset missing")
+    Some(value) => value
+  }
+  let lig_cov_base = lig_caret_offset + lig_cov_offset
+  let lig_cov_format = match read_u16(data, lig_cov_base) {
+    None => fail("GDEF lig caret coverage format missing")
+    Some(value) => value
+  }
+  let lig_cov_count = match read_u16(data, lig_cov_base + 2) {
+    None => fail("GDEF lig caret coverage count missing")
+    Some(value) => value
+  }
+  let lig_cov1 = match read_u16(data, lig_cov_base + 4) {
+    None => fail("GDEF lig caret coverage glyph missing")
+    Some(value) => value
+  }
+  let lig_cov2 = match read_u16(data, lig_cov_base + 6) {
+    None => fail("GDEF lig caret coverage glyph missing")
+    Some(value) => value
+  }
+  inspect((lig_cov_format, lig_cov_count, lig_cov1, lig_cov2), content="(1, 2, 1, 2)")
+  let lig_offset1 = match read_u16(data, lig_caret_offset + 4) {
+    None => fail("GDEF lig caret offset missing")
+    Some(value) => value
+  }
+  let lig_offset2 = match read_u16(data, lig_caret_offset + 6) {
+    None => fail("GDEF lig caret offset missing")
+    Some(value) => value
+  }
+  let lig1_base = lig_caret_offset + lig_offset1
+  let lig2_base = lig_caret_offset + lig_offset2
+  let lig1_count = match read_u16(data, lig1_base) {
+    None => fail("GDEF lig caret count missing")
+    Some(value) => value
+  }
+  let lig1_caret_offset = match read_u16(data, lig1_base + 2) {
+    None => fail("GDEF lig caret offset missing")
+    Some(value) => value
+  }
+  let lig1_caret_base = lig1_base + lig1_caret_offset
+  let lig1_format = match read_u16(data, lig1_caret_base) {
+    None => fail("GDEF lig caret format missing")
+    Some(value) => value
+  }
+  let lig1_coord = match read_i16(data, lig1_caret_base + 2) {
+    None => fail("GDEF lig caret coord missing")
+    Some(value) => value
+  }
+  inspect((lig1_count, lig1_format, lig1_coord), content="(1, 1, 100)")
+  let lig2_count = match read_u16(data, lig2_base) {
+    None => fail("GDEF lig caret count missing")
+    Some(value) => value
+  }
+  let lig2_caret1_offset = match read_u16(data, lig2_base + 2) {
+    None => fail("GDEF lig caret offset missing")
+    Some(value) => value
+  }
+  let lig2_caret2_offset = match read_u16(data, lig2_base + 4) {
+    None => fail("GDEF lig caret offset missing")
+    Some(value) => value
+  }
+  let lig2_caret1_base = lig2_base + lig2_caret1_offset
+  let lig2_caret2_base = lig2_base + lig2_caret2_offset
+  let lig2_format1 = match read_u16(data, lig2_caret1_base) {
+    None => fail("GDEF lig caret format missing")
+    Some(value) => value
+  }
+  let lig2_point = match read_u16(data, lig2_caret1_base + 2) {
+    None => fail("GDEF lig caret point missing")
+    Some(value) => value
+  }
+  let lig2_format2 = match read_u16(data, lig2_caret2_base) {
+    None => fail("GDEF lig caret format missing")
+    Some(value) => value
+  }
+  let lig2_coord = match read_i16(data, lig2_caret2_base + 2) {
+    None => fail("GDEF lig caret coord missing")
+    Some(value) => value
+  }
+  let lig2_device_offset = match read_u16(data, lig2_caret2_base + 4) {
+    None => fail("GDEF lig caret device offset missing")
+    Some(value) => value
+  }
+  let lig2_device_base = lig2_caret2_base + lig2_device_offset
+  let lig2_device_format = match read_u16(data, lig2_device_base + 4) {
+    None => fail("GDEF lig caret device format missing")
+    Some(value) => value
+  }
+  inspect(
+    (
+      lig2_count,
+      lig2_format1,
+      lig2_point,
+      lig2_format2,
+      lig2_coord,
+      lig2_device_offset,
+      lig2_device_format,
+    ),
+    content="(2, 2, 5, 3, 200, 6, 1)",
+  )
 }
 
 ///|

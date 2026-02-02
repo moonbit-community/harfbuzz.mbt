@@ -1852,6 +1852,329 @@ fn build_mark_glyph_sets_subset(
   Ok(Some(Bytes::from_array(out)))
 }
 
+fn build_attach_list_subset(
+  bytes : Array[Byte],
+  offset : Int,
+  plan : SubsetPlan,
+) -> Result[Bytes?, SubsetError] {
+  let cov_offset = match read_u16(bytes, offset) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  let glyph_count = match read_u16(bytes, offset + 2) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  if cov_offset == 0 || glyph_count <= 0 {
+    return Ok(None)
+  }
+  let offsets_base = offset + 4
+  if offsets_base + glyph_count * 2 > bytes.length() {
+    return Err(InvalidInput("invalid attach list offsets"))
+  }
+  let cov_base = offset + cov_offset
+  let glyphs = match parse_coverage_subset(bytes, cov_base) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  if glyphs.length() != glyph_count {
+    return Err(InvalidInput("attach list glyph count mismatch"))
+  }
+  let records : Array[(Int, Bytes)] = []
+  for i in 0..<glyph_count {
+    let glyph = glyphs[i]
+    if glyph < 0 || glyph >= plan.old_to_new.length() {
+      return Err(InvalidInput("glyph id out of range"))
+    }
+    let attach_offset = match read_u16(bytes, offsets_base + i * 2) {
+      Err(err) => return Err(err)
+      Ok(value) => value
+    }
+    if attach_offset == 0 {
+      continue
+    }
+    let attach_base = offset + attach_offset
+    let point_count = match read_u16(bytes, attach_base) {
+      Err(err) => return Err(err)
+      Ok(value) => value
+    }
+    if point_count < 0 {
+      return Err(InvalidInput("invalid attach point count"))
+    }
+    let length = 2 + point_count * 2
+    if attach_base < 0 || attach_base + length > bytes.length() {
+      return Err(InvalidInput("invalid attach point table"))
+    }
+    let new_gid = plan.old_to_new[glyph]
+    if new_gid >= 0 {
+      let attach_bytes = Bytes::from_array(bytes[attach_base:attach_base + length].to_array())
+      records.push((new_gid, attach_bytes))
+    }
+  }
+  if records.is_empty() {
+    return Ok(None)
+  }
+  records.sort_by((a, b) => {
+    let (gid_a, _) = a
+    let (gid_b, _) = b
+    gid_a - gid_b
+  })
+  let mapped : Array[Int] = []
+  for record in records {
+    mapped.push(record.0)
+  }
+  let coverage = build_coverage_subset(mapped)
+  let out : Array[Byte] = []
+  let header_len = 4 + records.length() * 2
+  push_u16(out, header_len)
+  push_u16(out, records.length())
+  let mut cursor = header_len + coverage.length()
+  let offsets : Array[Int] = []
+  for record in records {
+    offsets.push(cursor)
+    cursor = cursor + record.1.length()
+  }
+  for offset_value in offsets {
+    push_u16(out, offset_value)
+  }
+  for b in coverage {
+    out.push(b)
+  }
+  for record in records {
+    for b in record.1 {
+      out.push(b)
+    }
+  }
+  Ok(Some(Bytes::from_array(out)))
+}
+
+fn device_table_length(
+  bytes : Array[Byte],
+  offset : Int,
+) -> Result[Int, SubsetError] {
+  let start_size = match read_u16(bytes, offset) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  let end_size = match read_u16(bytes, offset + 2) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  let delta_format = match read_u16(bytes, offset + 4) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  let count = end_size - start_size + 1
+  if count <= 0 {
+    return Err(InvalidInput("invalid device table range"))
+  }
+  let bits = if delta_format == 1 {
+    2
+  } else if delta_format == 2 {
+    4
+  } else if delta_format == 3 {
+    8
+  } else {
+    return Err(InvalidInput("invalid device table format"))
+  }
+  let words = (count * bits + 15) / 16
+  Ok(6 + words * 2)
+}
+
+fn build_caret_value_subset(
+  bytes : Array[Byte],
+  offset : Int,
+) -> Result[Bytes, SubsetError] {
+  let format = match read_u16(bytes, offset) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  if format == 1 {
+    let coord = match read_i16(bytes, offset + 2) {
+      Err(err) => return Err(err)
+      Ok(value) => value
+    }
+    let out : Array[Byte] = []
+    push_u16(out, 1)
+    push_i16(out, coord)
+    return Ok(Bytes::from_array(out))
+  }
+  if format == 2 {
+    let point = match read_u16(bytes, offset + 2) {
+      Err(err) => return Err(err)
+      Ok(value) => value
+    }
+    let out : Array[Byte] = []
+    push_u16(out, 2)
+    push_u16(out, point)
+    return Ok(Bytes::from_array(out))
+  }
+  if format == 3 {
+    let coord = match read_i16(bytes, offset + 2) {
+      Err(err) => return Err(err)
+      Ok(value) => value
+    }
+    let device_offset = match read_u16(bytes, offset + 4) {
+      Err(err) => return Err(err)
+      Ok(value) => value
+    }
+    let device_bytes : Array[Byte] = []
+    if device_offset != 0 {
+      let device_base = offset + device_offset
+      let length = match device_table_length(bytes, device_base) {
+        Err(err) => return Err(err)
+        Ok(value) => value
+      }
+      if device_base < 0 || device_base + length > bytes.length() {
+        return Err(InvalidInput("invalid device table"))
+      }
+      for b in bytes[device_base:device_base + length] {
+        device_bytes.push(b)
+      }
+    }
+    let out : Array[Byte] = []
+    push_u16(out, 3)
+    push_i16(out, coord)
+    let new_offset = if device_bytes.is_empty() { 0 } else { 6 }
+    push_u16(out, new_offset)
+    for b in device_bytes {
+      out.push(b)
+    }
+    return Ok(Bytes::from_array(out))
+  }
+  Err(InvalidInput("unsupported caret value format"))
+}
+
+fn build_lig_caret_list_subset(
+  bytes : Array[Byte],
+  offset : Int,
+  plan : SubsetPlan,
+) -> Result[Bytes?, SubsetError] {
+  let cov_offset = match read_u16(bytes, offset) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  let glyph_count = match read_u16(bytes, offset + 2) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  if cov_offset == 0 || glyph_count <= 0 {
+    return Ok(None)
+  }
+  let offsets_base = offset + 4
+  if offsets_base + glyph_count * 2 > bytes.length() {
+    return Err(InvalidInput("invalid lig caret offsets"))
+  }
+  let cov_base = offset + cov_offset
+  let glyphs = match parse_coverage_subset(bytes, cov_base) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  if glyphs.length() != glyph_count {
+    return Err(InvalidInput("lig caret glyph count mismatch"))
+  }
+  let records : Array[(Int, Bytes)] = []
+  for i in 0..<glyph_count {
+    let glyph = glyphs[i]
+    if glyph < 0 || glyph >= plan.old_to_new.length() {
+      return Err(InvalidInput("glyph id out of range"))
+    }
+    let lig_offset = match read_u16(bytes, offsets_base + i * 2) {
+      Err(err) => return Err(err)
+      Ok(value) => value
+    }
+    if lig_offset == 0 {
+      continue
+    }
+    let lig_base = offset + lig_offset
+    let caret_count = match read_u16(bytes, lig_base) {
+      Err(err) => return Err(err)
+      Ok(value) => value
+    }
+    if caret_count < 0 {
+      return Err(InvalidInput("invalid caret count"))
+    }
+    let caret_offsets_base = lig_base + 2
+    if caret_offsets_base + caret_count * 2 > bytes.length() {
+      return Err(InvalidInput("invalid caret offsets"))
+    }
+    let caret_values : Array[Bytes] = []
+    for j in 0..<caret_count {
+      let caret_offset = match read_u16(bytes, caret_offsets_base + j * 2) {
+        Err(err) => return Err(err)
+        Ok(value) => value
+      }
+      if caret_offset == 0 {
+        continue
+      }
+      let caret_base = lig_base + caret_offset
+      let caret_bytes = match build_caret_value_subset(bytes, caret_base) {
+        Err(err) => return Err(err)
+        Ok(value) => value
+      }
+      caret_values.push(caret_bytes)
+    }
+    if caret_values.is_empty() {
+      continue
+    }
+    let lig_bytes : Array[Byte] = []
+    push_u16(lig_bytes, caret_values.length())
+    let mut cursor = 2 + caret_values.length() * 2
+    let offsets : Array[Int] = []
+    for caret in caret_values {
+      offsets.push(cursor)
+      cursor = cursor + caret.length()
+    }
+    for offset_value in offsets {
+      push_u16(lig_bytes, offset_value)
+    }
+    for caret in caret_values {
+      for b in caret {
+        lig_bytes.push(b)
+      }
+    }
+    let new_gid = plan.old_to_new[glyph]
+    if new_gid >= 0 {
+      records.push((new_gid, Bytes::from_array(lig_bytes)))
+    }
+  }
+  if records.is_empty() {
+    return Ok(None)
+  }
+  records.sort_by((a, b) => {
+    let (gid_a, _) = a
+    let (gid_b, _) = b
+    gid_a - gid_b
+  })
+  let mapped : Array[Int] = []
+  for record in records {
+    mapped.push(record.0)
+  }
+  let coverage = build_coverage_subset(mapped)
+  let out : Array[Byte] = []
+  let header_len = 4 + records.length() * 2
+  push_u16(out, header_len)
+  push_u16(out, records.length())
+  let mut cursor = header_len + coverage.length()
+  let offsets : Array[Int] = []
+  for record in records {
+    offsets.push(cursor)
+    cursor = cursor + record.1.length()
+  }
+  for offset_value in offsets {
+    push_u16(out, offset_value)
+  }
+  for b in coverage {
+    out.push(b)
+  }
+  for record in records {
+    for b in record.1 {
+      out.push(b)
+    }
+  }
+  Ok(Some(Bytes::from_array(out)))
+}
+
 fn build_gdef_subset(
   face : @face.Face,
   plan : SubsetPlan,
@@ -1875,6 +2198,14 @@ fn build_gdef_subset(
         return Err(InvalidInput("invalid GDEF version"))
       }
       let glyph_class_def_offset = match read_u16(bytes, 4) {
+        Err(err) => return Err(err)
+        Ok(value) => value
+      }
+      let attach_list_offset = match read_u16(bytes, 6) {
+        Err(err) => return Err(err)
+        Ok(value) => value
+      }
+      let lig_caret_list_offset = match read_u16(bytes, 8) {
         Err(err) => return Err(err)
         Ok(value) => value
       }
@@ -1905,6 +2236,22 @@ fn build_gdef_subset(
       } else {
         None
       }
+      let attach_list = if attach_list_offset != 0 {
+        match build_attach_list_subset(bytes, attach_list_offset, plan) {
+          Err(err) => return Err(err)
+          Ok(value) => value
+        }
+      } else {
+        None
+      }
+      let lig_caret_list = if lig_caret_list_offset != 0 {
+        match build_lig_caret_list_subset(bytes, lig_caret_list_offset, plan) {
+          Err(err) => return Err(err)
+          Ok(value) => value
+        }
+      } else {
+        None
+      }
       let mark_glyph_sets = if mark_glyph_sets_def_offset != 0 {
         match build_mark_glyph_sets_subset(bytes, mark_glyph_sets_def_offset, plan) {
           Err(err) => return Err(err)
@@ -1913,13 +2260,33 @@ fn build_gdef_subset(
       } else {
         None
       }
-      if glyph_class_def is None && mark_attach_class_def is None && mark_glyph_sets is None {
+      if glyph_class_def is None &&
+          mark_attach_class_def is None &&
+          attach_list is None &&
+          lig_caret_list is None &&
+          mark_glyph_sets is None {
         return Ok(None)
       }
       let include_mark_sets = mark_glyph_sets is Some(_)
       let header_len = if include_mark_sets { 14 } else { 12 }
       let mut offset = header_len
       let glyph_class_offset = match glyph_class_def {
+        None => 0
+        Some(bytes) => {
+          let current = offset
+          offset = offset + bytes.length()
+          current
+        }
+      }
+      let attach_list_offset = match attach_list {
+        None => 0
+        Some(bytes) => {
+          let current = offset
+          offset = offset + bytes.length()
+          current
+        }
+      }
+      let lig_caret_list_offset = match lig_caret_list {
         None => 0
         Some(bytes) => {
           let current = offset
@@ -1947,13 +2314,29 @@ fn build_gdef_subset(
       let out_version = if include_mark_sets { 0x00010002 } else { 0x00010000 }
       push_u32(out, out_version)
       push_u16(out, glyph_class_offset)
-      push_u16(out, 0)
-      push_u16(out, 0)
+      push_u16(out, attach_list_offset)
+      push_u16(out, lig_caret_list_offset)
       push_u16(out, mark_attach_offset)
       if include_mark_sets {
         push_u16(out, mark_sets_offset)
       }
       match glyph_class_def {
+        None => ()
+        Some(bytes) => {
+          for b in bytes {
+            out.push(b)
+          }
+        }
+      }
+      match attach_list {
+        None => ()
+        Some(bytes) => {
+          for b in bytes {
+            out.push(b)
+          }
+        }
+      }
+      match lig_caret_list {
         None => ()
         Some(bytes) => {
           for b in bytes {
