@@ -2549,6 +2549,206 @@ fn build_gsub_ligature_subtable(
   Ok(Some(Bytes::from_array(out)))
 }
 
+fn build_gsub_contextual_subtable(
+  bytes : Array[Byte],
+  plan : SubsetPlan,
+) -> Result[Bytes?, SubsetError] {
+  if bytes.length() < 8 {
+    return Err(InvalidInput("invalid GSUB contextual subtable"))
+  }
+  let format = match read_u16(bytes, 0) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  if format != 1 {
+    return Ok(None)
+  }
+  let coverage_offset = match read_u16(bytes, 2) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  let set_count = match read_u16(bytes, 4) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  if coverage_offset <= 0 || set_count < 0 {
+    return Err(InvalidInput("invalid GSUB contextual header"))
+  }
+  let offsets_base = 6
+  if offsets_base + set_count * 2 > bytes.length() {
+    return Err(InvalidInput("invalid GSUB contextual offsets"))
+  }
+  let coverage = match parse_coverage_subset(bytes, coverage_offset) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  if coverage.length() != set_count {
+    return Err(InvalidInput("GSUB contextual coverage count mismatch"))
+  }
+  let pairs : Array[(Int, Bytes)] = []
+  for i in 0..<set_count {
+    let glyph = coverage[i]
+    if glyph < 0 || glyph >= plan.old_to_new.length() {
+      return Err(InvalidInput("glyph id out of range"))
+    }
+    let new_in = plan.old_to_new[glyph]
+    if new_in < 0 {
+      continue
+    }
+    let set_offset = match read_u16(bytes, offsets_base + i * 2) {
+      Err(err) => return Err(err)
+      Ok(value) => value
+    }
+    if set_offset <= 0 {
+      continue
+    }
+    let set_base = set_offset
+    if set_base < 0 || set_base + 2 > bytes.length() {
+      return Err(InvalidInput("invalid GSUB contextual set offset"))
+    }
+    let rule_count = match read_u16(bytes, set_base) {
+      Err(err) => return Err(err)
+      Ok(value) => value
+    }
+    if rule_count <= 0 {
+      continue
+    }
+    if set_base + 2 + rule_count * 2 > bytes.length() {
+      return Err(InvalidInput("invalid GSUB contextual set length"))
+    }
+    let rule_bytes_list : Array[Bytes] = []
+    for j in 0..<rule_count {
+      let rule_offset = match read_u16(bytes, set_base + 2 + j * 2) {
+        Err(err) => return Err(err)
+        Ok(value) => value
+      }
+      if rule_offset <= 0 {
+        continue
+      }
+      let rule_base = set_base + rule_offset
+      if rule_base < 0 || rule_base + 4 > bytes.length() {
+        return Err(InvalidInput("invalid GSUB contextual rule offset"))
+      }
+      let glyph_count = match read_u16(bytes, rule_base) {
+        Err(err) => return Err(err)
+        Ok(value) => value
+      }
+      let subst_count = match read_u16(bytes, rule_base + 2) {
+        Err(err) => return Err(err)
+        Ok(value) => value
+      }
+      if glyph_count <= 0 {
+        continue
+      }
+      let input_len = glyph_count - 1
+      let input_base = rule_base + 4
+      let records_base = input_base + input_len * 2
+      if records_base + subst_count * 4 > bytes.length() {
+        return Err(InvalidInput("invalid GSUB contextual rule length"))
+      }
+      if input_base + input_len * 2 > bytes.length() {
+        return Err(InvalidInput("invalid GSUB contextual input length"))
+      }
+      let inputs : Array[Int] = []
+      let mut ok = true
+      for k in 0..<input_len {
+        let input_gid = match read_u16(bytes, input_base + k * 2) {
+          Err(err) => return Err(err)
+          Ok(value) => value
+        }
+        if input_gid < 0 || input_gid >= plan.old_to_new.length() {
+          ok = false
+          break
+        }
+        let new_input = plan.old_to_new[input_gid]
+        if new_input < 0 {
+          ok = false
+          break
+        }
+        inputs.push(new_input)
+      }
+      if !ok {
+        continue
+      }
+      let rule_bytes : Array[Byte] = []
+      push_u16(rule_bytes, glyph_count)
+      push_u16(rule_bytes, subst_count)
+      for input in inputs {
+        push_u16(rule_bytes, input)
+      }
+      for k in 0..<subst_count {
+        let record_base = records_base + k * 4
+        let seq_index = match read_u16(bytes, record_base) {
+          Err(err) => return Err(err)
+          Ok(value) => value
+        }
+        let lookup_index = match read_u16(bytes, record_base + 2) {
+          Err(err) => return Err(err)
+          Ok(value) => value
+        }
+        push_u16(rule_bytes, seq_index)
+        push_u16(rule_bytes, lookup_index)
+      }
+      rule_bytes_list.push(Bytes::from_array(rule_bytes))
+    }
+    if !rule_bytes_list.is_empty() {
+      let set_bytes : Array[Byte] = []
+      push_u16(set_bytes, rule_bytes_list.length())
+      let mut cursor = 2 + rule_bytes_list.length() * 2
+      let offsets : Array[Int] = []
+      for rule_bytes in rule_bytes_list {
+        offsets.push(cursor)
+        cursor = cursor + rule_bytes.length()
+      }
+      for offset in offsets {
+        push_u16(set_bytes, offset)
+      }
+      for rule_bytes in rule_bytes_list {
+        for b in rule_bytes {
+          set_bytes.push(b)
+        }
+      }
+      pairs.push((new_in, Bytes::from_array(set_bytes)))
+    }
+  }
+  if pairs.is_empty() {
+    return Ok(None)
+  }
+  pairs.sort_by((a, b) => a.0 - b.0)
+  let glyphs : Array[Int] = []
+  let sets : Array[Bytes] = []
+  for pair in pairs {
+    let (gid, set_bytes) = pair
+    glyphs.push(gid)
+    sets.push(set_bytes)
+  }
+  let coverage_bytes = build_coverage_subset(glyphs)
+  let out : Array[Byte] = []
+  push_u16(out, 1)
+  let header_len = 6 + sets.length() * 2
+  let mut cursor = header_len
+  let offsets : Array[Int] = []
+  for set_bytes in sets {
+    offsets.push(cursor)
+    cursor = cursor + set_bytes.length()
+  }
+  let coverage_offset = cursor
+  push_u16(out, coverage_offset)
+  push_u16(out, sets.length())
+  for offset in offsets {
+    push_u16(out, offset)
+  }
+  for set_bytes in sets {
+    for b in set_bytes {
+      out.push(b)
+    }
+  }
+  for b in coverage_bytes {
+    out.push(b)
+  }
+  Ok(Some(Bytes::from_array(out)))
+}
+
 fn parse_lookup_header(
   bytes : Array[Byte],
   offset : Int,
@@ -2803,6 +3003,30 @@ fn build_gsub_subset(
             }
             let sub_bytes = bytes[sub_base:sub_end].to_array()
             let new_sub = match build_gsub_ligature_subtable(sub_bytes, plan) {
+              Err(err) => return Err(err)
+              Ok(value) => value
+            }
+            match new_sub {
+              None => ()
+              Some(value) => {
+                kept_subtables = kept_subtables + 1
+                subtables.push(value)
+              }
+            }
+          }
+        } else if lookup_type == 5 {
+          for j in 0..<sub_offsets.length() {
+            let sub_base = base + sub_offsets[j]
+            let sub_end = if j + 1 < sub_offsets.length() {
+              base + sub_offsets[j + 1]
+            } else {
+              end
+            }
+            if sub_base < 0 || sub_base >= end || sub_end <= sub_base || sub_end > end {
+              return Err(InvalidInput("invalid GSUB subtable bounds"))
+            }
+            let sub_bytes = bytes[sub_base:sub_end].to_array()
+            let new_sub = match build_gsub_contextual_subtable(sub_bytes, plan) {
               Err(err) => return Err(err)
               Ok(value) => value
             }

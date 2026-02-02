@@ -630,17 +630,54 @@ fn build_gsub_single() -> Bytes {
     ligature_lookup.push(b)
   }
 
+  let contextual_rule : Array[Byte] = []
+  push_u16(contextual_rule, 2)
+  push_u16(contextual_rule, 1)
+  push_u16(contextual_rule, 3)
+  push_u16(contextual_rule, 1)
+  push_u16(contextual_rule, 0)
+  let contextual_set : Array[Byte] = []
+  push_u16(contextual_set, 1)
+  push_u16(contextual_set, 4)
+  for b in contextual_rule {
+    contextual_set.push(b)
+  }
+  let contextual_coverage = build_coverage_format1([2])
+  let contextual_subtable : Array[Byte] = []
+  push_u16(contextual_subtable, 1)
+  let contextual_header_len = 8
+  let contextual_coverage_offset = contextual_header_len + contextual_set.length()
+  push_u16(contextual_subtable, contextual_coverage_offset)
+  push_u16(contextual_subtable, 1)
+  push_u16(contextual_subtable, contextual_header_len)
+  for b in contextual_set {
+    contextual_subtable.push(b)
+  }
+  for b in contextual_coverage {
+    contextual_subtable.push(b)
+  }
+  let contextual_lookup : Array[Byte] = []
+  push_u16(contextual_lookup, 5)
+  push_u16(contextual_lookup, 0)
+  push_u16(contextual_lookup, 1)
+  push_u16(contextual_lookup, 8)
+  for b in contextual_subtable {
+    contextual_lookup.push(b)
+  }
+
   let lookup_list : Array[Byte] = []
-  let lookup_count = 4
+  let lookup_count = 5
   let lookup_header_len = 2 + lookup_count * 2
   push_u16(lookup_list, lookup_count)
   let second_offset = lookup_header_len + single_lookup.length()
   let third_offset = second_offset + multiple_lookup.length()
   let fourth_offset = third_offset + alternate_lookup.length()
+  let fifth_offset = fourth_offset + ligature_lookup.length()
   push_u16(lookup_list, lookup_header_len)
   push_u16(lookup_list, second_offset)
   push_u16(lookup_list, third_offset)
   push_u16(lookup_list, fourth_offset)
+  push_u16(lookup_list, fifth_offset)
   for b in single_lookup {
     lookup_list.push(b)
   }
@@ -653,14 +690,18 @@ fn build_gsub_single() -> Bytes {
   for b in ligature_lookup {
     lookup_list.push(b)
   }
+  for b in contextual_lookup {
+    lookup_list.push(b)
+  }
 
   let feature : Array[Byte] = []
   push_u16(feature, 0)
-  push_u16(feature, 4)
+  push_u16(feature, 5)
   push_u16(feature, 0)
   push_u16(feature, 1)
   push_u16(feature, 2)
   push_u16(feature, 3)
+  push_u16(feature, 4)
   let feature_list : Array[Byte] = []
   push_u16(feature_list, 1)
   feature_list.push(b'l')
@@ -1144,9 +1185,9 @@ test "subset rebuilds gsub single" {
     None => fail("GSUB coverage glyph missing")
     Some(value) => value
   }
-  inspect((lookup_count, lookup_type, sub_count, sub_format), content="(4, 1, 1, 2)")
+  inspect((lookup_count, lookup_type, sub_count, sub_format), content="(5, 1, 1, 2)")
   inspect((glyph_count, cov_format, cov_count, cov_glyph, substitute), content="(1, 1, 1, 1, 2)")
-  inspect(lookup1_offset, content="32")
+  inspect(lookup1_offset, content="34")
 }
 
 ///|
@@ -1314,7 +1355,7 @@ test "subset rebuilds gsub alternate" {
     None => fail("GSUB coverage glyph missing")
     Some(value) => value
   }
-  inspect(lookup_count, content="4")
+  inspect(lookup_count, content="5")
   inspect((lookup_type, sub_count, sub_format), content="(3, 1, 1)")
   inspect((alt_count, alt_glyph_count, alt_glyph), content="(1, 1, 2)")
   inspect((cov_format, cov_count, cov_glyph), content="(1, 1, 1)")
@@ -1411,6 +1452,109 @@ test "subset rebuilds gsub ligature" {
   }
   inspect((lookup_type, sub_count, sub_format), content="(4, 1, 1)")
   inspect((set_count, lig_count, lig_glyph, comp_count, comp_glyph), content="(1, 1, 1, 2, 1)")
+  inspect((cov_format, cov_count, cov_glyph), content="(1, 1, 1)")
+}
+
+///|
+test "subset rebuilds gsub contextual" {
+  let font = @font.Font::from_bytes(build_font_bytes_subset_fixture())
+  let bytes = match subset(font, SubsetInput::from_codepoints([0x42U])) {
+    Err(err) => fail("subset failed: \{err}")
+    Ok(value) => value
+  }
+  let subset_font = @font.Font::from_bytes(bytes)
+  let gsub_blob = match subset_font.get_face().reference_table_optional(
+    @common.Tag::from_chars('G', 'S', 'U', 'B'),
+  ) {
+    Err(err) => fail("GSUB lookup failed: \{err}")
+    Ok(None) => fail("GSUB table missing from subset")
+    Ok(Some(blob)) => blob
+  }
+  let data = gsub_blob.as_view()
+  let lookup_offset = match read_u16(data, 8) {
+    None => fail("GSUB lookup offset missing")
+    Some(value) => value
+  }
+  let lookup4_offset = match read_u16(data, lookup_offset + 10) {
+    None => fail("GSUB lookup offset missing")
+    Some(value) => value
+  }
+  let lookup4_base = lookup_offset + lookup4_offset
+  let lookup_type = match read_u16(data, lookup4_base) {
+    None => fail("GSUB lookup type missing")
+    Some(value) => value
+  }
+  let sub_count = match read_u16(data, lookup4_base + 4) {
+    None => fail("GSUB subtable count missing")
+    Some(value) => value
+  }
+  let sub_offset = match read_u16(data, lookup4_base + 6) {
+    None => fail("GSUB subtable offset missing")
+    Some(value) => value
+  }
+  let sub_base = lookup4_base + sub_offset
+  let sub_format = match read_u16(data, sub_base) {
+    None => fail("GSUB subtable format missing")
+    Some(value) => value
+  }
+  let coverage_offset = match read_u16(data, sub_base + 2) {
+    None => fail("GSUB coverage offset missing")
+    Some(value) => value
+  }
+  let set_count = match read_u16(data, sub_base + 4) {
+    None => fail("GSUB contextual set count missing")
+    Some(value) => value
+  }
+  let set_offset = match read_u16(data, sub_base + 6) {
+    None => fail("GSUB contextual set offset missing")
+    Some(value) => value
+  }
+  let set_base = sub_base + set_offset
+  let rule_count = match read_u16(data, set_base) {
+    None => fail("GSUB contextual rule count missing")
+    Some(value) => value
+  }
+  let rule_offset = match read_u16(data, set_base + 2) {
+    None => fail("GSUB contextual rule offset missing")
+    Some(value) => value
+  }
+  let rule_base = set_base + rule_offset
+  let glyph_count = match read_u16(data, rule_base) {
+    None => fail("GSUB contextual glyph count missing")
+    Some(value) => value
+  }
+  let subst_count = match read_u16(data, rule_base + 2) {
+    None => fail("GSUB contextual subst count missing")
+    Some(value) => value
+  }
+  let input_glyph = match read_u16(data, rule_base + 4) {
+    None => fail("GSUB contextual input glyph missing")
+    Some(value) => value
+  }
+  let seq_index = match read_u16(data, rule_base + 6) {
+    None => fail("GSUB contextual sequence index missing")
+    Some(value) => value
+  }
+  let lookup_index = match read_u16(data, rule_base + 8) {
+    None => fail("GSUB contextual lookup index missing")
+    Some(value) => value
+  }
+  let cov_base = sub_base + coverage_offset
+  let cov_format = match read_u16(data, cov_base) {
+    None => fail("GSUB coverage format missing")
+    Some(value) => value
+  }
+  let cov_count = match read_u16(data, cov_base + 2) {
+    None => fail("GSUB coverage count missing")
+    Some(value) => value
+  }
+  let cov_glyph = match read_u16(data, cov_base + 4) {
+    None => fail("GSUB coverage glyph missing")
+    Some(value) => value
+  }
+  inspect((lookup_type, sub_count, sub_format), content="(5, 1, 1)")
+  inspect((set_count, rule_count, glyph_count, subst_count), content="(1, 1, 2, 1)")
+  inspect((input_glyph, seq_index, lookup_index), content="(2, 1, 0)")
   inspect((cov_format, cov_count, cov_glyph), content="(1, 1, 1)")
 }
 
@@ -1801,7 +1945,7 @@ test "subset preserves layout tables for identity subset" {
     Some(value) => value
   }
   inspect(version, content="65536")
-  inspect(gsub_view.length(), content="168")
+  inspect(gsub_view.length(), content="208")
 }
 
 ///|
