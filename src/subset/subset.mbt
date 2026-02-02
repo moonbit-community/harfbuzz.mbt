@@ -1044,11 +1044,14 @@ pub fn subset_with_plan(
       for b in glyph_bytes {
         glyf_bytes.push(b)
       }
-      if (length & 1) != 0 {
-        glyf_bytes.push(b'\x00')
-        offset = offset + 1
-      }
       offset = offset + length
+      if (offset & 3) != 0 {
+        let pad = 4 - (offset & 3)
+        for _ in 0..<pad {
+          glyf_bytes.push(b'\x00')
+        }
+        offset = offset + pad
+      }
     }
   }
   new_offsets.push(offset)
