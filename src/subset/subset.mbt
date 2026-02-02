@@ -1078,6 +1078,28 @@ fn add_optional_gdef(
   }
 }
 
+fn add_optional_gsub(
+  face : @face.Face,
+  plan : SubsetPlan,
+  tables : Array[(@common.Tag, Bytes)],
+  identity : Bool,
+) -> Result[Unit, SubsetError] {
+  if identity {
+    return Ok(())
+  }
+  let bytes = match build_gsub_subset(face, plan) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  match bytes {
+    None => Ok(())
+    Some(bytes) => {
+      tables.push((tag_gsub, bytes))
+      Ok(())
+    }
+  }
+}
+
 fn is_identity_subset(plan : SubsetPlan, total_glyphs : Int) -> Bool {
   if total_glyphs <= 0 || plan.glyphs.length() != total_glyphs {
     return false
@@ -1966,6 +1988,365 @@ fn build_mark_glyph_sets_subset(
     }
   }
   Ok(Some(Bytes::from_array(out)))
+}
+
+fn build_coverage_from_pairs(
+  pairs : Array[(Int, Int)],
+) -> (Bytes, Array[Int]) {
+  pairs.sort_by((a, b) => a.0 - b.0)
+  let glyphs : Array[Int] = []
+  let substitutes : Array[Int] = []
+  for pair in pairs {
+    let (gid, sub) = pair
+    glyphs.push(gid)
+    substitutes.push(sub)
+  }
+  (build_coverage_subset(glyphs), substitutes)
+}
+
+fn build_gsub_single_subtable(
+  bytes : Array[Byte],
+  plan : SubsetPlan,
+) -> Result[Bytes?, SubsetError] {
+  if bytes.length() < 6 {
+    return Err(InvalidInput("invalid GSUB subtable"))
+  }
+  let format = match read_u16(bytes, 0) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  let coverage_offset = match read_u16(bytes, 2) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  if coverage_offset <= 0 {
+    return Err(InvalidInput("invalid GSUB coverage offset"))
+  }
+  let coverage = match parse_coverage_subset(bytes, coverage_offset) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  let pairs : Array[(Int, Int)] = []
+  if format == 1 {
+    let delta = match read_i16(bytes, 4) {
+      Err(err) => return Err(err)
+      Ok(value) => value
+    }
+    for glyph in coverage {
+      let out_glyph = glyph + delta
+      if glyph < 0 || glyph >= plan.old_to_new.length() {
+        return Err(InvalidInput("glyph id out of range"))
+      }
+      if out_glyph < 0 || out_glyph >= plan.old_to_new.length() {
+        continue
+      }
+      let new_in = plan.old_to_new[glyph]
+      let new_out = plan.old_to_new[out_glyph]
+      if new_in >= 0 && new_out >= 0 {
+        pairs.push((new_in, new_out))
+      }
+    }
+  } else if format == 2 {
+    let glyph_count = match read_u16(bytes, 4) {
+      Err(err) => return Err(err)
+      Ok(value) => value
+    }
+    if glyph_count < 0 || glyph_count != coverage.length() {
+      return Err(InvalidInput("GSUB single glyph count mismatch"))
+    }
+    let subs_base = 6
+    if subs_base + glyph_count * 2 > bytes.length() {
+      return Err(InvalidInput("invalid GSUB substitute array"))
+    }
+    for i in 0..<glyph_count {
+      let glyph = coverage[i]
+      let sub = match read_u16(bytes, subs_base + i * 2) {
+        Err(err) => return Err(err)
+        Ok(value) => value
+      }
+      if glyph < 0 || glyph >= plan.old_to_new.length() {
+        return Err(InvalidInput("glyph id out of range"))
+      }
+      if sub < 0 || sub >= plan.old_to_new.length() {
+        continue
+      }
+      let new_in = plan.old_to_new[glyph]
+      let new_out = plan.old_to_new[sub]
+      if new_in >= 0 && new_out >= 0 {
+        pairs.push((new_in, new_out))
+      }
+    }
+  } else {
+    return Ok(None)
+  }
+  if pairs.is_empty() {
+    return Ok(None)
+  }
+  let (coverage_bytes, substitutes) = build_coverage_from_pairs(pairs)
+  let out : Array[Byte] = []
+  push_u16(out, 2)
+  let coverage_offset = 6 + substitutes.length() * 2
+  push_u16(out, coverage_offset)
+  push_u16(out, substitutes.length())
+  for sub in substitutes {
+    push_u16(out, sub)
+  }
+  for b in coverage_bytes {
+    out.push(b)
+  }
+  Ok(Some(Bytes::from_array(out)))
+}
+
+fn parse_lookup_header(
+  bytes : Array[Byte],
+  offset : Int,
+) -> Result[(Int, Int, Int?, Array[Int]), SubsetError] {
+  let lookup_type = match read_u16(bytes, offset) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  let lookup_flag = match read_u16(bytes, offset + 2) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  let subtable_count = match read_u16(bytes, offset + 4) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  if subtable_count < 0 {
+    return Err(InvalidInput("invalid lookup subtable count"))
+  }
+  let offsets_base = offset + 6
+  if offsets_base + subtable_count * 2 > bytes.length() {
+    return Err(InvalidInput("invalid lookup offsets"))
+  }
+  let subtable_offsets : Array[Int] = []
+  for i in 0..<subtable_count {
+    let value = match read_u16(bytes, offsets_base + i * 2) {
+      Err(err) => return Err(err)
+      Ok(value) => value
+    }
+    if value <= 0 {
+      return Err(InvalidInput("invalid lookup offset"))
+    }
+    subtable_offsets.push(value)
+  }
+  let mark_set = if (lookup_flag & 0x0010) != 0 {
+    let extra_offset = offsets_base + subtable_count * 2
+    if extra_offset + 2 > bytes.length() {
+      return Err(InvalidInput("invalid lookup mark filtering set"))
+    }
+    let value = match read_u16(bytes, extra_offset) {
+      Err(err) => return Err(err)
+      Ok(value) => value
+    }
+    Some(value)
+  } else {
+    None
+  }
+  Ok((lookup_type, lookup_flag, mark_set, subtable_offsets))
+}
+
+fn build_lookup_bytes(
+  lookup_type : Int,
+  lookup_flag : Int,
+  mark_set : Int?,
+  subtables : Array[Bytes],
+) -> Result[Bytes, SubsetError] {
+  let out : Array[Byte] = []
+  push_u16(out, lookup_type)
+  push_u16(out, lookup_flag)
+  push_u16(out, subtables.length())
+  let mut cursor = 6 + subtables.length() * 2
+  if mark_set is Some(_) {
+    cursor = cursor + 2
+  }
+  for subtable in subtables {
+    push_u16(out, cursor)
+    cursor = cursor + subtable.length()
+  }
+  match mark_set {
+    None => ()
+    Some(value) => push_u16(out, value)
+  }
+  for subtable in subtables {
+    for b in subtable {
+      out.push(b)
+    }
+  }
+  Ok(Bytes::from_array(out))
+}
+
+fn build_gsub_subset(
+  face : @face.Face,
+  plan : SubsetPlan,
+) -> Result[Bytes?, SubsetError] {
+  let blob = match face.reference_table_optional(tag_gsub) {
+    Err(err) => return Err(Face(err))
+    Ok(value) => value
+  }
+  match blob {
+    None => Ok(None)
+    Some(blob) => {
+      let bytes = blob.as_view().to_bytes().to_array()
+      if bytes.length() < 10 {
+        return Err(InvalidInput("invalid GSUB table"))
+      }
+      let version = match read_u32(bytes, 0) {
+        Err(err) => return Err(err)
+        Ok(value) => value
+      }
+      if version != 0x00010000 {
+        return Ok(None)
+      }
+      let script_offset = match read_u16(bytes, 4) {
+        Err(err) => return Err(err)
+        Ok(value) => value
+      }
+      let feature_offset = match read_u16(bytes, 6) {
+        Err(err) => return Err(err)
+        Ok(value) => value
+      }
+      let lookup_offset = match read_u16(bytes, 8) {
+        Err(err) => return Err(err)
+        Ok(value) => value
+      }
+      if script_offset <= 0 || feature_offset <= 0 || lookup_offset <= 0 {
+        return Ok(None)
+      }
+      if script_offset >= bytes.length() ||
+          feature_offset >= bytes.length() ||
+          lookup_offset >= bytes.length() {
+        return Err(InvalidInput("invalid GSUB offsets"))
+      }
+      if !(script_offset < feature_offset && feature_offset < lookup_offset) {
+        return Ok(None)
+      }
+      let script_bytes = bytes[script_offset:feature_offset].to_array()
+      let feature_bytes = bytes[feature_offset:lookup_offset].to_array()
+      let lookup_count = match read_u16(bytes, lookup_offset) {
+        Err(err) => return Err(err)
+        Ok(value) => value
+      }
+      if lookup_count < 0 {
+        return Err(InvalidInput("invalid lookup count"))
+      }
+      let offsets_base = lookup_offset + 2
+      if offsets_base + lookup_count * 2 > bytes.length() {
+        return Err(InvalidInput("invalid lookup list offsets"))
+      }
+      let lookup_offsets : Array[Int] = []
+      for i in 0..<lookup_count {
+        let value = match read_u16(bytes, offsets_base + i * 2) {
+          Err(err) => return Err(err)
+          Ok(value) => value
+        }
+        if value <= 0 {
+          return Err(InvalidInput("invalid lookup offset"))
+        }
+        lookup_offsets.push(value)
+      }
+      let lookup_bytes_list : Array[Bytes] = []
+      let mut kept_subtables = 0
+      for i in 0..<lookup_count {
+        let base = lookup_offset + lookup_offsets[i]
+        let end = if i + 1 < lookup_count {
+          lookup_offset + lookup_offsets[i + 1]
+        } else {
+          bytes.length()
+        }
+        if base < 0 || base >= bytes.length() || end <= base || end > bytes.length() {
+          return Err(InvalidInput("invalid lookup bounds"))
+        }
+        let (lookup_type, lookup_flag, mark_set, sub_offsets) = match parse_lookup_header(
+          bytes,
+          base,
+        ) {
+          Err(err) => return Err(err)
+          Ok(value) => value
+        }
+        let subtables : Array[Bytes] = []
+        if lookup_type == 1 {
+          for j in 0..<sub_offsets.length() {
+            let sub_base = base + sub_offsets[j]
+            let sub_end = if j + 1 < sub_offsets.length() {
+              base + sub_offsets[j + 1]
+            } else {
+              end
+            }
+            if sub_base < 0 || sub_base >= end || sub_end <= sub_base || sub_end > end {
+              return Err(InvalidInput("invalid GSUB subtable bounds"))
+            }
+            let sub_bytes = bytes[sub_base:sub_end].to_array()
+            let new_sub = match build_gsub_single_subtable(sub_bytes, plan) {
+              Err(err) => return Err(err)
+              Ok(value) => value
+            }
+            match new_sub {
+              None => ()
+              Some(value) => {
+                kept_subtables = kept_subtables + 1
+                subtables.push(value)
+              }
+            }
+          }
+        }
+        let lookup_bytes = match build_lookup_bytes(
+          lookup_type,
+          lookup_flag,
+          mark_set,
+          subtables,
+        ) {
+          Err(err) => return Err(err)
+          Ok(value) => value
+        }
+        lookup_bytes_list.push(lookup_bytes)
+      }
+      if kept_subtables == 0 {
+        return Ok(None)
+      }
+      let lookup_list_bytes = match build_lookup_list_bytes(lookup_bytes_list) {
+        Err(err) => return Err(err)
+        Ok(value) => value
+      }
+      let out : Array[Byte] = []
+      push_u32(out, version)
+      let script_new_offset = 10
+      let feature_new_offset = script_new_offset + script_bytes.length()
+      let lookup_new_offset = feature_new_offset + feature_bytes.length()
+      push_u16(out, script_new_offset)
+      push_u16(out, feature_new_offset)
+      push_u16(out, lookup_new_offset)
+      for b in script_bytes {
+        out.push(b)
+      }
+      for b in feature_bytes {
+        out.push(b)
+      }
+      for b in lookup_list_bytes {
+        out.push(b)
+      }
+      Ok(Some(Bytes::from_array(out)))
+    }
+  }
+}
+
+fn build_lookup_list_bytes(
+  lookups : Array[Bytes],
+) -> Result[Bytes, SubsetError] {
+  let out : Array[Byte] = []
+  push_u16(out, lookups.length())
+  let mut cursor = 2 + lookups.length() * 2
+  for lookup in lookups {
+    push_u16(out, cursor)
+    cursor = cursor + lookup.length()
+  }
+  for lookup in lookups {
+    for b in lookup {
+      out.push(b)
+    }
+  }
+  Ok(Bytes::from_array(out))
 }
 
 fn build_attach_list_subset(
@@ -2873,6 +3254,10 @@ pub fn subset_with_plan(
     Err(err) => return Err(err)
     Ok(_) => ()
   }
+  match add_optional_gsub(face, plan, tables, identity) {
+    Err(err) => return Err(err)
+    Ok(_) => ()
+  }
   match add_optional_post(face, plan, tables, identity) {
     Err(err) => return Err(err)
     Ok(_) => ()
@@ -3007,6 +3392,10 @@ fn subset_cff1_with_plan(
     Err(err) => return Err(err)
     Ok(_) => ()
   }
+  match add_optional_gsub(face, plan, tables, identity) {
+    Err(err) => return Err(err)
+    Ok(_) => ()
+  }
   match add_optional_post(face, plan, tables, identity) {
     Err(err) => return Err(err)
     Ok(_) => ()
@@ -3138,6 +3527,10 @@ fn subset_cff2_with_plan(
     Some(cmap) => tables.push((tag_cmap, cmap))
   }
   match add_identity_passthrough_tables(face, tables, identity) {
+    Err(err) => return Err(err)
+    Ok(_) => ()
+  }
+  match add_optional_gsub(face, plan, tables, identity) {
     Err(err) => return Err(err)
     Ok(_) => ()
   }
