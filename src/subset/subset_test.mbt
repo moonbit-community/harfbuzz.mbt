@@ -251,6 +251,42 @@ fn build_colr_table() -> Bytes {
 }
 
 ///|
+fn build_gdef_table() -> Bytes {
+  let bytes : Array[Byte] = []
+  let glyph_class_offset = 14
+  let mark_attach_offset = glyph_class_offset + 14
+  let mark_sets_offset = mark_attach_offset + 14
+  push_u32(bytes, 0x00010002)
+  push_u16(bytes, glyph_class_offset)
+  push_u16(bytes, 0)
+  push_u16(bytes, 0)
+  push_u16(bytes, mark_attach_offset)
+  push_u16(bytes, mark_sets_offset)
+  push_u16(bytes, 1)
+  push_u16(bytes, 0)
+  push_u16(bytes, 4)
+  push_u16(bytes, 0)
+  push_u16(bytes, 1)
+  push_u16(bytes, 2)
+  push_u16(bytes, 0)
+  push_u16(bytes, 1)
+  push_u16(bytes, 0)
+  push_u16(bytes, 4)
+  push_u16(bytes, 0)
+  push_u16(bytes, 0)
+  push_u16(bytes, 1)
+  push_u16(bytes, 2)
+  push_u16(bytes, 1)
+  push_u16(bytes, 1)
+  push_u16(bytes, 6)
+  push_u16(bytes, 1)
+  push_u16(bytes, 2)
+  push_u16(bytes, 2)
+  push_u16(bytes, 3)
+  Bytes::from_array(bytes)
+}
+
+///|
 fn build_gsub_stub() -> Bytes {
   let bytes : Array[Byte] = []
   push_u32(bytes, 0x00010000)
@@ -385,6 +421,7 @@ fn build_font_bytes_subset_fixture() -> Bytes {
     (@common.Tag::from_chars('V', 'O', 'R', 'G'), build_vorg_table()),
     (@common.Tag::from_chars('k', 'e', 'r', 'n'), build_kern_table()),
     (@common.Tag::from_chars('C', 'O', 'L', 'R'), build_colr_table()),
+    (@common.Tag::from_chars('G', 'D', 'E', 'F'), build_gdef_table()),
     (@common.Tag::from_chars('G', 'S', 'U', 'B'), build_gsub_stub()),
     (@common.Tag::from_chars('h', 'm', 't', 'x'), build_hmtx([500, 600, 700, 800], [0, 10, 20, 30])),
     (@common.Tag::from_chars('v', 'h', 'e', 'a'), build_vhea(4)),
@@ -657,6 +694,113 @@ test "subset rebuilds colr v0" {
   }
   inspect((layer0_gid, layer0_color), content="(1, 0)")
   inspect((layer1_gid, layer1_color), content="(2, 1)")
+}
+
+///|
+test "subset rebuilds gdef" {
+  let font = @font.Font::from_bytes(build_font_bytes_subset_fixture())
+  let bytes = match subset(font, SubsetInput::from_codepoints([0x42U])) {
+    Err(err) => fail("subset failed: \{err}")
+    Ok(value) => value
+  }
+  let subset_font = @font.Font::from_bytes(bytes)
+  let gdef_blob = match subset_font.get_face().reference_table_optional(
+    @common.Tag::from_chars('G', 'D', 'E', 'F'),
+  ) {
+    Err(err) => fail("gdef lookup failed: \{err}")
+    Ok(None) => fail("GDEF table missing from subset")
+    Ok(Some(blob)) => blob
+  }
+  let data = gdef_blob.as_view()
+  let version = match read_u32(data, 0) {
+    None => fail("GDEF version missing")
+    Some(value) => value
+  }
+  let glyph_class_offset = match read_u16(data, 4) {
+    None => fail("GDEF class offset missing")
+    Some(value) => value
+  }
+  let mark_attach_offset = match read_u16(data, 10) {
+    None => fail("GDEF mark attach offset missing")
+    Some(value) => value
+  }
+  let mark_sets_offset = match read_u16(data, 12) {
+    None => fail("GDEF mark sets offset missing")
+    Some(value) => value
+  }
+  inspect((version, glyph_class_offset, mark_attach_offset, mark_sets_offset), content="(65538, 14, 26, 38)")
+  let class_format = match read_u16(data, glyph_class_offset) {
+    None => fail("GDEF class format missing")
+    Some(value) => value
+  }
+  let class_count = match read_u16(data, glyph_class_offset + 4) {
+    None => fail("GDEF class count missing")
+    Some(value) => value
+  }
+  let class1 = match read_u16(data, glyph_class_offset + 6) {
+    None => fail("GDEF class value missing")
+    Some(value) => value
+  }
+  let class2 = match read_u16(data, glyph_class_offset + 8) {
+    None => fail("GDEF class value missing")
+    Some(value) => value
+  }
+  let class3 = match read_u16(data, glyph_class_offset + 10) {
+    None => fail("GDEF class value missing")
+    Some(value) => value
+  }
+  inspect((class_format, class_count, class1, class2, class3), content="(1, 3, 0, 2, 0)")
+  let mark_format = match read_u16(data, mark_attach_offset) {
+    None => fail("GDEF mark format missing")
+    Some(value) => value
+  }
+  let mark_class_count = match read_u16(data, mark_attach_offset + 4) {
+    None => fail("GDEF mark count missing")
+    Some(value) => value
+  }
+  let mark1 = match read_u16(data, mark_attach_offset + 6) {
+    None => fail("GDEF mark class missing")
+    Some(value) => value
+  }
+  let mark2 = match read_u16(data, mark_attach_offset + 8) {
+    None => fail("GDEF mark class missing")
+    Some(value) => value
+  }
+  let mark3 = match read_u16(data, mark_attach_offset + 10) {
+    None => fail("GDEF mark class missing")
+    Some(value) => value
+  }
+  inspect((mark_format, mark_class_count, mark1, mark2, mark3), content="(1, 3, 0, 1, 2)")
+  let sets_format = match read_u16(data, mark_sets_offset) {
+    None => fail("GDEF sets format missing")
+    Some(value) => value
+  }
+  let sets_count = match read_u16(data, mark_sets_offset + 2) {
+    None => fail("GDEF sets count missing")
+    Some(value) => value
+  }
+  let cov_offset = match read_u16(data, mark_sets_offset + 4) {
+    None => fail("GDEF sets offset missing")
+    Some(value) => value
+  }
+  let cov_base = mark_sets_offset + cov_offset
+  let cov_format = match read_u16(data, cov_base) {
+    None => fail("GDEF coverage format missing")
+    Some(value) => value
+  }
+  let cov_count = match read_u16(data, cov_base + 2) {
+    None => fail("GDEF coverage count missing")
+    Some(value) => value
+  }
+  let cov1 = match read_u16(data, cov_base + 4) {
+    None => fail("GDEF coverage missing")
+    Some(value) => value
+  }
+  let cov2 = match read_u16(data, cov_base + 6) {
+    None => fail("GDEF coverage missing")
+    Some(value) => value
+  }
+  inspect((sets_format, sets_count, cov_format, cov_count, cov1, cov2), content="(1, 1, 1, 2, 1, 2)")
 }
 
 ///|

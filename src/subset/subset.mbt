@@ -828,6 +828,28 @@ fn add_optional_colr(
   }
 }
 
+fn add_optional_gdef(
+  face : @face.Face,
+  plan : SubsetPlan,
+  tables : Array[(@common.Tag, Bytes)],
+  identity : Bool,
+) -> Result[Unit, SubsetError] {
+  if identity {
+    return add_optional_table(face, tag_gdef, tables)
+  }
+  let bytes = match build_gdef_subset(face, plan) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  match bytes {
+    None => Ok(())
+    Some(bytes) => {
+      tables.push((tag_gdef, bytes))
+      Ok(())
+    }
+  }
+}
+
 fn is_identity_subset(plan : SubsetPlan, total_glyphs : Int) -> Bool {
   if total_glyphs <= 0 || plan.glyphs.length() != total_glyphs {
     return false
@@ -851,7 +873,6 @@ fn add_identity_passthrough_tables(
   let tags : Array[@common.Tag] = [
     tag_gsub,
     tag_gpos,
-    tag_gdef,
     tag_base,
     tag_jstf,
     tag_morx,
@@ -1471,6 +1492,359 @@ fn build_colr_subset(
   }
 }
 
+fn class_def_value_subset(
+  bytes : Array[Byte],
+  offset : Int,
+  glyph : Int,
+) -> Result[Int, SubsetError] {
+  let format = match read_u16(bytes, offset) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  if format == 1 {
+    let start = match read_u16(bytes, offset + 2) {
+      Err(err) => return Err(err)
+      Ok(value) => value
+    }
+    let count = match read_u16(bytes, offset + 4) {
+      Err(err) => return Err(err)
+      Ok(value) => value
+    }
+    if glyph < start || glyph >= start + count {
+      return Ok(0)
+    }
+    let idx = glyph - start
+    let value = match read_u16(bytes, offset + 6 + idx * 2) {
+      Err(err) => return Err(err)
+      Ok(value) => value
+    }
+    Ok(value)
+  } else if format == 2 {
+    let count = match read_u16(bytes, offset + 2) {
+      Err(err) => return Err(err)
+      Ok(value) => value
+    }
+    let mut record_offset = offset + 4
+    for _ in 0..<count {
+      let start = match read_u16(bytes, record_offset) {
+        Err(err) => return Err(err)
+        Ok(value) => value
+      }
+      let end = match read_u16(bytes, record_offset + 2) {
+        Err(err) => return Err(err)
+        Ok(value) => value
+      }
+      let class_value = match read_u16(bytes, record_offset + 4) {
+        Err(err) => return Err(err)
+        Ok(value) => value
+      }
+      if glyph >= start && glyph <= end {
+        return Ok(class_value)
+      }
+      record_offset = record_offset + 6
+    }
+    Ok(0)
+  } else {
+    Err(InvalidInput("unsupported class def format"))
+  }
+}
+
+fn build_class_def_subset(
+  bytes : Array[Byte],
+  offset : Int,
+  plan : SubsetPlan,
+) -> Result[Bytes?, SubsetError] {
+  let glyph_count = plan.glyphs.length()
+  if glyph_count <= 0 {
+    return Ok(None)
+  }
+  let class_values : Array[Int] = []
+  let mut max_class = 0
+  for i in 0..<glyph_count {
+    let old_gid = plan.glyphs[i].reinterpret_as_int()
+    let class_value = match class_def_value_subset(bytes, offset, old_gid) {
+      Err(err) => return Err(err)
+      Ok(value) => value
+    }
+    class_values.push(class_value)
+    if class_value > max_class {
+      max_class = class_value
+    }
+  }
+  if max_class == 0 {
+    return Ok(None)
+  }
+  let out : Array[Byte] = []
+  push_u16(out, 1)
+  push_u16(out, 0)
+  push_u16(out, glyph_count)
+  for value in class_values {
+    push_u16(out, value)
+  }
+  Ok(Some(Bytes::from_array(out)))
+}
+
+fn parse_coverage_subset(
+  bytes : Array[Byte],
+  offset : Int,
+) -> Result[Array[Int], SubsetError] {
+  let format = match read_u16(bytes, offset) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  if format == 1 {
+    let count = match read_u16(bytes, offset + 2) {
+      Err(err) => return Err(err)
+      Ok(value) => value
+    }
+    let glyphs : Array[Int] = []
+    for i in 0..<count {
+      let glyph = match read_u16(bytes, offset + 4 + i * 2) {
+        Err(err) => return Err(err)
+        Ok(value) => value
+      }
+      glyphs.push(glyph)
+    }
+    Ok(glyphs)
+  } else if format == 2 {
+    let count = match read_u16(bytes, offset + 2) {
+      Err(err) => return Err(err)
+      Ok(value) => value
+    }
+    let glyphs : Array[Int] = []
+    let mut record_offset = offset + 4
+    for _ in 0..<count {
+      let start = match read_u16(bytes, record_offset) {
+        Err(err) => return Err(err)
+        Ok(value) => value
+      }
+      let end = match read_u16(bytes, record_offset + 2) {
+        Err(err) => return Err(err)
+        Ok(value) => value
+      }
+      for glyph in start..=end {
+        glyphs.push(glyph)
+      }
+      record_offset = record_offset + 6
+    }
+    Ok(glyphs)
+  } else {
+    Err(InvalidInput("unsupported coverage format"))
+  }
+}
+
+fn build_coverage_subset(glyphs : Array[Int]) -> Bytes {
+  let sorted : Array[Int] = []
+  for glyph in glyphs {
+    sorted.push(glyph)
+  }
+  sorted.sort()
+  let out : Array[Byte] = []
+  push_u16(out, 1)
+  push_u16(out, sorted.length())
+  for glyph in sorted {
+    push_u16(out, glyph)
+  }
+  Bytes::from_array(out)
+}
+
+fn build_mark_glyph_sets_subset(
+  bytes : Array[Byte],
+  offset : Int,
+  plan : SubsetPlan,
+) -> Result[Bytes?, SubsetError] {
+  let format = match read_u16(bytes, offset) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  if format != 1 {
+    return Ok(None)
+  }
+  let set_count = match read_u16(bytes, offset + 2) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  if set_count < 0 {
+    return Err(InvalidInput("invalid mark glyph set count"))
+  }
+  let offsets_base = offset + 4
+  let coverages : Array[Bytes] = []
+  for i in 0..<set_count {
+    let cov_offset = match read_u16(bytes, offsets_base + i * 2) {
+      Err(err) => return Err(err)
+      Ok(value) => value
+    }
+    if cov_offset == 0 {
+      coverages.push(build_coverage_subset([]))
+      continue
+    }
+    let cov_base = offset + cov_offset
+    let glyphs = match parse_coverage_subset(bytes, cov_base) {
+      Err(err) => return Err(err)
+      Ok(value) => value
+    }
+    let mapped : Array[Int] = []
+    for glyph in glyphs {
+      if glyph < 0 || glyph >= plan.old_to_new.length() {
+        return Err(InvalidInput("glyph id out of range"))
+      }
+      let new_gid = plan.old_to_new[glyph]
+      if new_gid >= 0 {
+        mapped.push(new_gid)
+      }
+    }
+    coverages.push(build_coverage_subset(mapped))
+  }
+  let out : Array[Byte] = []
+  push_u16(out, 1)
+  push_u16(out, set_count)
+  let mut cursor = 4 + set_count * 2
+  let offsets : Array[Int] = []
+  for coverage in coverages {
+    offsets.push(cursor)
+    cursor = cursor + coverage.length()
+  }
+  for offset_value in offsets {
+    push_u16(out, offset_value)
+  }
+  for coverage in coverages {
+    for b in coverage {
+      out.push(b)
+    }
+  }
+  Ok(Some(Bytes::from_array(out)))
+}
+
+fn build_gdef_subset(
+  face : @face.Face,
+  plan : SubsetPlan,
+) -> Result[Bytes?, SubsetError] {
+  let blob = match face.reference_table_optional(tag_gdef) {
+    Err(err) => return Err(Face(err))
+    Ok(value) => value
+  }
+  match blob {
+    None => Ok(None)
+    Some(blob) => {
+      let bytes = blob.as_view().to_bytes().to_array()
+      if bytes.length() < 12 {
+        return Err(InvalidInput("invalid GDEF table"))
+      }
+      let version = match read_u32(bytes, 0) {
+        Err(err) => return Err(err)
+        Ok(value) => value
+      }
+      if version < 0x00010000 {
+        return Err(InvalidInput("invalid GDEF version"))
+      }
+      let glyph_class_def_offset = match read_u16(bytes, 4) {
+        Err(err) => return Err(err)
+        Ok(value) => value
+      }
+      let mark_attach_class_def_offset = match read_u16(bytes, 10) {
+        Err(err) => return Err(err)
+        Ok(value) => value
+      }
+      let mut mark_glyph_sets_def_offset = 0
+      if version >= 0x00010002 {
+        mark_glyph_sets_def_offset = match read_u16(bytes, 12) {
+          Err(err) => return Err(err)
+          Ok(value) => value
+        }
+      }
+      let glyph_class_def = if glyph_class_def_offset != 0 {
+        match build_class_def_subset(bytes, glyph_class_def_offset, plan) {
+          Err(err) => return Err(err)
+          Ok(value) => value
+        }
+      } else {
+        None
+      }
+      let mark_attach_class_def = if mark_attach_class_def_offset != 0 {
+        match build_class_def_subset(bytes, mark_attach_class_def_offset, plan) {
+          Err(err) => return Err(err)
+          Ok(value) => value
+        }
+      } else {
+        None
+      }
+      let mark_glyph_sets = if mark_glyph_sets_def_offset != 0 {
+        match build_mark_glyph_sets_subset(bytes, mark_glyph_sets_def_offset, plan) {
+          Err(err) => return Err(err)
+          Ok(value) => value
+        }
+      } else {
+        None
+      }
+      if glyph_class_def is None && mark_attach_class_def is None && mark_glyph_sets is None {
+        return Ok(None)
+      }
+      let include_mark_sets = mark_glyph_sets is Some(_)
+      let header_len = if include_mark_sets { 14 } else { 12 }
+      let mut offset = header_len
+      let glyph_class_offset = match glyph_class_def {
+        None => 0
+        Some(bytes) => {
+          let current = offset
+          offset = offset + bytes.length()
+          current
+        }
+      }
+      let mark_attach_offset = match mark_attach_class_def {
+        None => 0
+        Some(bytes) => {
+          let current = offset
+          offset = offset + bytes.length()
+          current
+        }
+      }
+      let mark_sets_offset = match mark_glyph_sets {
+        None => 0
+        Some(bytes) => {
+          let current = offset
+          offset = offset + bytes.length()
+          current
+        }
+      }
+      let out : Array[Byte] = []
+      let out_version = if include_mark_sets { 0x00010002 } else { 0x00010000 }
+      push_u32(out, out_version)
+      push_u16(out, glyph_class_offset)
+      push_u16(out, 0)
+      push_u16(out, 0)
+      push_u16(out, mark_attach_offset)
+      if include_mark_sets {
+        push_u16(out, mark_sets_offset)
+      }
+      match glyph_class_def {
+        None => ()
+        Some(bytes) => {
+          for b in bytes {
+            out.push(b)
+          }
+        }
+      }
+      match mark_attach_class_def {
+        None => ()
+        Some(bytes) => {
+          for b in bytes {
+            out.push(b)
+          }
+        }
+      }
+      match mark_glyph_sets {
+        None => ()
+        Some(bytes) => {
+          for b in bytes {
+            out.push(b)
+          }
+        }
+      }
+      Ok(Some(Bytes::from_array(out)))
+    }
+  }
+}
+
 fn build_plan_cff1(
   font : @font.Font,
   input : SubsetInput,
@@ -1875,6 +2249,10 @@ pub fn subset_with_plan(
     Err(err) => return Err(err)
     Ok(_) => ()
   }
+  match add_optional_gdef(face, plan, tables, identity) {
+    Err(err) => return Err(err)
+    Ok(_) => ()
+  }
   match add_optional_os2(face, plan, tables) {
     Err(err) => return Err(err)
     Ok(_) => ()
@@ -2005,6 +2383,10 @@ fn subset_cff1_with_plan(
     Err(err) => return Err(err)
     Ok(_) => ()
   }
+  match add_optional_gdef(face, plan, tables, identity) {
+    Err(err) => return Err(err)
+    Ok(_) => ()
+  }
   match add_optional_os2(face, plan, tables) {
     Err(err) => return Err(err)
     Ok(_) => ()
@@ -2132,6 +2514,10 @@ fn subset_cff2_with_plan(
     Ok(_) => ()
   }
   match add_optional_colr(face, plan, tables, identity) {
+    Err(err) => return Err(err)
+    Ok(_) => ()
+  }
+  match add_optional_gdef(face, plan, tables, identity) {
     Err(err) => return Err(err)
     Ok(_) => ()
   }
