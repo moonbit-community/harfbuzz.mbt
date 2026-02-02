@@ -2357,6 +2357,198 @@ fn build_gsub_alternate_subtable(
   Ok(Some(Bytes::from_array(out)))
 }
 
+fn build_gsub_ligature_subtable(
+  bytes : Array[Byte],
+  plan : SubsetPlan,
+) -> Result[Bytes?, SubsetError] {
+  if bytes.length() < 8 {
+    return Err(InvalidInput("invalid GSUB ligature subtable"))
+  }
+  let format = match read_u16(bytes, 0) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  if format != 1 {
+    return Ok(None)
+  }
+  let coverage_offset = match read_u16(bytes, 2) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  let set_count = match read_u16(bytes, 4) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  if coverage_offset <= 0 || set_count < 0 {
+    return Err(InvalidInput("invalid GSUB ligature header"))
+  }
+  let offsets_base = 6
+  if offsets_base + set_count * 2 > bytes.length() {
+    return Err(InvalidInput("invalid GSUB ligature offsets"))
+  }
+  let coverage = match parse_coverage_subset(bytes, coverage_offset) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  if coverage.length() != set_count {
+    return Err(InvalidInput("GSUB ligature coverage count mismatch"))
+  }
+  let pairs : Array[(Int, Array[(Int, Array[Int])])] = []
+  for i in 0..<set_count {
+    let glyph = coverage[i]
+    if glyph < 0 || glyph >= plan.old_to_new.length() {
+      return Err(InvalidInput("glyph id out of range"))
+    }
+    let new_in = plan.old_to_new[glyph]
+    if new_in < 0 {
+      continue
+    }
+    let set_offset = match read_u16(bytes, offsets_base + i * 2) {
+      Err(err) => return Err(err)
+      Ok(value) => value
+    }
+    if set_offset <= 0 {
+      continue
+    }
+    let set_base = set_offset
+    if set_base < 0 || set_base + 2 > bytes.length() {
+      return Err(InvalidInput("invalid GSUB ligature set offset"))
+    }
+    let lig_count = match read_u16(bytes, set_base) {
+      Err(err) => return Err(err)
+      Ok(value) => value
+    }
+    if lig_count <= 0 {
+      continue
+    }
+    if set_base + 2 + lig_count * 2 > bytes.length() {
+      return Err(InvalidInput("invalid GSUB ligature set length"))
+    }
+    let ligatures : Array[(Int, Array[Int])] = []
+    for j in 0..<lig_count {
+      let lig_offset = match read_u16(bytes, set_base + 2 + j * 2) {
+        Err(err) => return Err(err)
+        Ok(value) => value
+      }
+      if lig_offset <= 0 {
+        continue
+      }
+      let lig_base = set_base + lig_offset
+      if lig_base < 0 || lig_base + 4 > bytes.length() {
+        return Err(InvalidInput("invalid GSUB ligature offset"))
+      }
+      let lig_glyph = match read_u16(bytes, lig_base) {
+        Err(err) => return Err(err)
+        Ok(value) => value
+      }
+      let comp_count = match read_u16(bytes, lig_base + 2) {
+        Err(err) => return Err(err)
+        Ok(value) => value
+      }
+      if comp_count <= 1 {
+        continue
+      }
+      let comp_len = comp_count - 1
+      if lig_base + 4 + comp_len * 2 > bytes.length() {
+        return Err(InvalidInput("invalid GSUB ligature components"))
+      }
+      if lig_glyph < 0 || lig_glyph >= plan.old_to_new.length() {
+        return Err(InvalidInput("glyph id out of range"))
+      }
+      let new_lig = plan.old_to_new[lig_glyph]
+      if new_lig < 0 {
+        continue
+      }
+      let components : Array[Int] = []
+      let mut ok = true
+      for k in 0..<comp_len {
+        let comp = match read_u16(bytes, lig_base + 4 + k * 2) {
+          Err(err) => return Err(err)
+          Ok(value) => value
+        }
+        if comp < 0 || comp >= plan.old_to_new.length() {
+          ok = false
+          break
+        }
+        let new_comp = plan.old_to_new[comp]
+        if new_comp < 0 {
+          ok = false
+          break
+        }
+        components.push(new_comp)
+      }
+      if ok {
+        ligatures.push((new_lig, components))
+      }
+    }
+    if !ligatures.is_empty() {
+      pairs.push((new_in, ligatures))
+    }
+  }
+  if pairs.is_empty() {
+    return Ok(None)
+  }
+  pairs.sort_by((a, b) => a.0 - b.0)
+  let glyphs : Array[Int] = []
+  let lig_sets : Array[Bytes] = []
+  for pair in pairs {
+    let (gid, ligatures) = pair
+    glyphs.push(gid)
+    let set_bytes : Array[Byte] = []
+    push_u16(set_bytes, ligatures.length())
+    let mut cursor = 2 + ligatures.length() * 2
+    let offsets : Array[Int] = []
+    let lig_bytes_list : Array[Bytes] = []
+    for ligature in ligatures {
+      let (lig_gid, components) = ligature
+      let lig_bytes : Array[Byte] = []
+      push_u16(lig_bytes, lig_gid)
+      push_u16(lig_bytes, components.length() + 1)
+      for comp in components {
+        push_u16(lig_bytes, comp)
+      }
+      let lig_blob = Bytes::from_array(lig_bytes)
+      offsets.push(cursor)
+      cursor = cursor + lig_blob.length()
+      lig_bytes_list.push(lig_blob)
+    }
+    for offset in offsets {
+      push_u16(set_bytes, offset)
+    }
+    for lig_blob in lig_bytes_list {
+      for b in lig_blob {
+        set_bytes.push(b)
+      }
+    }
+    lig_sets.push(Bytes::from_array(set_bytes))
+  }
+  let coverage_bytes = build_coverage_subset(glyphs)
+  let out : Array[Byte] = []
+  push_u16(out, 1)
+  let header_len = 6 + lig_sets.length() * 2
+  let mut cursor = header_len
+  let offsets : Array[Int] = []
+  for set_bytes in lig_sets {
+    offsets.push(cursor)
+    cursor = cursor + set_bytes.length()
+  }
+  let coverage_offset = cursor
+  push_u16(out, coverage_offset)
+  push_u16(out, lig_sets.length())
+  for offset in offsets {
+    push_u16(out, offset)
+  }
+  for set_bytes in lig_sets {
+    for b in set_bytes {
+      out.push(b)
+    }
+  }
+  for b in coverage_bytes {
+    out.push(b)
+  }
+  Ok(Some(Bytes::from_array(out)))
+}
+
 fn parse_lookup_header(
   bytes : Array[Byte],
   offset : Int,
@@ -2587,6 +2779,30 @@ fn build_gsub_subset(
             }
             let sub_bytes = bytes[sub_base:sub_end].to_array()
             let new_sub = match build_gsub_alternate_subtable(sub_bytes, plan) {
+              Err(err) => return Err(err)
+              Ok(value) => value
+            }
+            match new_sub {
+              None => ()
+              Some(value) => {
+                kept_subtables = kept_subtables + 1
+                subtables.push(value)
+              }
+            }
+          }
+        } else if lookup_type == 4 {
+          for j in 0..<sub_offsets.length() {
+            let sub_base = base + sub_offsets[j]
+            let sub_end = if j + 1 < sub_offsets.length() {
+              base + sub_offsets[j + 1]
+            } else {
+              end
+            }
+            if sub_base < 0 || sub_base >= end || sub_end <= sub_base || sub_end > end {
+              return Err(InvalidInput("invalid GSUB subtable bounds"))
+            }
+            let sub_bytes = bytes[sub_base:sub_end].to_array()
+            let new_sub = match build_gsub_ligature_subtable(sub_bytes, plan) {
               Err(err) => return Err(err)
               Ok(value) => value
             }
