@@ -159,6 +159,16 @@ fn build_cpal() -> Bytes {
 }
 
 ///|
+fn build_gsub_stub() -> Bytes {
+  let bytes : Array[Byte] = []
+  push_u32(bytes, 0x00010000)
+  push_u16(bytes, 0)
+  push_u16(bytes, 0)
+  push_u16(bytes, 0)
+  Bytes::from_array(bytes)
+}
+
+///|
 fn build_vhea(number_of_vmetrics : Int) -> Bytes {
   let bytes : Array[Byte] = Array::make(36, b'\x00')
   bytes[34] = ((number_of_vmetrics >> 8) & 0xff).to_byte()
@@ -279,6 +289,7 @@ fn build_font_bytes_subset_fixture() -> Bytes {
     (@common.Tag::from_chars('h', 'h', 'e', 'a'), build_hhea(4)),
     (@common.Tag::from_chars('O', 'S', '/', '2'), build_os2()),
     (@common.Tag::from_chars('C', 'P', 'A', 'L'), build_cpal()),
+    (@common.Tag::from_chars('G', 'S', 'U', 'B'), build_gsub_stub()),
     (@common.Tag::from_chars('h', 'm', 't', 'x'), build_hmtx([500, 600, 700, 800], [0, 10, 20, 30])),
     (@common.Tag::from_chars('v', 'h', 'e', 'a'), build_vhea(4)),
     (@common.Tag::from_chars('v', 'm', 't', 'x'), build_vmtx([900, 910, 920, 930], [5, 6, 7, 8])),
@@ -368,6 +379,47 @@ test "subset preserves cpal" {
     Ok(Some(blob)) => blob
   }
   inspect(cpal_blob.as_view().length(), content="18")
+}
+
+///|
+test "subset drops layout tables when remapped" {
+  let font = @font.Font::from_bytes(build_font_bytes_subset_fixture())
+  let bytes = match subset(font, SubsetInput::from_codepoints([0x41U])) {
+    Err(err) => fail("subset failed: \{err}")
+    Ok(value) => value
+  }
+  let subset_font = @font.Font::from_bytes(bytes)
+  match subset_font.get_face().reference_table_optional(
+    @common.Tag::from_chars('G', 'S', 'U', 'B'),
+  ) {
+    Err(err) => fail("GSUB lookup failed: \{err}")
+    Ok(None) => ()
+    Ok(Some(_)) => fail("GSUB should be dropped for remapped subsets")
+  }
+}
+
+///|
+test "subset preserves layout tables for identity subset" {
+  let font = @font.Font::from_bytes(build_font_bytes_subset_fixture())
+  let bytes = match subset(font, SubsetInput::from_codepoints([0x41U, 0x42U])) {
+    Err(err) => fail("subset failed: \{err}")
+    Ok(value) => value
+  }
+  let subset_font = @font.Font::from_bytes(bytes)
+  let gsub_blob = match subset_font.get_face().reference_table_optional(
+    @common.Tag::from_chars('G', 'S', 'U', 'B'),
+  ) {
+    Err(err) => fail("GSUB lookup failed: \{err}")
+    Ok(None) => fail("GSUB table missing from identity subset")
+    Ok(Some(blob)) => blob
+  }
+  let gsub_view = gsub_blob.as_view()
+  let version = match read_u32(gsub_view, 0) {
+    None => fail("GSUB header missing")
+    Some(value) => value
+  }
+  inspect(version, content="65536")
+  inspect(gsub_view.length(), content="10")
 }
 
 ///|

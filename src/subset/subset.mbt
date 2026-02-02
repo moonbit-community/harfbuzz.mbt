@@ -106,6 +106,84 @@ let tag_cpal : @common.Tag = @common.Tag::from_chars('C', 'P', 'A', 'L')
 let tag_meta : @common.Tag = @common.Tag::from_chars('m', 'e', 't', 'a')
 
 ///|
+let tag_gsub : @common.Tag = @common.Tag::from_chars('G', 'S', 'U', 'B')
+
+///|
+let tag_gpos : @common.Tag = @common.Tag::from_chars('G', 'P', 'O', 'S')
+
+///|
+let tag_gdef : @common.Tag = @common.Tag::from_chars('G', 'D', 'E', 'F')
+
+///|
+let tag_base : @common.Tag = @common.Tag::from_chars('B', 'A', 'S', 'E')
+
+///|
+let tag_jstf : @common.Tag = @common.Tag::from_chars('J', 'S', 'T', 'F')
+
+///|
+let tag_morx : @common.Tag = @common.Tag::from_chars('m', 'o', 'r', 'x')
+
+///|
+let tag_mort : @common.Tag = @common.Tag::from_chars('m', 'o', 'r', 't')
+
+///|
+let tag_kerx : @common.Tag = @common.Tag::from_chars('k', 'e', 'r', 'x')
+
+///|
+let tag_kern : @common.Tag = @common.Tag::from_chars('k', 'e', 'r', 'n')
+
+///|
+let tag_ankr : @common.Tag = @common.Tag::from_chars('a', 'n', 'k', 'r')
+
+///|
+let tag_trak : @common.Tag = @common.Tag::from_chars('t', 'r', 'a', 'k')
+
+///|
+let tag_bsln : @common.Tag = @common.Tag::from_chars('b', 's', 'l', 'n')
+
+///|
+let tag_feat : @common.Tag = @common.Tag::from_chars('f', 'e', 'a', 't')
+
+///|
+let tag_opbd : @common.Tag = @common.Tag::from_chars('o', 'p', 'b', 'd')
+
+///|
+let tag_just : @common.Tag = @common.Tag::from_chars('j', 'u', 's', 't')
+
+///|
+let tag_ltag : @common.Tag = @common.Tag::from_chars('l', 't', 'a', 'g')
+
+///|
+let tag_colr : @common.Tag = @common.Tag::from_chars('C', 'O', 'L', 'R')
+
+///|
+let tag_cblc : @common.Tag = @common.Tag::from_chars('C', 'B', 'L', 'C')
+
+///|
+let tag_cbdt : @common.Tag = @common.Tag::from_chars('C', 'B', 'D', 'T')
+
+///|
+let tag_svg : @common.Tag = @common.Tag::from_chars('S', 'V', 'G', ' ')
+
+///|
+let tag_sbix : @common.Tag = @common.Tag::from_chars('s', 'b', 'i', 'x')
+
+///|
+let tag_gvar : @common.Tag = @common.Tag::from_chars('g', 'v', 'a', 'r')
+
+///|
+let tag_hvar : @common.Tag = @common.Tag::from_chars('H', 'V', 'A', 'R')
+
+///|
+let tag_vvar : @common.Tag = @common.Tag::from_chars('V', 'V', 'A', 'R')
+
+///|
+let tag_vorg : @common.Tag = @common.Tag::from_chars('V', 'O', 'R', 'G')
+
+///|
+let tag_varc : @common.Tag = @common.Tag::from_chars('V', 'A', 'R', 'C')
+
+///|
 fn read_u16(bytes : Array[Byte], offset : Int) -> Result[Int, SubsetError] {
   if offset < 0 || offset + 2 > bytes.length() {
     return Err(InvalidInput("unexpected eof"))
@@ -574,6 +652,63 @@ fn add_optional_os2(
       Ok(())
     }
   }
+}
+
+fn is_identity_subset(plan : SubsetPlan, total_glyphs : Int) -> Bool {
+  if total_glyphs <= 0 || plan.glyphs.length() != total_glyphs {
+    return false
+  }
+  for i in 0..<plan.glyphs.length() {
+    if plan.glyphs[i].reinterpret_as_int() != i {
+      return false
+    }
+  }
+  true
+}
+
+fn add_identity_passthrough_tables(
+  face : @face.Face,
+  tables : Array[(@common.Tag, Bytes)],
+  identity : Bool,
+) -> Result[Unit, SubsetError] {
+  if !identity {
+    return Ok(())
+  }
+  let tags : Array[@common.Tag] = [
+    tag_gsub,
+    tag_gpos,
+    tag_gdef,
+    tag_base,
+    tag_jstf,
+    tag_morx,
+    tag_mort,
+    tag_kerx,
+    tag_kern,
+    tag_ankr,
+    tag_trak,
+    tag_bsln,
+    tag_feat,
+    tag_opbd,
+    tag_just,
+    tag_ltag,
+    tag_colr,
+    tag_cblc,
+    tag_cbdt,
+    tag_svg,
+    tag_sbix,
+    tag_gvar,
+    tag_hvar,
+    tag_vvar,
+    tag_vorg,
+    tag_varc,
+  ]
+  for tag in tags {
+    match add_optional_table(face, tag, tables) {
+      Err(err) => return Err(err)
+      Ok(_) => ()
+    }
+  }
+  Ok(())
 }
 
 fn add_passthrough_tables(
@@ -1239,6 +1374,7 @@ pub fn subset_with_plan(
   }
 
   let cmap_bytes = build_cmap_from_pairs(plan.codepoint_map)
+  let identity = is_identity_subset(plan, maxp.num_glyphs)
 
   let tables : Array[(@common.Tag, Bytes)] = [
     (tag_head, Bytes::from_array(head_bytes)),
@@ -1258,6 +1394,10 @@ pub fn subset_with_plan(
   match cmap_bytes {
     None => ()
     Some(cmap) => tables.push((tag_cmap, cmap))
+  }
+  match add_identity_passthrough_tables(face, tables, identity) {
+    Err(err) => return Err(err)
+    Ok(_) => ()
   }
   match add_optional_os2(face, plan, tables) {
     Err(err) => return Err(err)
@@ -1345,6 +1485,7 @@ fn subset_cff1_with_plan(
   }
 
   let cmap_bytes = build_cmap_from_pairs(plan.codepoint_map)
+  let identity = is_identity_subset(plan, maxp.num_glyphs)
 
   let tables : Array[(@common.Tag, Bytes)] = [
     (tag_head, Bytes::from_array(head_bytes)),
@@ -1363,6 +1504,10 @@ fn subset_cff1_with_plan(
   match cmap_bytes {
     None => ()
     Some(cmap) => tables.push((tag_cmap, cmap))
+  }
+  match add_identity_passthrough_tables(face, tables, identity) {
+    Err(err) => return Err(err)
+    Ok(_) => ()
   }
   match add_optional_os2(face, plan, tables) {
     Err(err) => return Err(err)
@@ -1450,6 +1595,7 @@ fn subset_cff2_with_plan(
   }
 
   let cmap_bytes = build_cmap_from_pairs(plan.codepoint_map)
+  let identity = is_identity_subset(plan, maxp.num_glyphs)
 
   let tables : Array[(@common.Tag, Bytes)] = [
     (tag_head, Bytes::from_array(head_bytes)),
@@ -1468,6 +1614,10 @@ fn subset_cff2_with_plan(
   match cmap_bytes {
     None => ()
     Some(cmap) => tables.push((tag_cmap, cmap))
+  }
+  match add_identity_passthrough_tables(face, tables, identity) {
+    Err(err) => return Err(err)
+    Ok(_) => ()
   }
   match add_optional_os2(face, plan, tables) {
     Err(err) => return Err(err)

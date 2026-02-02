@@ -21,6 +21,10 @@ Optional tables `name`, `post`, `OS/2` (first/last char indices updated),
 `gasp`, `cvt `, `fpgm`, `prep`, `VDMX`,
 `fvar`, `avar`, `STAT`, `MVAR`, `cvar`, `CPAL`, and `meta` are copied through
 unchanged if present.
+Layout/color/variation tables that reference glyph IDs (GSUB/GPOS/GDEF,
+BASE/JSTF, AAT tables, COLR/CBDT/CBLC/SVG/sbix, gvar/HVAR/VVAR/VORG/VARC)
+are copied through only when the subset preserves all glyphs (identity);
+otherwise they are dropped.
 
 For CFF1 fonts, the subset path rebuilds the `CFF ` table by slicing
 CharStrings/charset to the selected glyph set (CFF subrs are copied as-is).
@@ -32,7 +36,8 @@ The ItemVariationStore bytes are copied through unchanged if present.
 
 - CFF1 subrs are copied as-is; unused subroutines are not removed.
 - CFF2 private subrs and var store bytes are copied as-is; unused subroutines are not removed.
-- No subsetting of GSUB/GPOS/GDEF, color, variations, or AAT tables.
+- Layout/color/variation tables that reference glyph IDs are not subset yet;
+  they are only preserved when the subset keeps all glyphs.
 - `loca` is always written in long format.
 - `cmap` is rebuilt only from the supplied codepoints.
 
