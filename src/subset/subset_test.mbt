@@ -208,13 +208,17 @@ fn build_vorg_table() -> Bytes {
 fn build_kern_table() -> Bytes {
   let subtable0 = build_kern_subtable_format0()
   let subtable2 = build_kern_subtable_format2()
+  let subtable3 = build_kern_subtable_format3()
   let bytes : Array[Byte] = []
   push_u16(bytes, 0)
-  push_u16(bytes, 2)
+  push_u16(bytes, 3)
   for b in subtable0 {
     bytes.push(b)
   }
   for b in subtable2 {
+    bytes.push(b)
+  }
+  for b in subtable3 {
     bytes.push(b)
   }
   Bytes::from_array(bytes)
@@ -277,6 +281,45 @@ fn build_kern_subtable_format2() -> Bytes {
   }
   for value in values {
     push_i16(bytes, value)
+  }
+  Bytes::from_array(bytes)
+}
+
+///|
+fn build_kern_subtable_format3() -> Bytes {
+  let glyph_count = 4
+  let kern_values : Array[Int] = [0, -10, -50]
+  let left_class : Array[Int] = [0, 1, 1, 0]
+  let right_class : Array[Int] = [0, 1, 0, 1]
+  let kern_index : Array[Int] = [0, 1, 1, 2]
+  let kern_value_count = kern_values.length()
+  let left_class_count = 2
+  let right_class_count = 2
+  let values_len = kern_values.length() * 2
+  let left_len = glyph_count
+  let right_len = glyph_count
+  let index_len = left_class_count * right_class_count
+  let length = 12 + values_len + left_len + right_len + index_len
+  let bytes : Array[Byte] = []
+  push_u16(bytes, 0)
+  push_u16(bytes, length)
+  push_u16(bytes, 0x0301)
+  push_u16(bytes, glyph_count)
+  bytes.push(kern_value_count.to_byte())
+  bytes.push(left_class_count.to_byte())
+  bytes.push(right_class_count.to_byte())
+  bytes.push(0)
+  for value in kern_values {
+    push_i16(bytes, value)
+  }
+  for value in left_class {
+    bytes.push(value.to_byte())
+  }
+  for value in right_class {
+    bytes.push(value.to_byte())
+  }
+  for value in kern_index {
+    bytes.push(value.to_byte())
   }
   Bytes::from_array(bytes)
 }
@@ -827,7 +870,7 @@ test "subset rebuilds kern" {
     Err(err) => fail("kern parse failed: \{err}")
     Ok(value) => value
   }
-  inspect(kern.subtables.length(), content="2")
+  inspect(kern.subtables.length(), content="3")
   let subtable = kern.subtables[0]
   inspect(subtable.format, content="0")
   inspect(subtable.pairs.length(), content="1")
@@ -853,6 +896,20 @@ test "subset rebuilds kern" {
   inspect(
     pairs2,
     content="[(0, 2, -20), (1, 0, -30), (1, 1, -30), (1, 2, -40), (2, 2, -20)]",
+  )
+  let subtable3 = kern.subtables[2]
+  inspect(subtable3.format, content="0")
+  let pairs3 : Array[(Int, Int, Int)] = []
+  for pair in subtable3.pairs {
+    pairs3.push((
+      pair.left.reinterpret_as_int(),
+      pair.right.reinterpret_as_int(),
+      pair.value,
+    ))
+  }
+  inspect(
+    pairs3,
+    content="[(0, 2, -10), (1, 0, -10), (1, 1, -10), (1, 2, -50), (2, 2, -10)]",
   )
 }
 

@@ -462,6 +462,97 @@ fn kern_pairs_from_format2(
   Ok(pairs)
 }
 
+fn kern_class_from_list(
+  classes : Array[Int],
+  class_count : Int,
+  glyph : Int,
+) -> Int {
+  if glyph < 0 || glyph >= classes.length() {
+    return 0
+  }
+  let value = classes[glyph]
+  if value < 0 || value >= class_count { 0 } else { value }
+}
+
+fn kern_pairs_from_format3(
+  format3 : @sfnt.KernSubtableFormat3,
+  plan : SubsetPlan,
+) -> Result[Array[(Int, Int, Int)], SubsetError] {
+  let glyph_count = format3.glyph_count
+  if glyph_count <= 0 {
+    return Ok([])
+  }
+  if glyph_count > format3.left_class.length() || glyph_count > format3.right_class.length() {
+    return Err(InvalidInput("kern format3 glyph count mismatch"))
+  }
+  let left_class_count = format3.left_class_count
+  let right_class_count = format3.right_class_count
+  if left_class_count <= 0 || right_class_count <= 0 {
+    return Ok([])
+  }
+  let index_len = left_class_count * right_class_count
+  if index_len < 0 || index_len > format3.kern_index.length() {
+    return Err(InvalidInput("kern format3 index length mismatch"))
+  }
+  if format3.values.is_empty() {
+    return Ok([])
+  }
+  let left_classes : Array[Array[Int]] = []
+  for _ in 0..<left_class_count {
+    left_classes.push([])
+  }
+  let right_classes : Array[Array[Int]] = []
+  for _ in 0..<right_class_count {
+    right_classes.push([])
+  }
+  for old_gid_u in plan.glyphs {
+    let old_gid = old_gid_u.reinterpret_as_int()
+    if old_gid < 0 || old_gid >= glyph_count {
+      return Err(InvalidInput("glyph id out of range"))
+    }
+    let new_gid = plan.old_to_new[old_gid]
+    if new_gid < 0 {
+      continue
+    }
+    let left_class = kern_class_from_list(format3.left_class, left_class_count, old_gid)
+    let right_class = kern_class_from_list(format3.right_class, right_class_count, old_gid)
+    left_classes[left_class].push(new_gid)
+    right_classes[right_class].push(new_gid)
+  }
+  let pairs : Array[(Int, Int, Int)] = []
+  for left_class in 0..<left_class_count {
+    let left_glyphs = left_classes[left_class]
+    if left_glyphs.is_empty() {
+      continue
+    }
+    let base = left_class * right_class_count
+    for right_class in 0..<right_class_count {
+      let right_glyphs = right_classes[right_class]
+      if right_glyphs.is_empty() {
+        continue
+      }
+      let idx = base + right_class
+      if idx < 0 || idx >= format3.kern_index.length() {
+        return Err(InvalidInput("kern format3 index out of range"))
+      }
+      let value_index = format3.kern_index[idx]
+      if value_index < 0 || value_index >= format3.values.length() {
+        return Err(InvalidInput("kern format3 value index out of range"))
+      }
+      let value = format3.values[value_index]
+      if value == 0 {
+        continue
+      }
+      for left_gid in left_glyphs {
+        for right_gid in right_glyphs {
+          pairs.push((left_gid, right_gid, value))
+        }
+      }
+    }
+  }
+  Ok(pairs)
+}
+
 fn compare_tags(a : @common.Tag, b : @common.Tag) -> Int {
   let (a1, a2, a3, a4) = a.bytes()
   let (b1, b2, b3, b4) = b.bytes()
@@ -1451,6 +1542,31 @@ fn build_kern_subset(
             Some(value) => value
           }
           let pairs = match kern_pairs_from_format2(format2, plan) {
+            Err(err) => return Err(err)
+            Ok(value) => value
+          }
+          let bytes = match build_kern_format0_subtable(
+            pairs,
+            horizontal,
+            minimum,
+            cross_stream,
+            override_flag,
+          ) {
+            Err(err) => return Err(err)
+            Ok(value) => value
+          }
+          match bytes {
+            None => ()
+            Some(bytes) => subtables.push(bytes)
+          }
+          continue
+        }
+        if subtable.format == 3 {
+          let format3 = match subtable.format3 {
+            None => continue
+            Some(value) => value
+          }
+          let pairs = match kern_pairs_from_format3(format3, plan) {
             Err(err) => return Err(err)
             Ok(value) => value
           }
