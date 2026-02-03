@@ -119,3 +119,112 @@ test "cff1 seac bounds" {
   }
   inspect(components, content="Some((1, 2))")
 }
+
+///|
+fn empty_index() -> CffIndex {
+  CffIndex::{ count: 0, off_size: 0, offsets: [], data: Bytes::from_array([]) }
+}
+
+///|
+fn zero_charstrings(count : Int) -> CffIndex {
+  let offsets : Array[Int] = Array::make(count + 1, 1)
+  CffIndex::{ count, off_size: 1, offsets, data: Bytes::from_array([]) }
+}
+
+///|
+fn build_string_index(names : Array[String]) -> CffIndex {
+  if names.is_empty() {
+    return empty_index()
+  }
+  let bytes : Array[Byte] = []
+  let offsets : Array[Int] = [1]
+  let mut cursor = 1
+  for name in names {
+    let name_bytes = @utf8.encode(name)
+    for b in name_bytes {
+      bytes.push(b)
+    }
+    cursor = cursor + name_bytes.length()
+    offsets.push(cursor)
+  }
+  CffIndex::{ count: names.length(), off_size: 1, offsets, data: Bytes::from_array(bytes) }
+}
+
+///|
+test "cff1 glyph names standard charset" {
+  let empty = empty_index()
+  let empty_dict = CffDict::{ entries: {} }
+  let charstrings = zero_charstrings(3)
+  let cff1 = Cff1Table::{
+    data: Bytes::from_array([]),
+    name_index: empty,
+    top_dict: empty_dict,
+    string_index: empty,
+    global_subrs: empty,
+    charstrings,
+    private_dict: None,
+    local_subrs: None,
+    charstrings_offset: 0,
+    private_offset: 0,
+    private_size: 0,
+    charset_offset: 0,
+    charset_map: None,
+  }
+  let name0 = match cff1.glyph_name(0) {
+    Err(err) => fail("glyph name error: \{err}")
+    Ok(value) => value
+  }
+  let name1 = match cff1.glyph_name(1) {
+    Err(err) => fail("glyph name error: \{err}")
+    Ok(value) => value
+  }
+  let gid1 = match cff1.glyph_from_name("space") {
+    Err(err) => fail("glyph from name error: \{err}")
+    Ok(value) => value
+  }
+  inspect(name0, content="Some(\".notdef\")")
+  inspect(name1, content="Some(\"space\")")
+  inspect(gid1, content="Some(1)")
+}
+
+///|
+test "cff1 glyph names custom strings" {
+  let empty = empty_index()
+  let empty_dict = CffDict::{ entries: {} }
+  let charstrings = zero_charstrings(3)
+  let string_index = build_string_index(["customA", "customB"])
+  let standard_len = cff1_standard_strings_len()
+  let map : Map[Int, Int] = {}
+  map[standard_len] = 1
+  map[standard_len + 1] = 2
+  let cff1 = Cff1Table::{
+    data: Bytes::from_array([]),
+    name_index: empty,
+    top_dict: empty_dict,
+    string_index,
+    global_subrs: empty,
+    charstrings,
+    private_dict: None,
+    local_subrs: None,
+    charstrings_offset: 0,
+    private_offset: 0,
+    private_size: 0,
+    charset_offset: 3,
+    charset_map: Some(map),
+  }
+  let name1 = match cff1.glyph_name(1) {
+    Err(err) => fail("glyph name error: \{err}")
+    Ok(value) => value
+  }
+  let name2 = match cff1.glyph_name(2) {
+    Err(err) => fail("glyph name error: \{err}")
+    Ok(value) => value
+  }
+  let gid2 = match cff1.glyph_from_name("customB") {
+    Err(err) => fail("glyph from name error: \{err}")
+    Ok(value) => value
+  }
+  inspect(name1, content="Some(\"customA\")")
+  inspect(name2, content="Some(\"customB\")")
+  inspect(gid2, content="Some(2)")
+}

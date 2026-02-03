@@ -177,6 +177,82 @@ pub fn Cff1Table::glyph_count(self : Cff1Table) -> Int {
 }
 
 ///|
+pub fn Cff1Table::glyph_name(
+  self : Cff1Table,
+  glyph : Int,
+) -> Result[String?, CffError] {
+  if glyph < 0 || glyph >= self.charstrings.count {
+    return Ok(None)
+  }
+  let gid_to_sid = match build_gid_to_sid_map(
+    self.charset_offset,
+    self.charset_map,
+    self.charstrings.count,
+  ) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  let sid = gid_to_sid[glyph]
+  if sid < 0 {
+    return Ok(None)
+  }
+  match cff1_standard_string(sid) {
+    Some(value) => Ok(Some(value))
+    None => {
+      let standard_len = cff1_standard_strings_len()
+      let index = sid - standard_len
+      if index < 0 || index >= self.string_index.count {
+        return Ok(None)
+      }
+      let bytes = match self.string_index.item_bytes(index) {
+        Err(err) => return Err(err)
+        Ok(value) => value
+      }
+      Ok(Some(@utf8.decode_lossy(bytes[:])))
+    }
+  }
+}
+
+///|
+pub fn Cff1Table::glyph_from_name(
+  self : Cff1Table,
+  name : String,
+) -> Result[Int?, CffError] {
+  if name == "" {
+    return Ok(None)
+  }
+  let sid =
+    match cff1_standard_sid_for(name) {
+      Some(value) => Some(value)
+      None => {
+        let standard_len = cff1_standard_strings_len()
+        let mut found : Int? = None
+        for i in 0..<self.string_index.count {
+          let bytes = match self.string_index.item_bytes(i) {
+            Err(err) => return Err(err)
+            Ok(value) => value
+          }
+          if @utf8.decode_lossy(bytes[:]) == name {
+            found = Some(i + standard_len)
+            break
+          }
+        }
+        found
+      }
+    }
+  match sid {
+    None => Ok(None)
+    Some(value) =>
+      Ok(cff1_sid_to_gid(
+        self.charset_offset,
+        self.charset_map,
+        value,
+        self.charstrings.count,
+      ))
+  }
+}
+
+///|
 pub fn Cff1Table::seac_components(
   self : Cff1Table,
   glyph : Int,

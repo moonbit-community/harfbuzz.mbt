@@ -1468,6 +1468,91 @@ pub fn Font::variation_glyph_for(
 }
 
 ///|
+pub fn Font::glyph_name(
+  self : Font,
+  glyph : UInt,
+) -> Result[String?, FontError] {
+  let maxp = match self.ensure_maxp() {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  let index = glyph.reinterpret_as_int()
+  if index < 0 || index >= maxp.num_glyphs {
+    return Ok(None)
+  }
+  let post = match self.post() {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  match post {
+    Some(post) =>
+      match post.glyph_name(index) {
+        Some(name) => return Ok(Some(name))
+        None => ()
+      }
+    None => ()
+  }
+  let cff1 = match self.cff1() {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  match cff1 {
+    None => Ok(None)
+    Some(cff1) =>
+      match cff1.glyph_name(index) {
+        Err(err) => Err(Cff(err))
+        Ok(value) => Ok(value)
+      }
+  }
+}
+
+///|
+pub fn Font::glyph_from_name(
+  self : Font,
+  name : String,
+) -> Result[UInt?, FontError] {
+  if name == "" {
+    return Ok(None)
+  }
+  let maxp = match self.ensure_maxp() {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  let post = match self.post() {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  match post {
+    Some(post) =>
+      match post.glyph_from_name(name) {
+        None => ()
+        Some(glyph) => if glyph >= 0 && glyph < maxp.num_glyphs {
+          return Ok(Some(glyph.reinterpret_as_uint()))
+        }
+      }
+    None => ()
+  }
+  let cff1 = match self.cff1() {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  match cff1 {
+    None => Ok(None)
+    Some(cff1) =>
+      match cff1.glyph_from_name(name) {
+        Err(err) => Err(Cff(err))
+        Ok(None) => Ok(None)
+        Ok(Some(glyph)) =>
+          if glyph < 0 || glyph >= maxp.num_glyphs {
+            Ok(None)
+          } else {
+            Ok(Some(glyph.reinterpret_as_uint()))
+          }
+      }
+  }
+}
+
+///|
 pub fn Font::set_variations(
   self : Font,
   variations : Array[@ot_var.AxisCoord],

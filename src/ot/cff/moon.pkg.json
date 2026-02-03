@@ -1,5 +1,6 @@
 {
   "import": [
+    "moonbitlang/core/encoding/utf8",
     {
       "path": "moonbit-community/harfbuzz/ot/var",
       "alias": "ot_var"

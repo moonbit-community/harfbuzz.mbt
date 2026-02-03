@@ -1,0 +1,78 @@
+///|
+fn build_post_format2(indices : Array[Int], custom_names : Array[String]) -> Bytes {
+  let bytes : Array[Byte] = []
+  push_u32(bytes, 0x00020000)
+  push_u32(bytes, 0)
+  push_i16(bytes, 0)
+  push_i16(bytes, 0)
+  push_u32(bytes, 0)
+  push_u32(bytes, 0)
+  push_u32(bytes, 0)
+  push_u32(bytes, 0)
+  push_u32(bytes, 0)
+  push_u16(bytes, indices.length())
+  for index in indices {
+    push_u16(bytes, index)
+  }
+  for name in custom_names {
+    let name_bytes = @utf8.encode(name)
+    bytes.push(name_bytes.length().to_byte())
+    for b in name_bytes {
+      bytes.push(b)
+    }
+  }
+  Bytes::from_array(bytes)
+}
+
+///|
+test "font glyph names from post format2" {
+  let tag_maxp = @common.Tag::from_chars('m', 'a', 'x', 'p')
+  let tag_post = @common.Tag::from_chars('p', 'o', 's', 't')
+  let post = build_post_format2([0, 3, 258], ["icon0"])
+  let sfnt = build_sfnt([
+    (tag_maxp, build_maxp(3)),
+    (tag_post, post),
+  ])
+  let face = @face.Face::from_bytes(sfnt)
+  let font = Font::new(face)
+  let name0 = match font.glyph_name(0) {
+    Err(err) => fail("glyph name error: \{err}")
+    Ok(value) => value
+  }
+  let name1 = match font.glyph_name(1) {
+    Err(err) => fail("glyph name error: \{err}")
+    Ok(value) => value
+  }
+  let name2 = match font.glyph_name(2) {
+    Err(err) => fail("glyph name error: \{err}")
+    Ok(value) => value
+  }
+  let name_missing = match font.glyph_name(99) {
+    Err(err) => fail("glyph name error: \{err}")
+    Ok(value) => value
+  }
+  inspect(name0, content="Some(\".notdef\")")
+  inspect(name1, content="Some(\"space\")")
+  inspect(name2, content="Some(\"icon0\")")
+  inspect(name_missing, content="None")
+  let gid0 = match font.glyph_from_name(".notdef") {
+    Err(err) => fail("glyph from name error: \{err}")
+    Ok(value) => value
+  }
+  let gid_custom = match font.glyph_from_name("icon0") {
+    Err(err) => fail("glyph from name error: \{err}")
+    Ok(value) => value
+  }
+  let gid_missing = match font.glyph_from_name("missing") {
+    Err(err) => fail("glyph from name error: \{err}")
+    Ok(value) => value
+  }
+  let gid_empty = match font.glyph_from_name("") {
+    Err(err) => fail("glyph from name error: \{err}")
+    Ok(value) => value
+  }
+  inspect(gid0, content="Some(0)")
+  inspect(gid_custom, content="Some(2)")
+  inspect(gid_missing, content="None")
+  inspect(gid_empty, content="None")
+}
