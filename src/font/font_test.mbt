@@ -890,6 +890,15 @@ test "font scale negative flips advances" {
 }
 
 ///|
+test "font ppem properties" {
+  let bytes = build_font_bytes()
+  let font = Font::from_bytes(bytes)
+  inspect(font.get_ppem(), content="(0, 0)")
+  font.set_ppem(12, 34)
+  inspect(font.get_ppem(), content="(12, 34)")
+}
+
+///|
 test "font scale defaults to upem" {
   let bytes = build_font_bytes()
   let font = Font::from_bytes(bytes)
