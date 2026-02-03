@@ -60,6 +60,27 @@ test "buffer default feature list vertical" {
 }
 
 ///|
+test "buffer feature list honors manual override" {
+  let buffer = Buffer::new()
+  let custom = @common.Tag::from_chars('a', 'b', 'c', 'd')
+  buffer.set_gsub_features([custom])
+  buffer.set_direction(@common.direction_ttb)
+  let tags = buffer.gsub_features()
+  inspect(tags.length(), content="1")
+  inspect(tags[0].to_string(), content="abcd")
+}
+
+///|
+test "buffer variation selector fallback" {
+  let buffer = Buffer::new()
+  inspect(buffer.get_not_found_variation_selector(), content="None")
+  buffer.set_not_found_variation_selector(Some(5U))
+  inspect(buffer.get_not_found_variation_selector(), content="Some(5)")
+  buffer.set_not_found_variation_selector(None)
+  inspect(buffer.get_not_found_variation_selector(), content="None")
+}
+
+///|
 test "buffer merge clusters" {
   let buffer = Buffer::new()
   buffer.add_codepoint(0x61U, cluster=5)
