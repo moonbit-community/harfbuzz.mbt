@@ -7,7 +7,27 @@ fn default_shapers() -> Array[String] {
 ///|
 /// Return the names of available shapers.
 pub fn available_shapers() -> Array[String] {
-  ["aat", "ot", "fallback"]
+  ["ot", "aat", "fallback"]
+}
+
+let shape_plan_cache : Map[String, ShapePlan] = {}
+
+fn shape_plan_key(
+  buffer : @buffer.Buffer,
+  shapers : Array[String],
+) -> String {
+  let sb = StringBuilder::new()
+  sb.write_view(shapers.join(","))
+  sb.write_char('|')
+  sb.write_view(buffer.get_direction().to_string())
+  sb.write_char('|')
+  sb.write_view(buffer.get_script().to_tag().to_string())
+  sb.write_char('|')
+  match buffer.get_language().to_string() {
+    None => sb.write_view("und")
+    Some(value) => sb.write_view(value)
+  }
+  sb.to_string()
 }
 
 ///|
@@ -64,6 +84,15 @@ pub fn shape(
   shapers? : Array[String] = [],
 ) -> Result[Unit, @buffer.ShapeError] {
   buffer.guess_segment_properties()
-  let plan = ShapePlan::from_buffer(buffer, shapers~)
+  let names = if shapers.is_empty() { default_shapers() } else { shapers }
+  let key = shape_plan_key(buffer, names)
+  let plan = match shape_plan_cache.get(key) {
+    None => {
+      let next = ShapePlan::from_buffer(buffer, shapers=names)
+      shape_plan_cache[key] = next
+      next
+    }
+    Some(value) => value
+  }
   plan.shape(font, buffer)
 }

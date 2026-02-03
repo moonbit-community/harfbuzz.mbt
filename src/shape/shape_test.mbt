@@ -1,6 +1,6 @@
 ///|
 test "shape available shapers" {
-  inspect(available_shapers(), content="[\"aat\", \"ot\", \"fallback\"]")
+  inspect(available_shapers(), content="[\"ot\", \"aat\", \"fallback\"]")
 }
 
 ///|

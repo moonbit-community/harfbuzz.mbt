@@ -250,6 +250,35 @@ fn apply_gpos(
     }
   }
   let gpos_present = gpos_to_use is Some(_) && !gpos_lookups.is_empty()
+  let kern_tag =
+    if buffer.direction.is_horizontal() {
+      @common.Tag::from_chars('k', 'e', 'r', 'n')
+    } else {
+      @common.Tag::from_chars('v', 'k', 'r', 'n')
+    }
+  let mut wants_kern = false
+  for entry in buffer.gpos_features {
+    if entry == kern_tag {
+      wants_kern = true
+      break
+    }
+  }
+  let mut has_gpos_kern = false
+  if wants_kern && gpos_to_use is Some(gpos) {
+    let kern_lookups = match gpos.layout().select_lookup_offsets_for_feature(
+      match gpos_tag {
+        None => buffer.script.to_tag()
+        Some(tag) => tag
+      },
+      kern_tag,
+      language_tag=language_to_ot_tag(buffer.language),
+      include_required=false,
+    ) {
+      Err(err) => return Err(Layout(err))
+      Ok(value) => value
+    }
+    has_gpos_kern = !kern_lookups.is_empty()
+  }
   match zero_width_marks {
     ZeroWidthMarks::ByGdefEarly =>
       match zero_marks_by_gdef_or_unicode(font, buffer, unicode_mark_flags, gpos_present) {
@@ -298,7 +327,8 @@ fn apply_gpos(
       })
     }
     buffer.positions = new_positions
-  } else if buffer.direction.is_horizontal() {
+  }
+  if buffer.direction.is_horizontal() && wants_kern && !has_gpos_kern {
     let kern = match font.kern() {
       Err(err) => return Err(Font(err))
       Ok(value) => value

@@ -1,4 +1,14 @@
 ///|
+fn has_tag(tags : ArrayView[@common.Tag], tag : @common.Tag) -> Bool {
+  for entry in tags {
+    if entry == tag {
+      return true
+    }
+  }
+  false
+}
+
+///|
 test "buffer basics" {
   let buffer = Buffer::new()
   assert_true(buffer.is_empty())
@@ -29,6 +39,24 @@ test "buffer properties" {
   inspect(buffer.get_direction().to_string(), content="ltr")
   inspect(buffer.get_script().to_tag().to_string(), content="Latn")
   inspect(buffer.get_language().to_string(), content="Some(\"en\")")
+}
+
+///|
+test "buffer default feature list horizontal" {
+  let buffer = Buffer::new()
+  buffer.set_direction(@common.direction_ltr)
+  let tags = buffer.gsub_features()
+  inspect(has_tag(tags, @common.Tag::from_chars('c', 'c', 'm', 'p')), content="true")
+  inspect(has_tag(tags, @common.Tag::from_chars('k', 'e', 'r', 'n')), content="true")
+}
+
+///|
+test "buffer default feature list vertical" {
+  let buffer = Buffer::new()
+  buffer.set_direction(@common.direction_ttb)
+  let tags = buffer.gsub_features()
+  inspect(has_tag(tags, @common.Tag::from_chars('v', 'e', 'r', 't')), content="true")
+  inspect(has_tag(tags, @common.Tag::from_chars('k', 'e', 'r', 'n')), content="false")
 }
 
 ///|

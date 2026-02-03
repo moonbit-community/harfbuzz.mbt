@@ -31,6 +31,8 @@ pub struct Buffer {
   mut language : @common.Language
   mut gsub_features : Array[@common.Tag]
   mut gpos_features : Array[@common.Tag]
+  mut gsub_features_default : Bool
+  mut gpos_features_default : Bool
   mut preserve_default_ignorables : Bool
   mut remove_default_ignorables : Bool
   mut not_found_variation_selector : UInt?
@@ -45,8 +47,10 @@ pub fn Buffer::new() -> Buffer {
     direction: @common.direction_invalid,
     script: @common.script_invalid,
     language: @common.language_invalid,
-    gsub_features: default_gsub_features(),
-    gpos_features: default_gpos_features(),
+    gsub_features: default_feature_tags(@common.direction_ltr),
+    gpos_features: default_feature_tags(@common.direction_ltr),
+    gsub_features_default: true,
+    gpos_features_default: true,
     preserve_default_ignorables: false,
     remove_default_ignorables: false,
     not_found_variation_selector: None,
@@ -223,6 +227,7 @@ pub fn Buffer::set_direction(
   direction : @common.Direction,
 ) -> Unit {
   self.direction = direction
+  update_default_features(self)
 }
 
 ///|
@@ -255,6 +260,7 @@ pub fn Buffer::set_gsub_features(
   features : Array[@common.Tag],
 ) -> Unit {
   self.gsub_features = features
+  self.gsub_features_default = false
 }
 
 ///|
@@ -263,6 +269,7 @@ pub fn Buffer::set_gpos_features(
   features : Array[@common.Tag],
 ) -> Unit {
   self.gpos_features = features
+  self.gpos_features_default = false
 }
 
 ///|
@@ -300,13 +307,60 @@ pub fn Buffer::get_not_found_variation_selector(self : Buffer) -> UInt? {
 }
 
 ///|
-fn default_gsub_features() -> Array[@common.Tag] {
-  [@common.Tag::from_chars('l', 'i', 'g', 'a')]
+fn default_feature_tags(direction : @common.Direction) -> Array[@common.Tag] {
+  let tags : Array[@common.Tag] = []
+  let dir = if direction.is_valid() { direction } else { @common.direction_ltr }
+  tags.push(@common.Tag::from_chars('r', 'v', 'r', 'n'))
+  if dir == @common.direction_ltr {
+    tags.push(@common.Tag::from_chars('l', 't', 'r', 'a'))
+    tags.push(@common.Tag::from_chars('l', 't', 'r', 'm'))
+  } else if dir == @common.direction_rtl {
+    tags.push(@common.Tag::from_chars('r', 't', 'l', 'a'))
+    tags.push(@common.Tag::from_chars('r', 't', 'l', 'm'))
+  }
+  tags.push(@common.Tag::from_chars('f', 'r', 'a', 'c'))
+  tags.push(@common.Tag::from_chars('n', 'u', 'm', 'r'))
+  tags.push(@common.Tag::from_chars('d', 'n', 'o', 'm'))
+  tags.push(@common.Tag::from_chars('r', 'a', 'n', 'd'))
+  tags.push(@common.Tag::from_chars('H', 'a', 'r', 'f'))
+  tags.push(@common.Tag::from_chars('H', 'A', 'R', 'F'))
+  tags.push(@common.Tag::from_chars('B', 'u', 'z', 'z'))
+  tags.push(@common.Tag::from_chars('B', 'U', 'Z', 'Z'))
+  tags.push(@common.Tag::from_chars('c', 'c', 'm', 'p'))
+  tags.push(@common.Tag::from_chars('l', 'o', 'c', 'l'))
+  tags.push(@common.Tag::from_chars('m', 'a', 'r', 'k'))
+  tags.push(@common.Tag::from_chars('m', 'k', 'm', 'k'))
+  tags.push(@common.Tag::from_chars('r', 'l', 'i', 'g'))
+  if dir.is_horizontal() {
+    tags.push(@common.Tag::from_chars('c', 'a', 'l', 't'))
+    tags.push(@common.Tag::from_chars('c', 'l', 'i', 'g'))
+    tags.push(@common.Tag::from_chars('c', 'u', 'r', 's'))
+    tags.push(@common.Tag::from_chars('d', 'i', 's', 't'))
+    tags.push(@common.Tag::from_chars('k', 'e', 'r', 'n'))
+    tags.push(@common.Tag::from_chars('l', 'i', 'g', 'a'))
+    tags.push(@common.Tag::from_chars('r', 'c', 'l', 't'))
+  } else {
+    tags.push(@common.Tag::from_chars('v', 'e', 'r', 't'))
+  }
+  tags
 }
 
-///|
-fn default_gpos_features() -> Array[@common.Tag] {
-  [@common.Tag::from_chars('k', 'e', 'r', 'n')]
+fn tag_in_list(tags : Array[@common.Tag], tag : @common.Tag) -> Bool {
+  for entry in tags {
+    if entry == tag {
+      return true
+    }
+  }
+  false
+}
+
+fn update_default_features(buffer : Buffer) -> Unit {
+  if buffer.gsub_features_default {
+    buffer.gsub_features = default_feature_tags(buffer.direction)
+  }
+  if buffer.gpos_features_default {
+    buffer.gpos_features = default_feature_tags(buffer.direction)
+  }
 }
 
 fn fallback_glyph_for_codepoint(
@@ -530,6 +584,7 @@ pub fn Buffer::guess_segment_properties(self : Buffer) -> Unit {
     let dir = self.script.horizontal_direction()
     self.direction = if dir.is_valid() { dir } else { @common.direction_ltr }
   }
+  update_default_features(self)
   if !self.language.is_valid() {
     self.language = @common.Language::from_string("und")
   }
@@ -1394,6 +1449,26 @@ fn Buffer::shape_ot_with_options(
   }
   let gpos_lookups = map.gpos_lookups()
   let gpos_present = gpos is Some(_) && !gpos_lookups.is_empty()
+  let kern_tag =
+    if self.direction.is_horizontal() {
+      @common.Tag::from_chars('k', 'e', 'r', 'n')
+    } else {
+      @common.Tag::from_chars('v', 'k', 'r', 'n')
+    }
+  let wants_kern = tag_in_list(self.gpos_features, kern_tag)
+  let mut has_gpos_kern = false
+  if wants_kern && gpos is Some(gpos) {
+    let kern_lookups = match gpos.layout().select_lookup_offsets_for_feature(
+      script_tag,
+      kern_tag,
+      language_tag=lang_tag,
+      include_required=false,
+    ) {
+      Err(err) => return Err(Layout(err))
+      Ok(value) => value
+    }
+    has_gpos_kern = !kern_lookups.is_empty()
+  }
   if gsub is Some(gsub) {
     let gdef = match font.gdef() {
       Err(err) => return Err(Font(err))
@@ -1494,7 +1569,8 @@ fn Buffer::shape_ot_with_options(
       })
     }
     self.positions = new_positions
-  } else if self.direction.is_horizontal() {
+  }
+  if self.direction.is_horizontal() && wants_kern && !has_gpos_kern {
     let kern = match font.kern() {
       Err(err) => return Err(Font(err))
       Ok(value) => value
