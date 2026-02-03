@@ -8,6 +8,35 @@ test "blob basics" {
 }
 
 ///|
+test "blob empty" {
+  let blob = Blob::from_bytes([])
+  inspect(blob.len(), content="0")
+  inspect(blob.is_empty(), content="true")
+  inspect(blob.get(0), content="None")
+  let sub = match blob.sub(0, 0) {
+    Err(err) => fail("unexpected error: \{err}")
+    Ok(value) => value
+  }
+  inspect(sub.len(), content="0")
+  inspect(sub.is_empty(), content="true")
+  inspect(blob.sub(0, 1), content="Err(OutOfBounds)")
+}
+
+///|
+test "blob memory mode" {
+  let bytes : Bytes = [0x10, 0x11]
+  let ro_blob = Blob::from_bytes(bytes)
+  inspect(ro_blob.memory_mode(), content="Readonly")
+  let dup_blob = Blob::from_bytes_copy(bytes)
+  inspect(dup_blob.memory_mode(), content="Duplicate")
+  let sub = match dup_blob.sub(0, 1) {
+    Err(err) => fail("unexpected error: \{err}")
+    Ok(value) => value
+  }
+  inspect(sub.memory_mode(), content="Readonly")
+}
+
+///|
 test "blob sub view" {
   let bytes : Bytes = [0x10, 0x11, 0x12, 0x13, 0x14]
   let blob = Blob::from_bytes(bytes)
