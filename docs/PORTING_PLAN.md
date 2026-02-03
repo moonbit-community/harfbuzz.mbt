@@ -20,7 +20,7 @@ Unicode data, variations, color/paint, and subsetting.
 - `ot/var`: variation tables + var store (fvar/gvar/avar/cvar/hvar/vvar/mvar/varc) with tests.
 - `ot/color` + `paint`: COLR/CPAL parsing + COLRv1 paint graph decoding (no rendering/backends yet).
 - `aat`: AAT layout tables + shaping (morx/mort/kerx/ankr/trak + bsln/feat/opbd/just/ltag).
-- `subset`: TrueType subsetting for glyf/loca/hmtx/vmtx/head/hhea/vhea/maxp/cmap (composite remap; long loca) + CFF1 charstrings/charset subsetting + CFF2 outline subsetting + passthrough metadata/axis tables (OS/2 with updated first/last char indices, gasp, cvt, fpgm, prep, VDMX, fvar, avar, STAT, MVAR, cvar, CPAL, meta) + VORG rebuild + kern format 0/2/3 rebuild + COLR v0 rebuild + GDEF class/attach/lig caret/mark set rebuild + GSUB lookup types 1/2/3/4/5/6/7/8 rebuild + GPOS lookup types 1/2 rebuild. Layout/color/variation tables that reference glyph IDs are preserved only for identity subsets.
+- `subset`: TrueType subsetting for glyf/loca/hmtx/vmtx/head/hhea/vhea/maxp/cmap (composite remap; long loca) + CFF1 charstrings/charset subsetting + CFF2 outline subsetting + passthrough metadata/axis tables (OS/2 with updated first/last char indices, gasp, cvt, fpgm, prep, VDMX, fvar, avar, STAT, MVAR, cvar, CPAL, meta) + VORG rebuild + kern format 0/2/3 rebuild + COLR v0 rebuild + GDEF class/attach/lig caret/mark set rebuild + GSUB lookup types 1/2/3/4/5/6/7/8 rebuild + GPOS lookup types 1/2 plus extension type 9 rebuild. Layout/color/variation tables that reference glyph IDs are preserved only for identity subsets.
 
 ## Package Map (current + planned)
 
@@ -43,7 +43,7 @@ Unicode data, variations, color/paint, and subsetting.
 | `paint` | Paint API | `hb-paint.*` | partial |
 | `aat` | AAT layout + shaping | `hb-aat-*` | done |
 | `graphite` | Graphite2 shaper | `hb-graphite2.*` | excluded (external dependency) |
-| `subset` | Subsetting pipeline | `hb-subset*` | done (TrueType glyf/loca + vertical metrics + CFF1 charstrings/charset + CFF2 outlines + metadata/axis passthrough tables + VORG + kern format 0/2/3 + COLR v0 + GDEF class/attach/lig caret/mark sets + GSUB lookup types 1/2/3/4/5/6/7/8 + GPOS lookup types 1/2; identity-only passthrough for layout/color/variation tables that reference glyph IDs) |
+| `subset` | Subsetting pipeline | `hb-subset*` | done (TrueType glyf/loca + vertical metrics + CFF1 charstrings/charset + CFF2 outlines + metadata/axis passthrough tables + VORG + kern format 0/2/3 + COLR v0 + GDEF class/attach/lig caret/mark sets + GSUB lookup types 1/2/3/4/5/6/7/8 + GPOS lookup types 1/2 plus extension type 9; identity-only passthrough for layout/color/variation tables that reference glyph IDs) |
 | `draw` | Draw/outline helpers | `hb-draw.*`, `hb-outline.*` | planned |
 | `platform/*` | Platform backends | CoreText/DirectWrite/Uniscribe/etc. | excluded |
 
