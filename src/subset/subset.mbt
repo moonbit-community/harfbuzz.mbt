@@ -1974,6 +1974,34 @@ fn gpos_value_record_size(value_format : Int) -> Int {
   size
 }
 
+fn build_anchor_bytes_optional(
+  bytes : Array[Byte],
+  offset : Int,
+) -> Result[Bytes?, SubsetError] {
+  if offset == 0 {
+    return Ok(None)
+  }
+  if offset < 0 || offset + 6 > bytes.length() {
+    return Err(InvalidInput("invalid GPOS anchor offset"))
+  }
+  let format = match read_u16(bytes, offset) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  if format == 1 {
+    let anchor_bytes = bytes[offset:offset + 6].to_array()
+    return Ok(Some(Bytes::from_array(anchor_bytes)))
+  }
+  if format == 2 {
+    if offset + 8 > bytes.length() {
+      return Err(InvalidInput("invalid GPOS anchor format2 bounds"))
+    }
+    let anchor_bytes = bytes[offset:offset + 8].to_array()
+    return Ok(Some(Bytes::from_array(anchor_bytes)))
+  }
+  Ok(None)
+}
+
 fn build_mark_glyph_sets_subset(
   bytes : Array[Byte],
   offset : Int,
@@ -3703,6 +3731,834 @@ fn build_gpos_pair_subtable(
   }
 }
 
+fn build_mark_array_bytes(records : Array[(Int, Int, Bytes)]) -> Bytes {
+  let out : Array[Byte] = []
+  push_u16(out, records.length())
+  let mut cursor = 2 + records.length() * 4
+  let anchors : Array[Bytes] = []
+  for record in records {
+    let (_, mark_class, anchor_bytes) = record
+    push_u16(out, mark_class)
+    push_u16(out, cursor)
+    cursor = cursor + anchor_bytes.length()
+    anchors.push(anchor_bytes)
+  }
+  for anchor_bytes in anchors {
+    for b in anchor_bytes {
+      out.push(b)
+    }
+  }
+  Bytes::from_array(out)
+}
+
+fn build_base_array_bytes(
+  records : Array[(Int, Array[Bytes?])],
+  class_count : Int,
+) -> Bytes {
+  let out : Array[Byte] = []
+  push_u16(out, records.length())
+  let mut cursor = 2 + records.length() * class_count * 2
+  let anchors : Array[Bytes] = []
+  for record in records {
+    let (_, anchor_list) = record
+    for anchor in anchor_list {
+      match anchor {
+        None => push_u16(out, 0)
+        Some(anchor_bytes) => {
+          push_u16(out, cursor)
+          cursor = cursor + anchor_bytes.length()
+          anchors.push(anchor_bytes)
+        }
+      }
+    }
+  }
+  for anchor_bytes in anchors {
+    for b in anchor_bytes {
+      out.push(b)
+    }
+  }
+  Bytes::from_array(out)
+}
+
+fn build_ligature_attach_bytes(
+  components : Array[Array[Bytes?]],
+  class_count : Int,
+) -> Bytes {
+  let out : Array[Byte] = []
+  push_u16(out, components.length())
+  let mut cursor = 2 + components.length() * class_count * 2
+  let anchors : Array[Bytes] = []
+  for component in components {
+    for anchor in component {
+      match anchor {
+        None => push_u16(out, 0)
+        Some(anchor_bytes) => {
+          push_u16(out, cursor)
+          cursor = cursor + anchor_bytes.length()
+          anchors.push(anchor_bytes)
+        }
+      }
+    }
+  }
+  for anchor_bytes in anchors {
+    for b in anchor_bytes {
+      out.push(b)
+    }
+  }
+  Bytes::from_array(out)
+}
+
+fn build_ligature_array_bytes(
+  records : Array[(Int, Array[Array[Bytes?]])],
+  class_count : Int,
+) -> Bytes {
+  let out : Array[Byte] = []
+  push_u16(out, records.length())
+  let mut cursor = 2 + records.length() * 2
+  let attaches : Array[Bytes] = []
+  for record in records {
+    let (_, components) = record
+    let attach_bytes = build_ligature_attach_bytes(components, class_count)
+    push_u16(out, cursor)
+    cursor = cursor + attach_bytes.length()
+    attaches.push(attach_bytes)
+  }
+  for attach_bytes in attaches {
+    for b in attach_bytes {
+      out.push(b)
+    }
+  }
+  Bytes::from_array(out)
+}
+
+fn build_gpos_cursive_subtable(
+  bytes : Array[Byte],
+  plan : SubsetPlan,
+) -> Result[Bytes?, SubsetError] {
+  if bytes.length() < 6 {
+    return Err(InvalidInput("invalid GPOS cursive subtable"))
+  }
+  let format = match read_u16(bytes, 0) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  if format != 1 {
+    return Ok(None)
+  }
+  let coverage_offset = match read_u16(bytes, 2) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  let entry_exit_count = match read_u16(bytes, 4) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  if coverage_offset <= 0 || entry_exit_count < 0 {
+    return Err(InvalidInput("invalid GPOS cursive header"))
+  }
+  let record_base = 6
+  if record_base + entry_exit_count * 4 > bytes.length() {
+    return Err(InvalidInput("invalid GPOS cursive records"))
+  }
+  let coverage = match parse_coverage_subset(bytes, coverage_offset) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  if coverage.length() != entry_exit_count {
+    return Err(InvalidInput("GPOS cursive coverage count mismatch"))
+  }
+  let records : Array[(Int, Bytes?, Bytes?)] = []
+  for i in 0..<entry_exit_count {
+    let glyph = coverage[i]
+    if glyph < 0 || glyph >= plan.old_to_new.length() {
+      return Err(InvalidInput("glyph id out of range"))
+    }
+    let new_gid = plan.old_to_new[glyph]
+    if new_gid < 0 {
+      continue
+    }
+    let entry_offset = match read_u16(bytes, record_base + i * 4) {
+      Err(err) => return Err(err)
+      Ok(value) => value
+    }
+    let exit_offset = match read_u16(bytes, record_base + i * 4 + 2) {
+      Err(err) => return Err(err)
+      Ok(value) => value
+    }
+    let entry_anchor = if entry_offset == 0 {
+      None
+    } else {
+      match build_anchor_bytes_optional(bytes, entry_offset) {
+        Err(err) => return Err(err)
+        Ok(None) => return Ok(None)
+        Ok(Some(value)) => Some(value)
+      }
+    }
+    let exit_anchor = if exit_offset == 0 {
+      None
+    } else {
+      match build_anchor_bytes_optional(bytes, exit_offset) {
+        Err(err) => return Err(err)
+        Ok(None) => return Ok(None)
+        Ok(Some(value)) => Some(value)
+      }
+    }
+    records.push((new_gid, entry_anchor, exit_anchor))
+  }
+  if records.is_empty() {
+    return Ok(None)
+  }
+  records.sort_by((a, b) => a.0 - b.0)
+  let glyphs : Array[Int] = []
+  let out_records : Array[Byte] = []
+  push_u16(out_records, records.length())
+  let mut cursor = 2 + records.length() * 4
+  let anchors : Array[Bytes] = []
+  for record in records {
+    let (gid, entry_anchor, exit_anchor) = record
+    glyphs.push(gid)
+    match entry_anchor {
+      None => push_u16(out_records, 0)
+      Some(anchor_bytes) => {
+        push_u16(out_records, 4 + cursor)
+        cursor = cursor + anchor_bytes.length()
+        anchors.push(anchor_bytes)
+      }
+    }
+    match exit_anchor {
+      None => push_u16(out_records, 0)
+      Some(anchor_bytes) => {
+        push_u16(out_records, 4 + cursor)
+        cursor = cursor + anchor_bytes.length()
+        anchors.push(anchor_bytes)
+      }
+    }
+  }
+  for anchor_bytes in anchors {
+    for b in anchor_bytes {
+      out_records.push(b)
+    }
+  }
+  let coverage_bytes = build_coverage_subset(glyphs)
+  let coverage_offset = 4 + out_records.length()
+  let out : Array[Byte] = []
+  push_u16(out, 1)
+  push_u16(out, coverage_offset)
+  for b in out_records {
+    out.push(b)
+  }
+  for b in coverage_bytes {
+    out.push(b)
+  }
+  Ok(Some(Bytes::from_array(out)))
+}
+
+fn build_gpos_mark_base_subtable(
+  bytes : Array[Byte],
+  plan : SubsetPlan,
+) -> Result[Bytes?, SubsetError] {
+  if bytes.length() < 12 {
+    return Err(InvalidInput("invalid GPOS mark-to-base subtable"))
+  }
+  let format = match read_u16(bytes, 0) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  if format != 1 {
+    return Ok(None)
+  }
+  let mark_cov_offset = match read_u16(bytes, 2) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  let base_cov_offset = match read_u16(bytes, 4) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  let class_count = match read_u16(bytes, 6) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  let mark_array_offset = match read_u16(bytes, 8) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  let base_array_offset = match read_u16(bytes, 10) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  if mark_cov_offset <= 0 || base_cov_offset <= 0 ||
+      mark_array_offset <= 0 || base_array_offset <= 0 ||
+      class_count <= 0 {
+    return Ok(None)
+  }
+  let mark_coverage = match parse_coverage_subset(bytes, mark_cov_offset) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  let base_coverage = match parse_coverage_subset(bytes, base_cov_offset) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  let mark_array_base = mark_array_offset
+  let mark_count = match read_u16(bytes, mark_array_base) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  if mark_count < 0 || mark_count != mark_coverage.length() {
+    return Err(InvalidInput("GPOS mark array count mismatch"))
+  }
+  let mark_record_base = mark_array_base + 2
+  if mark_record_base + mark_count * 4 > bytes.length() {
+    return Err(InvalidInput("invalid GPOS mark array bounds"))
+  }
+  let base_array_base = base_array_offset
+  let base_count = match read_u16(bytes, base_array_base) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  if base_count < 0 || base_count != base_coverage.length() {
+    return Err(InvalidInput("GPOS base array count mismatch"))
+  }
+  let base_record_base = base_array_base + 2
+  let base_record_size = class_count * 2
+  if base_record_base + base_count * base_record_size > bytes.length() {
+    return Err(InvalidInput("invalid GPOS base array bounds"))
+  }
+
+  let mark_records : Array[(Int, Int, Bytes)] = []
+  for i in 0..<mark_count {
+    let glyph = mark_coverage[i]
+    if glyph < 0 || glyph >= plan.old_to_new.length() {
+      return Err(InvalidInput("glyph id out of range"))
+    }
+    let new_gid = plan.old_to_new[glyph]
+    if new_gid < 0 {
+      continue
+    }
+    let mark_class = match read_u16(bytes, mark_record_base + i * 4) {
+      Err(err) => return Err(err)
+      Ok(value) => value
+    }
+    let mark_anchor_offset = match read_u16(bytes, mark_record_base + i * 4 + 2) {
+      Err(err) => return Err(err)
+      Ok(value) => value
+    }
+    if mark_class < 0 || mark_class >= class_count {
+      return Err(InvalidInput("invalid GPOS mark class"))
+    }
+    if mark_anchor_offset == 0 {
+      return Ok(None)
+    }
+    let mark_anchor = match build_anchor_bytes_optional(
+      bytes,
+      mark_array_base + mark_anchor_offset,
+    ) {
+      Err(err) => return Err(err)
+      Ok(None) => return Ok(None)
+      Ok(Some(value)) => value
+    }
+    mark_records.push((new_gid, mark_class, mark_anchor))
+  }
+
+  let base_records : Array[(Int, Array[Bytes?])] = []
+  for i in 0..<base_count {
+    let glyph = base_coverage[i]
+    if glyph < 0 || glyph >= plan.old_to_new.length() {
+      return Err(InvalidInput("glyph id out of range"))
+    }
+    let new_gid = plan.old_to_new[glyph]
+    if new_gid < 0 {
+      continue
+    }
+    let anchors : Array[Bytes?] = []
+    for class_index in 0..<class_count {
+      let anchor_offset = match read_u16(
+        bytes,
+        base_record_base + i * base_record_size + class_index * 2,
+      ) {
+        Err(err) => return Err(err)
+        Ok(value) => value
+      }
+      if anchor_offset == 0 {
+        anchors.push(None)
+      } else {
+        let anchor = match build_anchor_bytes_optional(
+          bytes,
+          base_array_base + anchor_offset,
+        ) {
+          Err(err) => return Err(err)
+          Ok(None) => return Ok(None)
+          Ok(Some(value)) => Some(value)
+        }
+        anchors.push(anchor)
+      }
+    }
+    base_records.push((new_gid, anchors))
+  }
+
+  if mark_records.is_empty() || base_records.is_empty() {
+    return Ok(None)
+  }
+  mark_records.sort_by((a, b) => a.0 - b.0)
+  base_records.sort_by((a, b) => a.0 - b.0)
+  let mark_glyphs : Array[Int] = []
+  let base_glyphs : Array[Int] = []
+  for record in mark_records {
+    mark_glyphs.push(record.0)
+  }
+  for record in base_records {
+    base_glyphs.push(record.0)
+  }
+  let mark_cov_bytes = build_coverage_subset(mark_glyphs)
+  let base_cov_bytes = build_coverage_subset(base_glyphs)
+  let mark_array_bytes = build_mark_array_bytes(mark_records)
+  let base_array_bytes = build_base_array_bytes(base_records, class_count)
+
+  let header_len = 12
+  let mark_array_offset = header_len
+  let base_array_offset = mark_array_offset + mark_array_bytes.length()
+  let mark_cov_offset = base_array_offset + base_array_bytes.length()
+  let base_cov_offset = mark_cov_offset + mark_cov_bytes.length()
+  let out : Array[Byte] = []
+  push_u16(out, 1)
+  push_u16(out, mark_cov_offset)
+  push_u16(out, base_cov_offset)
+  push_u16(out, class_count)
+  push_u16(out, mark_array_offset)
+  push_u16(out, base_array_offset)
+  for b in mark_array_bytes {
+    out.push(b)
+  }
+  for b in base_array_bytes {
+    out.push(b)
+  }
+  for b in mark_cov_bytes {
+    out.push(b)
+  }
+  for b in base_cov_bytes {
+    out.push(b)
+  }
+  Ok(Some(Bytes::from_array(out)))
+}
+
+fn build_gpos_mark_ligature_subtable(
+  bytes : Array[Byte],
+  plan : SubsetPlan,
+) -> Result[Bytes?, SubsetError] {
+  if bytes.length() < 12 {
+    return Err(InvalidInput("invalid GPOS mark-to-ligature subtable"))
+  }
+  let format = match read_u16(bytes, 0) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  if format != 1 {
+    return Ok(None)
+  }
+  let mark_cov_offset = match read_u16(bytes, 2) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  let lig_cov_offset = match read_u16(bytes, 4) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  let class_count = match read_u16(bytes, 6) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  let mark_array_offset = match read_u16(bytes, 8) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  let lig_array_offset = match read_u16(bytes, 10) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  if mark_cov_offset <= 0 || lig_cov_offset <= 0 ||
+      mark_array_offset <= 0 || lig_array_offset <= 0 ||
+      class_count <= 0 {
+    return Ok(None)
+  }
+  let mark_coverage = match parse_coverage_subset(bytes, mark_cov_offset) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  let lig_coverage = match parse_coverage_subset(bytes, lig_cov_offset) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  let mark_array_base = mark_array_offset
+  let mark_count = match read_u16(bytes, mark_array_base) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  if mark_count < 0 || mark_count != mark_coverage.length() {
+    return Err(InvalidInput("GPOS mark array count mismatch"))
+  }
+  let mark_record_base = mark_array_base + 2
+  if mark_record_base + mark_count * 4 > bytes.length() {
+    return Err(InvalidInput("invalid GPOS mark array bounds"))
+  }
+  let lig_array_base = lig_array_offset
+  let lig_count = match read_u16(bytes, lig_array_base) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  if lig_count < 0 || lig_count != lig_coverage.length() {
+    return Err(InvalidInput("GPOS ligature array count mismatch"))
+  }
+  if lig_array_base + 2 + lig_count * 2 > bytes.length() {
+    return Err(InvalidInput("invalid GPOS ligature array bounds"))
+  }
+
+  let mark_records : Array[(Int, Int, Bytes)] = []
+  for i in 0..<mark_count {
+    let glyph = mark_coverage[i]
+    if glyph < 0 || glyph >= plan.old_to_new.length() {
+      return Err(InvalidInput("glyph id out of range"))
+    }
+    let new_gid = plan.old_to_new[glyph]
+    if new_gid < 0 {
+      continue
+    }
+    let mark_class = match read_u16(bytes, mark_record_base + i * 4) {
+      Err(err) => return Err(err)
+      Ok(value) => value
+    }
+    let mark_anchor_offset = match read_u16(bytes, mark_record_base + i * 4 + 2) {
+      Err(err) => return Err(err)
+      Ok(value) => value
+    }
+    if mark_class < 0 || mark_class >= class_count {
+      return Err(InvalidInput("invalid GPOS mark class"))
+    }
+    if mark_anchor_offset == 0 {
+      return Ok(None)
+    }
+    let mark_anchor = match build_anchor_bytes_optional(
+      bytes,
+      mark_array_base + mark_anchor_offset,
+    ) {
+      Err(err) => return Err(err)
+      Ok(None) => return Ok(None)
+      Ok(Some(value)) => value
+    }
+    mark_records.push((new_gid, mark_class, mark_anchor))
+  }
+
+  let lig_records : Array[(Int, Array[Array[Bytes?]])] = []
+  for i in 0..<lig_count {
+    let glyph = lig_coverage[i]
+    if glyph < 0 || glyph >= plan.old_to_new.length() {
+      return Err(InvalidInput("glyph id out of range"))
+    }
+    let new_gid = plan.old_to_new[glyph]
+    if new_gid < 0 {
+      continue
+    }
+    let attach_offset = match read_u16(bytes, lig_array_base + 2 + i * 2) {
+      Err(err) => return Err(err)
+      Ok(value) => value
+    }
+    if attach_offset == 0 {
+      continue
+    }
+    let attach_base = lig_array_base + attach_offset
+    if attach_base < 0 || attach_base + 2 > bytes.length() {
+      return Err(InvalidInput("invalid GPOS ligature attach offset"))
+    }
+    let component_count = match read_u16(bytes, attach_base) {
+      Err(err) => return Err(err)
+      Ok(value) => value
+    }
+    if component_count <= 0 {
+      continue
+    }
+    let record_base = attach_base + 2
+    let record_size = class_count * 2
+    if record_base + component_count * record_size > bytes.length() {
+      return Err(InvalidInput("invalid GPOS ligature attach bounds"))
+    }
+    let components : Array[Array[Bytes?]] = []
+    for component_index in 0..<component_count {
+      let anchors : Array[Bytes?] = []
+      for class_index in 0..<class_count {
+        let anchor_offset = match read_u16(
+          bytes,
+          record_base + component_index * record_size + class_index * 2,
+        ) {
+          Err(err) => return Err(err)
+          Ok(value) => value
+        }
+        if anchor_offset == 0 {
+          anchors.push(None)
+        } else {
+          let anchor = match build_anchor_bytes_optional(
+            bytes,
+            attach_base + anchor_offset,
+          ) {
+            Err(err) => return Err(err)
+            Ok(None) => return Ok(None)
+            Ok(Some(value)) => Some(value)
+          }
+          anchors.push(anchor)
+        }
+      }
+      components.push(anchors)
+    }
+    lig_records.push((new_gid, components))
+  }
+
+  if mark_records.is_empty() || lig_records.is_empty() {
+    return Ok(None)
+  }
+  mark_records.sort_by((a, b) => a.0 - b.0)
+  lig_records.sort_by((a, b) => a.0 - b.0)
+  let mark_glyphs : Array[Int] = []
+  let lig_glyphs : Array[Int] = []
+  for record in mark_records {
+    mark_glyphs.push(record.0)
+  }
+  for record in lig_records {
+    lig_glyphs.push(record.0)
+  }
+  let mark_cov_bytes = build_coverage_subset(mark_glyphs)
+  let lig_cov_bytes = build_coverage_subset(lig_glyphs)
+  let mark_array_bytes = build_mark_array_bytes(mark_records)
+  let lig_array_bytes = build_ligature_array_bytes(lig_records, class_count)
+
+  let header_len = 12
+  let mark_array_offset = header_len
+  let lig_array_offset = mark_array_offset + mark_array_bytes.length()
+  let mark_cov_offset = lig_array_offset + lig_array_bytes.length()
+  let lig_cov_offset = mark_cov_offset + mark_cov_bytes.length()
+  let out : Array[Byte] = []
+  push_u16(out, 1)
+  push_u16(out, mark_cov_offset)
+  push_u16(out, lig_cov_offset)
+  push_u16(out, class_count)
+  push_u16(out, mark_array_offset)
+  push_u16(out, lig_array_offset)
+  for b in mark_array_bytes {
+    out.push(b)
+  }
+  for b in lig_array_bytes {
+    out.push(b)
+  }
+  for b in mark_cov_bytes {
+    out.push(b)
+  }
+  for b in lig_cov_bytes {
+    out.push(b)
+  }
+  Ok(Some(Bytes::from_array(out)))
+}
+
+fn build_gpos_mark_mark_subtable(
+  bytes : Array[Byte],
+  plan : SubsetPlan,
+) -> Result[Bytes?, SubsetError] {
+  if bytes.length() < 12 {
+    return Err(InvalidInput("invalid GPOS mark-to-mark subtable"))
+  }
+  let format = match read_u16(bytes, 0) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  if format != 1 {
+    return Ok(None)
+  }
+  let mark1_cov_offset = match read_u16(bytes, 2) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  let mark2_cov_offset = match read_u16(bytes, 4) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  let class_count = match read_u16(bytes, 6) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  let mark1_array_offset = match read_u16(bytes, 8) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  let mark2_array_offset = match read_u16(bytes, 10) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  if mark1_cov_offset <= 0 || mark2_cov_offset <= 0 ||
+      mark1_array_offset <= 0 || mark2_array_offset <= 0 ||
+      class_count <= 0 {
+    return Ok(None)
+  }
+  let mark1_coverage = match parse_coverage_subset(bytes, mark1_cov_offset) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  let mark2_coverage = match parse_coverage_subset(bytes, mark2_cov_offset) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  let mark1_array_base = mark1_array_offset
+  let mark1_count = match read_u16(bytes, mark1_array_base) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  if mark1_count < 0 || mark1_count != mark1_coverage.length() {
+    return Err(InvalidInput("GPOS mark1 array count mismatch"))
+  }
+  let mark1_record_base = mark1_array_base + 2
+  if mark1_record_base + mark1_count * 4 > bytes.length() {
+    return Err(InvalidInput("invalid GPOS mark1 array bounds"))
+  }
+  let mark2_array_base = mark2_array_offset
+  let mark2_count = match read_u16(bytes, mark2_array_base) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  if mark2_count < 0 || mark2_count != mark2_coverage.length() {
+    return Err(InvalidInput("GPOS mark2 array count mismatch"))
+  }
+  let mark2_record_base = mark2_array_base + 2
+  let mark2_record_size = class_count * 2
+  if mark2_record_base + mark2_count * mark2_record_size > bytes.length() {
+    return Err(InvalidInput("invalid GPOS mark2 array bounds"))
+  }
+
+  let mark1_records : Array[(Int, Int, Bytes)] = []
+  for i in 0..<mark1_count {
+    let glyph = mark1_coverage[i]
+    if glyph < 0 || glyph >= plan.old_to_new.length() {
+      return Err(InvalidInput("glyph id out of range"))
+    }
+    let new_gid = plan.old_to_new[glyph]
+    if new_gid < 0 {
+      continue
+    }
+    let mark_class = match read_u16(bytes, mark1_record_base + i * 4) {
+      Err(err) => return Err(err)
+      Ok(value) => value
+    }
+    let mark_anchor_offset = match read_u16(bytes, mark1_record_base + i * 4 + 2) {
+      Err(err) => return Err(err)
+      Ok(value) => value
+    }
+    if mark_class < 0 || mark_class >= class_count {
+      return Err(InvalidInput("invalid GPOS mark class"))
+    }
+    if mark_anchor_offset == 0 {
+      return Ok(None)
+    }
+    let mark_anchor = match build_anchor_bytes_optional(
+      bytes,
+      mark1_array_base + mark_anchor_offset,
+    ) {
+      Err(err) => return Err(err)
+      Ok(None) => return Ok(None)
+      Ok(Some(value)) => value
+    }
+    mark1_records.push((new_gid, mark_class, mark_anchor))
+  }
+
+  let mark2_records : Array[(Int, Array[Bytes?])] = []
+  for i in 0..<mark2_count {
+    let glyph = mark2_coverage[i]
+    if glyph < 0 || glyph >= plan.old_to_new.length() {
+      return Err(InvalidInput("glyph id out of range"))
+    }
+    let new_gid = plan.old_to_new[glyph]
+    if new_gid < 0 {
+      continue
+    }
+    let anchors : Array[Bytes?] = []
+    for class_index in 0..<class_count {
+      let anchor_offset = match read_u16(
+        bytes,
+        mark2_record_base + i * mark2_record_size + class_index * 2,
+      ) {
+        Err(err) => return Err(err)
+        Ok(value) => value
+      }
+      if anchor_offset == 0 {
+        anchors.push(None)
+      } else {
+        let anchor = match build_anchor_bytes_optional(
+          bytes,
+          mark2_array_base + anchor_offset,
+        ) {
+          Err(err) => return Err(err)
+          Ok(None) => return Ok(None)
+          Ok(Some(value)) => Some(value)
+        }
+        anchors.push(anchor)
+      }
+    }
+    mark2_records.push((new_gid, anchors))
+  }
+
+  if mark1_records.is_empty() || mark2_records.is_empty() {
+    return Ok(None)
+  }
+  mark1_records.sort_by((a, b) => a.0 - b.0)
+  mark2_records.sort_by((a, b) => a.0 - b.0)
+  let mark1_glyphs : Array[Int] = []
+  let mark2_glyphs : Array[Int] = []
+  for record in mark1_records {
+    mark1_glyphs.push(record.0)
+  }
+  for record in mark2_records {
+    mark2_glyphs.push(record.0)
+  }
+  let mark1_cov_bytes = build_coverage_subset(mark1_glyphs)
+  let mark2_cov_bytes = build_coverage_subset(mark2_glyphs)
+  let mark1_array_bytes = build_mark_array_bytes(mark1_records)
+  let mark2_array_bytes = build_base_array_bytes(mark2_records, class_count)
+
+  let header_len = 12
+  let mark1_array_offset = header_len
+  let mark2_array_offset = mark1_array_offset + mark1_array_bytes.length()
+  let mark1_cov_offset = mark2_array_offset + mark2_array_bytes.length()
+  let mark2_cov_offset = mark1_cov_offset + mark1_cov_bytes.length()
+  let out : Array[Byte] = []
+  push_u16(out, 1)
+  push_u16(out, mark1_cov_offset)
+  push_u16(out, mark2_cov_offset)
+  push_u16(out, class_count)
+  push_u16(out, mark1_array_offset)
+  push_u16(out, mark2_array_offset)
+  for b in mark1_array_bytes {
+    out.push(b)
+  }
+  for b in mark2_array_bytes {
+    out.push(b)
+  }
+  for b in mark1_cov_bytes {
+    out.push(b)
+  }
+  for b in mark2_cov_bytes {
+    out.push(b)
+  }
+  Ok(Some(Bytes::from_array(out)))
+}
+
+fn build_gpos_contextual_subtable(
+  bytes : Array[Byte],
+  plan : SubsetPlan,
+) -> Result[Bytes?, SubsetError] {
+  build_gsub_contextual_subtable(bytes, plan)
+}
+
+fn build_gpos_chaining_subtable(
+  bytes : Array[Byte],
+  plan : SubsetPlan,
+) -> Result[Bytes?, SubsetError] {
+  build_gsub_chaining_subtable(bytes, plan)
+}
+
 fn build_gpos_extension_subtable(
   bytes : Array[Byte],
   plan : SubsetPlan,
@@ -3741,6 +4597,36 @@ fn build_gpos_extension_subtable(
     }
   } else if extension_type == 2 {
     new_sub = match build_gpos_pair_subtable(ext_bytes, plan) {
+      Err(err) => return Err(err)
+      Ok(value) => value
+    }
+  } else if extension_type == 3 {
+    new_sub = match build_gpos_cursive_subtable(ext_bytes, plan) {
+      Err(err) => return Err(err)
+      Ok(value) => value
+    }
+  } else if extension_type == 4 {
+    new_sub = match build_gpos_mark_base_subtable(ext_bytes, plan) {
+      Err(err) => return Err(err)
+      Ok(value) => value
+    }
+  } else if extension_type == 5 {
+    new_sub = match build_gpos_mark_ligature_subtable(ext_bytes, plan) {
+      Err(err) => return Err(err)
+      Ok(value) => value
+    }
+  } else if extension_type == 6 {
+    new_sub = match build_gpos_mark_mark_subtable(ext_bytes, plan) {
+      Err(err) => return Err(err)
+      Ok(value) => value
+    }
+  } else if extension_type == 7 {
+    new_sub = match build_gpos_contextual_subtable(ext_bytes, plan) {
+      Err(err) => return Err(err)
+      Ok(value) => value
+    }
+  } else if extension_type == 8 {
+    new_sub = match build_gpos_chaining_subtable(ext_bytes, plan) {
       Err(err) => return Err(err)
       Ok(value) => value
     }
@@ -4289,6 +5175,150 @@ fn build_gpos_subset(
             }
             let sub_bytes = bytes[sub_base:sub_end].to_array()
             let new_sub = match build_gpos_pair_subtable(sub_bytes, plan) {
+              Err(err) => return Err(err)
+              Ok(value) => value
+            }
+            match new_sub {
+              None => ()
+              Some(value) => {
+                kept_subtables = kept_subtables + 1
+                subtables.push(value)
+              }
+            }
+          }
+        } else if lookup_type == 3 {
+          for j in 0..<sub_offsets.length() {
+            let sub_base = base + sub_offsets[j]
+            let sub_end = if j + 1 < sub_offsets.length() {
+              base + sub_offsets[j + 1]
+            } else {
+              end
+            }
+            if sub_base < 0 || sub_base >= end || sub_end <= sub_base || sub_end > end {
+              return Err(InvalidInput("invalid GPOS subtable bounds"))
+            }
+            let sub_bytes = bytes[sub_base:sub_end].to_array()
+            let new_sub = match build_gpos_cursive_subtable(sub_bytes, plan) {
+              Err(err) => return Err(err)
+              Ok(value) => value
+            }
+            match new_sub {
+              None => ()
+              Some(value) => {
+                kept_subtables = kept_subtables + 1
+                subtables.push(value)
+              }
+            }
+          }
+        } else if lookup_type == 4 {
+          for j in 0..<sub_offsets.length() {
+            let sub_base = base + sub_offsets[j]
+            let sub_end = if j + 1 < sub_offsets.length() {
+              base + sub_offsets[j + 1]
+            } else {
+              end
+            }
+            if sub_base < 0 || sub_base >= end || sub_end <= sub_base || sub_end > end {
+              return Err(InvalidInput("invalid GPOS subtable bounds"))
+            }
+            let sub_bytes = bytes[sub_base:sub_end].to_array()
+            let new_sub = match build_gpos_mark_base_subtable(sub_bytes, plan) {
+              Err(err) => return Err(err)
+              Ok(value) => value
+            }
+            match new_sub {
+              None => ()
+              Some(value) => {
+                kept_subtables = kept_subtables + 1
+                subtables.push(value)
+              }
+            }
+          }
+        } else if lookup_type == 5 {
+          for j in 0..<sub_offsets.length() {
+            let sub_base = base + sub_offsets[j]
+            let sub_end = if j + 1 < sub_offsets.length() {
+              base + sub_offsets[j + 1]
+            } else {
+              end
+            }
+            if sub_base < 0 || sub_base >= end || sub_end <= sub_base || sub_end > end {
+              return Err(InvalidInput("invalid GPOS subtable bounds"))
+            }
+            let sub_bytes = bytes[sub_base:sub_end].to_array()
+            let new_sub = match build_gpos_mark_ligature_subtable(sub_bytes, plan) {
+              Err(err) => return Err(err)
+              Ok(value) => value
+            }
+            match new_sub {
+              None => ()
+              Some(value) => {
+                kept_subtables = kept_subtables + 1
+                subtables.push(value)
+              }
+            }
+          }
+        } else if lookup_type == 6 {
+          for j in 0..<sub_offsets.length() {
+            let sub_base = base + sub_offsets[j]
+            let sub_end = if j + 1 < sub_offsets.length() {
+              base + sub_offsets[j + 1]
+            } else {
+              end
+            }
+            if sub_base < 0 || sub_base >= end || sub_end <= sub_base || sub_end > end {
+              return Err(InvalidInput("invalid GPOS subtable bounds"))
+            }
+            let sub_bytes = bytes[sub_base:sub_end].to_array()
+            let new_sub = match build_gpos_mark_mark_subtable(sub_bytes, plan) {
+              Err(err) => return Err(err)
+              Ok(value) => value
+            }
+            match new_sub {
+              None => ()
+              Some(value) => {
+                kept_subtables = kept_subtables + 1
+                subtables.push(value)
+              }
+            }
+          }
+        } else if lookup_type == 7 {
+          for j in 0..<sub_offsets.length() {
+            let sub_base = base + sub_offsets[j]
+            let sub_end = if j + 1 < sub_offsets.length() {
+              base + sub_offsets[j + 1]
+            } else {
+              end
+            }
+            if sub_base < 0 || sub_base >= end || sub_end <= sub_base || sub_end > end {
+              return Err(InvalidInput("invalid GPOS subtable bounds"))
+            }
+            let sub_bytes = bytes[sub_base:sub_end].to_array()
+            let new_sub = match build_gpos_contextual_subtable(sub_bytes, plan) {
+              Err(err) => return Err(err)
+              Ok(value) => value
+            }
+            match new_sub {
+              None => ()
+              Some(value) => {
+                kept_subtables = kept_subtables + 1
+                subtables.push(value)
+              }
+            }
+          }
+        } else if lookup_type == 8 {
+          for j in 0..<sub_offsets.length() {
+            let sub_base = base + sub_offsets[j]
+            let sub_end = if j + 1 < sub_offsets.length() {
+              base + sub_offsets[j + 1]
+            } else {
+              end
+            }
+            if sub_base < 0 || sub_base >= end || sub_end <= sub_base || sub_end > end {
+              return Err(InvalidInput("invalid GPOS subtable bounds"))
+            }
+            let sub_bytes = bytes[sub_base:sub_end].to_array()
+            let new_sub = match build_gpos_chaining_subtable(sub_bytes, plan) {
               Err(err) => return Err(err)
               Ok(value) => value
             }
