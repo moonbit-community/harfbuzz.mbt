@@ -2,10 +2,17 @@
 test "tag construction" {
   let tag = Tag::from_chars('A', 'B', 'C', 'D')
   inspect(tag.to_string(), content="ABCD")
+  inspect(tag_none.to_uint(), content="0")
   let padded = Tag::from_string("a")
   inspect(padded.to_string(), content="a   ")
   let long = Tag::from_string("abcde")
   inspect(long.to_string(), content="abcd")
+  let short_len = Tag::from_string("aBcDe", len=2)
+  inspect(short_len.to_string(), content="aB  ")
+  let mid_len = Tag::from_string("aBcDe", len=3)
+  inspect(mid_len.to_string(), content="aBc ")
+  let zero_len = Tag::from_string("abcd", len=0)
+  inspect(zero_len.to_uint(), content="0")
 }
 
 ///|
@@ -17,6 +24,12 @@ test "direction parsing and helpers" {
   let rev = dir.reverse()
   inspect(rev.to_string(), content="rtl")
   assert_true(rev.is_backward())
+  inspect(Direction::from_string("rtl").to_string(), content="rtl")
+  inspect(Direction::from_string("x").to_string(), content="invalid")
+  inspect(Direction::from_string("ttb").to_string(), content="ttb")
+  inspect(Direction::from_string("t", len=0).to_string(), content="invalid")
+  let invalid = Direction::from_string("")
+  inspect(invalid.reverse().to_string(), content="invalid")
 }
 
 ///|
@@ -28,6 +41,12 @@ test "language canonicalization" {
   assert_true(!lang.matches(base))
   let zh = Language::from_string("zh_Hant")
   inspect(zh.to_string(), content="Some(\"zh-hant\")")
+  let fa = Language::from_string("FA_ir")
+  inspect(fa.to_string(), content="Some(\"fa-ir\")")
+  let invalid = Language::from_string("")
+  inspect(invalid.to_string(), content="None")
+  let capped = Language::from_string("Enx", len=2)
+  inspect(capped.to_string(), content="Some(\"en\")")
 }
 
 ///|
@@ -61,6 +80,15 @@ test "script tag normalization" {
   inspect(Script::from_string("zzzz").to_tag().to_string(), content="Zzzz")
   inspect(Script::from_string("kana").to_tag().to_string(), content="Kana")
   inspect(Script::from_string("math").to_tag().to_string(), content="Math")
+}
+
+///|
+test "script unknown tags" {
+  let custom = Script::from_string("wWyZ")
+  inspect(custom.to_tag().to_string(), content="Wwyz")
+  let unknown = Script::from_string("x123")
+  inspect(unknown.to_tag().to_string(), content="Zzzz")
+  assert_true(Script::from_string("") == script_invalid)
 }
 
 ///|
