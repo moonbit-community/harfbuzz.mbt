@@ -188,6 +188,16 @@ test "codepoint set empty state" {
 }
 
 ///|
+test "codepoint set clear resets" {
+  let set = CodepointSet::new()
+  assert_true(set.add_range(10U, 12U))
+  inspect(set.is_empty(), content="false")
+  set.clear()
+  inspect(set.is_empty(), content="true")
+  inspect(set.population(), content="0")
+}
+
+///|
 test "codepoint set next and ranges" {
   let set = CodepointSet::new()
   assert_true(set.add_range(1U, 3U))
