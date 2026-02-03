@@ -82,6 +82,65 @@ fn build_sfnt_with_tables(tables : Array[(@common.Tag, Bytes)]) -> Bytes {
 }
 
 ///|
+fn push_i16(bytes : Array[Byte], value : Int) -> Unit {
+  let adjusted = if value < 0 { value + 0x10000 } else { value }
+  push_u16(bytes, adjusted)
+}
+
+///|
+fn build_cmap_table(subtable : Bytes) -> Bytes {
+  let bytes : Array[Byte] = []
+  push_u16(bytes, 0)
+  push_u16(bytes, 1)
+  push_u16(bytes, 3)
+  push_u16(bytes, 10)
+  push_u32(bytes, 12)
+  for b in subtable {
+    bytes.push(b)
+  }
+  Bytes::from_array(bytes)
+}
+
+///|
+fn build_cmap_format12(start : UInt, end : UInt, start_gid : UInt) -> Bytes {
+  let bytes : Array[Byte] = []
+  push_u16(bytes, 12)
+  push_u16(bytes, 0)
+  push_u32(bytes, 28)
+  push_u32(bytes, 0)
+  push_u32(bytes, 1)
+  push_u32(bytes, start.reinterpret_as_int())
+  push_u32(bytes, end.reinterpret_as_int())
+  push_u32(bytes, start_gid.reinterpret_as_int())
+  Bytes::from_array(bytes)
+}
+
+///|
+fn build_cmap_format4_simple(start : Int, end : Int, start_gid : Int) -> Bytes {
+  let seg_count = 2
+  let length = 16 + 8 * seg_count
+  let id_delta = start_gid - start
+  let bytes : Array[Byte] = []
+  push_u16(bytes, 4)
+  push_u16(bytes, length)
+  push_u16(bytes, 0)
+  push_u16(bytes, seg_count * 2)
+  push_u16(bytes, 0)
+  push_u16(bytes, 0)
+  push_u16(bytes, 0)
+  push_u16(bytes, end)
+  push_u16(bytes, 0xFFFF)
+  push_u16(bytes, 0)
+  push_u16(bytes, start)
+  push_u16(bytes, 0xFFFF)
+  push_i16(bytes, id_delta)
+  push_i16(bytes, 1)
+  push_u16(bytes, 0)
+  push_u16(bytes, 0)
+  Bytes::from_array(bytes)
+}
+
+///|
 fn build_ttc(fonts : Array[Bytes]) -> Bytes {
   let bytes : Array[Byte] = []
   bytes.push(0x74)
@@ -191,4 +250,41 @@ test "face table tags listing" {
   }
   inspect(total2, content="3")
   inspect(tags2.length(), content="0")
+}
+
+///|
+test "face collect unicodes format12" {
+  let cmap = build_cmap_table(build_cmap_format12(0x61U, 0x63U, 1U))
+  let sfnt = build_sfnt_with_tables([
+    (@common.Tag::from_chars('c', 'm', 'a', 'p'), cmap),
+  ])
+  let face = Face::from_bytes(sfnt)
+  let set = match face.collect_unicodes() {
+    Err(err) => fail("collect unicodes error: \{err}")
+    Ok(value) => value
+  }
+  inspect(set.to_sorted_array(), content="[97, 98, 99]")
+  let map = match face.collect_nominal_glyph_mapping() {
+    Err(err) => fail("collect mapping error: \{err}")
+    Ok(value) => value
+  }
+  inspect(map.population(), content="3")
+  inspect(map.get(0x61U), content="1")
+  inspect(map.get(0x62U), content="2")
+  inspect(map.get(0x63U), content="3")
+}
+
+///|
+test "face collect unicodes format4" {
+  let subtable = build_cmap_format4_simple(0x61, 0x63, 1)
+  let cmap = build_cmap_table(subtable)
+  let sfnt = build_sfnt_with_tables([
+    (@common.Tag::from_chars('c', 'm', 'a', 'p'), cmap),
+  ])
+  let face = Face::from_bytes(sfnt)
+  let set = match face.collect_unicodes() {
+    Err(err) => fail("collect unicodes error: \{err}")
+    Ok(value) => value
+  }
+  inspect(set.to_sorted_array(), content="[97, 98, 99]")
 }

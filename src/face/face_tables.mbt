@@ -133,3 +133,34 @@ pub fn Face::table_tags(
     }
   }
 }
+
+///|
+/// Collect all Unicode codepoints mapped by the face cmap.
+pub fn Face::collect_unicodes(
+  self : Face,
+) -> Result[@common.CodepointSet, FaceTableError] {
+  match self.collect_nominal_glyph_mapping() {
+    Err(err) => Err(err)
+    Ok(map) => Ok(map.keys_set())
+  }
+}
+
+///|
+/// Collect nominal glyph mappings from the face cmap.
+pub fn Face::collect_nominal_glyph_mapping(
+  self : Face,
+) -> Result[@common.CodepointMap, FaceTableError] {
+  let tag = @common.Tag::from_chars('c', 'm', 'a', 'p')
+  let blob = match self.reference_table(tag) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  let cmap = match @sfnt.CmapTable::parse(blob) {
+    Err(err) => return Err(TableError(err))
+    Ok(value) => value
+  }
+  match cmap.collect_nominal_mapping() {
+    Err(err) => Err(TableError(err))
+    Ok(map) => Ok(map)
+  }
+}

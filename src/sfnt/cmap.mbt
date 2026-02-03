@@ -73,6 +73,27 @@ pub fn CmapTable::glyph_for(
 }
 
 ///|
+/// Collect nominal glyph mappings from the cmap table.
+pub fn CmapTable::collect_nominal_mapping(
+  self : CmapTable,
+) -> Result[@common.CodepointMap, SfntError] {
+  let map = @common.CodepointMap::new()
+  if self.format == 12 {
+    match collect_format12(self.data, self.subtable_offset, map) {
+      Err(err) => Err(err)
+      Ok(_) => Ok(map)
+    }
+  } else if self.format == 4 {
+    match collect_format4(self.data, self.subtable_offset, map) {
+      Err(err) => Err(err)
+      Ok(_) => Ok(map)
+    }
+  } else {
+    Err(InvalidFormat)
+  }
+}
+
+///|
 /// Map a codepoint + variation selector to a glyph id, if supported.
 pub fn CmapTable::variation_mapping(
   self : CmapTable,
@@ -241,6 +262,42 @@ fn glyph_for_format12(
   }
 }
 
+fn collect_format12(
+  data : BytesView,
+  offset : Int,
+  map : @common.CodepointMap,
+) -> Result[Unit, SfntError] {
+  let groups = read_u32_int(data, offset + 12)
+  match groups {
+    Err(err) => Err(err)
+    Ok(num_groups) => {
+      let mut base = offset + 16
+      for _ in 0..<num_groups {
+        let start = read_u32(data, base)
+        let end = read_u32(data, base + 4)
+        let start_gid = read_u32(data, base + 8)
+        match (start, end, start_gid) {
+          (Err(err), _, _) => return Err(err)
+          (_, Err(err), _) => return Err(err)
+          (_, _, Err(err)) => return Err(err)
+          (Ok(start), Ok(end), Ok(start_gid)) => {
+            let mut cp = start
+            while cp <= end {
+              let gid = start_gid + (cp - start)
+              if gid != 0U {
+                map.set(cp, gid)
+              }
+              cp = cp + 1U
+            }
+          }
+        }
+        base = base + 12
+      }
+      Ok(())
+    }
+  }
+}
+
 ///|
 fn glyph_for_format4(
   data : BytesView,
@@ -303,6 +360,68 @@ fn glyph_for_format4(
         }
       }
       Ok(None)
+    }
+  }
+}
+
+fn collect_format4(
+  data : BytesView,
+  offset : Int,
+  map : @common.CodepointMap,
+) -> Result[Unit, SfntError] {
+  let seg_count_x2 = read_u16_int(data, offset + 6)
+  match seg_count_x2 {
+    Err(err) => Err(err)
+    Ok(seg_count_x2) => {
+      let seg_count = seg_count_x2 / 2
+      let end_code_offset = offset + 14
+      let start_code_offset = end_code_offset + seg_count * 2 + 2
+      let id_delta_offset = start_code_offset + seg_count * 2
+      let id_range_offset_offset = id_delta_offset + seg_count * 2
+      for i in 0..<seg_count {
+        let end_code = read_u16_int(data, end_code_offset + i * 2)
+        let start_code = read_u16_int(data, start_code_offset + i * 2)
+        match (end_code, start_code) {
+          (Err(err), _) => return Err(err)
+          (_, Err(err)) => return Err(err)
+          (Ok(end_code), Ok(start_code)) => {
+            let id_delta = read_i16(data, id_delta_offset + i * 2)
+            let id_range_offset = read_u16_int(
+              data,
+              id_range_offset_offset + i * 2,
+            )
+            match (id_delta, id_range_offset) {
+              (Err(err), _) => return Err(err)
+              (_, Err(err)) => return Err(err)
+              (Ok(id_delta), Ok(id_range_offset)) => {
+                let mut cp = start_code
+                while cp <= end_code {
+                  let gid =
+                    if id_range_offset == 0 {
+                      (cp + id_delta) & 0xffff
+                    } else {
+                      let glyph_index_offset = id_range_offset_offset +
+                        i * 2 +
+                        id_range_offset +
+                        (cp - start_code) * 2
+                      match read_u16_int(data, glyph_index_offset) {
+                        Err(err) => return Err(err)
+                        Ok(glyph_id) => {
+                          if glyph_id == 0 { 0 } else { (glyph_id + id_delta) & 0xffff }
+                        }
+                      }
+                    }
+                  if gid != 0 {
+                    map.set(cp.reinterpret_as_uint(), gid.reinterpret_as_uint())
+                  }
+                  cp = cp + 1
+                }
+              }
+            }
+          }
+        }
+      }
+      Ok(())
     }
   }
 }
