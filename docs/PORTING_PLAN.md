@@ -42,7 +42,7 @@ Unicode data, variations, color/paint, and subsetting.
 | `ot/color` | COLR/CPAL + color utilities | `hb-ot-color.*` | partial |
 | `paint` | Paint API | `hb-paint.*` | partial |
 | `aat` | AAT layout + shaping | `hb-aat-*` | done |
-| `graphite` | Graphite2 shaper | `hb-graphite2.*` | excluded (external dependency) |
+| `graphite` | Graphite2 shaper | `hb-graphite2.*` | excluded (external dependency; see `docs/GRAPHITE2.md`) |
 | `subset` | Subsetting pipeline | `hb-subset*` | done (TrueType glyf/loca + vertical metrics + CFF1 charstrings/charset + CFF2 outlines + metadata/axis passthrough tables + VORG + kern format 0/2/3 + COLR v0 + GDEF class/attach/lig caret/mark sets + GSUB lookup types 1/2/3/4/5/6/7/8 + GPOS lookup types 1-8 plus extension type 9; identity-only passthrough for layout/color/variation tables that reference glyph IDs) |
 | `draw` | Draw/outline helpers | `hb-draw.*`, `hb-outline.*` | planned |
 | `platform/*` | Platform backends | CoreText/DirectWrite/Uniscribe/etc. | excluded |
@@ -56,7 +56,7 @@ Unicode data, variations, color/paint, and subsetting.
   (most script shapers + normalization done; remaining: variation selector glyph lookup + any missing fallback passes).
 - OT map/feature selection: `hb-ot-map.*` -> `ot/map`.
 - CFF/CFF2 support: `hb-ot-cff*`, `hb-cff*` -> `ot/cff` (done).
-- Graphite2 shaper: `hb-graphite2.*` -> `graphite` (excluded; requires external Graphite2 library).
+- Graphite2 shaper: `hb-graphite2.*` -> `graphite` (excluded; requires external Graphite2 library). Strategy in `docs/GRAPHITE2.md`.
 - Buffer serialization/verify: `hb-buffer-serialize.*`, `hb-buffer-verify.cc` -> `buffer`.
 - Utility data structures and helpers: `hb-set.*`, `hb-map.*`, `hb-serialize.*`, `hb-repacker.*`,
   `hb-number-parser.*` -> new support package (or fold into existing).
