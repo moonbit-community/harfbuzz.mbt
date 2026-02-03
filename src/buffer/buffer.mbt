@@ -542,10 +542,20 @@ pub fn Buffer::normalize(self : Buffer) -> Unit {
   if len <= 1 {
     return ()
   }
+  let mut has_vs = false
   for info in self.infos {
     if @unicode.is_variation_selector(info.codepoint) {
-      merge_variation_selector_clusters(self)
-      return ()
+      has_vs = true
+      break
+    }
+  }
+  let vs_clusters : Map[Int, Bool] = {}
+  if has_vs {
+    merge_variation_selector_clusters(self)
+    for info in self.infos {
+      if @unicode.is_variation_selector(info.codepoint) {
+        vs_clusters[info.cluster] = true
+      }
     }
   }
   let is_hebrew = self.script == @common.script_hebrew
@@ -554,12 +564,23 @@ pub fn Buffer::normalize(self : Buffer) -> Unit {
   let mut start = 0
   while start < len {
     let mut end = start + 1
+    let mut cluster_has_vs = @unicode.is_variation_selector(self.infos[start].codepoint)
     while end < len {
-      let cc = @unicode.combining_class(self.infos[end].codepoint)
+      let codepoint = self.infos[end].codepoint
+      if @unicode.is_variation_selector(codepoint) {
+        cluster_has_vs = true
+        end = end + 1
+        continue
+      }
+      let cc = @unicode.combining_class(codepoint)
       if cc == 0U {
         break
       }
       end = end + 1
+    }
+    if cluster_has_vs {
+      start = end
+      continue
     }
     let mark_start = start + 1
     if end - mark_start > 1 {
@@ -616,7 +637,7 @@ pub fn Buffer::normalize(self : Buffer) -> Unit {
     start = end
   }
   if is_hangul {
-    normalize_hangul(self)
+    normalize_hangul(self, vs_clusters)
   }
 }
 
@@ -696,10 +717,15 @@ fn reorder_marks_arabic(buffer : Buffer, start : Int, end : Int) -> Unit {
 }
 
 ///|
-fn normalize_hangul(buffer : Buffer) -> Unit {
+fn normalize_hangul(buffer : Buffer, vs_clusters : Map[Int, Bool]) -> Unit {
   let mut i = 0
   let mut len = buffer.infos.length()
   while i + 1 < len {
+    if vs_clusters.contains(buffer.infos[i].cluster) ||
+      vs_clusters.contains(buffer.infos[i + 1].cluster) {
+      i = i + 1
+      continue
+    }
     let a = buffer.infos[i].codepoint
     let b = buffer.infos[i + 1].codepoint
     let composed = if is_hangul_l(a) && is_hangul_v(b) {
@@ -1349,7 +1375,6 @@ fn Buffer::shape_ot_with_options(
     Err(err) => return Err(Font(err))
     Ok(value) => value
   }
-  let gpos_present = gpos is Some(_)
   match self.shape_basic(font) {
     Err(err) => return Err(err)
     Ok(_) => ()
@@ -1367,6 +1392,8 @@ fn Buffer::shape_ot_with_options(
     Err(err) => return Err(Layout(err))
     Ok(value) => value
   }
+  let gpos_lookups = map.gpos_lookups()
+  let gpos_present = gpos is Some(_) && !gpos_lookups.is_empty()
   if gsub is Some(gsub) {
     let gdef = match font.gdef() {
       Err(err) => return Err(Font(err))
@@ -1427,7 +1454,7 @@ fn Buffer::shape_ot_with_options(
       }
     _ => ()
   }
-  if gpos is Some(gpos) {
+  if gpos_present && gpos is Some(gpos) {
     let gdef = match font.gdef() {
       Err(err) => return Err(Font(err))
       Ok(value) => value
@@ -1440,7 +1467,7 @@ fn Buffer::shape_ot_with_options(
       None =>
         match gpos.position_deltas_with_lookups(
           glyphs[:],
-          map.gpos_lookups(),
+          gpos_lookups,
         ) {
           Err(err) => return Err(Layout(err))
           Ok(value) => value
@@ -1448,7 +1475,7 @@ fn Buffer::shape_ot_with_options(
       Some(gdef) =>
         match gpos.position_deltas_with_lookups(
           glyphs[:],
-          map.gpos_lookups(),
+          gpos_lookups,
           gdef=gdef,
         ) {
           Err(err) => return Err(Layout(err))

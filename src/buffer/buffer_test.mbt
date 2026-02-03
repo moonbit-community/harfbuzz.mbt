@@ -1129,6 +1129,27 @@ fn build_font_bytes_kern() -> Bytes {
 }
 
 ///|
+fn build_font_bytes_kern_with_gpos() -> Bytes {
+  let tables : Array[(@common.Tag, Bytes)] = [
+    (@common.Tag::from_chars('h', 'e', 'a', 'd'), build_head(1000, 0)),
+    (@common.Tag::from_chars('m', 'a', 'x', 'p'), build_maxp(4)),
+    (@common.Tag::from_chars('h', 'h', 'e', 'a'), build_hhea(4)),
+    (@common.Tag::from_chars('h', 'm', 't', 'x'), build_hmtx_ot()),
+    (
+      @common.Tag::from_chars('c', 'm', 'a', 'p'),
+      build_cmap_table(build_cmap_format12(0x41U, 0x42U, 1U)),
+    ),
+    (@common.Tag::from_chars('k', 'e', 'r', 'n'), build_kern_table()),
+    build_ot_table(
+      @common.Tag::from_chars('G', 'P', 'O', 'S'),
+      build_gpos_lookup(),
+      @common.Tag::from_chars('m', 'a', 'r', 'k'),
+    ),
+  ]
+  build_sfnt(tables)
+}
+
+///|
 fn build_font_bytes_mark_fallback() -> Bytes {
   let cmap = build_cmap_table(build_cmap_format12_groups([
     (0x41U, 0x41U, 1U),
@@ -1646,6 +1667,22 @@ test "buffer shape ot kern fallback snapshot" {
     ))
   }
   json_inspect(snapshot, content=[[1,0,250,0,0],[2,1,400,0,0]])
+}
+
+///|
+test "buffer shape ot kern fallback with non-kern gpos" {
+  let font = @font.Font::from_bytes(build_font_bytes_kern_with_gpos())
+  let buffer = Buffer::new()
+  buffer.add_string("AB")
+  let result = buffer.shape_ot(font)
+  match result {
+    Err(err) => fail("shape error: \{err}")
+    Ok(_) => ()
+  }
+  let positions = buffer.positions()
+  inspect(positions[0].x_advance, content="250")
+  inspect(positions[1].x_advance, content="400")
+  inspect(positions[0].x_offset, content="0")
 }
 
 ///|

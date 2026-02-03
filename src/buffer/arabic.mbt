@@ -218,24 +218,38 @@ fn apply_gpos(
     Ok(value) => value
   }
   let mut gpos_to_use : @ot_tables.GposTable? = None
-  let mut gpos_present = false
   match gpos {
     None => ()
     Some(gpos) => {
       match gpos_tag {
         None => {
           gpos_to_use = Some(gpos)
-          gpos_present = true
         }
         Some(tag) => {
           if buffer_layout_has_script(gpos.layout(), tag) {
             gpos_to_use = Some(gpos)
-            gpos_present = true
           }
         }
       }
     }
   }
+  let mut gpos_lookups : Array[Int] = []
+  if gpos_to_use is Some(gpos) {
+    let script_tag = match gpos_tag {
+      None => buffer.script.to_tag()
+      Some(tag) => tag
+    }
+    let lang_tag = language_to_ot_tag(buffer.language)
+    gpos_lookups = match gpos.layout().select_lookup_offsets_with_features(
+      script_tag,
+      language_tag=lang_tag,
+      feature_tags=buffer.gpos_features,
+    ) {
+      Err(err) => return Err(Layout(err))
+      Ok(value) => value
+    }
+  }
+  let gpos_present = gpos_to_use is Some(_) && !gpos_lookups.is_empty()
   match zero_width_marks {
     ZeroWidthMarks::ByGdefEarly =>
       match zero_marks_by_gdef_or_unicode(font, buffer, unicode_mark_flags, gpos_present) {
@@ -244,7 +258,7 @@ fn apply_gpos(
       }
     _ => ()
   }
-  if gpos_to_use is Some(gpos) {
+  if gpos_present && gpos_to_use is Some(gpos) {
     let gdef = match font.gdef() {
       Err(err) => return Err(Font(err))
       Ok(value) => value
@@ -253,24 +267,11 @@ fn apply_gpos(
     for info in buffer.infos {
       glyphs.push(info.codepoint)
     }
-    let script_tag = match gpos_tag {
-      None => buffer.script.to_tag()
-      Some(tag) => tag
-    }
-    let lang_tag = language_to_ot_tag(buffer.language)
-    let lookup_offsets = match gpos.layout().select_lookup_offsets_with_features(
-      script_tag,
-      language_tag=lang_tag,
-      feature_tags=buffer.gpos_features,
-    ) {
-      Err(err) => return Err(Layout(err))
-      Ok(value) => value
-    }
     let deltas = match gdef {
       None =>
         match gpos.position_deltas_with_lookups(
           glyphs[:],
-          lookup_offsets[:],
+          gpos_lookups[:],
         ) {
           Err(err) => return Err(Layout(err))
           Ok(value) => value
@@ -278,7 +279,7 @@ fn apply_gpos(
       Some(gdef) =>
         match gpos.position_deltas_with_lookups(
           glyphs[:],
-          lookup_offsets[:],
+          gpos_lookups[:],
           gdef=gdef,
         ) {
           Err(err) => return Err(Layout(err))
