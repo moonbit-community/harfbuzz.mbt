@@ -55,6 +55,15 @@ test "script tag aliases" {
 }
 
 ///|
+test "script tag normalization" {
+  inspect(Script::from_string("zyyy").to_tag().to_string(), content="Zyyy")
+  inspect(Script::from_string("zinh").to_tag().to_string(), content="Zinh")
+  inspect(Script::from_string("zzzz").to_tag().to_string(), content="Zzzz")
+  inspect(Script::from_string("kana").to_tag().to_string(), content="Kana")
+  inspect(Script::from_string("math").to_tag().to_string(), content="Math")
+}
+
+///|
 test "script horizontal direction mapping" {
   inspect(
     script_old_italic.horizontal_direction().to_string(),
