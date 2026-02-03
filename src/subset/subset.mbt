@@ -1092,6 +1092,28 @@ fn add_optional_svg(
   }
 }
 
+fn add_optional_sbix(
+  face : @face.Face,
+  plan : SubsetPlan,
+  tables : Array[(@common.Tag, Bytes)],
+  identity : Bool,
+) -> Result[Unit, SubsetError] {
+  if identity {
+    return add_optional_table(face, tag_sbix, tables)
+  }
+  let bytes = match build_sbix_subset(face, plan) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  match bytes {
+    None => Ok(())
+    Some(bytes) => {
+      tables.push((tag_sbix, bytes))
+      Ok(())
+    }
+  }
+}
+
 fn add_optional_gdef(
   face : @face.Face,
   plan : SubsetPlan,
@@ -1197,7 +1219,6 @@ fn add_identity_passthrough_tables(
     tag_colr,
     tag_cblc,
     tag_cbdt,
-    tag_sbix,
     tag_gvar,
     tag_hvar,
     tag_vvar,
@@ -2288,6 +2309,156 @@ fn build_svg_subset(
       push_u32(out, 0)
       for b in index_bytes {
         out.push(b)
+      }
+      Ok(Some(Bytes::from_array(out)))
+    }
+  }
+}
+
+fn build_sbix_subset(
+  face : @face.Face,
+  plan : SubsetPlan,
+) -> Result[Bytes?, SubsetError] {
+  let blob = match face.reference_table_optional(tag_sbix) {
+    Err(err) => return Err(Face(err))
+    Ok(value) => value
+  }
+  match blob {
+    None => Ok(None)
+    Some(blob) => {
+      let bytes = blob.as_view().to_bytes().to_array()
+      if bytes.length() < 8 {
+        return Err(InvalidInput("invalid sbix table"))
+      }
+      let version = match read_u16(bytes, 0) {
+        Err(err) => return Err(err)
+        Ok(value) => value
+      }
+      let flags = match read_u16(bytes, 2) {
+        Err(err) => return Err(err)
+        Ok(value) => value
+      }
+      let strike_count = match read_u32(bytes, 4) {
+        Err(err) => return Err(err)
+        Ok(value) => value
+      }
+      if strike_count <= 0 {
+        return Ok(None)
+      }
+      let strike_offsets_base = 8
+      if strike_offsets_base + strike_count * 4 > bytes.length() {
+        return Err(InvalidInput("invalid sbix strike offsets"))
+      }
+      let strike_offsets : Array[Int] = []
+      for i in 0..<strike_count {
+        let offset = match read_u32(bytes, strike_offsets_base + i * 4) {
+          Err(err) => return Err(err)
+          Ok(value) => value
+        }
+        if offset < 0 || offset >= bytes.length() {
+          return Err(InvalidInput("invalid sbix strike offset"))
+        }
+        strike_offsets.push(offset)
+      }
+      let old_glyph_count = plan.old_to_new.length()
+      let new_glyph_count = plan.glyphs.length()
+      let strikes : Array[Bytes] = []
+      for i in 0..<strike_count {
+        let strike_offset = strike_offsets[i]
+        let strike_end =
+          if i + 1 < strike_count {
+            let next = strike_offsets[i + 1]
+            if next < strike_offset {
+              return Err(InvalidInput("invalid sbix strike bounds"))
+            }
+            next
+          } else {
+            bytes.length()
+          }
+        if strike_offset + 4 > strike_end {
+          return Err(InvalidInput("invalid sbix strike header"))
+        }
+        let available_len = strike_end - strike_offset
+        let ppem = match read_u16(bytes, strike_offset) {
+          Err(err) => return Err(err)
+          Ok(value) => value
+        }
+        let resolution = match read_u16(bytes, strike_offset + 2) {
+          Err(err) => return Err(err)
+          Ok(value) => value
+        }
+        let offsets_base = strike_offset + 4
+        let offsets_len = (old_glyph_count + 1) * 4
+        if offsets_base + offsets_len > strike_end {
+          return Err(InvalidInput("invalid sbix glyph offsets"))
+        }
+        let old_offsets : Array[Int] = []
+        for j in 0..<(old_glyph_count + 1) {
+          let offset = match read_u32(bytes, offsets_base + j * 4) {
+            Err(err) => return Err(err)
+            Ok(value) => value
+          }
+          old_offsets.push(offset)
+        }
+        let header_size = 4 + (new_glyph_count + 1) * 4
+        let mut head = header_size
+        let new_offsets : Array[Int] = []
+        let glyph_data : Array[Byte] = []
+        let mut has_glyphs = false
+        for new_gid in 0..<new_glyph_count {
+          let old_gid = plan.glyphs[new_gid].reinterpret_as_int()
+          if old_gid < 0 || old_gid + 1 >= old_offsets.length() {
+            return Err(InvalidInput("glyph id out of range"))
+          }
+          let start = old_offsets[old_gid]
+          let end = old_offsets[old_gid + 1]
+          if start <= 0 || end <= 0 || end <= start || end - start <= 8 || end > available_len {
+            new_offsets.push(head)
+            continue
+          }
+          new_offsets.push(head)
+          let data_start = strike_offset + start
+          let data_end = strike_offset + end
+          if data_start < 0 || data_end > bytes.length() {
+            return Err(InvalidInput("invalid sbix glyph data bounds"))
+          }
+          for idx in data_start..<data_end {
+            glyph_data.push(bytes[idx])
+          }
+          head = head + (end - start)
+          has_glyphs = true
+        }
+        if !has_glyphs {
+          continue
+        }
+        let out : Array[Byte] = []
+        push_u16(out, ppem)
+        push_u16(out, resolution)
+        for offset in new_offsets {
+          push_u32(out, offset)
+        }
+        push_u32(out, head)
+        for b in glyph_data {
+          out.push(b)
+        }
+        strikes.push(Bytes::from_array(out))
+      }
+      if strikes.is_empty() {
+        return Ok(None)
+      }
+      let out : Array[Byte] = []
+      push_u16(out, version)
+      push_u16(out, flags)
+      push_u32(out, strikes.length())
+      let mut cursor = 8 + strikes.length() * 4
+      for strike in strikes {
+        push_u32(out, cursor)
+        cursor = cursor + strike.length()
+      }
+      for strike in strikes {
+        for b in strike {
+          out.push(b)
+        }
       }
       Ok(Some(Bytes::from_array(out)))
     }
@@ -6863,6 +7034,10 @@ pub fn subset_with_plan(
     Err(err) => return Err(err)
     Ok(_) => ()
   }
+  match add_optional_sbix(face, plan, tables, identity) {
+    Err(err) => return Err(err)
+    Ok(_) => ()
+  }
   match add_optional_gdef(face, plan, tables, identity) {
     Err(err) => return Err(err)
     Ok(_) => ()
@@ -7005,6 +7180,10 @@ fn subset_cff1_with_plan(
     Err(err) => return Err(err)
     Ok(_) => ()
   }
+  match add_optional_sbix(face, plan, tables, identity) {
+    Err(err) => return Err(err)
+    Ok(_) => ()
+  }
   match add_optional_gdef(face, plan, tables, identity) {
     Err(err) => return Err(err)
     Ok(_) => ()
@@ -7144,6 +7323,10 @@ fn subset_cff2_with_plan(
     Ok(_) => ()
   }
   match add_optional_svg(face, plan, tables, identity) {
+    Err(err) => return Err(err)
+    Ok(_) => ()
+  }
+  match add_optional_sbix(face, plan, tables, identity) {
     Err(err) => return Err(err)
     Ok(_) => ()
   }

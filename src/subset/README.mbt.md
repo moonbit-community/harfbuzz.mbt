@@ -24,7 +24,7 @@ unchanged if present.
 The `post` table is copied through unchanged for identity subsets; for remapped
 subsets format 2.0 is rebuilt and format 3.0 is preserved.
 Layout/color/variation tables that reference glyph IDs (GSUB/GPOS,
-BASE/JSTF, AAT tables, CBDT/CBLC/sbix, gvar/HVAR/VVAR/VARC)
+BASE/JSTF, AAT tables, CBDT/CBLC, gvar/HVAR/VVAR/VARC)
 are copied through only when the subset preserves all glyphs (identity);
 otherwise they are dropped.
 `VORG` is rebuilt from the glyph subset when present.
@@ -32,6 +32,7 @@ otherwise they are dropped.
 expanded to format 0); other formats are dropped.
 COLR v0/v1 tables are rebuilt for remapped subsets.
 SVG tables are rebuilt for remapped subsets.
+sbix tables are rebuilt for remapped subsets.
 GDEF is rebuilt with glyph/mark class definitions, attach lists, ligature caret
 lists, and mark glyph sets.
 GSUB lookup types 1/2/3/4/5/6/7/8 (single/multiple/alternate/ligature/contextual/
@@ -53,6 +54,7 @@ The ItemVariationStore bytes are copied through unchanged if present.
   (format 3/device anchors are dropped).
 - COLR v1 subsetting remaps base glyph IDs and paint glyph references, but drops
   the clip list and does not prune layer list entries.
+- sbix subsetting copies glyph records as-is (including any `dupe` payloads).
 - Layout/color/variation tables that reference glyph IDs are not subset yet
   (except `VORG`, COLR v0/v1, GDEF class defs/attach/lig caret/mark sets, GSUB
   lookup types 1/2/3/4/5/6/7/8, GPOS lookup types 1-8 plus extension type 9,
