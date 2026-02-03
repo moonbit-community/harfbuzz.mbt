@@ -35,6 +35,20 @@ test "unicode emoji extended pictographic" {
 }
 
 ///|
+test "unicode emoji properties" {
+  inspect(is_emoji(0x1F600U), content="true")
+  inspect(is_emoji(0x41U), content="false")
+  inspect(is_emoji_presentation(0x1F600U), content="true")
+  inspect(is_emoji_presentation(0x263AU), content="false")
+  inspect(is_emoji_modifier(0x1F3FBU), content="true")
+  inspect(is_emoji_modifier(0x1F600U), content="false")
+  inspect(is_emoji_modifier_base(0x1F44DU), content="true")
+  inspect(is_emoji_modifier_base(0x41U), content="false")
+  inspect(is_emoji_component(0x200DU), content="true")
+  inspect(is_emoji_component(0x41U), content="false")
+}
+
+///|
 test "unicode space fallback and ignorable helpers" {
   inspect(space_fallback_type(0x2003U), content="SpaceEm")
   inspect(space_fallback_type(0x202FU), content="SpaceNarrow")

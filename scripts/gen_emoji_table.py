@@ -1,79 +1,88 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
-import re
+import urllib.request
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-SRC = ROOT / "refs/harfbuzz/src/hb-unicode-emoji-table.hh"
 OUT = ROOT / "src/unicode/emoji_data.mbt"
+LOCAL = ROOT / "scripts/emoji-data.txt"
+URL = "https://www.unicode.org/Public/17.0.0/ucd/emoji/emoji-data.txt"
 
-TEXT = SRC.read_text(encoding="utf-8")
+PROPS = [
+    "Emoji",
+    "Emoji_Presentation",
+    "Emoji_Modifier",
+    "Emoji_Modifier_Base",
+    "Emoji_Component",
+    "Extended_Pictographic",
+]
+
+NAME_MAP = {
+    "Emoji": "emoji_ranges",
+    "Emoji_Presentation": "emoji_presentation_ranges",
+    "Emoji_Modifier": "emoji_modifier_ranges",
+    "Emoji_Modifier_Base": "emoji_modifier_base_ranges",
+    "Emoji_Component": "emoji_component_ranges",
+    "Extended_Pictographic": "extended_pictographic_ranges",
+}
 
 
-def strip_comments(text: str) -> str:
-    text = re.sub(r"/\*.*?\*/", "", text, flags=re.S)
-    text = re.sub(r"//.*", "", text)
-    return text
+def load_emoji_data() -> tuple[str, str]:
+    if LOCAL.exists():
+        return LOCAL.read_text(encoding="utf-8"), "scripts/emoji-data.txt"
+    with urllib.request.urlopen(URL) as resp:
+        return resp.read().decode("utf-8"), URL
 
 
-def split_tokens(body: str) -> list[str]:
-    tokens: list[str] = []
-    current: list[str] = []
-    depth = 0
-    for ch in body:
-        if ch == "(":
-            depth += 1
-        elif ch == ")":
-            depth = max(0, depth - 1)
-        elif ch == "," and depth == 0:
-            token = "".join(current).strip()
-            if token:
-                tokens.append(token)
-            current = []
+def parse_ranges(text: str) -> dict[str, list[tuple[int, int]]]:
+    ranges: dict[str, list[tuple[int, int]]] = {prop: [] for prop in PROPS}
+    for line in text.splitlines():
+        line = line.split("#", 1)[0].strip()
+        if not line:
             continue
-        current.append(ch)
-    tail = "".join(current).strip()
-    if tail:
-        tokens.append(tail)
-    return tokens
+        fields = [f.strip() for f in line.split(";")]
+        if len(fields) < 2:
+            continue
+        rang, prop = fields[0], fields[1]
+        if prop not in ranges:
+            continue
+        if ".." in rang:
+            start_s, end_s = rang.split("..", 1)
+            start = int(start_s, 16)
+            end = int(end_s, 16)
+        else:
+            start = end = int(rang, 16)
+        lst = ranges[prop]
+        if lst and lst[-1][1] + 1 == start:
+            lst[-1] = (lst[-1][0], end)
+        else:
+            lst.append((start, end))
+    return ranges
 
 
-def parse_array(name: str) -> list[int]:
-    idx = TEXT.find(name)
-    if idx < 0:
-        raise SystemExit(f"array {name} not found")
-    snippet = TEXT[idx:]
-    header = re.search(rf"{re.escape(name)}\[(\d+)\]\s*=\s*\{{", snippet)
-    if not header:
-        raise SystemExit(f"array {name} header not found")
-    body_start = header.end()
-    end_idx = snippet.find("};", body_start)
-    if end_idx < 0:
-        raise SystemExit(f"array {name} end not found")
-    body = strip_comments(snippet[body_start:end_idx])
-    tokens = split_tokens(body.replace("\n", " "))
-    return [int(t.strip(), 16) if t.strip().startswith("0x") else int(t.strip()) for t in tokens]
-
-
-def format_list(values: list[str], indent: str = "  ", per_line: int = 12) -> str:
-    lines = []
-    for i in range(0, len(values), per_line):
-        lines.append(indent + ", ".join(values[i : i + per_line]) + ",")
+def format_ranges(values: list[tuple[int, int]]) -> str:
+    lines: list[str] = []
+    for start, end in values:
+        lines.append(f"  (0x{start:X}U, 0x{end:X}U),")
     return "\n".join(lines)
 
 
-def format_ints(values: list[int], per_line: int = 16) -> str:
-    tokens = [f"{v}" for v in values]
-    return format_list(tokens, per_line=per_line)
-
-
 def main() -> None:
-    u8_vals = parse_array("_hb_emoji_u8")
-    content = []
-    content.append("///|\n/// Generated from refs/harfbuzz/src/hb-unicode-emoji-table.hh.\n")
-    content.append("///|\nlet emoji_u8 : Bytes = [\n" + format_ints(u8_vals) + "\n]\n")
-    OUT.write_text("\n".join(content), encoding="utf-8")
+    text, source = load_emoji_data()
+    ranges = parse_ranges(text)
+    content: list[str] = []
+    content.append("///|")
+    content.append(f"/// Generated from {source}.")
+    content.append("")
+    for prop in PROPS:
+        name = NAME_MAP[prop]
+        content.append("///|")
+        content.append(f"let {name} : Array[(UInt, UInt)] = [")
+        content.append(format_ranges(ranges[prop]))
+        content.append("]")
+        content.append("")
+    OUT.write_text("\n".join(content).rstrip() + "\n", encoding="utf-8")
 
 
 if __name__ == "__main__":

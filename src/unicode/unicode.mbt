@@ -424,36 +424,57 @@ pub fn decompose(ab : UInt) -> (UInt, UInt)? {
 }
 
 ///|
-fn emoji_u8_at(index : Int) -> Int {
-  emoji_u8[index].to_int()
-}
-
-///|
-fn emoji_b4(offset : Int, index : Int) -> Int {
-  let value = emoji_u8_at(offset + (index >> 1))
-  (value >> ((index & 1) << 2)) & 15
-}
-
-///|
-fn emoji_b1(offset : Int, index : Int) -> Int {
-  let value = emoji_u8_at(offset + (index >> 3))
-  (value >> (index & 7)) & 1
+fn emoji_range_contains(ranges : Array[(UInt, UInt)], u : UInt) -> Bool {
+  let mut lo = 0
+  let mut hi = ranges.length()
+  while lo < hi {
+    let mid = (lo + hi) / 2
+    let (start, end) = ranges[mid]
+    if u < start {
+      hi = mid
+    } else if u > end {
+      lo = mid + 1
+    } else {
+      return true
+    }
+  }
+  false
 }
 
 ///|
 /// True when the codepoint is Extended_Pictographic (emoji data table).
 pub fn is_extended_pictographic(u : UInt) -> Bool {
-  if u >= 131070U {
-    return false
-  }
-  let ui = u.reinterpret_as_int()
-  let t0 = ui >> 6
-  let t1 = t0 >> 4
-  let a = emoji_b4(0, t1)
-  let idx0 = 64 + ((a << 4) + (t0 & 15))
-  let b = emoji_u8_at(idx0)
-  let idx1 = (b << 6) + (ui & 63)
-  emoji_b1(224, idx1) == 1
+  emoji_range_contains(extended_pictographic_ranges, u)
+}
+
+///|
+/// True when the codepoint has Emoji property (emoji data table).
+pub fn is_emoji(u : UInt) -> Bool {
+  emoji_range_contains(emoji_ranges, u)
+}
+
+///|
+/// True when the codepoint defaults to emoji presentation.
+pub fn is_emoji_presentation(u : UInt) -> Bool {
+  emoji_range_contains(emoji_presentation_ranges, u)
+}
+
+///|
+/// True when the codepoint is an emoji modifier (skin tone).
+pub fn is_emoji_modifier(u : UInt) -> Bool {
+  emoji_range_contains(emoji_modifier_ranges, u)
+}
+
+///|
+/// True when the codepoint can take an emoji modifier.
+pub fn is_emoji_modifier_base(u : UInt) -> Bool {
+  emoji_range_contains(emoji_modifier_base_ranges, u)
+}
+
+///|
+/// True when the codepoint is an emoji component.
+pub fn is_emoji_component(u : UInt) -> Bool {
+  emoji_range_contains(emoji_component_ranges, u)
 }
 
 ///|
