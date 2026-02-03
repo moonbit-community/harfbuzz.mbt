@@ -833,6 +833,7 @@ test "font cvar cvt values" {
 test "font cmap mapping and advances" {
   let bytes = build_font_bytes()
   let font = Font::from_bytes(bytes)
+  inspect(font.get_face().get_glyph_count(), content="0")
   let gid = match font.glyph_for_codepoint(0x41U) {
     Err(err) => fail("lookup error: \{err}")
     Ok(None) => fail("missing glyph")
@@ -844,6 +845,7 @@ test "font cmap mapping and advances" {
     Ok(value) => value
   }
   inspect(advance, content="300")
+  inspect(font.get_face().get_glyph_count(), content="2")
 }
 
 ///|
