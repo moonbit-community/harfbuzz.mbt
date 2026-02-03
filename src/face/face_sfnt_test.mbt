@@ -46,6 +46,42 @@ fn push_u32(bytes : Array[Byte], value : Int) -> Unit {
 }
 
 ///|
+fn push_u16(bytes : Array[Byte], value : Int) -> Unit {
+  bytes.push(((value >> 8) & 0xff).to_byte())
+  bytes.push((value & 0xff).to_byte())
+}
+
+///|
+fn build_sfnt_with_tables(tables : Array[(@common.Tag, Bytes)]) -> Bytes {
+  let bytes : Array[Byte] = []
+  push_u32(bytes, 0x00010000)
+  push_u16(bytes, tables.length())
+  push_u16(bytes, 0)
+  push_u16(bytes, 0)
+  push_u16(bytes, 0)
+  let mut offset = 12 + tables.length() * 16
+  for entry in tables {
+    let (tag, table_bytes) = entry
+    let (b1, b2, b3, b4) = tag.bytes()
+    bytes.push(b1)
+    bytes.push(b2)
+    bytes.push(b3)
+    bytes.push(b4)
+    push_u32(bytes, 0)
+    push_u32(bytes, offset)
+    push_u32(bytes, table_bytes.length())
+    offset = offset + table_bytes.length()
+  }
+  for entry in tables {
+    let (_, table_bytes) = entry
+    for b in table_bytes {
+      bytes.push(b)
+    }
+  }
+  Bytes::from_array(bytes)
+}
+
+///|
 fn build_ttc(fonts : Array[Bytes]) -> Bytes {
   let bytes : Array[Byte] = []
   bytes.push(0x74)
@@ -118,4 +154,41 @@ test "face set_index resets cached tables" {
   }
   inspect(table0.to_bytes(), content="b\"\\x01\"")
   inspect(table1.to_bytes(), content="b\"\\x02\"")
+}
+
+///|
+test "face table tags listing" {
+  let tables : Array[(@common.Tag, Bytes)] = [
+    (@common.Tag::from_chars('c', 'v', 't', ' '), [0x01]),
+    (@common.Tag::from_chars('f', 'p', 'g', 'm'), [0x02, 0x03]),
+    (@common.Tag::from_chars('g', 'a', 's', 'p'), []),
+  ]
+  let sfnt = build_sfnt_with_tables(tables)
+  let face = Face::from_bytes(sfnt)
+  let (total0, tags0) = match face.table_tags() {
+    Err(err) => fail("table tags error: \{err}")
+    Ok(value) => value
+  }
+  inspect(total0, content="3")
+  let names0 : Array[String] = []
+  for tag in tags0 {
+    names0.push(tag.to_string())
+  }
+  inspect(names0, content="[\"cvt \", \"fpgm\", \"gasp\"]")
+  let (total1, tags1) = match face.table_tags(start_offset=1, count=1) {
+    Err(err) => fail("table tags error: \{err}")
+    Ok(value) => value
+  }
+  inspect(total1, content="3")
+  let names1 : Array[String] = []
+  for tag in tags1 {
+    names1.push(tag.to_string())
+  }
+  inspect(names1, content="[\"fpgm\"]")
+  let (total2, tags2) = match face.table_tags(start_offset=3, count=2) {
+    Err(err) => fail("table tags error: \{err}")
+    Ok(value) => value
+  }
+  inspect(total2, content="3")
+  inspect(tags2.length(), content="0")
 }

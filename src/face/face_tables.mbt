@@ -105,3 +105,31 @@ pub fn Face::reference_table_optional(
     Err(err) => Err(err)
   }
 }
+
+///|
+/// List table tags starting at `start_offset`.
+/// Returns (total_count, tags_slice).
+pub fn Face::table_tags(
+  self : Face,
+  start_offset? : Int = 0,
+  count? : Int = -1,
+) -> Result[(Int, Array[@common.Tag]), FaceTableError] {
+  let offset = if start_offset < 0 { 0 } else { start_offset }
+  match self.ensure_sfnt_tables() {
+    Err(err) => Err(err)
+    Ok(_) => {
+      let tags = Array::from_iter(self.tables.keys())
+      let total = tags.length()
+      if offset >= total {
+        return Ok((total, []))
+      }
+      let remaining = total - offset
+      let take = if count < 0 || count > remaining { remaining } else { count }
+      let out : Array[@common.Tag] = []
+      for i in offset..<(offset + take) {
+        out.push(tags[i])
+      }
+      Ok((total, out))
+    }
+  }
+}
