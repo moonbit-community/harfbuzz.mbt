@@ -60,6 +60,17 @@ test "buffer default feature list vertical" {
 }
 
 ///|
+test "buffer default feature list rtl" {
+  let buffer = Buffer::new()
+  buffer.set_direction(@common.direction_rtl)
+  let tags = buffer.gsub_features()
+  inspect(has_tag(tags, @common.Tag::from_chars('r', 't', 'l', 'a')), content="true")
+  inspect(has_tag(tags, @common.Tag::from_chars('r', 't', 'l', 'm')), content="true")
+  inspect(has_tag(tags, @common.Tag::from_chars('l', 't', 'r', 'a')), content="false")
+  inspect(has_tag(tags, @common.Tag::from_chars('r', 'c', 'l', 't')), content="true")
+}
+
+///|
 test "buffer feature list honors manual override" {
   let buffer = Buffer::new()
   let custom = @common.Tag::from_chars('a', 'b', 'c', 'd')
