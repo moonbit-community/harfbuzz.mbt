@@ -353,6 +353,27 @@ fn build_colr_table() -> Bytes {
 }
 
 ///|
+fn build_svg_table() -> Bytes {
+  let doc : Array[Byte] = [0x3c, 0x73, 0x76, 0x67, 0x2f, 0x3e]
+  let bytes : Array[Byte] = []
+  let entry_count = 1
+  let index_offset = 10
+  let index_size = 2 + entry_count * 12
+  push_u16(bytes, 0)
+  push_u32(bytes, index_offset)
+  push_u32(bytes, 0)
+  push_u16(bytes, entry_count)
+  push_u16(bytes, 1)
+  push_u16(bytes, 3)
+  push_u32(bytes, index_size)
+  push_u32(bytes, doc.length())
+  for b in doc {
+    bytes.push(b)
+  }
+  Bytes::from_array(bytes)
+}
+
+///|
 fn build_class_def_format1(start_glyph : Int, classes : Array[Int]) -> Bytes {
   let bytes : Array[Byte] = []
   push_u16(bytes, 1)
@@ -1362,6 +1383,35 @@ fn build_font_bytes_subset_fixture() -> Bytes {
     (@common.Tag::from_chars('V', 'O', 'R', 'G'), build_vorg_table()),
     (@common.Tag::from_chars('k', 'e', 'r', 'n'), build_kern_table()),
     (@common.Tag::from_chars('C', 'O', 'L', 'R'), build_colr_table()),
+    (@common.Tag::from_chars('G', 'D', 'E', 'F'), build_gdef_table()),
+    (@common.Tag::from_chars('G', 'S', 'U', 'B'), build_gsub_single()),
+    (@common.Tag::from_chars('G', 'P', 'O', 'S'), build_gpos_single()),
+    (@common.Tag::from_chars('h', 'm', 't', 'x'), build_hmtx([500, 600, 700, 800], [0, 10, 20, 30])),
+    (@common.Tag::from_chars('v', 'h', 'e', 'a'), build_vhea(4)),
+    (@common.Tag::from_chars('v', 'm', 't', 'x'), build_vmtx([900, 910, 920, 930], [5, 6, 7, 8])),
+    (@common.Tag::from_chars('l', 'o', 'c', 'a'), loca),
+    (@common.Tag::from_chars('g', 'l', 'y', 'f'), glyf),
+    (@common.Tag::from_chars('c', 'm', 'a', 'p'), cmap),
+  ]
+  build_sfnt(tables)
+}
+
+///|
+fn build_font_bytes_subset_svg_fixture() -> Bytes {
+  let glyf = build_glyf_table()
+  let loca = build_loca_long([0, 0, 12, 30, 42])
+  let cmap = build_cmap_table(build_cmap_format12(0x41U, 0x42U, 1U))
+  let tables : Array[(@common.Tag, Bytes)] = [
+    (@common.Tag::from_chars('h', 'e', 'a', 'd'), build_head(1000, 1)),
+    (@common.Tag::from_chars('m', 'a', 'x', 'p'), build_maxp(4)),
+    (@common.Tag::from_chars('h', 'h', 'e', 'a'), build_hhea(4)),
+    (@common.Tag::from_chars('O', 'S', '/', '2'), build_os2()),
+    (@common.Tag::from_chars('C', 'P', 'A', 'L'), build_cpal()),
+    (@common.Tag::from_chars('p', 'o', 's', 't'), build_post_table_v2()),
+    (@common.Tag::from_chars('V', 'O', 'R', 'G'), build_vorg_table()),
+    (@common.Tag::from_chars('k', 'e', 'r', 'n'), build_kern_table()),
+    (@common.Tag::from_chars('C', 'O', 'L', 'R'), build_colr_table()),
+    (@common.Tag::from_chars('S', 'V', 'G', ' '), build_svg_table()),
     (@common.Tag::from_chars('G', 'D', 'E', 'F'), build_gdef_table()),
     (@common.Tag::from_chars('G', 'S', 'U', 'B'), build_gsub_single()),
     (@common.Tag::from_chars('G', 'P', 'O', 'S'), build_gpos_single()),
@@ -3182,6 +3232,62 @@ test "subset rebuilds colr v0" {
   }
   inspect((layer0_gid, layer0_color), content="(1, 0)")
   inspect((layer1_gid, layer1_color), content="(2, 1)")
+}
+
+///|
+test "subset rebuilds svg" {
+  let font = @font.Font::from_bytes(build_font_bytes_subset_svg_fixture())
+  let bytes = match subset(font, SubsetInput::from_codepoints([0x42U])) {
+    Err(err) => fail("subset failed: \{err}")
+    Ok(value) => value
+  }
+  let subset_font = @font.Font::from_bytes(bytes)
+  let svg_blob = match subset_font.get_face().reference_table_optional(
+    @common.Tag::from_chars('S', 'V', 'G', ' '),
+  ) {
+    Err(err) => fail("svg lookup failed: \{err}")
+    Ok(None) => fail("SVG table missing from subset")
+    Ok(Some(blob)) => blob
+  }
+  let data = svg_blob.as_view()
+  let version = match read_u16(data, 0) {
+    None => fail("SVG version missing")
+    Some(value) => value
+  }
+  let index_offset = match read_u32(data, 2) {
+    None => fail("SVG index offset missing")
+    Some(value) => value
+  }
+  let entry_count = match read_u16(data, index_offset) {
+    None => fail("SVG entry count missing")
+    Some(value) => value
+  }
+  let entry_base = index_offset + 2
+  let start = match read_u16(data, entry_base) {
+    None => fail("SVG entry start missing")
+    Some(value) => value
+  }
+  let end = match read_u16(data, entry_base + 2) {
+    None => fail("SVG entry end missing")
+    Some(value) => value
+  }
+  let doc_offset = match read_u32(data, entry_base + 4) {
+    None => fail("SVG doc offset missing")
+    Some(value) => value
+  }
+  let doc_length = match read_u32(data, entry_base + 8) {
+    None => fail("SVG doc length missing")
+    Some(value) => value
+  }
+  inspect((version, index_offset, entry_count), content="(0, 10, 1)")
+  inspect((start, end), content="(1, 2)")
+  inspect((doc_offset, doc_length), content="(14, 6)")
+  let doc_base = index_offset + doc_offset
+  let doc_bytes : Array[Int] = []
+  for i in 0..<doc_length {
+    doc_bytes.push(data[doc_base + i].to_int())
+  }
+  inspect(doc_bytes, content="[60, 115, 118, 103, 47, 62]")
 }
 
 ///|

@@ -1056,6 +1056,28 @@ fn add_optional_colr(
   }
 }
 
+fn add_optional_svg(
+  face : @face.Face,
+  plan : SubsetPlan,
+  tables : Array[(@common.Tag, Bytes)],
+  identity : Bool,
+) -> Result[Unit, SubsetError] {
+  if identity {
+    return add_optional_table(face, tag_svg, tables)
+  }
+  let bytes = match build_svg_subset(face, plan) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  match bytes {
+    None => Ok(())
+    Some(bytes) => {
+      tables.push((tag_svg, bytes))
+      Ok(())
+    }
+  }
+}
+
 fn add_optional_gdef(
   face : @face.Face,
   plan : SubsetPlan,
@@ -1161,7 +1183,6 @@ fn add_identity_passthrough_tables(
     tag_colr,
     tag_cblc,
     tag_cbdt,
-    tag_svg,
     tag_sbix,
     tag_gvar,
     tag_hvar,
@@ -1783,6 +1804,164 @@ fn build_colr_subset(
         let (gid, color_index) = layer
         push_u16(out, gid)
         push_u16(out, color_index)
+      }
+      Ok(Some(Bytes::from_array(out)))
+    }
+  }
+}
+
+fn build_svg_subset(
+  face : @face.Face,
+  plan : SubsetPlan,
+) -> Result[Bytes?, SubsetError] {
+  let blob = match face.reference_table_optional(tag_svg) {
+    Err(err) => return Err(Face(err))
+    Ok(value) => value
+  }
+  match blob {
+    None => Ok(None)
+    Some(blob) => {
+      let bytes = blob.as_view().to_bytes().to_array()
+      if bytes.length() < 10 {
+        return Err(InvalidInput("invalid SVG table"))
+      }
+      let version = match read_u16(bytes, 0) {
+        Err(err) => return Err(err)
+        Ok(value) => value
+      }
+      if version != 0 {
+        return Ok(None)
+      }
+      let index_offset = match read_u32(bytes, 2) {
+        Err(err) => return Err(err)
+        Ok(value) => value
+      }
+      if index_offset <= 0 || index_offset >= bytes.length() {
+        return Err(InvalidInput("invalid SVG index offset"))
+      }
+      let index_base = index_offset
+      if index_base + 2 > bytes.length() {
+        return Err(InvalidInput("invalid SVG index bounds"))
+      }
+      let entry_count = match read_u16(bytes, index_base) {
+        Err(err) => return Err(err)
+        Ok(value) => value
+      }
+      if entry_count < 0 {
+        return Err(InvalidInput("invalid SVG entry count"))
+      }
+      let entry_base = index_base + 2
+      if entry_base + entry_count * 12 > bytes.length() {
+        return Err(InvalidInput("invalid SVG entry bounds"))
+      }
+      let doc_keys : Array[(Int, Int)] = []
+      let docs : Array[Bytes] = []
+      let runs : Array[(Int, Int, Int)] = []
+      for i in 0..<entry_count {
+        let rec_base = entry_base + i * 12
+        let start = match read_u16(bytes, rec_base) {
+          Err(err) => return Err(err)
+          Ok(value) => value
+        }
+        let end = match read_u16(bytes, rec_base + 2) {
+          Err(err) => return Err(err)
+          Ok(value) => value
+        }
+        let doc_offset = match read_u32(bytes, rec_base + 4) {
+          Err(err) => return Err(err)
+          Ok(value) => value
+        }
+        let doc_length = match read_u32(bytes, rec_base + 8) {
+          Err(err) => return Err(err)
+          Ok(value) => value
+        }
+        if end < start {
+          return Err(InvalidInput("invalid SVG entry range"))
+        }
+        if doc_offset <= 0 || doc_length <= 0 {
+          return Err(InvalidInput("invalid SVG document range"))
+        }
+        let doc_base = index_base + doc_offset
+        if doc_base < 0 || doc_base + doc_length > bytes.length() {
+          return Err(InvalidInput("invalid SVG document bounds"))
+        }
+        let mut doc_id = -1
+        for j in 0..<doc_keys.length() {
+          let (offset_key, length_key) = doc_keys[j]
+          if offset_key == doc_offset && length_key == doc_length {
+            doc_id = j
+            break
+          }
+        }
+        if doc_id < 0 {
+          let doc_bytes = bytes[doc_base:doc_base + doc_length].to_array()
+          doc_keys.push((doc_offset, doc_length))
+          docs.push(Bytes::from_array(doc_bytes))
+          doc_id = doc_keys.length() - 1
+        }
+        let mut run_start = -1
+        let mut run_last = -1
+        for old_gid in plan.glyphs {
+          let gid = old_gid.reinterpret_as_int()
+          if gid < start || gid > end {
+            continue
+          }
+          if gid < 0 || gid >= plan.old_to_new.length() {
+            return Err(InvalidInput("glyph id out of range"))
+          }
+          let new_gid = plan.old_to_new[gid]
+          if new_gid < 0 {
+            continue
+          }
+          if new_gid > 0xFFFF {
+            return Err(InvalidInput("SVG glyph id out of range"))
+          }
+          if run_start < 0 {
+            run_start = new_gid
+            run_last = new_gid
+          } else if new_gid == run_last + 1 {
+            run_last = new_gid
+          } else {
+            runs.push((run_start, run_last, doc_id))
+            run_start = new_gid
+            run_last = new_gid
+          }
+        }
+        if run_start >= 0 {
+          runs.push((run_start, run_last, doc_id))
+        }
+      }
+      if runs.is_empty() {
+        return Ok(None)
+      }
+      runs.sort_by((a, b) => a.0 - b.0)
+      let index_size = 2 + runs.length() * 12
+      let doc_offsets : Array[Int] = []
+      let mut cursor = index_size
+      for doc in docs {
+        doc_offsets.push(cursor)
+        cursor = cursor + doc.length()
+      }
+      let index_bytes : Array[Byte] = []
+      push_u16(index_bytes, runs.length())
+      for run in runs {
+        let (start, end, doc_id) = run
+        push_u16(index_bytes, start)
+        push_u16(index_bytes, end)
+        push_u32(index_bytes, doc_offsets[doc_id])
+        push_u32(index_bytes, docs[doc_id].length())
+      }
+      for doc in docs {
+        for b in doc {
+          index_bytes.push(b)
+        }
+      }
+      let out : Array[Byte] = []
+      push_u16(out, version)
+      push_u32(out, 10)
+      push_u32(out, 0)
+      for b in index_bytes {
+        out.push(b)
       }
       Ok(Some(Bytes::from_array(out)))
     }
@@ -6354,6 +6533,10 @@ pub fn subset_with_plan(
     Err(err) => return Err(err)
     Ok(_) => ()
   }
+  match add_optional_svg(face, plan, tables, identity) {
+    Err(err) => return Err(err)
+    Ok(_) => ()
+  }
   match add_optional_gdef(face, plan, tables, identity) {
     Err(err) => return Err(err)
     Ok(_) => ()
@@ -6492,6 +6675,10 @@ fn subset_cff1_with_plan(
     Err(err) => return Err(err)
     Ok(_) => ()
   }
+  match add_optional_svg(face, plan, tables, identity) {
+    Err(err) => return Err(err)
+    Ok(_) => ()
+  }
   match add_optional_gdef(face, plan, tables, identity) {
     Err(err) => return Err(err)
     Ok(_) => ()
@@ -6627,6 +6814,10 @@ fn subset_cff2_with_plan(
     Ok(_) => ()
   }
   match add_optional_colr(face, plan, tables, identity) {
+    Err(err) => return Err(err)
+    Ok(_) => ()
+  }
+  match add_optional_svg(face, plan, tables, identity) {
     Err(err) => return Err(err)
     Ok(_) => ()
   }
