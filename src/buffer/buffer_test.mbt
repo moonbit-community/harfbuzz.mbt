@@ -86,6 +86,20 @@ test "buffer variation selector fallback" {
 }
 
 ///|
+test "buffer clear preserves properties" {
+  let buffer = Buffer::new()
+  buffer.set_direction(@common.direction_rtl)
+  buffer.set_script(@common.script_arabic)
+  buffer.set_language(@common.Language::from_string("fa"))
+  buffer.add_codepoint(0x41U)
+  buffer.clear()
+  inspect(buffer.len(), content="0")
+  inspect(buffer.get_direction().to_string(), content="rtl")
+  inspect(buffer.get_script().to_tag().to_string(), content="Arab")
+  inspect(buffer.get_language().to_string(), content="Some(\"fa\")")
+}
+
+///|
 test "buffer merge clusters" {
   let buffer = Buffer::new()
   buffer.add_codepoint(0x61U, cluster=5)
