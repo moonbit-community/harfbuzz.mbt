@@ -872,6 +872,24 @@ test "font scale applies to advances" {
 }
 
 ///|
+test "font scale negative flips advances" {
+  let bytes = build_font_bytes()
+  let font_pos = Font::from_bytes(bytes)
+  let font_neg = Font::from_bytes(bytes)
+  font_pos.set_scale(2000, 2000)
+  font_neg.set_scale(-2000, -2000)
+  let advance_pos = match font_pos.glyph_h_advance(1U) {
+    Err(err) => fail("advance error: \{err}")
+    Ok(value) => value
+  }
+  let advance_neg = match font_neg.glyph_h_advance(1U) {
+    Err(err) => fail("advance error: \{err}")
+    Ok(value) => value
+  }
+  inspect((advance_pos, advance_neg), content="(600, -600)")
+}
+
+///|
 test "font scale defaults to upem" {
   let bytes = build_font_bytes()
   let font = Font::from_bytes(bytes)
