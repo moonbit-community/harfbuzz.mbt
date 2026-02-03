@@ -43,6 +43,18 @@ test "script aliases and direction" {
 }
 
 ///|
+test "script tag aliases" {
+  inspect(Script::from_string("Aran").to_tag().to_string(), content="Arab")
+  inspect(Script::from_string("Cyrs").to_tag().to_string(), content="Cyrl")
+  inspect(Script::from_string("Geok").to_tag().to_string(), content="Geor")
+  inspect(Script::from_string("Latf").to_tag().to_string(), content="Latn")
+  inspect(Script::from_string("Latg").to_tag().to_string(), content="Latn")
+  inspect(Script::from_string("Syrn").to_tag().to_string(), content="Syrc")
+  inspect(Script::from_string("Qaac").to_tag().to_string(), content="Copt")
+  inspect(Script::from_string("Jamo").to_tag().to_string(), content="Hang")
+}
+
+///|
 test "script horizontal direction mapping" {
   inspect(
     script_old_italic.horizontal_direction().to_string(),
