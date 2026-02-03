@@ -185,6 +185,28 @@ fn build_glyf_simple_square() -> Bytes {
 }
 
 ///|
+fn build_font_bytes_simple_square() -> Bytes {
+  let glyph0 = build_glyf_simple_square()
+  let bytes : Array[Byte] = []
+  for b in glyph0 {
+    bytes.push(b)
+  }
+  let glyf = Bytes::from_array(bytes)
+  let loca = build_loca_short([0, glyf.length(), glyf.length()])
+  let tables : Array[(@common.Tag, Bytes)] = [
+    (@common.Tag::from_chars('h', 'e', 'a', 'd'), build_head(1000, 0)),
+    (@common.Tag::from_chars('m', 'a', 'x', 'p'), build_maxp(2)),
+    (@common.Tag::from_chars('h', 'h', 'e', 'a'), build_hhea(2)),
+    (@common.Tag::from_chars('h', 'm', 't', 'x'), build_hmtx()),
+    (@common.Tag::from_chars('v', 'h', 'e', 'a'), build_vhea(2)),
+    (@common.Tag::from_chars('v', 'm', 't', 'x'), build_vmtx()),
+    (@common.Tag::from_chars('l', 'o', 'c', 'a'), loca),
+    (@common.Tag::from_chars('g', 'l', 'y', 'f'), glyf),
+  ]
+  build_sfnt(tables)
+}
+
+///|
 fn build_glyf_composite_one_component() -> Bytes {
   let bytes : Array[Byte] = []
   push_i16(bytes, -1) // composite
@@ -999,4 +1021,26 @@ test "font glyph bounds varc composite" {
     Ok(Some(value)) => value
   }
   inspect((bounds.x_min, bounds.y_min, bounds.x_max, bounds.y_max), content="(25, -2, 70, 100)")
+}
+
+test "font draw glyph simple square" {
+  let bytes = build_font_bytes_simple_square()
+  let font = Font::from_bytes(bytes)
+  let ops : Array[String] = []
+  let funcs : @draw.DrawFuncs[Array[String]] = @draw.DrawFuncs::new()
+  funcs.set_move_to(Some((data, _st, x, y) => {
+    data.push("M\{x.to_int()},\{y.to_int()}")
+  }))
+  funcs.set_line_to(Some((data, _st, x, y) => {
+    data.push("L\{x.to_int()},\{y.to_int()}")
+  }))
+  funcs.set_close_path(Some((data, _st) => {
+    data.push("Z")
+  }))
+  let ok = match font.draw_glyph_or_fail(0U, funcs, ops) {
+    Err(err) => fail("draw error: \{err}")
+    Ok(value) => value
+  }
+  assert_true(ok)
+  inspect(ops.join("|"), content="M0,0|L50,0|L50,50|L0,50|L0,0|Z")
 }
