@@ -34,6 +34,39 @@ test "face setters" {
 }
 
 ///|
+test "face reference blob and optional table" {
+  let bytes : Bytes = [
+    0x00, 0x01, 0x00, 0x00,
+    0x00, 0x00,
+    0x00, 0x00,
+    0x00, 0x00,
+    0x00, 0x00,
+  ]
+  let face = Face::from_bytes(bytes)
+  let blob = face.reference_blob()
+  inspect(blob.len(), content="12")
+  inspect(
+    blob.to_bytes(),
+    content="b\"\\x00\\x01\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\"",
+  )
+  let tag = @common.Tag::from_chars('h', 'e', 'a', 'd')
+  let missing = match face.reference_table_optional(tag) {
+    Err(err) => fail("unexpected error: \{err}")
+    Ok(value) => value
+  }
+  inspect(missing, content="None")
+  face.set_table(tag, @blob.Blob::from_bytes([0x01]))
+  let found = match face.reference_table_optional(tag) {
+    Err(err) => fail("unexpected error: \{err}")
+    Ok(value) => value
+  }
+  match found {
+    None => fail("expected table")
+    Some(value) => inspect(value.to_bytes(), content="b\"\\x01\"")
+  }
+}
+
+///|
 test "face_count handles sfnt and ttc headers" {
   let empty = @blob.Blob::from_bytes([])
   inspect(face_count(empty), content="0")
