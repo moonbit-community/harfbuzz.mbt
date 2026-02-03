@@ -115,6 +115,22 @@ fn build_hmtx_three() -> Bytes {
 }
 
 ///|
+fn build_hmtx_long_metrics_case() -> Bytes {
+  let bytes : Array[Byte] = []
+  // glyph 0 advance 1, lsb 2
+  push_u16(bytes, 1)
+  push_i16(bytes, 2)
+  // glyph 1 advance 3, lsb 4
+  push_u16(bytes, 3)
+  push_i16(bytes, 4)
+  // glyphs 2..4 use last advance (3), only lsb values stored
+  push_i16(bytes, 5)
+  push_i16(bytes, 6)
+  push_i16(bytes, 7)
+  Bytes::from_array(bytes)
+}
+
+///|
 fn build_vmtx() -> Bytes {
   let bytes : Array[Byte] = []
   // glyph 0 advance 700, tsb 0
@@ -497,6 +513,17 @@ fn build_font_bytes() -> Bytes {
 }
 
 ///|
+fn build_font_bytes_hmtx_long_metrics() -> Bytes {
+  let tables : Array[(@common.Tag, Bytes)] = [
+    (@common.Tag::from_chars('h', 'e', 'a', 'd'), build_head(1000, 0)),
+    (@common.Tag::from_chars('m', 'a', 'x', 'p'), build_maxp(5)),
+    (@common.Tag::from_chars('h', 'h', 'e', 'a'), build_hhea(2)),
+    (@common.Tag::from_chars('h', 'm', 't', 'x'), build_hmtx_long_metrics_case()),
+  ]
+  build_sfnt(tables)
+}
+
+///|
 fn build_fvar_table() -> Bytes {
   Bytes::from_array([
     0x00, 0x01, 0x00, 0x00, // version 1.0
@@ -848,6 +875,37 @@ test "font scale defaults to upem" {
   let font = Font::from_bytes(bytes)
   let _ = font.glyph_h_advance(1U)
   inspect(font.get_scale(), content="(1000, 1000)")
+}
+
+///|
+test "font hmtx uses last long metric advance" {
+  let font = Font::from_bytes(build_font_bytes_hmtx_long_metrics())
+  let advance0 = match font.glyph_h_advance(0U) {
+    Err(err) => fail("advance error: \{err}")
+    Ok(value) => value
+  }
+  inspect(advance0, content="1")
+  let advance1 = match font.glyph_h_advance(1U) {
+    Err(err) => fail("advance error: \{err}")
+    Ok(value) => value
+  }
+  inspect(advance1, content="3")
+  let advance2 = match font.glyph_h_advance(2U) {
+    Err(err) => fail("advance error: \{err}")
+    Ok(value) => value
+  }
+  inspect(advance2, content="3")
+  let advance3 = match font.glyph_h_advance(3U) {
+    Err(err) => fail("advance error: \{err}")
+    Ok(value) => value
+  }
+  inspect(advance3, content="3")
+  let advance4 = match font.glyph_h_advance(4U) {
+    Err(err) => fail("advance error: \{err}")
+    Ok(value) => value
+  }
+  inspect(advance4, content="3")
+  inspect(font.glyph_h_advance(5U), content="Err(GlyphOutOfRange)")
 }
 
 ///|
