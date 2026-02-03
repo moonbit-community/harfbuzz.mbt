@@ -1653,6 +1653,175 @@ fn build_font_bytes_subset_cblc_fixture() -> Bytes {
 }
 
 ///|
+fn build_delta_map(values : Array[Int]) -> Array[Byte] {
+  let bytes : Array[Byte] = []
+  bytes.push(0)
+  bytes.push(0)
+  push_u16(bytes, values.length())
+  for value in values {
+    bytes.push(value.to_byte())
+  }
+  bytes
+}
+
+///|
+fn build_hvar_table() -> Bytes {
+  let adv = build_delta_map([10, 20, 30, 40])
+  let lsb = build_delta_map([1, 2, 3, 4])
+  let rsb = build_delta_map([5, 6, 7, 8])
+  let var_store : Array[Byte] = [0xde, 0xad, 0xbe, 0xef]
+  let adv_offset = 20
+  let lsb_offset = adv_offset + adv.length()
+  let rsb_offset = lsb_offset + lsb.length()
+  let var_store_offset = rsb_offset + rsb.length()
+  let bytes : Array[Byte] = []
+  push_u32(bytes, 0x00010000)
+  push_u32(bytes, var_store_offset)
+  push_u32(bytes, adv_offset)
+  push_u32(bytes, lsb_offset)
+  push_u32(bytes, rsb_offset)
+  for b in adv {
+    bytes.push(b)
+  }
+  for b in lsb {
+    bytes.push(b)
+  }
+  for b in rsb {
+    bytes.push(b)
+  }
+  for b in var_store {
+    bytes.push(b)
+  }
+  Bytes::from_array(bytes)
+}
+
+///|
+fn build_vvar_table() -> Bytes {
+  let adv = build_delta_map([50, 60, 70, 80])
+  let tsb = build_delta_map([9, 10, 11, 12])
+  let bsb = build_delta_map([13, 14, 15, 16])
+  let vorg = build_delta_map([17, 18, 19, 20])
+  let var_store : Array[Byte] = [0xca, 0xfe, 0xba, 0xbe]
+  let adv_offset = 24
+  let tsb_offset = adv_offset + adv.length()
+  let bsb_offset = tsb_offset + tsb.length()
+  let vorg_offset = bsb_offset + bsb.length()
+  let var_store_offset = vorg_offset + vorg.length()
+  let bytes : Array[Byte] = []
+  push_u32(bytes, 0x00010000)
+  push_u32(bytes, var_store_offset)
+  push_u32(bytes, adv_offset)
+  push_u32(bytes, tsb_offset)
+  push_u32(bytes, bsb_offset)
+  push_u32(bytes, vorg_offset)
+  for b in adv {
+    bytes.push(b)
+  }
+  for b in tsb {
+    bytes.push(b)
+  }
+  for b in bsb {
+    bytes.push(b)
+  }
+  for b in vorg {
+    bytes.push(b)
+  }
+  for b in var_store {
+    bytes.push(b)
+  }
+  Bytes::from_array(bytes)
+}
+
+///|
+fn build_gvar_table() -> Bytes {
+  let offsets : Array[Int] = [0, 1, 3, 6, 6]
+  let data_bytes : Array[Byte] = [0xa0, 0xb1, 0xb2, 0xc1, 0xc2, 0xc3]
+  let data_offset = 20 + offsets.length() * 4
+  let bytes : Array[Byte] = []
+  push_u32(bytes, 0x00010000)
+  push_u16(bytes, 1)
+  push_u16(bytes, 0)
+  push_u32(bytes, 0)
+  push_u16(bytes, 4)
+  push_u16(bytes, 1)
+  push_u32(bytes, data_offset)
+  for offset in offsets {
+    push_u32(bytes, offset)
+  }
+  for b in data_bytes {
+    bytes.push(b)
+  }
+  Bytes::from_array(bytes)
+}
+
+///|
+fn build_varc_table() -> Bytes {
+  let record : Array[Byte] = []
+  record.push(0)
+  push_u16(record, 3)
+  let records : Array[Byte] = []
+  push_u32(records, 1)
+  records.push(1)
+  records.push(1)
+  records.push((1 + record.length()).to_byte())
+  for b in record {
+    records.push(b)
+  }
+  let coverage : Array[Byte] = []
+  push_u16(coverage, 1)
+  push_u16(coverage, 1)
+  push_u16(coverage, 2)
+  let coverage_offset = 24
+  let glyph_records_offset = coverage_offset + coverage.length()
+  let bytes : Array[Byte] = []
+  push_u32(bytes, 0x00010000)
+  push_u32(bytes, coverage_offset)
+  push_u32(bytes, 0)
+  push_u32(bytes, 0)
+  push_u32(bytes, 0)
+  push_u32(bytes, glyph_records_offset)
+  for b in coverage {
+    bytes.push(b)
+  }
+  for b in records {
+    bytes.push(b)
+  }
+  Bytes::from_array(bytes)
+}
+
+///|
+fn build_font_bytes_subset_variation_fixture() -> Bytes {
+  let glyf = build_glyf_table()
+  let loca = build_loca_long([0, 0, 12, 30, 42])
+  let cmap = build_cmap_table(build_cmap_format12(0x41U, 0x42U, 1U))
+  let tables : Array[(@common.Tag, Bytes)] = [
+    (@common.Tag::from_chars('h', 'e', 'a', 'd'), build_head(1000, 1)),
+    (@common.Tag::from_chars('m', 'a', 'x', 'p'), build_maxp(4)),
+    (@common.Tag::from_chars('h', 'h', 'e', 'a'), build_hhea(4)),
+    (@common.Tag::from_chars('O', 'S', '/', '2'), build_os2()),
+    (@common.Tag::from_chars('C', 'P', 'A', 'L'), build_cpal()),
+    (@common.Tag::from_chars('p', 'o', 's', 't'), build_post_table_v2()),
+    (@common.Tag::from_chars('V', 'O', 'R', 'G'), build_vorg_table()),
+    (@common.Tag::from_chars('k', 'e', 'r', 'n'), build_kern_table()),
+    (@common.Tag::from_chars('C', 'O', 'L', 'R'), build_colr_table()),
+    (@common.Tag::from_chars('G', 'D', 'E', 'F'), build_gdef_table()),
+    (@common.Tag::from_chars('G', 'S', 'U', 'B'), build_gsub_single()),
+    (@common.Tag::from_chars('G', 'P', 'O', 'S'), build_gpos_single()),
+    (@common.Tag::from_chars('g', 'v', 'a', 'r'), build_gvar_table()),
+    (@common.Tag::from_chars('H', 'V', 'A', 'R'), build_hvar_table()),
+    (@common.Tag::from_chars('V', 'V', 'A', 'R'), build_vvar_table()),
+    (@common.Tag::from_chars('V', 'A', 'R', 'C'), build_varc_table()),
+    (@common.Tag::from_chars('h', 'm', 't', 'x'), build_hmtx([500, 600, 700, 800], [0, 10, 20, 30])),
+    (@common.Tag::from_chars('v', 'h', 'e', 'a'), build_vhea(4)),
+    (@common.Tag::from_chars('v', 'm', 't', 'x'), build_vmtx([900, 910, 920, 930], [5, 6, 7, 8])),
+    (@common.Tag::from_chars('l', 'o', 'c', 'a'), loca),
+    (@common.Tag::from_chars('g', 'l', 'y', 'f'), glyf),
+    (@common.Tag::from_chars('c', 'm', 'a', 'p'), cmap),
+  ]
+  build_sfnt(tables)
+}
+
+///|
 fn build_font_bytes_subset_with_gpos(gpos : Bytes) -> Bytes {
   let glyf = build_glyf_table()
   let loca = build_loca_long([0, 0, 12, 30, 42])
@@ -4039,6 +4208,119 @@ test "subset rebuilds gdef" {
     ),
     content="(2, 2, 5, 3, 200, 6, 1)",
   )
+}
+
+///|
+///|
+test "subset rebuilds variation tables" {
+  let font = @font.Font::from_bytes(build_font_bytes_subset_variation_fixture())
+  let bytes = match subset(font, SubsetInput::from_codepoints([0x42U])) {
+    Err(err) => fail("subset failed: \{err}")
+    Ok(value) => value
+  }
+  let subset_font = @font.Font::from_bytes(bytes)
+  let face = subset_font.get_face()
+
+  let gvar_blob = match face.reference_table_optional(@common.Tag::from_chars('g', 'v', 'a', 'r')) {
+    Err(err) => fail("gvar lookup failed: \{err}")
+    Ok(None) => fail("gvar table missing from subset")
+    Ok(Some(blob)) => blob
+  }
+  let gvar = gvar_blob.as_view()
+  let glyph_count = match read_u16(gvar, 12) {
+    None => fail("gvar glyph count missing")
+    Some(value) => value
+  }
+  let data_offset = match read_u32(gvar, 16) {
+    None => fail("gvar data offset missing")
+    Some(value) => value
+  }
+  let last_offset = match read_u32(gvar, 20 + glyph_count * 4) {
+    None => fail("gvar last offset missing")
+    Some(value) => value
+  }
+  let gvar_bytes : Array[Int] = []
+  for i in data_offset..<(data_offset + last_offset) {
+    gvar_bytes.push(gvar[i].to_int())
+  }
+  inspect(glyph_count, content="3")
+  inspect(gvar_bytes, content="[160, 193, 194, 195]")
+
+  let hvar_blob = match face.reference_table_optional(@common.Tag::from_chars('H', 'V', 'A', 'R')) {
+    Err(err) => fail("hvar lookup failed: \{err}")
+    Ok(None) => fail("HVAR table missing from subset")
+    Ok(Some(blob)) => blob
+  }
+  let hvar = hvar_blob.as_view()
+  let adv_offset = match read_u32(hvar, 8) {
+    None => fail("HVAR adv offset missing")
+    Some(value) => value
+  }
+  let adv_count = match read_u16(hvar, adv_offset + 2) {
+    None => fail("HVAR adv count missing")
+    Some(value) => value
+  }
+  let adv_values : Array[Int] = []
+  for i in 0..<adv_count {
+    adv_values.push(hvar[adv_offset + 4 + i].to_int())
+  }
+  inspect(adv_values, content="[10, 30, 40]")
+
+  let vvar_blob = match face.reference_table_optional(@common.Tag::from_chars('V', 'V', 'A', 'R')) {
+    Err(err) => fail("vvar lookup failed: \{err}")
+    Ok(None) => fail("VVAR table missing from subset")
+    Ok(Some(blob)) => blob
+  }
+  let vvar = vvar_blob.as_view()
+  let vadv_offset = match read_u32(vvar, 8) {
+    None => fail("VVAR adv offset missing")
+    Some(value) => value
+  }
+  let vadv_count = match read_u16(vvar, vadv_offset + 2) {
+    None => fail("VVAR adv count missing")
+    Some(value) => value
+  }
+  let vadv_values : Array[Int] = []
+  for i in 0..<vadv_count {
+    vadv_values.push(vvar[vadv_offset + 4 + i].to_int())
+  }
+  inspect(vadv_values, content="[50, 70, 80]")
+
+  let varc_blob = match face.reference_table_optional(@common.Tag::from_chars('V', 'A', 'R', 'C')) {
+    Err(err) => fail("varc lookup failed: \{err}")
+    Ok(None) => fail("VARC table missing from subset")
+    Ok(Some(blob)) => blob
+  }
+  let varc = varc_blob.as_view()
+  let coverage_offset = match read_u32(varc, 4) {
+    None => fail("VARC coverage offset missing")
+    Some(value) => value
+  }
+  let cover_gid = match read_u16(varc, coverage_offset + 4) {
+    None => fail("VARC coverage glyph missing")
+    Some(value) => value
+  }
+  let records_offset = match read_u32(varc, 20) {
+    None => fail("VARC records offset missing")
+    Some(value) => value
+  }
+  let record_count = match read_u32(varc, records_offset) {
+    None => fail("VARC record count missing")
+    Some(value) => value
+  }
+  let off_size = varc[records_offset + 4].to_int()
+  if record_count != 1 || off_size != 1 {
+    fail("unexpected VARC record index")
+  }
+  let data_start = records_offset + 5 + (record_count + 1) * off_size
+  let start = varc[records_offset + 5].to_int() - 1
+  let end = varc[records_offset + 6].to_int() - 1
+  let record_bytes : Array[Int] = []
+  for i in (data_start + start)..<(data_start + end) {
+    record_bytes.push(varc[i].to_int())
+  }
+  inspect(cover_gid, content="1")
+  inspect(record_bytes, content="[0, 0, 2]")
 }
 
 ///|

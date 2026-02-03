@@ -1163,6 +1163,94 @@ fn add_optional_gdef(
   }
 }
 
+fn add_optional_gvar(
+  face : @face.Face,
+  plan : SubsetPlan,
+  tables : Array[(@common.Tag, Bytes)],
+  identity : Bool,
+) -> Result[Unit, SubsetError] {
+  if identity {
+    return Ok(())
+  }
+  let bytes = match build_gvar_subset(face, plan) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  match bytes {
+    None => Ok(())
+    Some(bytes) => {
+      tables.push((tag_gvar, bytes))
+      Ok(())
+    }
+  }
+}
+
+fn add_optional_hvar(
+  face : @face.Face,
+  plan : SubsetPlan,
+  tables : Array[(@common.Tag, Bytes)],
+  identity : Bool,
+) -> Result[Unit, SubsetError] {
+  if identity {
+    return Ok(())
+  }
+  let bytes = match build_hvar_subset(face, plan) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  match bytes {
+    None => Ok(())
+    Some(bytes) => {
+      tables.push((tag_hvar, bytes))
+      Ok(())
+    }
+  }
+}
+
+fn add_optional_vvar(
+  face : @face.Face,
+  plan : SubsetPlan,
+  tables : Array[(@common.Tag, Bytes)],
+  identity : Bool,
+) -> Result[Unit, SubsetError] {
+  if identity {
+    return Ok(())
+  }
+  let bytes = match build_vvar_subset(face, plan) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  match bytes {
+    None => Ok(())
+    Some(bytes) => {
+      tables.push((tag_vvar, bytes))
+      Ok(())
+    }
+  }
+}
+
+fn add_optional_varc(
+  face : @face.Face,
+  plan : SubsetPlan,
+  tables : Array[(@common.Tag, Bytes)],
+  identity : Bool,
+) -> Result[Unit, SubsetError] {
+  if identity {
+    return Ok(())
+  }
+  let bytes = match build_varc_subset(face, plan) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  match bytes {
+    None => Ok(())
+    Some(bytes) => {
+      tables.push((tag_varc, bytes))
+      Ok(())
+    }
+  }
+}
+
 fn add_optional_gsub(
   face : @face.Face,
   plan : SubsetPlan,
@@ -2501,6 +2589,87 @@ priv struct CblcStrike {
   subtable : Array[Byte]
 }
 
+priv struct DeltaMapInfo {
+  format : Int
+  entry_format : Int
+  width : Int
+  map_count : Int
+  map_data : Array[Byte]
+}
+
+fn parse_delta_map(
+  bytes : Array[Byte],
+  offset : Int,
+) -> Result[DeltaMapInfo, SubsetError] {
+  let format = match read_u8(bytes, offset) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  let entry_format = match read_u8(bytes, offset + 1) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  let width = ((entry_format >> 4) & 0x3) + 1
+  let map_count = if format == 0 {
+    match read_u16(bytes, offset + 2) {
+      Err(err) => return Err(err)
+      Ok(value) => value
+    }
+  } else if format == 1 {
+    match read_u32(bytes, offset + 2) {
+      Err(err) => return Err(err)
+      Ok(value) => value
+    }
+  } else {
+    return Err(InvalidInput("unsupported delta map format"))
+  }
+  if map_count <= 0 {
+    return Err(InvalidInput("invalid delta map count"))
+  }
+  let data_offset = if format == 0 { offset + 4 } else { offset + 6 }
+  let length = map_count * width
+  if data_offset < 0 || data_offset + length > bytes.length() {
+    return Err(InvalidInput("invalid delta map bounds"))
+  }
+  let map_data = bytes[data_offset:data_offset + length].to_array()
+  Ok(DeltaMapInfo::{ format, entry_format, width, map_count, map_data })
+}
+
+fn build_delta_map_subset(
+  info : DeltaMapInfo,
+  glyphs : Array[UInt],
+) -> Result[Array[Byte], SubsetError] {
+  let new_count = glyphs.length()
+  if new_count <= 0 {
+    return Err(InvalidInput("invalid delta map size"))
+  }
+  let format =
+    if info.format == 0 && new_count <= 0xFFFF { 0 } else if info.format == 1 { 1 } else { 1 }
+  let out : Array[Byte] = []
+  out.push(format.to_byte())
+  out.push(info.entry_format.to_byte())
+  if format == 0 {
+    push_u16(out, new_count)
+  } else {
+    push_u32(out, new_count)
+  }
+  let max_index = info.map_count - 1
+  for gid in glyphs {
+    let mut idx = gid.reinterpret_as_int()
+    if idx < 0 {
+      idx = 0
+    }
+    if idx > max_index {
+      idx = max_index
+    }
+    let base = idx * info.width
+    for i in 0..<info.width {
+      out.push(info.map_data[base + i])
+    }
+  }
+  Ok(out)
+}
+
 fn build_cblc_cbdt_subset(
   face : @face.Face,
   plan : SubsetPlan,
@@ -2764,6 +2933,943 @@ fn build_cblc_cbdt_subset(
       Ok(Some((Bytes::from_array(out), Bytes::from_array(cbdt_out))))
     }
     _ => Ok(None)
+  }
+}
+
+fn parse_gvar_offsets(
+  bytes : Array[Byte],
+  offset : Int,
+  glyph_count : Int,
+  long_offsets : Bool,
+) -> Result[Array[Int], SubsetError] {
+  let count = glyph_count + 1
+  if count <= 0 {
+    return Err(InvalidInput("invalid gvar glyph count"))
+  }
+  let offsets : Array[Int] = []
+  if long_offsets {
+    let total = count * 4
+    if offset < 0 || offset + total > bytes.length() {
+      return Err(InvalidInput("invalid gvar offsets"))
+    }
+    let mut pos = offset
+    for _ in 0..<count {
+      let value = match read_u32(bytes, pos) {
+        Err(err) => return Err(err)
+        Ok(v) => v
+      }
+      offsets.push(value)
+      pos = pos + 4
+    }
+  } else {
+    let total = count * 2
+    if offset < 0 || offset + total > bytes.length() {
+      return Err(InvalidInput("invalid gvar offsets"))
+    }
+    let mut pos = offset
+    for _ in 0..<count {
+      let value = match read_u16(bytes, pos) {
+        Err(err) => return Err(err)
+        Ok(v) => v
+      }
+      offsets.push(value * 2)
+      pos = pos + 2
+    }
+  }
+  Ok(offsets)
+}
+
+fn build_gvar_subset(
+  face : @face.Face,
+  plan : SubsetPlan,
+) -> Result[Bytes?, SubsetError] {
+  let blob = match face.reference_table_optional(tag_gvar) {
+    Err(err) => return Err(Face(err))
+    Ok(value) => value
+  }
+  match blob {
+    None => Ok(None)
+    Some(blob) => {
+      let bytes = blob.as_view().to_bytes().to_array()
+      if bytes.length() < 20 {
+        return Err(InvalidInput("invalid gvar table"))
+      }
+      let version = match read_u32(bytes, 0) {
+        Err(err) => return Err(err)
+        Ok(value) => value
+      }
+      let axis_count = match read_u16(bytes, 4) {
+        Err(err) => return Err(err)
+        Ok(value) => value
+      }
+      let shared_tuple_count = match read_u16(bytes, 6) {
+        Err(err) => return Err(err)
+        Ok(value) => value
+      }
+      let shared_tuples_offset = match read_u32(bytes, 8) {
+        Err(err) => return Err(err)
+        Ok(value) => value
+      }
+      let glyph_count = match read_u16(bytes, 12) {
+        Err(err) => return Err(err)
+        Ok(value) => value
+      }
+      let flags = match read_u16(bytes, 14) {
+        Err(err) => return Err(err)
+        Ok(value) => value
+      }
+      let data_offset = match read_u32(bytes, 16) {
+        Err(err) => return Err(err)
+        Ok(value) => value
+      }
+      let major = (version >> 16) & 0xFFFF
+      if major != 1 {
+        return Ok(None)
+      }
+      let long_offsets = (flags & 1) != 0
+      let offsets = match parse_gvar_offsets(bytes, 20, glyph_count, long_offsets) {
+        Err(err) => return Err(err)
+        Ok(value) => value
+      }
+      if glyph_count <= 0 {
+        return Ok(None)
+      }
+      let shared_len = shared_tuple_count * axis_count * 2
+      let shared_bytes : Array[Byte] = []
+      if shared_tuple_count > 0 {
+        if shared_tuples_offset <= 0 || shared_tuples_offset + shared_len > bytes.length() {
+          return Err(InvalidInput("invalid gvar shared tuples"))
+        }
+        for b in bytes[shared_tuples_offset:shared_tuples_offset + shared_len] {
+          shared_bytes.push(b)
+        }
+      }
+      let new_offsets : Array[Int] = []
+      let mut cursor = 0
+      let data_bytes : Array[Byte] = []
+      for old_gid in plan.glyphs {
+        let gid = old_gid.reinterpret_as_int()
+        if gid < 0 || gid + 1 >= offsets.length() {
+          return Err(InvalidInput("glyph id out of range"))
+        }
+        let start = offsets[gid]
+        let end = offsets[gid + 1]
+        if end < start {
+          return Err(InvalidInput("invalid gvar glyph range"))
+        }
+        new_offsets.push(cursor)
+        let length = end - start
+        if length > 0 {
+          if data_offset < 0 || data_offset + end > bytes.length() {
+            return Err(InvalidInput("invalid gvar data offset"))
+          }
+          let base = data_offset + start
+          let limit = base + length
+          for idx in base..<limit {
+            data_bytes.push(bytes[idx])
+          }
+          cursor = cursor + length
+        }
+      }
+      new_offsets.push(cursor)
+      if cursor == 0 {
+        return Ok(None)
+      }
+      let new_glyph_count = plan.glyphs.length()
+      let offsets_len = (new_glyph_count + 1) * 4
+      let data_start = 20 + offsets_len
+      let shared_offset = if shared_tuple_count > 0 { data_start } else { 0 }
+      let data_start = if shared_tuple_count > 0 { data_start + shared_bytes.length() } else { data_start }
+      let out : Array[Byte] = []
+      push_u32(out, version)
+      push_u16(out, axis_count)
+      push_u16(out, shared_tuple_count)
+      push_u32(out, shared_offset)
+      push_u16(out, new_glyph_count)
+      push_u16(out, flags | 1)
+      push_u32(out, data_start)
+      for offset in new_offsets {
+        push_u32(out, offset)
+      }
+      for b in shared_bytes {
+        out.push(b)
+      }
+      for b in data_bytes {
+        out.push(b)
+      }
+      Ok(Some(Bytes::from_array(out)))
+    }
+  }
+}
+
+fn build_metrics_variation_subset(
+  bytes : Array[Byte],
+  map_offsets : Array[Int],
+  plan : SubsetPlan,
+) -> Result[Array[(Int, Array[Byte])], SubsetError] {
+  let built : Array[(Int, Array[Byte])] = []
+  for offset in map_offsets {
+    if offset == 0 {
+      built.push((0, []))
+      continue
+    }
+    let info = match parse_delta_map(bytes, offset) {
+      Err(err) => return Err(err)
+      Ok(value) => value
+    }
+    let map_bytes = match build_delta_map_subset(info, plan.glyphs) {
+      Err(err) => return Err(err)
+      Ok(value) => value
+    }
+    built.push((offset, map_bytes))
+  }
+  Ok(built)
+}
+
+fn build_hvar_subset(
+  face : @face.Face,
+  plan : SubsetPlan,
+) -> Result[Bytes?, SubsetError] {
+  let blob = match face.reference_table_optional(tag_hvar) {
+    Err(err) => return Err(Face(err))
+    Ok(value) => value
+  }
+  match blob {
+    None => Ok(None)
+    Some(blob) => {
+      let bytes = blob.as_view().to_bytes().to_array()
+      if bytes.length() < 20 {
+        return Err(InvalidInput("invalid HVAR table"))
+      }
+      let version = match read_u32(bytes, 0) {
+        Err(err) => return Err(err)
+        Ok(value) => value
+      }
+      let major = (version >> 16) & 0xFFFF
+      if major != 1 {
+        return Ok(None)
+      }
+      let var_store_offset = match read_u32(bytes, 4) {
+        Err(err) => return Err(err)
+        Ok(value) => value
+      }
+      let adv_offset = match read_u32(bytes, 8) {
+        Err(err) => return Err(err)
+        Ok(value) => value
+      }
+      let lsb_offset = match read_u32(bytes, 12) {
+        Err(err) => return Err(err)
+        Ok(value) => value
+      }
+      let rsb_offset = match read_u32(bytes, 16) {
+        Err(err) => return Err(err)
+        Ok(value) => value
+      }
+      if var_store_offset <= 0 || var_store_offset > bytes.length() {
+        return Err(InvalidInput("invalid HVAR var store"))
+      }
+      let maps = match build_metrics_variation_subset(bytes, [adv_offset, lsb_offset, rsb_offset], plan) {
+        Err(err) => return Err(err)
+        Ok(value) => value
+      }
+      let out : Array[Byte] = []
+      push_u32(out, version)
+      push_u32(out, 0)
+      push_u32(out, 0)
+      push_u32(out, 0)
+      push_u32(out, 0)
+      let mut cursor = 20
+      let mut idx = 0
+      while idx < maps.length() {
+        let (_, map_bytes) = maps[idx]
+        if map_bytes.length() > 0 {
+          write_u32(out, 8 + idx * 4, cursor)
+          for b in map_bytes {
+            out.push(b)
+          }
+          cursor = cursor + map_bytes.length()
+        }
+        idx = idx + 1
+      }
+      write_u32(out, 4, cursor)
+      for b in bytes[var_store_offset:] {
+        out.push(b)
+      }
+      Ok(Some(Bytes::from_array(out)))
+    }
+  }
+}
+
+fn build_vvar_subset(
+  face : @face.Face,
+  plan : SubsetPlan,
+) -> Result[Bytes?, SubsetError] {
+  let blob = match face.reference_table_optional(tag_vvar) {
+    Err(err) => return Err(Face(err))
+    Ok(value) => value
+  }
+  match blob {
+    None => Ok(None)
+    Some(blob) => {
+      let bytes = blob.as_view().to_bytes().to_array()
+      if bytes.length() < 24 {
+        return Err(InvalidInput("invalid VVAR table"))
+      }
+      let version = match read_u32(bytes, 0) {
+        Err(err) => return Err(err)
+        Ok(value) => value
+      }
+      let major = (version >> 16) & 0xFFFF
+      if major != 1 {
+        return Ok(None)
+      }
+      let var_store_offset = match read_u32(bytes, 4) {
+        Err(err) => return Err(err)
+        Ok(value) => value
+      }
+      let adv_offset = match read_u32(bytes, 8) {
+        Err(err) => return Err(err)
+        Ok(value) => value
+      }
+      let tsb_offset = match read_u32(bytes, 12) {
+        Err(err) => return Err(err)
+        Ok(value) => value
+      }
+      let bsb_offset = match read_u32(bytes, 16) {
+        Err(err) => return Err(err)
+        Ok(value) => value
+      }
+      let vorg_offset = match read_u32(bytes, 20) {
+        Err(err) => return Err(err)
+        Ok(value) => value
+      }
+      if var_store_offset <= 0 || var_store_offset > bytes.length() {
+        return Err(InvalidInput("invalid VVAR var store"))
+      }
+      let maps = match build_metrics_variation_subset(
+        bytes,
+        [adv_offset, tsb_offset, bsb_offset, vorg_offset],
+        plan,
+      ) {
+        Err(err) => return Err(err)
+        Ok(value) => value
+      }
+      let out : Array[Byte] = []
+      push_u32(out, version)
+      push_u32(out, 0)
+      push_u32(out, 0)
+      push_u32(out, 0)
+      push_u32(out, 0)
+      push_u32(out, 0)
+      let mut cursor = 24
+      let mut idx = 0
+      while idx < maps.length() {
+        let (_, map_bytes) = maps[idx]
+        if map_bytes.length() > 0 {
+          write_u32(out, 8 + idx * 4, cursor)
+          for b in map_bytes {
+            out.push(b)
+          }
+          cursor = cursor + map_bytes.length()
+        }
+        idx = idx + 1
+      }
+      write_u32(out, 4, cursor)
+      for b in bytes[var_store_offset:] {
+        out.push(b)
+      }
+      Ok(Some(Bytes::from_array(out)))
+    }
+  }
+}
+
+let varc_flag_have_axes : UInt = 1U << 1
+let varc_flag_axis_values_have_variation : UInt = 1U << 2
+let varc_flag_transform_has_variation : UInt = 1U << 3
+let varc_flag_have_translate_x : UInt = 1U << 4
+let varc_flag_have_translate_y : UInt = 1U << 5
+let varc_flag_have_rotation : UInt = 1U << 6
+let varc_flag_have_condition : UInt = 1U << 7
+let varc_flag_have_scale_x : UInt = 1U << 8
+let varc_flag_have_scale_y : UInt = 1U << 9
+let varc_flag_have_tcenter_x : UInt = 1U << 10
+let varc_flag_have_tcenter_y : UInt = 1U << 11
+let varc_flag_gid_is_24bit : UInt = 1U << 12
+let varc_flag_have_skew_x : UInt = 1U << 13
+let varc_flag_have_skew_y : UInt = 1U << 14
+let varc_flag_reserved_mask : UInt = 0xFFFF8000U
+
+fn read_u32var(bytes : Array[Byte], offset : Int) -> Result[(UInt, Int), SubsetError] {
+  if offset < 0 || offset >= bytes.length() {
+    return Err(InvalidInput("invalid VARC u32var offset"))
+  }
+  let b0 = bytes[offset].to_uint()
+  if b0 < 0x80U {
+    return Ok((b0, 1))
+  }
+  if b0 < 0xC0U {
+    if offset + 2 > bytes.length() {
+      return Err(InvalidInput("invalid VARC u32var bounds"))
+    }
+    let b1 = bytes[offset + 1].to_uint()
+    let value = ((b0 & 0x3FU) << 8) | b1
+    return Ok((value, 2))
+  }
+  if b0 < 0xE0U {
+    if offset + 3 > bytes.length() {
+      return Err(InvalidInput("invalid VARC u32var bounds"))
+    }
+    let b1 = bytes[offset + 1].to_uint()
+    let b2 = bytes[offset + 2].to_uint()
+    let value = ((b0 & 0x1FU) << 16) | (b1 << 8) | b2
+    return Ok((value, 3))
+  }
+  if b0 < 0xF0U {
+    if offset + 4 > bytes.length() {
+      return Err(InvalidInput("invalid VARC u32var bounds"))
+    }
+    let b1 = bytes[offset + 1].to_uint()
+    let b2 = bytes[offset + 2].to_uint()
+    let b3 = bytes[offset + 3].to_uint()
+    let value = ((b0 & 0x0FU) << 24) | (b1 << 16) | (b2 << 8) | b3
+    return Ok((value, 4))
+  }
+  if offset + 5 > bytes.length() {
+    return Err(InvalidInput("invalid VARC u32var bounds"))
+  }
+  let b1 = bytes[offset + 1].to_uint()
+  let b2 = bytes[offset + 2].to_uint()
+  let b3 = bytes[offset + 3].to_uint()
+  let b4 = bytes[offset + 4].to_uint()
+  let value = (b1 << 24) | (b2 << 16) | (b3 << 8) | b4
+  Ok((value, 5))
+}
+
+fn read_glyph_id_24(bytes : Array[Byte], offset : Int) -> Result[Int, SubsetError] {
+  if offset < 0 || offset + 3 > bytes.length() {
+    return Err(InvalidInput("invalid VARC glyph bounds"))
+  }
+  let b0 = bytes[offset].to_int()
+  let b1 = bytes[offset + 1].to_int()
+  let b2 = bytes[offset + 2].to_int()
+  Ok((b0 << 16) | (b1 << 8) | b2)
+}
+
+fn count_tuple_values(data : Array[Byte]) -> Result[Int, SubsetError] {
+  let mut pos = 0
+  let mut count = 0
+  while pos < data.length() {
+    let control = data[pos].to_int()
+    pos = pos + 1
+    let run_count = (control & 0x3F) + 1
+    let mode = control & 0xC0
+    let bytes_per =
+      if mode == 0x80 {
+        0
+      } else if mode == 0x40 {
+        2
+      } else if mode == 0xC0 {
+        4
+      } else {
+        1
+      }
+    let needed = run_count * bytes_per
+    if pos + needed > data.length() {
+      return Err(InvalidInput("invalid VARC tuple values"))
+    }
+    pos = pos + needed
+    count = count + run_count
+  }
+  Ok(count)
+}
+
+fn skip_tuple_values(
+  data : Array[Byte],
+  offset : Int,
+  count : Int,
+) -> Result[Int, SubsetError] {
+  if count < 0 {
+    return Err(InvalidInput("invalid VARC tuple count"))
+  }
+  let mut pos = offset
+  let mut seen = 0
+  while seen < count {
+    if pos >= data.length() {
+      return Err(InvalidInput("invalid VARC tuple data"))
+    }
+    let control = data[pos].to_int()
+    pos = pos + 1
+    let run_count = (control & 0x3F) + 1
+    let mode = control & 0xC0
+    let bytes_per =
+      if mode == 0x80 {
+        0
+      } else if mode == 0x40 {
+        2
+      } else if mode == 0xC0 {
+        4
+      } else {
+        1
+      }
+    let needed = run_count * bytes_per
+    if pos + needed > data.length() {
+      return Err(InvalidInput("invalid VARC tuple data"))
+    }
+    pos = pos + needed
+    seen = seen + run_count
+  }
+  Ok(pos - offset)
+}
+
+fn axis_indices_count(
+  index : @ot_cff.CffIndex,
+  axis_index : Int,
+) -> Result[Int, SubsetError] {
+  let bytes = match index.item_bytes(axis_index) {
+    Err(err) => return Err(Cff(err))
+    Ok(value) => value
+  }
+  count_tuple_values(bytes.to_array())
+}
+
+fn offset_size_for(value : Int) -> Result[Int, SubsetError] {
+  if value <= 0 {
+    return Err(InvalidInput("invalid VARC index size"))
+  }
+  if value <= 0xFF {
+    return Ok(1)
+  }
+  if value <= 0xFFFF {
+    return Ok(2)
+  }
+  if value <= 0xFFFFFF {
+    return Ok(3)
+  }
+  if value <= 0x7FFFFFFF {
+    return Ok(4)
+  }
+  Err(InvalidInput("invalid VARC index size"))
+}
+
+fn push_offset(bytes : Array[Byte], value : Int, size : Int) -> Result[Unit, SubsetError] {
+  if value < 0 || size <= 0 || size > 4 {
+    return Err(InvalidInput("invalid VARC index offset"))
+  }
+  for i in 0..<size {
+    let shift = (size - 1 - i) * 8
+    bytes.push(((value >> shift) & 0xff).to_byte())
+  }
+  Ok(())
+}
+
+fn write_cff2_index(items : Array[Bytes]) -> Result[Bytes, SubsetError] {
+  let out : Array[Byte] = []
+  let count = items.length()
+  push_u32(out, count)
+  if count == 0 {
+    return Ok(Bytes::from_array(out))
+  }
+  let offsets : Array[Int] = []
+  let mut current = 1
+  offsets.push(current)
+  for item in items {
+    current = current + item.length()
+    offsets.push(current)
+  }
+  let off_size = match offset_size_for(current) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  out.push(off_size.to_byte())
+  for off in offsets {
+    match push_offset(out, off, off_size) {
+      Err(err) => return Err(err)
+      Ok(_) => ()
+    }
+  }
+  for item in items {
+    for b in item {
+      out.push(b)
+    }
+  }
+  Ok(Bytes::from_array(out))
+}
+
+fn rewrite_varc_record(
+  record : Bytes,
+  plan : SubsetPlan,
+  axis_indices : @ot_cff.CffIndex?,
+) -> Result[Bytes?, SubsetError] {
+  let data = record.to_array()
+  let out : Array[Byte] = []
+  let mut pos = 0
+  while pos < data.length() {
+    let (flags, size) = match read_u32var(data, pos) {
+      Err(err) => return Err(err)
+      Ok(value) => value
+    }
+    let mut cursor = pos + size
+    let glyph_pos = cursor
+    let is_24 = (flags & varc_flag_gid_is_24bit) != 0U
+    let glyph =
+      if is_24 {
+        match read_glyph_id_24(data, cursor) {
+          Err(err) => return Err(err)
+          Ok(value) => value
+        }
+      } else {
+        match read_u16(data, cursor) {
+          Err(err) => return Err(err)
+          Ok(value) => value
+        }
+      }
+    cursor = cursor + (if is_24 { 3 } else { 2 })
+    if (flags & varc_flag_have_condition) != 0U {
+      let (_, skip) = match read_u32var(data, cursor) {
+        Err(err) => return Err(err)
+        Ok(value) => value
+      }
+      cursor = cursor + skip
+    }
+    if (flags & varc_flag_have_axes) != 0U {
+      let (axis_index, skip) = match read_u32var(data, cursor) {
+        Err(err) => return Err(err)
+        Ok(value) => value
+      }
+      cursor = cursor + skip
+      let axis_index = axis_index.reinterpret_as_int()
+      if axis_index < 0 {
+        return Err(InvalidInput("invalid VARC axis index"))
+      }
+      let axis_count = match axis_indices {
+        None => return Err(InvalidInput("missing VARC axis indices"))
+        Some(index) => match axis_indices_count(index, axis_index) {
+          Err(err) => return Err(err)
+          Ok(value) => value
+        }
+      }
+      let consumed = match skip_tuple_values(data, cursor, axis_count) {
+        Err(err) => return Err(err)
+        Ok(value) => value
+      }
+      cursor = cursor + consumed
+    }
+    if (flags & varc_flag_axis_values_have_variation) != 0U {
+      let (_, skip) = match read_u32var(data, cursor) {
+        Err(err) => return Err(err)
+        Ok(value) => value
+      }
+      cursor = cursor + skip
+    }
+    if (flags & varc_flag_transform_has_variation) != 0U {
+      let (_, skip) = match read_u32var(data, cursor) {
+        Err(err) => return Err(err)
+        Ok(value) => value
+      }
+      cursor = cursor + skip
+    }
+    if (flags & varc_flag_have_translate_x) != 0U {
+      if cursor + 2 > data.length() {
+        return Err(InvalidInput("invalid VARC transform"))
+      }
+      cursor = cursor + 2
+    }
+    if (flags & varc_flag_have_translate_y) != 0U {
+      if cursor + 2 > data.length() {
+        return Err(InvalidInput("invalid VARC transform"))
+      }
+      cursor = cursor + 2
+    }
+    if (flags & varc_flag_have_rotation) != 0U {
+      if cursor + 2 > data.length() {
+        return Err(InvalidInput("invalid VARC transform"))
+      }
+      cursor = cursor + 2
+    }
+    if (flags & varc_flag_have_scale_x) != 0U {
+      if cursor + 2 > data.length() {
+        return Err(InvalidInput("invalid VARC transform"))
+      }
+      cursor = cursor + 2
+    }
+    if (flags & varc_flag_have_scale_y) != 0U {
+      if cursor + 2 > data.length() {
+        return Err(InvalidInput("invalid VARC transform"))
+      }
+      cursor = cursor + 2
+    }
+    if (flags & varc_flag_have_skew_x) != 0U {
+      if cursor + 2 > data.length() {
+        return Err(InvalidInput("invalid VARC transform"))
+      }
+      cursor = cursor + 2
+    }
+    if (flags & varc_flag_have_skew_y) != 0U {
+      if cursor + 2 > data.length() {
+        return Err(InvalidInput("invalid VARC transform"))
+      }
+      cursor = cursor + 2
+    }
+    if (flags & varc_flag_have_tcenter_x) != 0U {
+      if cursor + 2 > data.length() {
+        return Err(InvalidInput("invalid VARC transform"))
+      }
+      cursor = cursor + 2
+    }
+    if (flags & varc_flag_have_tcenter_y) != 0U {
+      if cursor + 2 > data.length() {
+        return Err(InvalidInput("invalid VARC transform"))
+      }
+      cursor = cursor + 2
+    }
+    let mut reserved = flags & varc_flag_reserved_mask
+    while reserved != 0U {
+      let (_, skip) = match read_u32var(data, cursor) {
+        Err(err) => return Err(err)
+        Ok(value) => value
+      }
+      cursor = cursor + skip
+      reserved = reserved & (reserved - 1U)
+    }
+    if cursor <= pos {
+      return Err(InvalidInput("invalid VARC component bounds"))
+    }
+    let new_gid =
+      if glyph < 0 || glyph >= plan.old_to_new.length() {
+        -1
+      } else {
+        plan.old_to_new[glyph]
+      }
+    if new_gid >= 0 {
+      if !is_24 && new_gid > 0xFFFF {
+        return Err(InvalidInput("VARC glyph id overflow"))
+      }
+      let component : Array[Byte] = []
+      for idx in pos..<cursor {
+        component.push(data[idx])
+      }
+      let rel = glyph_pos - pos
+      if is_24 {
+        write_u24(component, rel, new_gid)
+      } else {
+        write_u16(component, rel, new_gid)
+      }
+      for b in component {
+        out.push(b)
+      }
+    }
+    pos = cursor
+  }
+  if out.is_empty() {
+    return Ok(None)
+  }
+  Ok(Some(Bytes::from_array(out)))
+}
+
+fn build_varc_subset(
+  face : @face.Face,
+  plan : SubsetPlan,
+) -> Result[Bytes?, SubsetError] {
+  let blob = match face.reference_table_optional(tag_varc) {
+    Err(err) => return Err(Face(err))
+    Ok(value) => value
+  }
+  match blob {
+    None => Ok(None)
+    Some(blob) => {
+      let data = blob.as_view().to_bytes()
+      let bytes = data.to_array()
+      if bytes.length() < 24 {
+        return Err(InvalidInput("invalid VARC table"))
+      }
+      let version = match read_u32(bytes, 0) {
+        Err(err) => return Err(err)
+        Ok(value) => value
+      }
+      let major = (version >> 16) & 0xFFFF
+      if major != 1 {
+        return Ok(None)
+      }
+      let coverage_offset = match read_u32(bytes, 4) {
+        Err(err) => return Err(err)
+        Ok(value) => value
+      }
+      let var_store_offset = match read_u32(bytes, 8) {
+        Err(err) => return Err(err)
+        Ok(value) => value
+      }
+      let condition_list_offset = match read_u32(bytes, 12) {
+        Err(err) => return Err(err)
+        Ok(value) => value
+      }
+      let axis_indices_offset = match read_u32(bytes, 16) {
+        Err(err) => return Err(err)
+        Ok(value) => value
+      }
+      let glyph_records_offset = match read_u32(bytes, 20) {
+        Err(err) => return Err(err)
+        Ok(value) => value
+      }
+      if coverage_offset <= 0 || glyph_records_offset <= 0 {
+        return Ok(None)
+      }
+      if coverage_offset >= bytes.length() || glyph_records_offset >= bytes.length() {
+        return Err(InvalidInput("invalid VARC offsets"))
+      }
+      let coverage = match parse_coverage_subset(bytes, coverage_offset) {
+        Err(err) => return Err(err)
+        Ok(value) => value
+      }
+      if coverage.is_empty() {
+        return Ok(None)
+      }
+      let records_index = match @ot_cff.parse_cff2_index(data[:], glyph_records_offset) {
+        Err(err) => return Err(Cff(err))
+        Ok(value) => value
+      }
+      if coverage.length() > records_index.count {
+        return Err(InvalidInput("invalid VARC record count"))
+      }
+      let axis_indices =
+        if axis_indices_offset == 0 {
+          None
+        } else {
+          if axis_indices_offset >= bytes.length() {
+            return Err(InvalidInput("invalid VARC axis indices"))
+          }
+          match @ot_cff.parse_cff2_index(data[:], axis_indices_offset) {
+            Err(err) => return Err(Cff(err))
+            Ok(value) => Some(value)
+          }
+        }
+      let new_glyphs : Array[Int] = []
+      let new_records : Array[Bytes] = []
+      for i in 0..<coverage.length() {
+        let old_gid = coverage[i]
+        if old_gid < 0 || old_gid >= plan.old_to_new.length() {
+          continue
+        }
+        let new_gid = plan.old_to_new[old_gid]
+        if new_gid < 0 {
+          continue
+        }
+        let record = match records_index.item_bytes(i) {
+          Err(err) => return Err(Cff(err))
+          Ok(value) => value
+        }
+        let rewritten = match rewrite_varc_record(record, plan, axis_indices) {
+          Err(err) => return Err(err)
+          Ok(value) => value
+        }
+        match rewritten {
+          None => ()
+          Some(record) => {
+            new_glyphs.push(new_gid)
+            new_records.push(record)
+          }
+        }
+      }
+      if new_glyphs.is_empty() {
+        return Ok(None)
+      }
+      let coverage_bytes = build_coverage_subset(new_glyphs)
+      let glyph_records_bytes = match write_cff2_index(new_records) {
+        Err(err) => return Err(err)
+        Ok(value) => value
+      }
+      let offsets : Array[Int] = []
+      offsets.push(coverage_offset)
+      offsets.push(glyph_records_offset)
+      if var_store_offset > 0 {
+        offsets.push(var_store_offset)
+      }
+      if condition_list_offset > 0 {
+        offsets.push(condition_list_offset)
+      }
+      if axis_indices_offset > 0 {
+        offsets.push(axis_indices_offset)
+      }
+      offsets.push(bytes.length())
+      offsets.sort()
+      let segment_bytes = (offset : Int) => {
+        let mut next = bytes.length()
+        for off in offsets {
+          if off > offset && off < next {
+            next = off
+          }
+        }
+        if offset < 0 || next <= offset || next > bytes.length() {
+          return Err(InvalidInput("invalid VARC segment bounds"))
+        }
+        Ok(bytes[offset:next].to_array())
+      }
+      let condition_bytes =
+        if condition_list_offset > 0 {
+          match segment_bytes(condition_list_offset) {
+            Err(err) => return Err(err)
+            Ok(value) => value
+          }
+        } else {
+          []
+        }
+      let axis_bytes =
+        if axis_indices_offset > 0 {
+          match segment_bytes(axis_indices_offset) {
+            Err(err) => return Err(err)
+            Ok(value) => value
+          }
+        } else {
+          []
+        }
+      let var_store_bytes =
+        if var_store_offset > 0 {
+          match segment_bytes(var_store_offset) {
+            Err(err) => return Err(err)
+            Ok(value) => value
+          }
+        } else {
+          []
+        }
+      let out : Array[Byte] = []
+      push_u32(out, version)
+      push_u32(out, 0)
+      push_u32(out, 0)
+      push_u32(out, 0)
+      push_u32(out, 0)
+      push_u32(out, 0)
+      let mut cursor = 24
+      write_u32(out, 4, cursor)
+      for b in coverage_bytes {
+        out.push(b)
+      }
+      cursor = cursor + coverage_bytes.length()
+      if !condition_bytes.is_empty() {
+        write_u32(out, 12, cursor)
+        for b in condition_bytes {
+          out.push(b)
+        }
+        cursor = cursor + condition_bytes.length()
+      }
+      if !axis_bytes.is_empty() {
+        write_u32(out, 16, cursor)
+        for b in axis_bytes {
+          out.push(b)
+        }
+        cursor = cursor + axis_bytes.length()
+      }
+      write_u32(out, 20, cursor)
+      for b in glyph_records_bytes {
+        out.push(b)
+      }
+      cursor = cursor + glyph_records_bytes.length()
+      if !var_store_bytes.is_empty() {
+        write_u32(out, 8, cursor)
+        for b in var_store_bytes {
+          out.push(b)
+        }
+      }
+      Ok(Some(Bytes::from_array(out)))
+    }
   }
 }
 
@@ -7348,6 +8454,22 @@ pub fn subset_with_plan(
     Err(err) => return Err(err)
     Ok(_) => ()
   }
+  match add_optional_gvar(face, plan, tables, identity) {
+    Err(err) => return Err(err)
+    Ok(_) => ()
+  }
+  match add_optional_hvar(face, plan, tables, identity) {
+    Err(err) => return Err(err)
+    Ok(_) => ()
+  }
+  match add_optional_vvar(face, plan, tables, identity) {
+    Err(err) => return Err(err)
+    Ok(_) => ()
+  }
+  match add_optional_varc(face, plan, tables, identity) {
+    Err(err) => return Err(err)
+    Ok(_) => ()
+  }
   match add_optional_os2(face, plan, tables) {
     Err(err) => return Err(err)
     Ok(_) => ()
@@ -7498,6 +8620,22 @@ fn subset_cff1_with_plan(
     Err(err) => return Err(err)
     Ok(_) => ()
   }
+  match add_optional_gvar(face, plan, tables, identity) {
+    Err(err) => return Err(err)
+    Ok(_) => ()
+  }
+  match add_optional_hvar(face, plan, tables, identity) {
+    Err(err) => return Err(err)
+    Ok(_) => ()
+  }
+  match add_optional_vvar(face, plan, tables, identity) {
+    Err(err) => return Err(err)
+    Ok(_) => ()
+  }
+  match add_optional_varc(face, plan, tables, identity) {
+    Err(err) => return Err(err)
+    Ok(_) => ()
+  }
   match add_optional_os2(face, plan, tables) {
     Err(err) => return Err(err)
     Ok(_) => ()
@@ -7645,6 +8783,22 @@ fn subset_cff2_with_plan(
     Ok(_) => ()
   }
   match add_optional_gdef(face, plan, tables, identity) {
+    Err(err) => return Err(err)
+    Ok(_) => ()
+  }
+  match add_optional_gvar(face, plan, tables, identity) {
+    Err(err) => return Err(err)
+    Ok(_) => ()
+  }
+  match add_optional_hvar(face, plan, tables, identity) {
+    Err(err) => return Err(err)
+    Ok(_) => ()
+  }
+  match add_optional_vvar(face, plan, tables, identity) {
+    Err(err) => return Err(err)
+    Ok(_) => ()
+  }
+  match add_optional_varc(face, plan, tables, identity) {
     Err(err) => return Err(err)
     Ok(_) => ()
   }
