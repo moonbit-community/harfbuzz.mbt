@@ -176,6 +176,18 @@ test "codepoint set basics" {
 }
 
 ///|
+test "codepoint set empty state" {
+  let set = CodepointSet::new()
+  inspect(set.population(), content="0")
+  inspect(set.get_min(), content="\{codepoint_invalid}")
+  inspect(set.get_max(), content="\{codepoint_invalid}")
+  inspect(set.next(), content="None")
+  inspect(set.previous(), content="None")
+  inspect(set.next_range(), content="None")
+  inspect(set.previous_range(), content="None")
+}
+
+///|
 test "codepoint set next and ranges" {
   let set = CodepointSet::new()
   assert_true(set.add_range(1U, 3U))
@@ -230,6 +242,7 @@ test "codepoint map and bimap" {
   inspect(map.get(2U), content="\{map_value_invalid}")
   map.del(1U)
   inspect(map.get(1U), content="\{map_value_invalid}")
+  inspect(map.population(), content="0")
 
   let bimap = CodepointBiMap::new()
   bimap.set(3U, 9U)
