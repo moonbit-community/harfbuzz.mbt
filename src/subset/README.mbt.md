@@ -30,7 +30,7 @@ otherwise they are dropped.
 `VORG` is rebuilt from the glyph subset when present.
 `kern` format 0/2/3 subtables are rebuilt for remapped subsets (formats 2/3 are
 expanded to format 0); other formats are dropped.
-COLR v0 tables are rebuilt for remapped subsets.
+COLR v0/v1 tables are rebuilt for remapped subsets.
 SVG tables are rebuilt for remapped subsets.
 GDEF is rebuilt with glyph/mark class definitions, attach lists, ligature caret
 lists, and mark glyph sets.
@@ -52,7 +52,7 @@ The ItemVariationStore bytes are copied through unchanged if present.
 - GPOS subsetting supports format 1 for lookup types 3-8 and anchor formats 1/2 only
   (format 3/device anchors are dropped).
 - Layout/color/variation tables that reference glyph IDs are not subset yet
-  (except `VORG`, COLR v0, GDEF class defs/attach/lig caret/mark sets, GSUB
+  (except `VORG`, COLR v0/v1, GDEF class defs/attach/lig caret/mark sets, GSUB
   lookup types 1/2/3/4/5/6/7/8, GPOS lookup types 1-8 plus extension type 9,
   SVG, and `kern` format 0/2/3);
   they are only preserved when the subset keeps all glyphs.

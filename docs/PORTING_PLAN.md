@@ -43,7 +43,7 @@ Unicode data, variations, color/paint, and subsetting.
 | `paint` | Paint API | `hb-paint.*` | partial |
 | `aat` | AAT layout + shaping | `hb-aat-*` | done |
 | `graphite` | Graphite2 shaper | `hb-graphite2.*` | excluded (external dependency; see `docs/GRAPHITE2.md`) |
-| `subset` | Subsetting pipeline | `hb-subset*` | done (TrueType glyf/loca + vertical metrics + CFF1 charstrings/charset + CFF2 outlines + metadata/axis passthrough tables + VORG + kern format 0/2/3 + COLR v0 + SVG + GDEF class/attach/lig caret/mark sets + GSUB lookup types 1/2/3/4/5/6/7/8 + GPOS lookup types 1-8 plus extension type 9; identity-only passthrough for remaining layout/color/variation tables that reference glyph IDs, including CBDT/CBLC, sbix, and gvar/HVAR/VVAR/VARC) |
+| `subset` | Subsetting pipeline | `hb-subset*` | done (TrueType glyf/loca + vertical metrics + CFF1 charstrings/charset + CFF2 outlines + metadata/axis passthrough tables + VORG + kern format 0/2/3 + COLR v0/v1 + SVG + GDEF class/attach/lig caret/mark sets + GSUB lookup types 1/2/3/4/5/6/7/8 + GPOS lookup types 1-8 plus extension type 9; identity-only passthrough for remaining layout/color/variation tables that reference glyph IDs, including CBDT/CBLC, sbix, and gvar/HVAR/VVAR/VARC) |
 | `draw` | Draw/outline helpers | `hb-draw.*`, `hb-outline.*` | planned |
 | `platform/*` | Platform backends | CoreText/DirectWrite/Uniscribe/etc. | excluded |
 

@@ -212,6 +212,13 @@ fn read_u24(bytes : Array[Byte], offset : Int) -> Result[Int, SubsetError] {
   Ok((b0 << 16) | (b1 << 8) | b2)
 }
 
+fn read_u8(bytes : Array[Byte], offset : Int) -> Result[Int, SubsetError] {
+  if offset < 0 || offset >= bytes.length() {
+    return Err(InvalidInput("unexpected eof"))
+  }
+  Ok(bytes[offset].to_int())
+}
+
 ///|
 fn read_u32(bytes : Array[Byte], offset : Int) -> Result[Int, SubsetError] {
   if offset < 0 || offset + 4 > bytes.length() {
@@ -235,6 +242,13 @@ fn write_u24(bytes : Array[Byte], offset : Int, value : Int) -> Unit {
   bytes[offset] = ((value >> 16) & 0xff).to_byte()
   bytes[offset + 1] = ((value >> 8) & 0xff).to_byte()
   bytes[offset + 2] = (value & 0xff).to_byte()
+}
+
+fn write_u32(bytes : Array[Byte], offset : Int, value : Int) -> Unit {
+  bytes[offset] = ((value >> 24) & 0xff).to_byte()
+  bytes[offset + 1] = ((value >> 16) & 0xff).to_byte()
+  bytes[offset + 2] = ((value >> 8) & 0xff).to_byte()
+  bytes[offset + 3] = (value & 0xff).to_byte()
 }
 
 ///|
@@ -1668,6 +1682,202 @@ fn build_kern_subset(
   }
 }
 
+let max_colr_paint_depth : Int = 64
+
+fn parse_colr_layer_offsets(
+  bytes : Array[Byte],
+  layer_list_offset : Int,
+) -> Result[Array[Int], SubsetError] {
+  if layer_list_offset < 0 || layer_list_offset + 4 > bytes.length() {
+    return Err(InvalidInput("invalid COLR layer list offset"))
+  }
+  let count = match read_u32(bytes, layer_list_offset) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  if count < 0 {
+    return Err(InvalidInput("invalid COLR layer list count"))
+  }
+  let entries_offset = layer_list_offset + 4
+  if entries_offset + count * 4 > bytes.length() {
+    return Err(InvalidInput("invalid COLR layer list bounds"))
+  }
+  let offsets : Array[Int] = []
+  for i in 0..<count {
+    let rel = match read_u32(bytes, entries_offset + i * 4) {
+      Err(err) => return Err(err)
+      Ok(value) => value
+    }
+    if rel < 0 {
+      return Err(InvalidInput("invalid COLR layer paint offset"))
+    }
+    let abs = layer_list_offset + rel
+    if abs < 0 || abs >= bytes.length() {
+      return Err(InvalidInput("invalid COLR layer paint bounds"))
+    }
+    offsets.push(abs)
+  }
+  Ok(offsets)
+}
+
+fn remap_colr_v1_paint(
+  bytes : Array[Byte],
+  offset : Int,
+  plan : SubsetPlan,
+  layer_offsets : Array[Int],
+  visited : Array[Bool],
+  depth : Int,
+) -> Result[Bool, SubsetError] {
+  if depth <= 0 {
+    return Err(InvalidInput("COLR paint depth exceeded"))
+  }
+  if offset < 0 || offset >= bytes.length() {
+    return Err(InvalidInput("invalid COLR paint offset"))
+  }
+  if visited[offset] {
+    return Ok(true)
+  }
+  visited[offset] = true
+  let format = match read_u8(bytes, offset) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  match format {
+    1 => {
+      let num_layers = match read_u8(bytes, offset + 1) {
+        Err(err) => return Err(err)
+        Ok(value) => value
+      }
+      let first_layer = match read_u32(bytes, offset + 2) {
+        Err(err) => return Err(err)
+        Ok(value) => value
+      }
+      if num_layers < 0 || first_layer < 0 {
+        return Err(InvalidInput("invalid COLR layer indices"))
+      }
+      let end = first_layer + num_layers
+      if end > layer_offsets.length() {
+        return Err(InvalidInput("invalid COLR layer range"))
+      }
+      for i in 0..<num_layers {
+        let idx = first_layer + i
+        let child_offset = layer_offsets[idx]
+        let ok = match remap_colr_v1_paint(
+          bytes,
+          child_offset,
+          plan,
+          layer_offsets,
+          visited,
+          depth - 1,
+        ) {
+          Err(err) => return Err(err)
+          Ok(value) => value
+        }
+        if !ok {
+          return Ok(false)
+        }
+      }
+      Ok(true)
+    }
+    2 | 3 => Ok(true)
+    4 | 5 | 6 | 7 | 8 | 9 => Ok(true)
+    10 => {
+      let paint_offset = match read_u24(bytes, offset + 1) {
+        Err(err) => return Err(err)
+        Ok(value) => value
+      }
+      let glyph_id = match read_u16(bytes, offset + 4) {
+        Err(err) => return Err(err)
+        Ok(value) => value
+      }
+      if glyph_id < 0 || glyph_id >= plan.old_to_new.length() {
+        return Err(InvalidInput("glyph id out of range"))
+      }
+      let new_gid = plan.old_to_new[glyph_id]
+      if new_gid < 0 {
+        return Ok(false)
+      }
+      write_u16(bytes, offset + 4, new_gid)
+      let child_offset = offset + paint_offset
+      let ok = match remap_colr_v1_paint(
+        bytes,
+        child_offset,
+        plan,
+        layer_offsets,
+        visited,
+        depth - 1,
+      ) {
+        Err(err) => return Err(err)
+        Ok(value) => value
+      }
+      Ok(ok)
+    }
+    11 => {
+      let glyph_id = match read_u16(bytes, offset + 1) {
+        Err(err) => return Err(err)
+        Ok(value) => value
+      }
+      if glyph_id < 0 || glyph_id >= plan.old_to_new.length() {
+        return Err(InvalidInput("glyph id out of range"))
+      }
+      let new_gid = plan.old_to_new[glyph_id]
+      if new_gid < 0 {
+        return Ok(false)
+      }
+      write_u16(bytes, offset + 1, new_gid)
+      Ok(true)
+    }
+    12 | 13 | 14 | 15 | 16 | 17 | 18 | 19 | 20 | 21 | 22 | 23 | 24 | 25 | 26 | 27 | 28 | 29 | 30
+    | 31 => {
+      let paint_offset = match read_u24(bytes, offset + 1) {
+        Err(err) => return Err(err)
+        Ok(value) => value
+      }
+      let child_offset = offset + paint_offset
+      remap_colr_v1_paint(bytes, child_offset, plan, layer_offsets, visited, depth - 1)
+    }
+    32 => {
+      let src_offset = match read_u24(bytes, offset + 1) {
+        Err(err) => return Err(err)
+        Ok(value) => value
+      }
+      let backdrop_offset = match read_u24(bytes, offset + 5) {
+        Err(err) => return Err(err)
+        Ok(value) => value
+      }
+      let src_abs = offset + src_offset
+      let backdrop_abs = offset + backdrop_offset
+      let src_ok = match remap_colr_v1_paint(
+        bytes,
+        src_abs,
+        plan,
+        layer_offsets,
+        visited,
+        depth - 1,
+      ) {
+        Err(err) => return Err(err)
+        Ok(value) => value
+      }
+      if !src_ok {
+        return Ok(false)
+      }
+      let back_ok = match remap_colr_v1_paint(
+        bytes,
+        backdrop_abs,
+        plan,
+        layer_offsets,
+        visited,
+        depth - 1,
+      ) {
+        Err(err) => return Err(err)
+        Ok(value) => value
+      }
+      Ok(back_ok)
+    }
+    _ => Err(InvalidInput("unsupported COLR paint format"))
+  }
+}
+
 fn build_colr_subset(
   face : @face.Face,
   plan : SubsetPlan,
@@ -1686,6 +1896,122 @@ fn build_colr_subset(
       let version = match read_u16(bytes, 0) {
         Err(err) => return Err(err)
         Ok(value) => value
+      }
+      if version >= 1 {
+        if bytes.length() < 34 {
+          return Err(InvalidInput("invalid COLR table"))
+        }
+        let base_glyph_list_offset = match read_u32(bytes, 14) {
+          Err(err) => return Err(err)
+          Ok(value) => value
+        }
+        let layer_list_offset = match read_u32(bytes, 18) {
+          Err(err) => return Err(err)
+          Ok(value) => value
+        }
+        let clip_list_offset = match read_u32(bytes, 22) {
+          Err(err) => return Err(err)
+          Ok(value) => value
+        }
+        if base_glyph_list_offset <= 0 || layer_list_offset <= 0 {
+          return Ok(None)
+        }
+        let layer_offsets = match parse_colr_layer_offsets(bytes, layer_list_offset) {
+          Err(err) => return Err(err)
+          Ok(value) => value
+        }
+        if base_glyph_list_offset < 0 || base_glyph_list_offset + 4 > bytes.length() {
+          return Err(InvalidInput("invalid COLR base glyph list offset"))
+        }
+        let count = match read_u32(bytes, base_glyph_list_offset) {
+          Err(err) => return Err(err)
+          Ok(value) => value
+        }
+        if count <= 0 {
+          return Ok(None)
+        }
+        let record_base = base_glyph_list_offset + 4
+        let record_len = 6
+        let records_end = record_base + count * record_len
+        if records_end > bytes.length() {
+          return Err(InvalidInput("invalid COLR base glyph list bounds"))
+        }
+        let mut min_paint_offset = bytes.length()
+        let visited : Array[Bool] = Array::make(bytes.length(), false)
+        let kept_records : Array[(Int, Int)] = []
+        for i in 0..<count {
+          let rec_offset = record_base + i * record_len
+          let gid = match read_u16(bytes, rec_offset) {
+            Err(err) => return Err(err)
+            Ok(value) => value
+          }
+          let paint_offset = match read_u32(bytes, rec_offset + 2) {
+            Err(err) => return Err(err)
+            Ok(value) => value
+          }
+          if paint_offset < 0 {
+            return Err(InvalidInput("invalid COLR paint offset"))
+          }
+          if paint_offset < min_paint_offset {
+            min_paint_offset = paint_offset
+          }
+          if gid < 0 || gid >= plan.old_to_new.length() {
+            return Err(InvalidInput("glyph id out of range"))
+          }
+          let new_gid = plan.old_to_new[gid]
+          if new_gid < 0 {
+            continue
+          }
+          let abs_paint = base_glyph_list_offset + paint_offset
+          if abs_paint < 0 || abs_paint >= bytes.length() {
+            return Err(InvalidInput("invalid COLR paint bounds"))
+          }
+          let ok = match remap_colr_v1_paint(
+            bytes,
+            abs_paint,
+            plan,
+            layer_offsets,
+            visited,
+            max_colr_paint_depth,
+          ) {
+            Err(err) => return Err(err)
+            Ok(value) => value
+          }
+          if ok {
+            kept_records.push((new_gid, paint_offset))
+          }
+        }
+        if kept_records.is_empty() {
+          return Ok(None)
+        }
+        if min_paint_offset < 4 {
+          return Err(InvalidInput("invalid COLR paint offset"))
+        }
+        let max_records = (min_paint_offset - 4) / record_len
+        if kept_records.length() > max_records {
+          return Err(InvalidInput("COLR base glyph list overflow"))
+        }
+        write_u16(bytes, 2, 0)
+        write_u32(bytes, 4, 0)
+        write_u32(bytes, 8, 0)
+        write_u16(bytes, 12, 0)
+        if clip_list_offset != 0 {
+          write_u32(bytes, 22, 0)
+        }
+        write_u32(bytes, base_glyph_list_offset, kept_records.length())
+        let clear_end = base_glyph_list_offset + min_paint_offset
+        let mut pos = base_glyph_list_offset + 4
+        while pos < clear_end {
+          bytes[pos] = (0).to_byte()
+          pos = pos + 1
+        }
+        for i in 0..<kept_records.length() {
+          let rec_offset = base_glyph_list_offset + 4 + i * record_len
+          let (gid, paint_offset) = kept_records[i]
+          write_u16(bytes, rec_offset, gid)
+          write_u32(bytes, rec_offset + 2, paint_offset)
+        }
+        return Ok(Some(Bytes::from_array(bytes)))
       }
       if version != 0 {
         return Ok(None)

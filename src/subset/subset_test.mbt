@@ -80,6 +80,13 @@ fn push_u32(bytes : Array[Byte], value : Int) -> Unit {
 }
 
 ///|
+fn push_u24(bytes : Array[Byte], value : Int) -> Unit {
+  bytes.push(((value >> 16) & 0xff).to_byte())
+  bytes.push(((value >> 8) & 0xff).to_byte())
+  bytes.push((value & 0xff).to_byte())
+}
+
+///|
 fn build_sfnt(tables : Array[(@common.Tag, Bytes)]) -> Bytes {
   let bytes : Array[Byte] = []
   push_u32(bytes, 0x00010000)
@@ -349,6 +356,40 @@ fn build_colr_table() -> Bytes {
   push_u16(bytes, 1)
   push_u16(bytes, 1)
   push_u16(bytes, 3)
+  Bytes::from_array(bytes)
+}
+
+///|
+fn build_colr_v1_table() -> Bytes {
+  let bytes : Array[Byte] = []
+  let base_offset = 34
+  let record_count = 1
+  let base_records_size = 4 + record_count * 6
+  let paint_offset = base_records_size
+  let paint_glyph_size = 6
+  let paint_solid_size = 5
+  let base_size = base_records_size + paint_glyph_size + paint_solid_size
+  let layer_offset = base_offset + base_size
+  push_u16(bytes, 1)
+  push_u16(bytes, 0)
+  push_u32(bytes, 0)
+  push_u32(bytes, 0)
+  push_u16(bytes, 0)
+  push_u32(bytes, base_offset)
+  push_u32(bytes, layer_offset)
+  push_u32(bytes, 0)
+  push_u32(bytes, 0)
+  push_u32(bytes, 0)
+  push_u32(bytes, record_count)
+  push_u16(bytes, 2)
+  push_u32(bytes, paint_offset)
+  bytes.push((10).to_byte())
+  push_u24(bytes, paint_glyph_size)
+  push_u16(bytes, 3)
+  bytes.push((2).to_byte())
+  push_u16(bytes, 0)
+  push_i16(bytes, 0)
+  push_u32(bytes, 0)
   Bytes::from_array(bytes)
 }
 
@@ -1412,6 +1453,34 @@ fn build_font_bytes_subset_svg_fixture() -> Bytes {
     (@common.Tag::from_chars('k', 'e', 'r', 'n'), build_kern_table()),
     (@common.Tag::from_chars('C', 'O', 'L', 'R'), build_colr_table()),
     (@common.Tag::from_chars('S', 'V', 'G', ' '), build_svg_table()),
+    (@common.Tag::from_chars('G', 'D', 'E', 'F'), build_gdef_table()),
+    (@common.Tag::from_chars('G', 'S', 'U', 'B'), build_gsub_single()),
+    (@common.Tag::from_chars('G', 'P', 'O', 'S'), build_gpos_single()),
+    (@common.Tag::from_chars('h', 'm', 't', 'x'), build_hmtx([500, 600, 700, 800], [0, 10, 20, 30])),
+    (@common.Tag::from_chars('v', 'h', 'e', 'a'), build_vhea(4)),
+    (@common.Tag::from_chars('v', 'm', 't', 'x'), build_vmtx([900, 910, 920, 930], [5, 6, 7, 8])),
+    (@common.Tag::from_chars('l', 'o', 'c', 'a'), loca),
+    (@common.Tag::from_chars('g', 'l', 'y', 'f'), glyf),
+    (@common.Tag::from_chars('c', 'm', 'a', 'p'), cmap),
+  ]
+  build_sfnt(tables)
+}
+
+///|
+fn build_font_bytes_subset_colr_v1_fixture() -> Bytes {
+  let glyf = build_glyf_table()
+  let loca = build_loca_long([0, 0, 12, 30, 42])
+  let cmap = build_cmap_table(build_cmap_format12(0x41U, 0x42U, 1U))
+  let tables : Array[(@common.Tag, Bytes)] = [
+    (@common.Tag::from_chars('h', 'e', 'a', 'd'), build_head(1000, 1)),
+    (@common.Tag::from_chars('m', 'a', 'x', 'p'), build_maxp(4)),
+    (@common.Tag::from_chars('h', 'h', 'e', 'a'), build_hhea(4)),
+    (@common.Tag::from_chars('O', 'S', '/', '2'), build_os2()),
+    (@common.Tag::from_chars('C', 'P', 'A', 'L'), build_cpal()),
+    (@common.Tag::from_chars('p', 'o', 's', 't'), build_post_table_v2()),
+    (@common.Tag::from_chars('V', 'O', 'R', 'G'), build_vorg_table()),
+    (@common.Tag::from_chars('k', 'e', 'r', 'n'), build_kern_table()),
+    (@common.Tag::from_chars('C', 'O', 'L', 'R'), build_colr_v1_table()),
     (@common.Tag::from_chars('G', 'D', 'E', 'F'), build_gdef_table()),
     (@common.Tag::from_chars('G', 'S', 'U', 'B'), build_gsub_single()),
     (@common.Tag::from_chars('G', 'P', 'O', 'S'), build_gpos_single()),
@@ -3232,6 +3301,52 @@ test "subset rebuilds colr v0" {
   }
   inspect((layer0_gid, layer0_color), content="(1, 0)")
   inspect((layer1_gid, layer1_color), content="(2, 1)")
+}
+
+///|
+test "subset rebuilds colr v1" {
+  let font = @font.Font::from_bytes(build_font_bytes_subset_colr_v1_fixture())
+  let bytes = match subset(font, SubsetInput::from_codepoints([0x42U])) {
+    Err(err) => fail("subset failed: \{err}")
+    Ok(value) => value
+  }
+  let subset_font = @font.Font::from_bytes(bytes)
+  let colr_blob = match subset_font.get_face().reference_table_optional(
+    @common.Tag::from_chars('C', 'O', 'L', 'R'),
+  ) {
+    Err(err) => fail("colr lookup failed: \{err}")
+    Ok(None) => fail("COLR table missing from subset")
+    Ok(Some(blob)) => blob
+  }
+  let data = colr_blob.as_view()
+  let version = match read_u16(data, 0) {
+    None => fail("COLR version missing")
+    Some(value) => value
+  }
+  let base_list_offset = match read_u32(data, 14) {
+    None => fail("COLR base list offset missing")
+    Some(value) => value
+  }
+  let count = match read_u32(data, base_list_offset) {
+    None => fail("COLR base list count missing")
+    Some(value) => value
+  }
+  let base_gid = match read_u16(data, base_list_offset + 4) {
+    None => fail("COLR base glyph missing")
+    Some(value) => value
+  }
+  let paint_offset = match read_u32(data, base_list_offset + 6) {
+    None => fail("COLR paint offset missing")
+    Some(value) => value
+  }
+  let paint_base = base_list_offset + paint_offset
+  let paint_format = data[paint_base].to_int()
+  let paint_gid = match read_u16(data, paint_base + 4) {
+    None => fail("COLR paint glyph missing")
+    Some(value) => value
+  }
+  inspect((version, count, base_gid), content="(1, 1, 1)")
+  inspect((paint_format, paint_gid), content="(10, 2)")
 }
 
 ///|
