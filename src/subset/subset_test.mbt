@@ -438,6 +438,61 @@ fn build_sbix_table() -> Bytes {
 }
 
 ///|
+fn build_cbdt_table() -> Bytes {
+  let bytes : Array[Byte] = []
+  push_u16(bytes, 2)
+  push_u16(bytes, 0)
+  bytes.push((0x11).to_byte())
+  bytes.push((0x22).to_byte())
+  bytes.push((0x33).to_byte())
+  bytes.push((0x44).to_byte())
+  bytes.push((0x55).to_byte())
+  bytes.push((0x66).to_byte())
+  bytes.push((0x77).to_byte())
+  Bytes::from_array(bytes)
+}
+
+///|
+fn build_cblc_table() -> Bytes {
+  let bytes : Array[Byte] = []
+  let num_sizes = 1
+  let size_record_len = 48
+  let list_offset = 8 + size_record_len * num_sizes
+  let offsets_count = 5
+  let subtable_len = 8 + offsets_count * 4
+  let list_len = 8
+  let list_size = list_len + subtable_len
+  push_u16(bytes, 3)
+  push_u16(bytes, 0)
+  push_u32(bytes, num_sizes)
+  push_u32(bytes, list_offset)
+  push_u32(bytes, list_size)
+  push_u32(bytes, 1)
+  push_u32(bytes, 0)
+  for _ in 0..<24 {
+    bytes.push((0).to_byte())
+  }
+  push_u16(bytes, 0)
+  push_u16(bytes, 3)
+  bytes.push((10).to_byte())
+  bytes.push((10).to_byte())
+  bytes.push((32).to_byte())
+  bytes.push((1).to_byte())
+  push_u16(bytes, 0)
+  push_u16(bytes, 3)
+  push_u32(bytes, 8)
+  push_u16(bytes, 1)
+  push_u16(bytes, 17)
+  push_u32(bytes, 4)
+  push_u32(bytes, 0)
+  push_u32(bytes, 0)
+  push_u32(bytes, 0)
+  push_u32(bytes, 3)
+  push_u32(bytes, 7)
+  Bytes::from_array(bytes)
+}
+
+///|
 fn build_svg_table() -> Bytes {
   let doc : Array[Byte] = [0x3c, 0x73, 0x76, 0x67, 0x2f, 0x3e]
   let bytes : Array[Byte] = []
@@ -1554,6 +1609,36 @@ fn build_font_bytes_subset_sbix_fixture() -> Bytes {
     (@common.Tag::from_chars('k', 'e', 'r', 'n'), build_kern_table()),
     (@common.Tag::from_chars('C', 'O', 'L', 'R'), build_colr_table()),
     (@common.Tag::from_chars('s', 'b', 'i', 'x'), build_sbix_table()),
+    (@common.Tag::from_chars('G', 'D', 'E', 'F'), build_gdef_table()),
+    (@common.Tag::from_chars('G', 'S', 'U', 'B'), build_gsub_single()),
+    (@common.Tag::from_chars('G', 'P', 'O', 'S'), build_gpos_single()),
+    (@common.Tag::from_chars('h', 'm', 't', 'x'), build_hmtx([500, 600, 700, 800], [0, 10, 20, 30])),
+    (@common.Tag::from_chars('v', 'h', 'e', 'a'), build_vhea(4)),
+    (@common.Tag::from_chars('v', 'm', 't', 'x'), build_vmtx([900, 910, 920, 930], [5, 6, 7, 8])),
+    (@common.Tag::from_chars('l', 'o', 'c', 'a'), loca),
+    (@common.Tag::from_chars('g', 'l', 'y', 'f'), glyf),
+    (@common.Tag::from_chars('c', 'm', 'a', 'p'), cmap),
+  ]
+  build_sfnt(tables)
+}
+
+///|
+fn build_font_bytes_subset_cblc_fixture() -> Bytes {
+  let glyf = build_glyf_table()
+  let loca = build_loca_long([0, 0, 12, 30, 42])
+  let cmap = build_cmap_table(build_cmap_format12(0x41U, 0x42U, 1U))
+  let tables : Array[(@common.Tag, Bytes)] = [
+    (@common.Tag::from_chars('h', 'e', 'a', 'd'), build_head(1000, 1)),
+    (@common.Tag::from_chars('m', 'a', 'x', 'p'), build_maxp(4)),
+    (@common.Tag::from_chars('h', 'h', 'e', 'a'), build_hhea(4)),
+    (@common.Tag::from_chars('O', 'S', '/', '2'), build_os2()),
+    (@common.Tag::from_chars('C', 'P', 'A', 'L'), build_cpal()),
+    (@common.Tag::from_chars('p', 'o', 's', 't'), build_post_table_v2()),
+    (@common.Tag::from_chars('V', 'O', 'R', 'G'), build_vorg_table()),
+    (@common.Tag::from_chars('k', 'e', 'r', 'n'), build_kern_table()),
+    (@common.Tag::from_chars('C', 'O', 'L', 'R'), build_colr_table()),
+    (@common.Tag::from_chars('C', 'B', 'L', 'C'), build_cblc_table()),
+    (@common.Tag::from_chars('C', 'B', 'D', 'T'), build_cbdt_table()),
     (@common.Tag::from_chars('G', 'D', 'E', 'F'), build_gdef_table()),
     (@common.Tag::from_chars('G', 'S', 'U', 'B'), build_gsub_single()),
     (@common.Tag::from_chars('G', 'P', 'O', 'S'), build_gpos_single()),
@@ -3517,6 +3602,109 @@ test "subset rebuilds sbix" {
   let d1 = data[glyph3_base + 8].to_int()
   let d2 = data[glyph3_base + 9].to_int()
   inspect((x1, y1, e0, e1, e2, e3, d1, d2), content="(3, 4, 112, 110, 103, 32, 187, 204)")
+}
+
+///|
+test "subset rebuilds cblc/cbdt" {
+  let font = @font.Font::from_bytes(build_font_bytes_subset_cblc_fixture())
+  let bytes = match subset(font, SubsetInput::from_codepoints([0x42U])) {
+    Err(err) => fail("subset failed: \{err}")
+    Ok(value) => value
+  }
+  let subset_font = @font.Font::from_bytes(bytes)
+  let face = subset_font.get_face()
+  let cblc_blob = match face.reference_table_optional(@common.Tag::from_chars('C', 'B', 'L', 'C')) {
+    Err(err) => fail("cblc lookup failed: \{err}")
+    Ok(None) => fail("cblc table missing from subset")
+    Ok(Some(blob)) => blob
+  }
+  let cbdt_blob = match face.reference_table_optional(@common.Tag::from_chars('C', 'B', 'D', 'T')) {
+    Err(err) => fail("cbdt lookup failed: \{err}")
+    Ok(None) => fail("cbdt table missing from subset")
+    Ok(Some(blob)) => blob
+  }
+  let cblc = cblc_blob.as_view()
+  let cbdt = cbdt_blob.as_view()
+  let num_sizes = match read_u32(cblc, 4) {
+    None => fail("cblc numSizes missing")
+    Some(value) => value
+  }
+  let size_offset = 8
+  let list_offset = match read_u32(cblc, size_offset) {
+    None => fail("cblc list offset missing")
+    Some(value) => value
+  }
+  let subtable_count = match read_u32(cblc, size_offset + 8) {
+    None => fail("cblc subtable count missing")
+    Some(value) => value
+  }
+  let start_gid = match read_u16(cblc, size_offset + 40) {
+    None => fail("cblc start gid missing")
+    Some(value) => value
+  }
+  let end_gid = match read_u16(cblc, size_offset + 42) {
+    None => fail("cblc end gid missing")
+    Some(value) => value
+  }
+  inspect((num_sizes, subtable_count, start_gid, end_gid), content="(1, 1, 0, 2)")
+  let record_first = match read_u16(cblc, list_offset) {
+    None => fail("cblc record first missing")
+    Some(value) => value
+  }
+  let record_last = match read_u16(cblc, list_offset + 2) {
+    None => fail("cblc record last missing")
+    Some(value) => value
+  }
+  let subtable_offset = match read_u32(cblc, list_offset + 4) {
+    None => fail("cblc record offset missing")
+    Some(value) => value
+  }
+  let subtable_base = list_offset + subtable_offset
+  let index_format = match read_u16(cblc, subtable_base) {
+    None => fail("cblc index format missing")
+    Some(value) => value
+  }
+  let image_format = match read_u16(cblc, subtable_base + 2) {
+    None => fail("cblc image format missing")
+    Some(value) => value
+  }
+  let image_data_offset = match read_u32(cblc, subtable_base + 4) {
+    None => fail("cblc image data offset missing")
+    Some(value) => value
+  }
+  let offset0 = match read_u32(cblc, subtable_base + 8) {
+    None => fail("cblc offset0 missing")
+    Some(value) => value
+  }
+  let offset1 = match read_u32(cblc, subtable_base + 12) {
+    None => fail("cblc offset1 missing")
+    Some(value) => value
+  }
+  let offset2 = match read_u32(cblc, subtable_base + 16) {
+    None => fail("cblc offset2 missing")
+    Some(value) => value
+  }
+  let offset3 = match read_u32(cblc, subtable_base + 20) {
+    None => fail("cblc offset3 missing")
+    Some(value) => value
+  }
+  inspect((record_first, record_last), content="(0, 2)")
+  inspect((index_format, image_format, image_data_offset), content="(1, 17, 4)")
+  inspect((offset0, offset1, offset2, offset3), content="(0, 0, 3, 7)")
+  let cbdt_major = match read_u16(cbdt, 0) {
+    None => fail("cbdt major missing")
+    Some(value) => value
+  }
+  let cbdt_minor = match read_u16(cbdt, 2) {
+    None => fail("cbdt minor missing")
+    Some(value) => value
+  }
+  inspect((cbdt_major, cbdt_minor), content="(2, 0)")
+  let data_bytes : Array[Int] = []
+  for i in 0..<7 {
+    data_bytes.push(cbdt[image_data_offset + i].to_int())
+  }
+  inspect(data_bytes, content="[17, 34, 51, 68, 85, 102, 119]")
 }
 
 ///|

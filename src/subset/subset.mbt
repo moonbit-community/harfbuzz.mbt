@@ -1114,6 +1114,33 @@ fn add_optional_sbix(
   }
 }
 
+fn add_optional_cblc_cbdt(
+  face : @face.Face,
+  plan : SubsetPlan,
+  tables : Array[(@common.Tag, Bytes)],
+  identity : Bool,
+) -> Result[Unit, SubsetError] {
+  if identity {
+    match add_optional_table(face, tag_cblc, tables) {
+      Err(err) => return Err(err)
+      Ok(_) => ()
+    }
+    return add_optional_table(face, tag_cbdt, tables)
+  }
+  let pair = match build_cblc_cbdt_subset(face, plan) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  match pair {
+    None => Ok(())
+    Some((cblc_bytes, cbdt_bytes)) => {
+      tables.push((tag_cblc, cblc_bytes))
+      tables.push((tag_cbdt, cbdt_bytes))
+      Ok(())
+    }
+  }
+}
+
 fn add_optional_gdef(
   face : @face.Face,
   plan : SubsetPlan,
@@ -1217,8 +1244,6 @@ fn add_identity_passthrough_tables(
     tag_just,
     tag_ltag,
     tag_colr,
-    tag_cblc,
-    tag_cbdt,
     tag_gvar,
     tag_hvar,
     tag_vvar,
@@ -2462,6 +2487,283 @@ fn build_sbix_subset(
       }
       Ok(Some(Bytes::from_array(out)))
     }
+  }
+}
+
+priv struct CblcStrike {
+  metrics : Array[Byte]
+  ppem_x : Int
+  ppem_y : Int
+  bit_depth : Int
+  flags : Int
+  color_ref : Int
+  list : Array[Byte]
+  subtable : Array[Byte]
+}
+
+fn build_cblc_cbdt_subset(
+  face : @face.Face,
+  plan : SubsetPlan,
+) -> Result[(Bytes, Bytes)?, SubsetError] {
+  let cblc_blob = match face.reference_table_optional(tag_cblc) {
+    Err(err) => return Err(Face(err))
+    Ok(value) => value
+  }
+  let cbdt_blob = match face.reference_table_optional(tag_cbdt) {
+    Err(err) => return Err(Face(err))
+    Ok(value) => value
+  }
+  match (cblc_blob, cbdt_blob) {
+    (Some(cblc_blob), Some(cbdt_blob)) => {
+      let cblc_bytes = cblc_blob.as_view().to_bytes().to_array()
+      let cbdt_bytes = cbdt_blob.as_view().to_bytes().to_array()
+      if cblc_bytes.length() < 8 || cbdt_bytes.length() < 4 {
+        return Err(InvalidInput("invalid CBLC/CBDT table"))
+      }
+      let major = match read_u16(cblc_bytes, 0) {
+        Err(err) => return Err(err)
+        Ok(value) => value
+      }
+      let minor = match read_u16(cblc_bytes, 2) {
+        Err(err) => return Err(err)
+        Ok(value) => value
+      }
+      let num_sizes = match read_u32(cblc_bytes, 4) {
+        Err(err) => return Err(err)
+        Ok(value) => value
+      }
+      if num_sizes <= 0 {
+        return Ok(None)
+      }
+      let size_record_len = 48
+      let size_base = 8
+      if size_base + num_sizes * size_record_len > cblc_bytes.length() {
+        return Err(InvalidInput("invalid CBLC size records"))
+      }
+      let new_glyph_count = plan.glyphs.length()
+      if new_glyph_count <= 0 {
+        return Ok(None)
+      }
+      let cbdt_header = cbdt_bytes[0:4].to_array()
+      let cbdt_out : Array[Byte] = []
+      for b in cbdt_header {
+        cbdt_out.push(b)
+      }
+      let mut cbdt_cursor = cbdt_out.length()
+      let strikes : Array[CblcStrike] = []
+      let old_glyph_count = plan.old_to_new.length()
+      for i in 0..<num_sizes {
+        let record_offset = size_base + i * size_record_len
+        let list_offset = match read_u32(cblc_bytes, record_offset) {
+          Err(err) => return Err(err)
+          Ok(value) => value
+        }
+        let list_size = match read_u32(cblc_bytes, record_offset + 4) {
+          Err(err) => return Err(err)
+          Ok(value) => value
+        }
+        let subtable_count = match read_u32(cblc_bytes, record_offset + 8) {
+          Err(err) => return Err(err)
+          Ok(value) => value
+        }
+        let color_ref = match read_u32(cblc_bytes, record_offset + 12) {
+          Err(err) => return Err(err)
+          Ok(value) => value
+        }
+        if subtable_count <= 0 || list_offset < 0 {
+          continue
+        }
+        if list_offset + list_size > cblc_bytes.length() {
+          return Err(InvalidInput("invalid CBLC index subtable list"))
+        }
+        let metrics : Array[Byte] = []
+        let metrics_base = record_offset + 16
+        for j in 0..<24 {
+          metrics.push(cblc_bytes[metrics_base + j])
+        }
+        let ppem_x = cblc_bytes[record_offset + 44].to_int()
+        let ppem_y = cblc_bytes[record_offset + 45].to_int()
+        let bit_depth = cblc_bytes[record_offset + 46].to_int()
+        let flags = cblc_bytes[record_offset + 47].to_int()
+        let record_len = subtable_count * 8
+        if list_offset + record_len > cblc_bytes.length() {
+          return Err(InvalidInput("invalid CBLC index subtable records"))
+        }
+        let glyph_offsets : Array[Int] = Array::make(old_glyph_count, -1)
+        let glyph_lengths : Array[Int] = Array::make(old_glyph_count, 0)
+        let mut image_format = -1
+        for j in 0..<subtable_count {
+          let rec_offset = list_offset + j * 8
+          let first = match read_u16(cblc_bytes, rec_offset) {
+            Err(err) => return Err(err)
+            Ok(value) => value
+          }
+          let last = match read_u16(cblc_bytes, rec_offset + 2) {
+            Err(err) => return Err(err)
+            Ok(value) => value
+          }
+          let subtable_offset = match read_u32(cblc_bytes, rec_offset + 4) {
+            Err(err) => return Err(err)
+            Ok(value) => value
+          }
+          if last < first || subtable_offset < 0 {
+            continue
+          }
+          let subtable_base = list_offset + subtable_offset
+          if subtable_base + 8 > cblc_bytes.length() {
+            return Err(InvalidInput("invalid CBLC subtable"))
+          }
+          let index_format = match read_u16(cblc_bytes, subtable_base) {
+            Err(err) => return Err(err)
+            Ok(value) => value
+          }
+          if index_format != 1 {
+            continue
+          }
+          let sub_image_format = match read_u16(cblc_bytes, subtable_base + 2) {
+            Err(err) => return Err(err)
+            Ok(value) => value
+          }
+          if image_format < 0 {
+            image_format = sub_image_format
+          } else if image_format != sub_image_format {
+            return Err(InvalidInput("mixed CBLC image formats"))
+          }
+          let image_data_offset = match read_u32(cblc_bytes, subtable_base + 4) {
+            Err(err) => return Err(err)
+            Ok(value) => value
+          }
+          let num_offsets = last - first + 2
+          if num_offsets < 2 {
+            continue
+          }
+          let offsets_base = subtable_base + 8
+          if offsets_base + num_offsets * 4 > cblc_bytes.length() {
+            return Err(InvalidInput("invalid CBLC offset array"))
+          }
+          let offsets : Array[Int] = []
+          for k in 0..<num_offsets {
+            let off = match read_u32(cblc_bytes, offsets_base + k * 4) {
+              Err(err) => return Err(err)
+              Ok(value) => value
+            }
+            offsets.push(off)
+          }
+          for k in 0..<(num_offsets - 1) {
+            let gid = first + k
+            if gid < 0 || gid >= old_glyph_count {
+              continue
+            }
+            let start = offsets[k]
+            let end = offsets[k + 1]
+            if end <= start {
+              continue
+            }
+            let abs_offset = image_data_offset + start
+            let length = end - start
+            if abs_offset < 0 || abs_offset + length > cbdt_bytes.length() {
+              return Err(InvalidInput("invalid CBDT data offset"))
+            }
+            glyph_offsets[gid] = abs_offset
+            glyph_lengths[gid] = length
+          }
+        }
+        if image_format < 0 {
+          continue
+        }
+        let new_offsets : Array[Int] = []
+        let strike_data : Array[Byte] = []
+        let mut data_cursor = 0
+        let mut has_data = false
+        for new_gid in 0..<new_glyph_count {
+          let old_gid = plan.glyphs[new_gid].reinterpret_as_int()
+          if old_gid < 0 || old_gid >= glyph_offsets.length() {
+            return Err(InvalidInput("glyph id out of range"))
+          }
+          let start = glyph_offsets[old_gid]
+          let length = glyph_lengths[old_gid]
+          if start < 0 || length <= 0 {
+            new_offsets.push(data_cursor)
+            continue
+          }
+          new_offsets.push(data_cursor)
+          let end = start + length
+          if start < 0 || end > cbdt_bytes.length() {
+            return Err(InvalidInput("invalid CBDT glyph bounds"))
+          }
+          for idx in start..<end {
+            strike_data.push(cbdt_bytes[idx])
+          }
+          data_cursor = data_cursor + length
+          has_data = true
+        }
+        if !has_data {
+          continue
+        }
+        let image_data_offset = cbdt_cursor
+        for b in strike_data {
+          cbdt_out.push(b)
+        }
+        cbdt_cursor = cbdt_cursor + strike_data.length()
+        let subtable : Array[Byte] = []
+        push_u16(subtable, 1)
+        push_u16(subtable, image_format)
+        push_u32(subtable, image_data_offset)
+        for offset in new_offsets {
+          push_u32(subtable, offset)
+        }
+        push_u32(subtable, data_cursor)
+        let list : Array[Byte] = []
+        push_u16(list, 0)
+        push_u16(list, new_glyph_count - 1)
+        push_u32(list, 8)
+        strikes.push(CblcStrike::{
+          metrics,
+          ppem_x,
+          ppem_y,
+          bit_depth,
+          flags,
+          color_ref,
+          list,
+          subtable,
+        })
+      }
+      if strikes.is_empty() {
+        return Ok(None)
+      }
+      let out : Array[Byte] = []
+      push_u16(out, major)
+      push_u16(out, minor)
+      push_u32(out, strikes.length())
+      let mut cursor = 8 + strikes.length() * size_record_len
+      for strike in strikes {
+        let list_size = strike.list.length() + strike.subtable.length()
+        push_u32(out, cursor)
+        push_u32(out, list_size)
+        push_u32(out, 1)
+        push_u32(out, strike.color_ref)
+        for b in strike.metrics {
+          out.push(b)
+        }
+        push_u16(out, 0)
+        push_u16(out, new_glyph_count - 1)
+        out.push(strike.ppem_x.to_byte())
+        out.push(strike.ppem_y.to_byte())
+        out.push(strike.bit_depth.to_byte())
+        out.push(strike.flags.to_byte())
+        cursor = cursor + list_size
+      }
+      for strike in strikes {
+        for b in strike.list {
+          out.push(b)
+        }
+        for b in strike.subtable {
+          out.push(b)
+        }
+      }
+      Ok(Some((Bytes::from_array(out), Bytes::from_array(cbdt_out))))
+    }
+    _ => Ok(None)
   }
 }
 
@@ -7038,6 +7340,10 @@ pub fn subset_with_plan(
     Err(err) => return Err(err)
     Ok(_) => ()
   }
+  match add_optional_cblc_cbdt(face, plan, tables, identity) {
+    Err(err) => return Err(err)
+    Ok(_) => ()
+  }
   match add_optional_gdef(face, plan, tables, identity) {
     Err(err) => return Err(err)
     Ok(_) => ()
@@ -7184,6 +7490,10 @@ fn subset_cff1_with_plan(
     Err(err) => return Err(err)
     Ok(_) => ()
   }
+  match add_optional_cblc_cbdt(face, plan, tables, identity) {
+    Err(err) => return Err(err)
+    Ok(_) => ()
+  }
   match add_optional_gdef(face, plan, tables, identity) {
     Err(err) => return Err(err)
     Ok(_) => ()
@@ -7327,6 +7637,10 @@ fn subset_cff2_with_plan(
     Ok(_) => ()
   }
   match add_optional_sbix(face, plan, tables, identity) {
+    Err(err) => return Err(err)
+    Ok(_) => ()
+  }
+  match add_optional_cblc_cbdt(face, plan, tables, identity) {
     Err(err) => return Err(err)
     Ok(_) => ()
   }
