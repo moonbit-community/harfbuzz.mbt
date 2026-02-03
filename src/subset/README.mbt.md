@@ -51,6 +51,8 @@ The ItemVariationStore bytes are copied through unchanged if present.
 - CFF2 private subrs and var store bytes are copied as-is; unused subroutines are not removed.
 - GPOS subsetting supports format 1 for lookup types 3-8 and anchor formats 1/2 only
   (format 3/device anchors are dropped).
+- COLR v1 subsetting remaps base glyph IDs and paint glyph references, but drops
+  the clip list and does not prune layer list entries.
 - Layout/color/variation tables that reference glyph IDs are not subset yet
   (except `VORG`, COLR v0/v1, GDEF class defs/attach/lig caret/mark sets, GSUB
   lookup types 1/2/3/4/5/6/7/8, GPOS lookup types 1-8 plus extension type 9,
