@@ -21,6 +21,7 @@ Unicode data, variations, color/paint, and subsetting.
 - `ot/color` + `paint`: COLR/CPAL parsing + COLRv1 paint graph decoding/traversal (no rendering backends).
 - `aat`: AAT layout tables + shaping (morx/mort/kerx/ankr/trak + bsln/feat/opbd/just/ltag).
 - `subset`: TrueType subsetting for glyf/loca/hmtx/vmtx/head/hhea/vhea/maxp/cmap (composite remap; long loca) + CFF1 charstrings/charset subsetting + CFF2 outline subsetting + passthrough metadata/axis tables (OS/2 with updated first/last char indices, gasp, cvt, fpgm, prep, VDMX, fvar, avar, STAT, MVAR, cvar, CPAL, meta) + VORG rebuild + kern format 0/2/3 rebuild + COLR v0/v1 rebuild + SVG/sbix/CBDT/CBLC rebuild + gvar/HVAR/VVAR delta map subsetting + VARC coverage/record remap + GDEF class/attach/lig caret/mark set rebuild + GSUB lookup types 1/2/3/4/5/6/7/8 rebuild + GPOS lookup types 1-8 plus extension type 9 rebuild. Layout tables that reference glyph IDs are preserved only for identity subsets.
+- `draw`: draw/outline helpers (callbacks, extents, outline recording/replay).
 
 ## Package Map (current + planned)
 
@@ -44,7 +45,7 @@ Unicode data, variations, color/paint, and subsetting.
 | `aat` | AAT layout + shaping | `hb-aat-*` | done |
 | `graphite` | Graphite2 shaper | `hb-graphite2.*` | excluded (external dependency; see `docs/GRAPHITE2.md`) |
 | `subset` | Subsetting pipeline | `hb-subset*` | done (TrueType glyf/loca + vertical metrics + CFF1 charstrings/charset + CFF2 outlines + metadata/axis passthrough tables + VORG + kern format 0/2/3 + COLR v0/v1 + SVG + sbix + CBDT/CBLC + GDEF class/attach/lig caret/mark sets + GSUB lookup types 1/2/3/4/5/6/7/8 + GPOS lookup types 1-8 plus extension type 9 + gvar/HVAR/VVAR delta map subsetting + VARC coverage/record remap; identity-only passthrough for remaining layout tables that reference glyph IDs) |
-| `draw` | Draw/outline helpers | `hb-draw.*`, `hb-outline.*` | planned |
+| `draw` | Draw/outline helpers | `hb-draw.*`, `hb-outline.*` | done |
 | `platform/*` | Platform backends | CoreText/DirectWrite/Uniscribe/etc. | excluded |
 
 ## Remaining Non-Platform Modules (inventory)
@@ -56,7 +57,7 @@ Unicode data, variations, color/paint, and subsetting.
   `hb-ot-shaper-*.cc` (arabic/indic/khmer/myanmar/use/hangul/hebrew/thai/syllabic) -> `ot/shape`
   (remaining: variation selector glyph lookup + any missing fallback passes).
 - OT map/feature selection: `hb-ot-map.*` -> `ot/map` (feature/lookup selection parity).
-- Draw/outline helpers: `hb-draw.*`, `hb-outline.*` -> new `draw` package.
+- Draw/outline helpers: `hb-draw.*`, `hb-outline.*` -> new `draw` package. (done)
 - Graphite2 shaper: `hb-graphite2.*` -> `graphite` (excluded; requires external Graphite2 library). Strategy in `docs/GRAPHITE2.md`.
 
 ## Platform-Specific Exclusions
