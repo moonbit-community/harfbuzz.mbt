@@ -63,11 +63,16 @@ test "buffer default feature list vertical" {
 test "buffer feature list honors manual override" {
   let buffer = Buffer::new()
   let custom = @common.Tag::from_chars('a', 'b', 'c', 'd')
+  let custom_gpos = @common.Tag::from_chars('w', 'x', 'y', 'z')
   buffer.set_gsub_features([custom])
+  buffer.set_gpos_features([custom_gpos])
   buffer.set_direction(@common.direction_ttb)
-  let tags = buffer.gsub_features()
-  inspect(tags.length(), content="1")
-  inspect(tags[0].to_string(), content="abcd")
+  let gsub_tags = buffer.gsub_features()
+  inspect(gsub_tags.length(), content="1")
+  inspect(gsub_tags[0].to_string(), content="abcd")
+  let gpos_tags = buffer.gpos_features()
+  inspect(gpos_tags.length(), content="1")
+  inspect(gpos_tags[0].to_string(), content="wxyz")
 }
 
 ///|
