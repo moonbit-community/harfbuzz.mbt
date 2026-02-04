@@ -7490,11 +7490,18 @@ fn gpos_subtable_bytes(
   sub_offsets : Array[Int],
   index : Int,
 ) -> Result[Array[Byte], SubsetError] {
-  let range = lookup_subtable_range(bytes.length(), base, sub_offsets, index)
-  match range {
-    None => Err(InvalidInput("invalid GPOS subtable bounds"))
-    Some((sub_base, sub_end)) => Ok(bytes[sub_base:sub_end].to_array())
+  if index < 0 || index >= sub_offsets.length() {
+    return Err(InvalidInput("invalid GPOS subtable bounds"))
   }
+  let start = sub_offsets[index]
+  if start <= 0 {
+    return Err(InvalidInput("invalid GPOS subtable bounds"))
+  }
+  let sub_base = base + start
+  if sub_base < 0 || sub_base >= bytes.length() {
+    return Err(InvalidInput("invalid GPOS subtable bounds"))
+  }
+  Ok(bytes[sub_base:bytes.length()].to_array())
 }
 
 fn build_lookup_bytes(
