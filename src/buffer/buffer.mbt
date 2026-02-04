@@ -1321,6 +1321,7 @@ pub fn Buffer::apply_gpos(
   self : Buffer,
   font : @font.Font,
   include_all_features? : Bool = false,
+  adjust_mark_offsets? : Bool = true,
 ) -> Result[Bool, ShapeError] {
   let gpos = match font.gpos() {
     Err(err) => return Err(Font(err))
@@ -1425,7 +1426,8 @@ pub fn Buffer::apply_gpos(
     Err(err) => return Err(err)
     Ok(_) => ()
   }
-  if include_all_features && unicode_mark_flags.length() == self.positions.length() {
+  if include_all_features && adjust_mark_offsets &&
+      unicode_mark_flags.length() == self.positions.length() {
     let mut advance_since_base = 0
     let mut has_base = false
     for i in 0..<self.positions.length() {

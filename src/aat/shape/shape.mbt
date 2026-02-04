@@ -25,7 +25,11 @@ pub fn shape(
       Ok(_) => ()
     }
   } else {
-    match buffer.apply_gpos(font, include_all_features=true) {
+    match buffer.apply_gpos(
+      font,
+      include_all_features=true,
+      adjust_mark_offsets=false,
+    ) {
       Err(err) => return Err(err)
       Ok(_) => ()
     }
