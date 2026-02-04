@@ -33,7 +33,6 @@ SKIP_SUITES = {
     "layout.tinos.tests",
     "layout.unsorted_featurelist.tests",
     "layout.tests",
-    "math.tests",
     "post.tests",
     "variable.tests",
 }

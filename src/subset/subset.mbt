@@ -25,6 +25,7 @@ pub struct SubsetPlan {
   glyphs : Array[UInt]
   old_to_new : Array[Int]
   codepoint_map : Array[(UInt, Int)]
+  gsub_mask : Array[Bool]
 } derive(Show, ToJson)
 
 ///|
@@ -118,6 +119,7 @@ let tag_gpos : @common.Tag = @common.Tag::from_chars('G', 'P', 'O', 'S')
 let tag_gdef : @common.Tag = @common.Tag::from_chars('G', 'D', 'E', 'F')
 
 ///|
+let tag_math : @common.Tag = @common.Tag::from_chars('M', 'A', 'T', 'H')
 
 ///|
 let tag_jstf : @common.Tag = @common.Tag::from_chars('J', 'S', 'T', 'F')
@@ -1673,6 +1675,25 @@ fn add_optional_gdef(
   }
 }
 
+fn add_optional_math(
+  face : @face.Face,
+  plan : SubsetPlan,
+  tables : Array[(@common.Tag, Bytes)],
+  _identity : Bool,
+) -> Result[Unit, SubsetError] {
+  let bytes = match build_math_subset(face, plan) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  match bytes {
+    None => Ok(())
+    Some(bytes) => {
+      tables.push((tag_math, bytes))
+      Ok(())
+    }
+  }
+}
+
 fn add_optional_gvar(
   face : @face.Face,
   plan : SubsetPlan,
@@ -1973,6 +1994,74 @@ fn remap_composite_glyph(
   Ok(())
 }
 
+fn trim_simple_glyph_padding_len(glyph_bytes : Array[Byte]) -> Int {
+  let length = glyph_bytes.length()
+  if length < 10 {
+    return length
+  }
+  let contours = match read_i16(glyph_bytes, 0) {
+    Err(_) => return length
+    Ok(value) => value
+  }
+  if contours < 0 {
+    return length
+  }
+  let instruction_len_offset = 10 + 2 * contours
+  if instruction_len_offset + 2 > length {
+    return length
+  }
+  let last_end = match read_u16(glyph_bytes, instruction_len_offset - 2) {
+    Err(_) => return length
+    Ok(value) => value
+  }
+  let num_coordinates = last_end + 1
+  let num_instructions = match read_u16(glyph_bytes, instruction_len_offset) {
+    Err(_) => return length
+    Ok(value) => value
+  }
+  let mut pos = instruction_len_offset + 2 + num_instructions
+  if pos > length {
+    return length
+  }
+  let mut coord_bytes = 0
+  let mut coords_with_flags = 0
+  while pos < length && coords_with_flags < num_coordinates {
+    let flag = glyph_bytes[pos].to_int()
+    pos = pos + 1
+    let mut repeat = 1
+    if (flag & 0x08) != 0 {
+      if pos >= length {
+        return length
+      }
+      repeat = glyph_bytes[pos].to_int() + 1
+      pos = pos + 1
+    }
+    let mut x_bytes = 0
+    if (flag & 0x02) != 0 {
+      x_bytes = 1
+    } else if (flag & 0x10) == 0 {
+      x_bytes = 2
+    }
+    let mut y_bytes = 0
+    if (flag & 0x04) != 0 {
+      y_bytes = 1
+    } else if (flag & 0x20) == 0 {
+      y_bytes = 2
+    }
+    coord_bytes = coord_bytes + (x_bytes + y_bytes) * repeat
+    coords_with_flags = coords_with_flags + repeat
+  }
+  if coords_with_flags != num_coordinates {
+    return length
+  }
+  let remaining = length - pos
+  let padding = remaining - coord_bytes
+  if padding <= 0 || padding > length {
+    return length
+  }
+  length - padding
+}
+
 ///|
 pub fn build_plan(
   font : @font.Font,
@@ -2040,6 +2129,39 @@ pub fn build_plan(
     Err(err) => return Err(Sfnt(err))
     Ok(value) => value
   }
+  let math_variant_refs = match face.reference_table_optional(tag_math) {
+    Err(err) => return Err(Face(err))
+    Ok(value) =>
+      match value {
+        None => Map::new()
+        Some(blob) => {
+          let bytes = blob.as_view().to_bytes().to_array()
+          match parse_math_variant_refs(bytes) {
+            Err(err) => return Err(err)
+            Ok(value) => value
+          }
+        }
+      }
+  }
+  let initial_glyphs : Array[Int] = []
+  for gid in 0..<selected.length() {
+    if selected[gid] {
+      initial_glyphs.push(gid)
+    }
+  }
+  let gsub_mask : Array[Bool] = []
+  for value in selected {
+    gsub_mask.push(value)
+  }
+  for gid in initial_glyphs {
+    match math_variant_refs.get(gid) {
+      None => ()
+      Some(refs) =>
+        for ref_gid in refs {
+          add_gid(ref_gid)
+        }
+    }
+  }
   let mut idx = 0
   while idx < queue.length() {
     let gid = queue[idx]
@@ -2098,7 +2220,7 @@ pub fn build_plan(
       }
     }
   }
-  Ok(SubsetPlan::{ glyphs, old_to_new, codepoint_map })
+  Ok(SubsetPlan::{ glyphs, old_to_new, codepoint_map, gsub_mask })
 }
 
 fn build_vmetrics_subset(
@@ -4478,9 +4600,14 @@ fn build_class_def_subset(
   let class_values : Array[Int] = []
   for i in 0..<glyph_count {
     let old_gid = plan.glyphs[i].reinterpret_as_int()
-    let class_value = match class_def_value_subset(bytes, offset, old_gid) {
-      Err(err) => return Err(err)
-      Ok(value) => value
+    let class_value = if old_gid >= 0 && old_gid < plan.gsub_mask.length() &&
+        plan.gsub_mask[old_gid] {
+      match class_def_value_subset(bytes, offset, old_gid) {
+        Err(err) => return Err(err)
+        Ok(value) => value
+      }
+    } else {
+      0
     }
     class_values.push(class_value)
   }
@@ -4604,6 +4731,24 @@ fn parse_coverage_subset(
   }
 }
 
+fn coverage_table_length(bytes : Array[Byte], offset : Int) -> Result[Int, SubsetError] {
+  let format = match read_u16(bytes, offset) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  let count = match read_u16(bytes, offset + 2) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  if format == 1 {
+    Ok(4 + count * 2)
+  } else if format == 2 {
+    Ok(4 + count * 6)
+  } else {
+    Err(InvalidInput("unsupported coverage format"))
+  }
+}
+
 fn build_coverage_subset(glyphs : Array[Int]) -> Bytes {
   let sorted : Array[Int] = []
   for glyph in glyphs {
@@ -4617,6 +4762,53 @@ fn build_coverage_subset(glyphs : Array[Int]) -> Bytes {
     push_u16(out, glyph)
   }
   Bytes::from_array(out)
+}
+
+fn build_coverage_compact(glyphs : Array[Int]) -> Bytes {
+  let sorted : Array[Int] = []
+  for glyph in glyphs {
+    sorted.push(glyph)
+  }
+  sorted.sort()
+  let format1 : Array[Byte] = []
+  push_u16(format1, 1)
+  push_u16(format1, sorted.length())
+  for glyph in sorted {
+    push_u16(format1, glyph)
+  }
+  if sorted.is_empty() {
+    return Bytes::from_array(format1)
+  }
+  let ranges : Array[(Int, Int)] = []
+  let mut start = sorted[0]
+  let mut prev = start
+  for i in 1..<sorted.length() {
+    let glyph = sorted[i]
+    if glyph == prev + 1 {
+      prev = glyph
+    } else {
+      ranges.push((start, prev))
+      start = glyph
+      prev = glyph
+    }
+  }
+  ranges.push((start, prev))
+  let format2 : Array[Byte] = []
+  push_u16(format2, 2)
+  push_u16(format2, ranges.length())
+  let mut coverage_index = 0
+  for range in ranges {
+    let (range_start, range_end) = range
+    push_u16(format2, range_start)
+    push_u16(format2, range_end)
+    push_u16(format2, coverage_index)
+    coverage_index = coverage_index + (range_end - range_start + 1)
+  }
+  if format2.length() < format1.length() {
+    Bytes::from_array(format2)
+  } else {
+    Bytes::from_array(format1)
+  }
 }
 
 fn gpos_value_record_size(value_format : Int) -> Int {
@@ -7574,6 +7766,7 @@ fn build_script_table_no_features(
 
 fn build_script_list_no_features(
   script_bytes : Array[Byte],
+  keep_only_dflt : Bool,
 ) -> Result[Bytes, SubsetError] {
   if script_bytes.length() < 2 {
     return Err(InvalidInput("invalid script list"))
@@ -7586,6 +7779,7 @@ fn build_script_list_no_features(
     return Err(InvalidInput("invalid script count"))
   }
   let records : Array[(Int, Bool, Array[Int])] = []
+  let dflt_tag = @common.Tag::from_chars('D', 'F', 'L', 'T').to_uint()
   for i in 0..<script_count {
     let record_base = 2 + i * 6
     if record_base + 6 > script_bytes.length() {
@@ -7607,31 +7801,23 @@ fn build_script_list_no_features(
       Err(err) => return Err(err)
       Ok(value) => value
     }
-    let lang_count = match read_u16(script_bytes, script_base + 2) {
+    let _lang_count = match read_u16(script_bytes, script_base + 2) {
       Err(err) => return Err(err)
       Ok(value) => value
     }
-    if lang_count < 0 {
+    if _lang_count < 0 {
       return Err(InvalidInput("invalid script langsys count"))
     }
-    let lang_tags : Array[Int] = []
-    for j in 0..<lang_count {
-      let lang_base = script_base + 4 + j * 6
-      if lang_base + 6 > script_bytes.length() {
-        return Err(InvalidInput("invalid langsys record"))
-      }
-      let lang_tag = match read_u32(script_bytes, lang_base) {
-        Err(err) => return Err(err)
-        Ok(value) => value
-      }
-      lang_tags.push(lang_tag)
+    if keep_only_dflt && tag.reinterpret_as_uint() != dflt_tag {
+      continue
     }
-    records.push((tag, default_offset != 0, lang_tags))
+    records.push((tag, default_offset != 0 && tag.reinterpret_as_uint() == dflt_tag, []))
   }
   let record_tables : Array[Bytes] = []
   for record in records {
     record_tables.push(build_script_table_no_features(record.1, record.2))
   }
+  let record_count = records.length()
   let unique_tables : Array[(Int, Int, Bytes)] = []
   for table_bytes in record_tables {
     let mut exists = false
@@ -7653,7 +7839,7 @@ fn build_script_list_no_features(
       a.1 - b.1
     }
   })
-  let mut cursor = 2 + script_count * 6
+  let mut cursor = 2 + record_count * 6
   let script_tables : Array[Bytes] = []
   let script_offsets : Array[Int] = []
   for entry in unique_tables {
@@ -7674,7 +7860,7 @@ fn build_script_list_no_features(
     record_offsets.push(offset)
   }
   let out : Array[Byte] = []
-  push_u16(out, script_count)
+  push_u16(out, record_count)
   for i in 0..<records.length() {
     push_u32(out, records[i].0)
     push_u16(out, record_offsets[i])
@@ -7941,7 +8127,7 @@ fn build_gsub_subset(
         lookup_bytes_list.push(lookup_bytes)
       }
       if kept_subtables == 0 {
-        let script_list = match build_script_list_no_features(script_bytes) {
+        let script_list = match build_script_list_no_features(script_bytes, false) {
           Err(err) => return Err(err)
           Ok(value) => value
         }
@@ -8257,7 +8443,23 @@ fn build_gpos_subset(
         lookup_bytes_list.push(lookup_bytes)
       }
       if kept_subtables == 0 {
-        return Ok(None)
+        let script_list = match build_script_list_no_features(script_bytes, true) {
+          Err(err) => return Err(err)
+          Ok(value) => value
+        }
+        let out : Array[Byte] = []
+        push_u32(out, version)
+        let script_new_offset = 10
+        let feature_new_offset = script_new_offset + script_list.length()
+        let lookup_new_offset = feature_new_offset
+        push_u16(out, script_new_offset)
+        push_u16(out, feature_new_offset)
+        push_u16(out, lookup_new_offset)
+        for b in script_list {
+          out.push(b)
+        }
+        push_u16(out, 0)
+        return Ok(Some(Bytes::from_array(out)))
       }
       let lookup_list_bytes = match build_lookup_list_bytes(lookup_bytes_list) {
         Err(err) => return Err(err)
@@ -8430,6 +8632,1104 @@ fn device_table_length(
   }
   let words = (count * bits + 15) / 16
   Ok(6 + words * 2)
+}
+
+fn bytes_equal(a : Array[Byte], b : Array[Byte]) -> Bool {
+  if a.length() != b.length() {
+    return false
+  }
+  for i in 0..<a.length() {
+    if a[i] != b[i] {
+      return false
+    }
+  }
+  true
+}
+
+fn find_table_offset(
+  tables : Array[(Array[Byte], Int)],
+  bytes : Array[Byte],
+) -> Int? {
+  for entry in tables {
+    let (existing, offset) = entry
+    if bytes_equal(existing, bytes) {
+      return Some(offset)
+    }
+  }
+  None
+}
+
+fn read_math_value_record_bytes(
+  bytes : Array[Byte],
+  offset : Int,
+  base : Int,
+) -> Result[(Int, Array[Byte]), SubsetError] {
+  let value = match read_i16(bytes, offset) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  let device_offset = match read_u16(bytes, offset + 2) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  if device_offset == 0 {
+    return Ok((value, []))
+  }
+  let device_base = base + device_offset
+  let length = match device_table_length(bytes, device_base) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  if device_base < 0 || device_base + length > bytes.length() {
+    return Err(InvalidInput("invalid MATH device table"))
+  }
+  let device_bytes : Array[Byte] = []
+  for b in bytes[device_base:device_base + length] {
+    device_bytes.push(b)
+  }
+  Ok((value, device_bytes))
+}
+
+fn build_math_value_table(
+  entries : Array[(Int, Array[Byte])],
+  coverage : Bytes,
+) -> Bytes {
+  let coverage_bytes = coverage.to_array()
+  let record_count = entries.length()
+  let coverage_offset = 4 + record_count * 4
+  let mut device_cursor = coverage_offset + coverage_bytes.length()
+  let out : Array[Byte] = []
+  push_u16(out, coverage_offset)
+  push_u16(out, record_count)
+  for entry in entries {
+    let (value, device) = entry
+    push_i16(out, value)
+    if device.is_empty() {
+      push_u16(out, 0)
+    } else {
+      push_u16(out, device_cursor)
+      device_cursor = device_cursor + device.length()
+    }
+  }
+  for b in coverage_bytes {
+    out.push(b)
+  }
+  for entry in entries {
+    let (_, device) = entry
+    for b in device {
+      out.push(b)
+    }
+  }
+  Bytes::from_array(out)
+}
+
+fn build_math_value_table_subset(
+  bytes : Array[Byte],
+  offset : Int,
+  plan : SubsetPlan,
+) -> Result[Bytes, SubsetError] {
+  let coverage_offset = match read_u16(bytes, offset) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  let count = match read_u16(bytes, offset + 2) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  if count > 0 && coverage_offset == 0 {
+    return Err(InvalidInput("invalid MATH coverage offset"))
+  }
+  let coverage_glyphs = if coverage_offset == 0 {
+    []
+  } else {
+    match parse_coverage_subset(bytes, offset + coverage_offset) {
+      Err(err) => return Err(err)
+      Ok(value) => value
+    }
+  }
+  if coverage_glyphs.length() < count {
+    return Err(InvalidInput("invalid MATH coverage count"))
+  }
+  let entries : Array[(Int, Int, Array[Byte])] = []
+  let record_base = offset + 4
+  for i in 0..<count {
+    let gid = coverage_glyphs[i]
+    if gid < 0 || gid >= plan.old_to_new.length() {
+      return Err(InvalidInput("glyph id out of range"))
+    }
+    let mapped = plan.old_to_new[gid]
+    if mapped < 0 {
+      continue
+    }
+    let record_offset = record_base + i * 4
+    let (value, device) = match read_math_value_record_bytes(bytes, record_offset, offset) {
+      Err(err) => return Err(err)
+      Ok(value) => value
+    }
+    entries.push((mapped, value, device))
+  }
+  if entries.is_empty() {
+    let coverage = build_coverage_compact([])
+    let records : Array[(Int, Array[Byte])] = []
+    return Ok(build_math_value_table(records, coverage))
+  }
+  entries.sort_by((a, b) => a.0 - b.0)
+  let mapped_glyphs : Array[Int] = []
+  let records : Array[(Int, Array[Byte])] = []
+  for entry in entries {
+    let (gid, value, device) = entry
+    mapped_glyphs.push(gid)
+    records.push((value, device))
+  }
+  let coverage = build_coverage_compact(mapped_glyphs)
+  Ok(build_math_value_table(records, coverage))
+}
+
+fn build_math_kern_table(
+  bytes : Array[Byte],
+  offset : Int,
+) -> Result[Bytes, SubsetError] {
+  let height_count = match read_u16(bytes, offset) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  let total = height_count * 2 + 1
+  let record_base = offset + 2
+  if record_base + total * 4 > bytes.length() {
+    return Err(InvalidInput("invalid MATH kern table"))
+  }
+  let entries : Array[(Int, Array[Byte])] = []
+  for i in 0..<total {
+    let record_offset = record_base + i * 4
+    let entry = match read_math_value_record_bytes(bytes, record_offset, offset) {
+      Err(err) => return Err(err)
+      Ok(value) => value
+    }
+    entries.push(entry)
+  }
+  let out : Array[Byte] = []
+  push_u16(out, height_count)
+  let mut device_cursor = 2 + entries.length() * 4
+  for entry in entries {
+    let (value, device) = entry
+    push_i16(out, value)
+    if device.is_empty() {
+      push_u16(out, 0)
+    } else {
+      push_u16(out, device_cursor)
+      device_cursor = device_cursor + device.length()
+    }
+  }
+  for entry in entries {
+    let (_, device) = entry
+    for b in device {
+      out.push(b)
+    }
+  }
+  Ok(Bytes::from_array(out))
+}
+
+fn build_math_kern_info_table(
+  bytes : Array[Byte],
+  offset : Int,
+  plan : SubsetPlan,
+) -> Result[Bytes, SubsetError] {
+  let coverage_offset = match read_u16(bytes, offset) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  let count = match read_u16(bytes, offset + 2) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  if count > 0 && coverage_offset == 0 {
+    return Err(InvalidInput("invalid MATH coverage offset"))
+  }
+  let coverage_glyphs = if coverage_offset == 0 {
+    []
+  } else {
+    match parse_coverage_subset(bytes, offset + coverage_offset) {
+      Err(err) => return Err(err)
+      Ok(value) => value
+    }
+  }
+  if coverage_glyphs.length() < count {
+    return Err(InvalidInput("invalid MATH coverage count"))
+  }
+  let entries : Array[(Int, Array[Bytes?])] = []
+  let record_base = offset + 4
+  for i in 0..<count {
+    let gid = coverage_glyphs[i]
+    if gid < 0 || gid >= plan.old_to_new.length() {
+      return Err(InvalidInput("glyph id out of range"))
+    }
+    let mapped = plan.old_to_new[gid]
+    if mapped < 0 {
+      continue
+    }
+    let kerns : Array[Bytes?] = []
+    let base = record_base + i * 8
+    for j in 0..<4 {
+      let kern_offset = match read_u16(bytes, base + j * 2) {
+        Err(err) => return Err(err)
+        Ok(value) => value
+      }
+      if kern_offset == 0 {
+        kerns.push(None)
+      } else {
+        let kern_base = offset + kern_offset
+        let kern_bytes = match build_math_kern_table(bytes, kern_base) {
+          Err(err) => return Err(err)
+          Ok(value) => value
+        }
+        kerns.push(Some(kern_bytes))
+      }
+    }
+    entries.push((mapped, kerns))
+  }
+  if entries.is_empty() {
+    let coverage = build_coverage_compact([])
+    let out : Array[Byte] = []
+    push_u16(out, 4)
+    push_u16(out, 0)
+    for b in coverage.to_array() {
+      out.push(b)
+    }
+    return Ok(Bytes::from_array(out))
+  }
+  entries.sort_by((a, b) => a.0 - b.0)
+  let mapped_glyphs : Array[Int] = []
+  for entry in entries {
+    mapped_glyphs.push(entry.0)
+  }
+  let coverage = build_coverage_compact(mapped_glyphs)
+  let coverage_bytes = coverage.to_array()
+  let record_count = entries.length()
+  let coverage_offset_out = 4 + record_count * 8
+  let mut kern_cursor = coverage_offset_out + coverage_bytes.length()
+  let out : Array[Byte] = []
+  push_u16(out, coverage_offset_out)
+  push_u16(out, record_count)
+  for entry in entries {
+    let (_, kerns) = entry
+    for kern in kerns {
+      match kern {
+        None => push_u16(out, 0)
+        Some(kern_bytes) => {
+          push_u16(out, kern_cursor)
+          kern_cursor = kern_cursor + kern_bytes.length()
+        }
+      }
+    }
+  }
+  for b in coverage_bytes {
+    out.push(b)
+  }
+  for entry in entries {
+    let (_, kerns) = entry
+    for kern in kerns {
+      match kern {
+        None => ()
+        Some(kern_bytes) =>
+          for b in kern_bytes.to_array() {
+            out.push(b)
+          }
+      }
+    }
+  }
+  Ok(Bytes::from_array(out))
+}
+
+fn build_math_glyph_construction_subset(
+  bytes : Array[Byte],
+  offset : Int,
+  plan : SubsetPlan,
+) -> Result[Bytes?, SubsetError] {
+  let assembly_offset = match read_u16(bytes, offset) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  let variant_count = match read_u16(bytes, offset + 2) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  let variants : Array[(Int, Int)] = []
+  let record_base = offset + 4
+  if record_base + variant_count * 4 > bytes.length() {
+    return Err(InvalidInput("invalid MATH construction records"))
+  }
+  for i in 0..<variant_count {
+    let base = record_base + i * 4
+    let gid = match read_u16(bytes, base) {
+      Err(err) => return Err(err)
+      Ok(value) => value
+    }
+    let advance = match read_u16(bytes, base + 2) {
+      Err(err) => return Err(err)
+      Ok(value) => value
+    }
+    if gid < 0 || gid >= plan.old_to_new.length() {
+      return Err(InvalidInput("glyph id out of range"))
+    }
+    let mapped = plan.old_to_new[gid]
+    if mapped >= 0 {
+      variants.push((mapped, advance))
+    }
+  }
+  let mut assembly_value : (Int, Array[Byte])? = None
+  let parts : Array[(Int, Int, Int, Int, Int)] = []
+  if assembly_offset != 0 {
+    let assembly_base = offset + assembly_offset
+    if assembly_base < 0 || assembly_base + 6 > bytes.length() {
+      return Err(InvalidInput("invalid MATH assembly offset"))
+    }
+    let (value, device) = match read_math_value_record_bytes(bytes, assembly_base, assembly_base) {
+      Err(err) => return Err(err)
+      Ok(value) => value
+    }
+    let part_count = match read_u16(bytes, assembly_base + 4) {
+      Err(err) => return Err(err)
+      Ok(value) => value
+    }
+    let parts_base = assembly_base + 6
+    if parts_base + part_count * 10 > bytes.length() {
+      return Err(InvalidInput("invalid MATH assembly parts"))
+    }
+    for i in 0..<part_count {
+      let base = parts_base + i * 10
+      let glyph = match read_u16(bytes, base) {
+        Err(err) => return Err(err)
+        Ok(value) => value
+      }
+      let start = match read_u16(bytes, base + 2) {
+        Err(err) => return Err(err)
+        Ok(value) => value
+      }
+      let end = match read_u16(bytes, base + 4) {
+        Err(err) => return Err(err)
+        Ok(value) => value
+      }
+      let advance = match read_u16(bytes, base + 6) {
+        Err(err) => return Err(err)
+        Ok(value) => value
+      }
+      let flags = match read_u16(bytes, base + 8) {
+        Err(err) => return Err(err)
+        Ok(value) => value
+      }
+      if glyph < 0 || glyph >= plan.old_to_new.length() {
+        return Err(InvalidInput("glyph id out of range"))
+      }
+      let mapped = plan.old_to_new[glyph]
+      if mapped >= 0 {
+        parts.push((mapped, start, end, advance, flags))
+      }
+    }
+    if !parts.is_empty() {
+      assembly_value = Some((value, device))
+    }
+  }
+  if variants.is_empty() && assembly_value is None {
+    return Ok(None)
+  }
+  let out : Array[Byte] = []
+  let assembly_present = assembly_value is Some(_)
+  let assembly_offset_out = if assembly_present {
+    4 + variants.length() * 4
+  } else {
+    0
+  }
+  push_u16(out, assembly_offset_out)
+  push_u16(out, variants.length())
+  for variant in variants {
+    let (gid, advance) = variant
+    push_u16(out, gid)
+    push_u16(out, advance)
+  }
+  match assembly_value {
+    None => ()
+    Some((value, device)) => {
+      let device_offset = if device.is_empty() {
+        0
+      } else {
+        6 + parts.length() * 10
+      }
+      push_i16(out, value)
+      push_u16(out, device_offset)
+      push_u16(out, parts.length())
+      for part in parts {
+        let (glyph, start, end, advance, flags) = part
+        push_u16(out, glyph)
+        push_u16(out, start)
+        push_u16(out, end)
+        push_u16(out, advance)
+        push_u16(out, flags)
+      }
+      for b in device {
+        out.push(b)
+      }
+    }
+  }
+  Ok(Some(Bytes::from_array(out)))
+}
+
+fn build_math_glyph_info_subset(
+  bytes : Array[Byte],
+  offset : Int,
+  plan : SubsetPlan,
+) -> Result[Bytes?, SubsetError] {
+  if offset == 0 {
+    return Ok(None)
+  }
+  if offset < 0 || offset + 8 > bytes.length() {
+    return Err(InvalidInput("invalid MATH glyph info offset"))
+  }
+  let italics_offset = match read_u16(bytes, offset) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  let top_offset = match read_u16(bytes, offset + 2) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  let extended_offset = match read_u16(bytes, offset + 4) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  let kern_offset = match read_u16(bytes, offset + 6) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  let italics_bytes = if italics_offset == 0 {
+    None
+  } else {
+    let table_offset = offset + italics_offset
+    Some(match build_math_value_table_subset(bytes, table_offset, plan) {
+      Err(err) => return Err(err)
+      Ok(value) => value
+    })
+  }
+  let top_bytes = if top_offset == 0 {
+    None
+  } else {
+    let table_offset = offset + top_offset
+    Some(match build_math_value_table_subset(bytes, table_offset, plan) {
+      Err(err) => return Err(err)
+      Ok(value) => value
+    })
+  }
+  let extended_bytes = if extended_offset == 0 {
+    None
+  } else {
+    let coverage_glyphs = match parse_coverage_subset(bytes, offset + extended_offset) {
+      Err(err) => return Err(err)
+      Ok(value) => value
+    }
+    let mapped : Array[Int] = []
+    for glyph in coverage_glyphs {
+      if glyph < 0 || glyph >= plan.old_to_new.length() {
+        return Err(InvalidInput("glyph id out of range"))
+      }
+      let mapped_gid = plan.old_to_new[glyph]
+      if mapped_gid >= 0 {
+        mapped.push(mapped_gid)
+      }
+    }
+    Some(build_coverage_compact(mapped))
+  }
+  let kern_bytes = if kern_offset == 0 {
+    None
+  } else {
+    let table_offset = offset + kern_offset
+    Some(match build_math_kern_info_table(bytes, table_offset, plan) {
+      Err(err) => return Err(err)
+      Ok(value) => value
+    })
+  }
+  let table_pool : Array[(Array[Byte], Int)] = []
+  let table_out : Array[Array[Byte]] = []
+  let mut cursor = 8
+  let place_table = (bytes : Bytes) => {
+    let arr = bytes.to_array()
+    match find_table_offset(table_pool, arr) {
+      None => {
+        let offset = cursor
+        table_pool.push((arr, offset))
+        table_out.push(arr)
+        cursor = cursor + arr.length()
+        offset
+      }
+      Some(offset) => offset
+    }
+  }
+  let extended_offset_out = match extended_bytes {
+    None => 0
+    Some(bytes) => place_table(bytes)
+  }
+  let top_offset_out = match top_bytes {
+    None => 0
+    Some(bytes) => place_table(bytes)
+  }
+  let italics_offset_out = match italics_bytes {
+    None => 0
+    Some(bytes) => place_table(bytes)
+  }
+  let kern_offset_out = match kern_bytes {
+    None => 0
+    Some(bytes) => place_table(bytes)
+  }
+  let out : Array[Byte] = []
+  push_u16(out, italics_offset_out)
+  push_u16(out, top_offset_out)
+  push_u16(out, extended_offset_out)
+  push_u16(out, kern_offset_out)
+  for table in table_out {
+    for b in table {
+      out.push(b)
+    }
+  }
+  Ok(Some(Bytes::from_array(out)))
+}
+
+priv struct MathVariantsSubset {
+  min_overlap : Int
+  vert_entries : Array[(Int, Bytes)]
+  horiz_entries : Array[(Int, Bytes)]
+  vert_coverage : Bytes
+  horiz_coverage : Bytes
+}
+
+fn collect_math_variants_subset(
+  bytes : Array[Byte],
+  offset : Int,
+  plan : SubsetPlan,
+) -> Result[MathVariantsSubset?, SubsetError] {
+  if offset == 0 {
+    return Ok(None)
+  }
+  if offset < 0 || offset + 10 > bytes.length() {
+    return Err(InvalidInput("invalid MATH variants offset"))
+  }
+  let min_overlap = match read_u16(bytes, offset) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  let vert_cov_offset = match read_u16(bytes, offset + 2) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  let horiz_cov_offset = match read_u16(bytes, offset + 4) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  let vert_count = match read_u16(bytes, offset + 6) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  let horiz_count = match read_u16(bytes, offset + 8) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  let total = vert_count + horiz_count
+  let offsets_base = offset + 10
+  if offsets_base + total * 2 > bytes.length() {
+    return Err(InvalidInput("invalid MATH construction offsets"))
+  }
+  let vert_glyphs = if vert_cov_offset == 0 {
+    []
+  } else {
+    match parse_coverage_subset(bytes, offset + vert_cov_offset) {
+      Err(err) => return Err(err)
+      Ok(value) => value
+    }
+  }
+  let horiz_glyphs = if horiz_cov_offset == 0 {
+    []
+  } else {
+    match parse_coverage_subset(bytes, offset + horiz_cov_offset) {
+      Err(err) => return Err(err)
+      Ok(value) => value
+    }
+  }
+  if vert_glyphs.length() < vert_count || horiz_glyphs.length() < horiz_count {
+    return Err(InvalidInput("invalid MATH coverage counts"))
+  }
+  let glyphs : Array[Int] = []
+  for i in 0..<vert_count {
+    glyphs.push(vert_glyphs[i])
+  }
+  for i in 0..<horiz_count {
+    glyphs.push(horiz_glyphs[i])
+  }
+  let vert_entries : Array[(Int, Bytes)] = []
+  let horiz_entries : Array[(Int, Bytes)] = []
+  for i in 0..<total {
+    let gid = glyphs[i]
+    if gid < 0 || gid >= plan.old_to_new.length() {
+      return Err(InvalidInput("glyph id out of range"))
+    }
+    let mapped = plan.old_to_new[gid]
+    if mapped < 0 {
+      continue
+    }
+    let cons_offset = match read_u16(bytes, offsets_base + i * 2) {
+      Err(err) => return Err(err)
+      Ok(value) => value
+    }
+    if cons_offset == 0 {
+      continue
+    }
+    let cons_base = offset + cons_offset
+    let cons_bytes = match build_math_glyph_construction_subset(bytes, cons_base, plan) {
+      Err(err) => return Err(err)
+      Ok(value) => value
+    }
+    match cons_bytes {
+      None => ()
+      Some(value) => {
+        if i < vert_count {
+          vert_entries.push((mapped, value))
+        } else {
+          horiz_entries.push((mapped, value))
+        }
+      }
+    }
+  }
+  if vert_entries.is_empty() && horiz_entries.is_empty() {
+    return Ok(None)
+  }
+  vert_entries.sort_by((a, b) => a.0 - b.0)
+  horiz_entries.sort_by((a, b) => a.0 - b.0)
+  let vert_glyphs_new : Array[Int] = []
+  let horiz_glyphs_new : Array[Int] = []
+  for entry in vert_entries {
+    vert_glyphs_new.push(entry.0)
+  }
+  for entry in horiz_entries {
+    horiz_glyphs_new.push(entry.0)
+  }
+  let vert_coverage = if vert_glyphs_new.is_empty() {
+    Bytes::from_array([])
+  } else {
+    build_coverage_compact(vert_glyphs_new)
+  }
+  let horiz_coverage = if horiz_glyphs_new.is_empty() {
+    Bytes::from_array([])
+  } else {
+    build_coverage_compact(horiz_glyphs_new)
+  }
+  Ok(Some(MathVariantsSubset::{
+    min_overlap,
+    vert_entries,
+    horiz_entries,
+    vert_coverage,
+    horiz_coverage,
+  }))
+}
+
+fn math_variants_length(data : MathVariantsSubset, share_horiz : Bool) -> Int {
+  let vert_count = data.vert_entries.length()
+  let horiz_count = data.horiz_entries.length()
+  let total = vert_count + horiz_count
+  let mut length = 10 + total * 2
+  if vert_count > 0 {
+    length = length + data.vert_coverage.length()
+  }
+  for entry in data.vert_entries {
+    let (_, bytes) = entry
+    length = length + bytes.length()
+  }
+  for entry in data.horiz_entries {
+    let (_, bytes) = entry
+    length = length + bytes.length()
+  }
+  if !share_horiz && horiz_count > 0 {
+    length = length + data.horiz_coverage.length()
+  }
+  length
+}
+
+fn serialize_math_variants(
+  data : MathVariantsSubset,
+  shared_horiz_offset : Int?,
+) -> Bytes {
+  let vert_count = data.vert_entries.length()
+  let horiz_count = data.horiz_entries.length()
+  let total = vert_count + horiz_count
+  let entries_all : Array[(Int, Bytes)] = []
+  for entry in data.vert_entries {
+    entries_all.push(entry)
+  }
+  for entry in data.horiz_entries {
+    entries_all.push(entry)
+  }
+  let offsets : Array[Int] = Array::make(total, 0)
+  let mut cursor = 10 + total * 2
+  let vert_cov_offset = if vert_count == 0 { 0 } else { cursor }
+  cursor = cursor + data.vert_coverage.length()
+  for i in 0..<total {
+    let idx = total - 1 - i
+    let (_, cons_bytes) = entries_all[idx]
+    offsets[idx] = cursor
+    cursor = cursor + cons_bytes.length()
+  }
+  let share_horiz = shared_horiz_offset is Some(_)
+  let horiz_cov_offset = if horiz_count == 0 {
+    0
+  } else if share_horiz {
+    match shared_horiz_offset {
+      Some(value) => value
+      None => 0
+    }
+  } else {
+    cursor
+  }
+  if horiz_count > 0 && !share_horiz {
+    cursor = cursor + data.horiz_coverage.length()
+  }
+  let out : Array[Byte] = []
+  push_u16(out, data.min_overlap)
+  push_u16(out, vert_cov_offset)
+  push_u16(out, horiz_cov_offset)
+  push_u16(out, vert_count)
+  push_u16(out, horiz_count)
+  for offset_value in offsets {
+    push_u16(out, offset_value)
+  }
+  for b in data.vert_coverage.to_array() {
+    out.push(b)
+  }
+  for i in 0..<total {
+    let idx = total - 1 - i
+    let (_, cons_bytes) = entries_all[idx]
+    for b in cons_bytes.to_array() {
+      out.push(b)
+    }
+  }
+  if horiz_count > 0 && !share_horiz {
+    for b in data.horiz_coverage.to_array() {
+      out.push(b)
+    }
+  }
+  Bytes::from_array(out)
+}
+
+fn build_math_constants_subset(
+  bytes : Array[Byte],
+  offset : Int,
+) -> Result[Bytes?, SubsetError] {
+  if offset == 0 {
+    return Ok(None)
+  }
+  if offset < 0 || offset + 214 > bytes.length() {
+    return Err(InvalidInput("invalid MATH constants offset"))
+  }
+  let mut end = offset + 214
+  for i in 0..<51 {
+    let record_offset = offset + 8 + i * 4
+    let device_offset = match read_u16(bytes, record_offset + 2) {
+      Err(err) => return Err(err)
+      Ok(value) => value
+    }
+    if device_offset == 0 {
+      continue
+    }
+    let device_base = offset + device_offset
+    let length = match device_table_length(bytes, device_base) {
+      Err(err) => return Err(err)
+      Ok(value) => value
+    }
+    if device_base < 0 || device_base + length > bytes.length() {
+      return Err(InvalidInput("invalid MATH device table"))
+    }
+    let candidate = device_base + length
+    if candidate > end {
+      end = candidate
+    }
+  }
+  let out : Array[Byte] = []
+  for b in bytes[offset:end] {
+    out.push(b)
+  }
+  Ok(Some(Bytes::from_array(out)))
+}
+
+fn build_math_subset(
+  face : @face.Face,
+  plan : SubsetPlan,
+) -> Result[Bytes?, SubsetError] {
+  let blob = match face.reference_table_optional(tag_math) {
+    Err(err) => return Err(Face(err))
+    Ok(value) => value
+  }
+  match blob {
+    None => Ok(None)
+    Some(blob) => {
+      let bytes = blob.as_view().to_bytes().to_array()
+      if bytes.length() < 10 {
+        return Err(InvalidInput("invalid MATH table"))
+      }
+      let version = match read_u32(bytes, 0) {
+        Err(err) => return Err(err)
+        Ok(value) => value
+      }
+      let constants_offset = match read_u16(bytes, 4) {
+        Err(err) => return Err(err)
+        Ok(value) => value
+      }
+      let glyph_info_offset = match read_u16(bytes, 6) {
+        Err(err) => return Err(err)
+        Ok(value) => value
+      }
+      let variants_offset = match read_u16(bytes, 8) {
+        Err(err) => return Err(err)
+        Ok(value) => value
+      }
+      let variants_data = match collect_math_variants_subset(bytes, variants_offset, plan) {
+        Err(err) => return Err(err)
+        Ok(value) => value
+      }
+      let glyph_info_bytes = match build_math_glyph_info_subset(bytes, glyph_info_offset, plan) {
+        Err(err) => return Err(err)
+        Ok(value) => value
+      }
+      let constants_bytes = match build_math_constants_subset(bytes, constants_offset) {
+        Err(err) => return Err(err)
+        Ok(value) => value
+      }
+      if variants_data is None && glyph_info_bytes is None && constants_bytes is None {
+        return Ok(None)
+      }
+      let mut top_cov_rel = -1
+      let mut top_cov_bytes : Bytes? = None
+      match glyph_info_bytes {
+        None => ()
+        Some(info_bytes) => {
+          let info = info_bytes.to_array()
+          if info.length() >= 4 {
+            let top_offset = match read_u16(info, 2) {
+              Err(err) => return Err(err)
+              Ok(value) => value
+            }
+            if top_offset != 0 && top_offset + 4 <= info.length() {
+              let cov_offset = match read_u16(info, top_offset) {
+                Err(err) => return Err(err)
+                Ok(value) => value
+              }
+              if cov_offset != 0 {
+                let cov_base = top_offset + cov_offset
+                if cov_base < info.length() {
+                  let cov_len = match coverage_table_length(info, cov_base) {
+                    Err(err) => return Err(err)
+                    Ok(value) => value
+                  }
+                  if cov_base + cov_len <= info.length() {
+                    top_cov_rel = cov_base
+                    top_cov_bytes =
+                      Some(Bytes::from_array(info[cov_base:cov_base + cov_len].to_array()))
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+      let share_horiz = match (variants_data, top_cov_bytes) {
+        (Some(data), Some(top_cov)) =>
+          data.horiz_entries.length() > 0 &&
+          top_cov_rel >= 0 &&
+          bytes_equal(data.horiz_coverage.to_array(), top_cov.to_array())
+        _ => false
+      }
+      let variants_length = match variants_data {
+        None => 0
+        Some(data) => math_variants_length(data, share_horiz)
+      }
+      let glyph_info_length = match glyph_info_bytes {
+        None => 0
+        Some(bytes) => bytes.length()
+      }
+      let variants_offset_out = if variants_data is None { 0 } else { 10 }
+      let glyph_info_offset_out = if glyph_info_bytes is None { 0 } else { 10 + variants_length }
+      let constants_offset_out = if constants_bytes is None {
+        0
+      } else {
+        glyph_info_offset_out + glyph_info_length
+      }
+      let shared_horiz_offset = if share_horiz {
+        let glyph_info_base = 10 + variants_length
+        let variants_base = 10
+        Some(glyph_info_base + top_cov_rel - variants_base)
+      } else {
+        None
+      }
+      let variants_bytes = match variants_data {
+        None => None
+        Some(data) => Some(serialize_math_variants(data, shared_horiz_offset))
+      }
+      let out : Array[Byte] = []
+      push_u32(out, version)
+      push_u16(out, constants_offset_out)
+      push_u16(out, glyph_info_offset_out)
+      push_u16(out, variants_offset_out)
+      match variants_bytes {
+        None => ()
+        Some(bytes) =>
+          for b in bytes.to_array() {
+            out.push(b)
+          }
+      }
+      match glyph_info_bytes {
+        None => ()
+        Some(bytes) =>
+          for b in bytes.to_array() {
+            out.push(b)
+          }
+      }
+      match constants_bytes {
+        None => ()
+        Some(bytes) =>
+          for b in bytes.to_array() {
+            out.push(b)
+          }
+      }
+      Ok(Some(Bytes::from_array(out)))
+    }
+  }
+}
+
+fn parse_math_glyph_construction_refs(
+  bytes : Array[Byte],
+  offset : Int,
+) -> Result[Array[Int], SubsetError] {
+  if offset < 0 || offset + 4 > bytes.length() {
+    return Err(InvalidInput("invalid MATH construction offset"))
+  }
+  let assembly_offset = match read_u16(bytes, offset) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  let variant_count = match read_u16(bytes, offset + 2) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  let record_base = offset + 4
+  if record_base + variant_count * 4 > bytes.length() {
+    return Err(InvalidInput("invalid MATH construction records"))
+  }
+  let refs : Array[Int] = []
+  for i in 0..<variant_count {
+    let gid = match read_u16(bytes, record_base + i * 4) {
+      Err(err) => return Err(err)
+      Ok(value) => value
+    }
+    refs.push(gid)
+  }
+  if assembly_offset != 0 {
+    let assembly_base = offset + assembly_offset
+    if assembly_base < 0 || assembly_base + 6 > bytes.length() {
+      return Err(InvalidInput("invalid MATH assembly offset"))
+    }
+    let part_count = match read_u16(bytes, assembly_base + 4) {
+      Err(err) => return Err(err)
+      Ok(value) => value
+    }
+    let parts_base = assembly_base + 6
+    if parts_base + part_count * 10 > bytes.length() {
+      return Err(InvalidInput("invalid MATH assembly parts"))
+    }
+    for i in 0..<part_count {
+      let gid = match read_u16(bytes, parts_base + i * 10) {
+        Err(err) => return Err(err)
+        Ok(value) => value
+      }
+      refs.push(gid)
+    }
+  }
+  Ok(refs)
+}
+
+fn parse_math_variant_refs(bytes : Array[Byte]) -> Result[Map[Int, Array[Int]], SubsetError] {
+  if bytes.length() < 10 {
+    return Err(InvalidInput("invalid MATH table"))
+  }
+  let variants_offset = match read_u16(bytes, 8) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  let refs = Map::new()
+  if variants_offset == 0 {
+    return Ok(refs)
+  }
+  if variants_offset < 0 || variants_offset + 10 > bytes.length() {
+    return Err(InvalidInput("invalid MATH variants offset"))
+  }
+  let base = variants_offset
+  let vert_cov_offset = match read_u16(bytes, base + 2) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  let horiz_cov_offset = match read_u16(bytes, base + 4) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  let vert_count = match read_u16(bytes, base + 6) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  let horiz_count = match read_u16(bytes, base + 8) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  let total = vert_count + horiz_count
+  let offsets_base = base + 10
+  if offsets_base + total * 2 > bytes.length() {
+    return Err(InvalidInput("invalid MATH construction offsets"))
+  }
+  let vert_glyphs = if vert_cov_offset == 0 {
+    []
+  } else {
+    match parse_coverage_subset(bytes, base + vert_cov_offset) {
+      Err(err) => return Err(err)
+      Ok(value) => value
+    }
+  }
+  let horiz_glyphs = if horiz_cov_offset == 0 {
+    []
+  } else {
+    match parse_coverage_subset(bytes, base + horiz_cov_offset) {
+      Err(err) => return Err(err)
+      Ok(value) => value
+    }
+  }
+  if vert_glyphs.length() < vert_count || horiz_glyphs.length() < horiz_count {
+    return Err(InvalidInput("invalid MATH coverage counts"))
+  }
+  let glyphs : Array[Int] = []
+  for i in 0..<vert_count {
+    glyphs.push(vert_glyphs[i])
+  }
+  for i in 0..<horiz_count {
+    glyphs.push(horiz_glyphs[i])
+  }
+  for i in 0..<total {
+    let cons_offset = match read_u16(bytes, offsets_base + i * 2) {
+      Err(err) => return Err(err)
+      Ok(value) => value
+    }
+    if cons_offset == 0 {
+      continue
+    }
+    let cons_base = base + cons_offset
+    let refs_list = match parse_math_glyph_construction_refs(bytes, cons_base) {
+      Err(err) => return Err(err)
+      Ok(value) => value
+    }
+    if !refs_list.is_empty() {
+      refs.set(glyphs[i], refs_list)
+    }
+  }
+  Ok(refs)
 }
 
 fn build_caret_value_subset(
@@ -8858,6 +10158,10 @@ fn build_plan_cff1(
       Some(gid) => add_gid(gid.reinterpret_as_int())
     }
   }
+  let gsub_mask : Array[Bool] = []
+  for value in selected {
+    gsub_mask.push(value)
+  }
   let mut idx = 0
   while idx < queue.length() {
     let gid = queue[idx]
@@ -8909,7 +10213,7 @@ fn build_plan_cff1(
       }
     }
   }
-  Ok(SubsetPlan::{ glyphs, old_to_new, codepoint_map })
+  Ok(SubsetPlan::{ glyphs, old_to_new, codepoint_map, gsub_mask })
 }
 
 fn build_plan_cff2(
@@ -8950,6 +10254,10 @@ fn build_plan_cff2(
       Some(gid) => add_gid(gid.reinterpret_as_int())
     }
   }
+  let gsub_mask : Array[Bool] = []
+  for value in selected {
+    gsub_mask.push(value)
+  }
   let glyphs : Array[UInt] = []
   for gid in 0..<selected.length() {
     if selected[gid] {
@@ -8985,7 +10293,7 @@ fn build_plan_cff2(
       }
     }
   }
-  Ok(SubsetPlan::{ glyphs, old_to_new, codepoint_map })
+  Ok(SubsetPlan::{ glyphs, old_to_new, codepoint_map, gsub_mask })
 }
 
 ///|
@@ -9136,10 +10444,13 @@ pub fn subset_with_plan(
         Err(err) => return Err(err)
         Ok(_) => ()
       }
-      for b in glyph_bytes {
-        glyf_bytes.push(b)
+      let trimmed_len = trim_simple_glyph_padding_len(glyph_bytes)
+      let mut idx = 0
+      while idx < trimmed_len {
+        glyf_bytes.push(glyph_bytes[idx])
+        idx = idx + 1
       }
-      offset = offset + length
+      offset = offset + trimmed_len
       if (offset & 1) != 0 {
         glyf_bytes.push(b'\x00')
         offset = offset + 1
@@ -9264,6 +10575,10 @@ pub fn subset_with_plan(
     Ok(_) => ()
   }
   match add_optional_gdef(face, plan, tables, identity) {
+    Err(err) => return Err(err)
+    Ok(_) => ()
+  }
+  match add_optional_math(face, plan, tables, identity) {
     Err(err) => return Err(err)
     Ok(_) => ()
   }
@@ -9430,6 +10745,10 @@ fn subset_cff1_with_plan(
     Err(err) => return Err(err)
     Ok(_) => ()
   }
+  match add_optional_math(face, plan, tables, identity) {
+    Err(err) => return Err(err)
+    Ok(_) => ()
+  }
   match add_optional_gvar(face, plan, tables, identity) {
     Err(err) => return Err(err)
     Ok(_) => ()
@@ -9590,6 +10909,10 @@ fn subset_cff2_with_plan(
     Ok(_) => ()
   }
   match add_optional_gdef(face, plan, tables, identity) {
+    Err(err) => return Err(err)
+    Ok(_) => ()
+  }
+  match add_optional_math(face, plan, tables, identity) {
     Err(err) => return Err(err)
     Ok(_) => ()
   }

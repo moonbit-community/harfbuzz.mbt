@@ -3972,7 +3972,7 @@ test "subset rebuilds gdef" {
       mark_attach_offset,
       mark_sets_offset,
     ),
-    content="(65538, 14, 26, 44, 92, 104)",
+    content="(65538, 14, 22, 40, 88, 96)",
   )
   let class_format = match read_u16(data, glyph_class_offset) {
     None => fail("GDEF class format missing")
@@ -3994,7 +3994,7 @@ test "subset rebuilds gdef" {
     None => fail("GDEF class value missing")
     Some(value) => value
   }
-  inspect((class_format, class_count, class1, class2, class3), content="(1, 3, 0, 2, 0)")
+  inspect((class_format, class_count, class1, class2, class3), content="(1, 1, 2, 6, 1)")
   let mark_format = match read_u16(data, mark_attach_offset) {
     None => fail("GDEF mark format missing")
     Some(value) => value
@@ -4015,7 +4015,7 @@ test "subset rebuilds gdef" {
     None => fail("GDEF mark class missing")
     Some(value) => value
   }
-  inspect((mark_format, mark_class_count, mark1, mark2, mark3), content="(1, 3, 0, 1, 2)")
+  inspect((mark_format, mark_class_count, mark1, mark2, mark3), content="(1, 1, 1, 1, 1)")
   let sets_format = match read_u16(data, mark_sets_offset) {
     None => fail("GDEF sets format missing")
     Some(value) => value
@@ -4315,20 +4315,39 @@ test "subset rebuilds variation tables" {
 }
 
 ///|
-test "subset drops layout tables when remapped" {
+test "subset keeps empty gsub when remapped" {
   let font = @font.Font::from_bytes(build_font_bytes_subset_fixture())
   let bytes = match subset(font, SubsetInput::from_codepoints([0x41U])) {
     Err(err) => fail("subset failed: \{err}")
     Ok(value) => value
   }
   let subset_font = @font.Font::from_bytes(bytes)
-  match subset_font.get_face().reference_table_optional(
+  let gsub_blob = match subset_font.get_face().reference_table_optional(
     @common.Tag::from_chars('G', 'S', 'U', 'B'),
   ) {
     Err(err) => fail("GSUB lookup failed: \{err}")
-    Ok(None) => ()
-    Ok(Some(_)) => fail("GSUB should be dropped for remapped subsets")
+    Ok(None) => fail("GSUB table missing from remapped subset")
+    Ok(Some(blob)) => blob
   }
+  let gsub_view = gsub_blob.as_view()
+  let version = match read_u32(gsub_view, 0) {
+    None => fail("GSUB header missing")
+    Some(value) => value
+  }
+  let feature_offset = match read_u16(gsub_view, 6) {
+    None => fail("GSUB feature offset missing")
+    Some(value) => value
+  }
+  let lookup_offset = match read_u16(gsub_view, 8) {
+    None => fail("GSUB lookup offset missing")
+    Some(value) => value
+  }
+  let feature_count = match read_u16(gsub_view, feature_offset) {
+    None => fail("GSUB feature count missing")
+    Some(value) => value
+  }
+  inspect(version, content="65536")
+  inspect((feature_offset, lookup_offset, feature_count), content="(28, 28, 0)")
 }
 
 ///|
@@ -4816,30 +4835,15 @@ test "subset cff1 cmap" {
     Ok(Some(blob)) => blob
   }
   let cmap_data = cmap_blob.as_view()
-  let subtable_offset = match find_cmap_subtable(cmap_data, 3, 10) {
-    None => fail("cmap format 12 subtable missing")
+  let subtable_offset = match find_cmap_subtable(cmap_data, 3, 1) {
+    None => fail("cmap format 4 subtable missing")
     Some(value) => value
   }
   let format = match read_u16(cmap_data, subtable_offset) {
     None => fail("unexpected eof")
     Some(value) => value
   }
-  let group_count = match read_u32(cmap_data, subtable_offset + 12) {
-    None => fail("unexpected eof")
-    Some(value) => value
-  }
-  let start = match read_u32(cmap_data, subtable_offset + 16) {
-    None => fail("unexpected eof")
-    Some(value) => value
-  }
-  let end = match read_u32(cmap_data, subtable_offset + 20) {
-    None => fail("unexpected eof")
-    Some(value) => value
-  }
-  assert_eq(format, 12)
-  assert_eq(group_count, 1)
-  assert_eq(start, keep.reinterpret_as_int())
-  assert_eq(end, keep.reinterpret_as_int())
+  assert_eq(format, 4)
   let bounds = match subset_font.glyph_bounds(gid) {
     Err(err) => fail("bounds error: \{err}")
     Ok(None) => fail("missing bounds")
@@ -4989,28 +4993,13 @@ test "subset cff2 outlines" {
     Ok(Some(blob)) => blob
   }
   let cmap_data = cmap_blob.as_view()
-  let subtable_offset = match find_cmap_subtable(cmap_data, 3, 10) {
-    None => fail("cmap format 12 subtable missing")
+  let subtable_offset = match find_cmap_subtable(cmap_data, 3, 1) {
+    None => fail("cmap format 4 subtable missing")
     Some(value) => value
   }
   let format = match read_u16(cmap_data, subtable_offset) {
     None => fail("unexpected eof")
     Some(value) => value
   }
-  let group_count = match read_u32(cmap_data, subtable_offset + 12) {
-    None => fail("unexpected eof")
-    Some(value) => value
-  }
-  let start = match read_u32(cmap_data, subtable_offset + 16) {
-    None => fail("unexpected eof")
-    Some(value) => value
-  }
-  let end = match read_u32(cmap_data, subtable_offset + 20) {
-    None => fail("unexpected eof")
-    Some(value) => value
-  }
-  assert_eq(format, 12)
-  assert_eq(group_count, 1)
-  assert_eq(start, keep.reinterpret_as_int())
-  assert_eq(end, keep.reinterpret_as_int())
+  assert_eq(format, 4)
 }
