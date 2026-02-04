@@ -90,5 +90,5 @@ test "shape aots fixtures" {
         }
     }
   }
-  inspect((aots_skipped_cases, skipped, mismatched), content="(3, 0, 32)")
+  inspect((aots_skipped_cases, skipped, mismatched), content="(3, 0, 15)")
 }

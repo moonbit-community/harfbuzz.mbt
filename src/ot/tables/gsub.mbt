@@ -199,6 +199,7 @@ pub fn GsubTable::apply_with_lookups_and_masks(
             data,
             subtable_offsets,
             current_glyphs,
+            current_clusters,
             lookup_list_offsets,
             lookup_flag,
             mark_filtering_set,
@@ -217,6 +218,7 @@ pub fn GsubTable::apply_with_lookups_and_masks(
             data,
             subtable_offsets,
             current_glyphs,
+            current_clusters,
             lookup_list_offsets,
             lookup_flag,
             mark_filtering_set,
@@ -447,6 +449,7 @@ fn apply_context_subtable_list(
   data : BytesView,
   offsets : Array[Int],
   glyphs : Array[UInt],
+  clusters : Array[Int],
   lookup_list_offsets : Array[Int],
   lookup_flag : Int,
   mark_filtering_set : Int?,
@@ -460,6 +463,7 @@ fn apply_context_subtable_list(
       data,
       offset,
       glyphs,
+      clusters,
       lookup_list_offsets,
       lookup_flag,
       mark_filtering_set,
@@ -480,6 +484,7 @@ fn apply_context_subtable(
   data : BytesView,
   offset : Int,
   glyphs : Array[UInt],
+  clusters : Array[Int],
   lookup_list_offsets : Array[Int],
   lookup_flag : Int,
   mark_filtering_set : Int?,
@@ -498,6 +503,7 @@ fn apply_context_subtable(
         data,
         offset,
         glyphs,
+        clusters,
       lookup_list_offsets,
       lookup_flag,
       mark_filtering_set,
@@ -510,6 +516,7 @@ fn apply_context_subtable(
       data,
       offset,
       glyphs,
+      clusters,
       lookup_list_offsets,
       lookup_flag,
       mark_filtering_set,
@@ -522,6 +529,7 @@ fn apply_context_subtable(
       data,
       offset,
       glyphs,
+      clusters,
       lookup_list_offsets,
       lookup_flag,
       mark_filtering_set,
@@ -540,6 +548,7 @@ fn apply_context_subtable_format1(
   data : BytesView,
   offset : Int,
   glyphs : Array[UInt],
+  clusters : Array[Int],
   lookup_list_offsets : Array[Int],
   lookup_flag : Int,
   mark_filtering_set : Int?,
@@ -565,7 +574,8 @@ fn apply_context_subtable_format1(
         return Err(UnexpectedEof)
       }
       let mut changed = false
-      for i in 0..<glyphs.length() {
+      let mut i = 0
+      while i < glyphs.length() {
         let glyph = glyphs[i]
         let ignored = should_ignore_glyph(
           glyph,
@@ -578,7 +588,10 @@ fn apply_context_subtable_format1(
         )
         match ignored {
           Err(err) => return Err(err)
-          Ok(true) => continue
+          Ok(true) => {
+            i = i + 1
+            continue
+          }
           Ok(false) => ()
         }
         let index = coverage_index(data, coverage_base, glyph)
@@ -625,6 +638,7 @@ fn apply_context_subtable_format1(
                             data,
                             rule_base,
                             glyphs,
+                            clusters,
                             i,
                             lookup_list_offsets,
                             lookup_flag,
@@ -649,6 +663,7 @@ fn apply_context_subtable_format1(
             }
           }
         }
+        i = i + 1
       }
       Ok(changed)
     }
@@ -660,6 +675,7 @@ fn apply_context_subtable_format2(
   data : BytesView,
   offset : Int,
   glyphs : Array[UInt],
+  clusters : Array[Int],
   lookup_list_offsets : Array[Int],
   lookup_flag : Int,
   mark_filtering_set : Int?,
@@ -689,7 +705,8 @@ fn apply_context_subtable_format2(
         return Err(UnexpectedEof)
       }
       let mut changed = false
-      for i in 0..<glyphs.length() {
+      let mut i = 0
+      while i < glyphs.length() {
         let glyph = glyphs[i]
         let ignored = should_ignore_glyph(
           glyph,
@@ -702,7 +719,10 @@ fn apply_context_subtable_format2(
         )
         match ignored {
           Err(err) => return Err(err)
-          Ok(true) => continue
+          Ok(true) => {
+            i = i + 1
+            continue
+          }
           Ok(false) => ()
         }
         let covered = coverage_index(data, coverage_base, glyph)
@@ -712,10 +732,14 @@ fn apply_context_subtable_format2(
           Ok(Some(_)) => {
             let class_value = class_def_value(data, class_def_base, glyph)
             match class_value {
-              Err(InvalidFormat) => continue
+              Err(InvalidFormat) => {
+                i = i + 1
+                continue
+              }
               Err(err) => return Err(err)
               Ok(class_value) => {
                 if class_value < 0 || class_value >= class_set_count {
+                  i = i + 1
                   continue
                 }
                 let class_set_offset = read_u16_int(
@@ -726,6 +750,7 @@ fn apply_context_subtable_format2(
                   Err(err) => return Err(err)
                   Ok(class_set_offset) => {
                     if class_set_offset == 0 {
+                      i = i + 1
                       continue
                     }
                     let rule_set_base = offset + class_set_offset
@@ -737,6 +762,7 @@ fn apply_context_subtable_format2(
                       Err(err) => return Err(err)
                       Ok(rule_count) => {
                         if rule_count <= 0 {
+                          i = i + 1
                           continue
                         }
                         let rule_list_base = rule_set_base + 2
@@ -760,6 +786,7 @@ fn apply_context_subtable_format2(
                                 data,
                                 rule_base,
                                 glyphs,
+                                clusters,
                                 i,
                                 class_def_base,
                                 lookup_list_offsets,
@@ -788,6 +815,7 @@ fn apply_context_subtable_format2(
             }
           }
         }
+        i = i + 1
       }
       Ok(changed)
     }
@@ -799,6 +827,7 @@ fn apply_context_subtable_format3(
   data : BytesView,
   offset : Int,
   glyphs : Array[UInt],
+  clusters : Array[Int],
   lookup_list_offsets : Array[Int],
   lookup_flag : Int,
   mark_filtering_set : Int?,
@@ -825,7 +854,8 @@ fn apply_context_subtable_format3(
       }
       let record_base = coverage_list_base + glyph_count * 2
       let mut changed = false
-      for i in 0..<glyphs.length() {
+      let mut i = 0
+      while i < glyphs.length() {
         let input_indices = collect_forward_indices(
           glyphs[:],
           i,
@@ -838,7 +868,10 @@ fn apply_context_subtable_format3(
         )
         let indices = match input_indices {
           Err(err) => return Err(err)
-          Ok(None) => continue
+          Ok(None) => {
+            i = i + 1
+            continue
+          }
           Ok(Some(indices)) => indices
         }
         let mut matched = true
@@ -870,9 +903,12 @@ fn apply_context_subtable_format3(
             subst_count,
             glyph_count,
             glyphs,
+            clusters,
             i,
             lookup_list_offsets,
             Some(indices),
+            lookup_flag,
+            mark_filtering_set,
             gdef,
             masks=masks,
             lookup_mask=lookup_mask,
@@ -884,6 +920,7 @@ fn apply_context_subtable_format3(
             changed = true
           }
         }
+        i = i + 1
       }
       Ok(changed)
     }
@@ -895,6 +932,7 @@ fn apply_context_class_rule(
   data : BytesView,
   offset : Int,
   glyphs : Array[UInt],
+  clusters : Array[Int],
   index : Int,
   class_def_base : Int,
   lookup_list_offsets : Array[Int],
@@ -961,9 +999,12 @@ fn apply_context_class_rule(
         subst_count,
         glyph_count,
         glyphs,
+        clusters,
         index,
         lookup_list_offsets,
         Some(indices),
+        lookup_flag,
+        mark_filtering_set,
         gdef,
         masks=masks,
         lookup_mask=lookup_mask,
@@ -983,9 +1024,12 @@ fn apply_subst_lookup_records(
   subst_count : Int,
   glyph_count : Int,
   glyphs : Array[UInt],
+  clusters : Array[Int],
   index : Int,
   lookup_list_offsets : Array[Int],
   input_indices : Array[Int]?,
+  input_lookup_flag : Int,
+  input_mark_filtering_set : Int?,
   gdef : GdefTable?,
   masks? : Array[UInt] = [],
   lookup_mask? : UInt = 0xFFFFFFFFU,
@@ -993,9 +1037,27 @@ fn apply_subst_lookup_records(
   if subst_count < 0 {
     return Err(InvalidFormat)
   }
-  match input_indices {
-    None => ()
-    Some(indices) => if indices.length() < glyph_count { return Err(InvalidFormat) }
+  if clusters.length() != glyphs.length() {
+    return Err(InvalidFormat)
+  }
+  let has_masks = !masks.is_empty()
+  if has_masks && masks.length() != glyphs.length() {
+    return Err(InvalidFormat)
+  }
+  let mut indices = match input_indices {
+    None => {
+      let values : Array[Int] = []
+      for i in 0..<glyph_count {
+        values.push(index + i)
+      }
+      values
+    }
+    Some(values) => {
+      if values.length() < glyph_count {
+        return Err(InvalidFormat)
+      }
+      values
+    }
   }
   if record_base < 0 || record_base + subst_count * 4 > data.length() {
     return Err(UnexpectedEof)
@@ -1014,18 +1076,16 @@ fn apply_subst_lookup_records(
         if lookup_index < 0 || lookup_index >= lookup_list_offsets.length() {
           return Err(InvalidFormat)
         }
-        let target = match input_indices {
-          None => index + seq_index
-          Some(indices) => indices[seq_index]
-        }
+        let target = indices[seq_index]
         if target < 0 || target >= glyphs.length() {
           return Err(InvalidFormat)
         }
         let lookup_offset = lookup_list_offsets[lookup_index]
-        let did_change = match apply_lookup_at(
+        let (did_change, delta) = match apply_lookup_at(
           data,
           lookup_offset,
           glyphs,
+          clusters,
           target,
           gdef,
           masks=masks,
@@ -1036,6 +1096,23 @@ fn apply_subst_lookup_records(
         }
         if did_change {
           changed = true
+        }
+        if delta != 0 {
+          let updated = collect_forward_indices(
+            glyphs[:],
+            indices[0],
+            glyph_count,
+            input_lookup_flag,
+            gdef,
+            input_mark_filtering_set,
+            masks=masks,
+            lookup_mask=lookup_mask,
+          )
+          match updated {
+            Err(err) => return Err(err)
+            Ok(None) => return Ok(changed)
+            Ok(Some(values)) => indices = values
+          }
         }
       }
     }
@@ -1048,6 +1125,7 @@ fn apply_context_rule(
   data : BytesView,
   offset : Int,
   glyphs : Array[UInt],
+  clusters : Array[Int],
   index : Int,
   lookup_list_offsets : Array[Int],
   lookup_flag : Int,
@@ -1106,9 +1184,12 @@ fn apply_context_rule(
         subst_count,
         glyph_count,
         glyphs,
+        clusters,
         index,
         lookup_list_offsets,
         Some(indices),
+        lookup_flag,
+        mark_filtering_set,
         gdef,
         masks=masks,
         lookup_mask=lookup_mask,
@@ -1122,20 +1203,38 @@ fn apply_lookup_at(
   data : BytesView,
   lookup_offset : Int,
   glyphs : Array[UInt],
+  clusters : Array[Int],
   index : Int,
   gdef : GdefTable?,
   masks? : Array[UInt] = [],
   lookup_mask? : UInt = 0xFFFFFFFFU,
-) -> Result[Bool, OtLayoutError] {
+) -> Result[(Bool, Int), OtLayoutError] {
   let parsed = parse_lookup(data, lookup_offset, 7)
   match parsed {
     Err(err) => Err(err)
     Ok((lookup_type, lookup_flag, mark_filtering_set, subtable_offsets)) => {
       if lookup_type == 1 {
-        apply_single_at(
+        let changed = match apply_single_at(
           data,
           subtable_offsets,
           glyphs,
+          index,
+          lookup_flag,
+          mark_filtering_set,
+          gdef,
+          masks=masks,
+          lookup_mask=lookup_mask,
+        ) {
+          Err(err) => return Err(err)
+          Ok(value) => value
+        }
+        Ok((changed, 0))
+      } else if lookup_type == 2 {
+        apply_multiple_at(
+          data,
+          subtable_offsets,
+          glyphs,
+          clusters,
           index,
           lookup_flag,
           mark_filtering_set,
@@ -1144,7 +1243,7 @@ fn apply_lookup_at(
           lookup_mask=lookup_mask,
         )
       } else if lookup_type == 3 {
-        apply_alternate_at(
+        let changed = match apply_alternate_at(
           data,
           subtable_offsets,
           glyphs,
@@ -1154,9 +1253,26 @@ fn apply_lookup_at(
           gdef,
           masks=masks,
           lookup_mask=lookup_mask,
+        ) {
+          Err(err) => return Err(err)
+          Ok(value) => value
+        }
+        Ok((changed, 0))
+      } else if lookup_type == 4 {
+        apply_ligature_at(
+          data,
+          subtable_offsets,
+          glyphs,
+          clusters,
+          index,
+          lookup_flag,
+          mark_filtering_set,
+          gdef,
+          masks=masks,
+          lookup_mask=lookup_mask,
         )
       } else {
-        Ok(false)
+        Ok((false, 0))
       }
     }
   }
@@ -1167,6 +1283,7 @@ fn apply_chain_subtable_list(
   data : BytesView,
   offsets : Array[Int],
   glyphs : Array[UInt],
+  clusters : Array[Int],
   lookup_list_offsets : Array[Int],
   lookup_flag : Int,
   mark_filtering_set : Int?,
@@ -1180,6 +1297,7 @@ fn apply_chain_subtable_list(
       data,
       offset,
       glyphs,
+      clusters,
       lookup_list_offsets,
       lookup_flag,
       mark_filtering_set,
@@ -1200,6 +1318,7 @@ fn apply_chain_subtable(
   data : BytesView,
   offset : Int,
   glyphs : Array[UInt],
+  clusters : Array[Int],
   lookup_list_offsets : Array[Int],
   lookup_flag : Int,
   mark_filtering_set : Int?,
@@ -1218,6 +1337,7 @@ fn apply_chain_subtable(
         data,
         offset,
         glyphs,
+        clusters,
       lookup_list_offsets,
       lookup_flag,
       mark_filtering_set,
@@ -1230,6 +1350,7 @@ fn apply_chain_subtable(
       data,
       offset,
       glyphs,
+      clusters,
       lookup_list_offsets,
       lookup_flag,
       mark_filtering_set,
@@ -1242,6 +1363,7 @@ fn apply_chain_subtable(
       data,
       offset,
       glyphs,
+      clusters,
       lookup_list_offsets,
       lookup_flag,
       mark_filtering_set,
@@ -1260,6 +1382,7 @@ fn apply_chain_subtable_format1(
   data : BytesView,
   offset : Int,
   glyphs : Array[UInt],
+  clusters : Array[Int],
   lookup_list_offsets : Array[Int],
   lookup_flag : Int,
   mark_filtering_set : Int?,
@@ -1285,7 +1408,8 @@ fn apply_chain_subtable_format1(
         return Err(UnexpectedEof)
       }
       let mut changed = false
-      for i in 0..<glyphs.length() {
+      let mut i = 0
+      while i < glyphs.length() {
         let glyph = glyphs[i]
         let ignored = should_ignore_glyph(
           glyph,
@@ -1298,7 +1422,10 @@ fn apply_chain_subtable_format1(
         )
         match ignored {
           Err(err) => return Err(err)
-          Ok(true) => continue
+          Ok(true) => {
+            i = i + 1
+            continue
+          }
           Ok(false) => ()
         }
         let index = coverage_index(data, coverage_base, glyph)
@@ -1345,6 +1472,7 @@ fn apply_chain_subtable_format1(
                             data,
                             rule_base,
                             glyphs,
+                            clusters,
                             i,
                             lookup_list_offsets,
                             lookup_flag,
@@ -1369,6 +1497,7 @@ fn apply_chain_subtable_format1(
             }
           }
         }
+        i = i + 1
       }
       Ok(changed)
     }
@@ -1380,6 +1509,7 @@ fn apply_chain_subtable_format2(
   data : BytesView,
   offset : Int,
   glyphs : Array[UInt],
+  clusters : Array[Int],
   lookup_list_offsets : Array[Int],
   lookup_flag : Int,
   mark_filtering_set : Int?,
@@ -1431,7 +1561,8 @@ fn apply_chain_subtable_format2(
         return Err(UnexpectedEof)
       }
       let mut changed = false
-      for i in 0..<glyphs.length() {
+      let mut i = 0
+      while i < glyphs.length() {
         let glyph = glyphs[i]
         let ignored = should_ignore_glyph(
           glyph,
@@ -1444,7 +1575,10 @@ fn apply_chain_subtable_format2(
         )
         match ignored {
           Err(err) => return Err(err)
-          Ok(true) => continue
+          Ok(true) => {
+            i = i + 1
+            continue
+          }
           Ok(false) => ()
         }
         let covered = coverage_index(data, coverage_base, glyph)
@@ -1457,6 +1591,7 @@ fn apply_chain_subtable_format2(
               Err(err) => return Err(err)
               Ok(class_value) => {
                 if class_value < 0 || class_value >= class_set_count {
+                  i = i + 1
                   continue
                 }
                 let class_set_offset = read_u16_int(
@@ -1467,6 +1602,7 @@ fn apply_chain_subtable_format2(
                   Err(err) => return Err(err)
                   Ok(class_set_offset) => {
                     if class_set_offset == 0 {
+                      i = i + 1
                       continue
                     }
                     let rule_set_base = offset + class_set_offset
@@ -1478,6 +1614,7 @@ fn apply_chain_subtable_format2(
                       Err(err) => return Err(err)
                       Ok(rule_count) => {
                         if rule_count <= 0 {
+                          i = i + 1
                           continue
                         }
                         let rule_list_base = rule_set_base + 2
@@ -1501,6 +1638,7 @@ fn apply_chain_subtable_format2(
                                 data,
                                 rule_base,
                                 glyphs,
+                                clusters,
                                 i,
                                 backtrack_class_def_base,
                                 input_class_def_base,
@@ -1531,6 +1669,7 @@ fn apply_chain_subtable_format2(
             }
           }
         }
+        i = i + 1
       }
       Ok(changed)
     }
@@ -1542,6 +1681,7 @@ fn apply_chain_subtable_format3(
   data : BytesView,
   offset : Int,
   glyphs : Array[UInt],
+  clusters : Array[Int],
   lookup_list_offsets : Array[Int],
   lookup_flag : Int,
   mark_filtering_set : Int?,
@@ -1658,7 +1798,8 @@ fn apply_chain_subtable_format3(
                   }
                   let record_base = cursor
                   let mut changed = false
-                  for i in 0..<glyphs.length() {
+                  let mut i = 0
+                  while i < glyphs.length() {
                     let input_indices = collect_forward_indices(
                       glyphs[:],
                       i,
@@ -1671,7 +1812,10 @@ fn apply_chain_subtable_format3(
                     )
                     let indices = match input_indices {
                       Err(err) => return Err(err)
-                      Ok(None) => continue
+                      Ok(None) => {
+                        i = i + 1
+                        continue
+                      }
                       Ok(Some(indices)) => indices
                     }
                     let backtrack_indices = collect_backward_indices(
@@ -1686,7 +1830,10 @@ fn apply_chain_subtable_format3(
                     )
                     let backtrack = match backtrack_indices {
                       Err(err) => return Err(err)
-                      Ok(None) => continue
+                      Ok(None) => {
+                        i = i + 1
+                        continue
+                      }
                       Ok(Some(values)) => values
                     }
                     let lookahead = if lookahead_bases.is_empty() {
@@ -1701,11 +1848,15 @@ fn apply_chain_subtable_format3(
                         mark_filtering_set,
                         masks=masks,
                         lookup_mask=lookup_mask,
+                        allow_ignored_start=true,
                       )
                     }
                     let lookahead = match lookahead {
                       Err(err) => return Err(err)
-                      Ok(None) => continue
+                      Ok(None) => {
+                        i = i + 1
+                        continue
+                      }
                       Ok(Some(values)) => values
                     }
                     let mut matched = true
@@ -1765,9 +1916,12 @@ fn apply_chain_subtable_format3(
                         subst_count,
                         input_count,
                         glyphs,
+                        clusters,
                         indices[0],
                         lookup_list_offsets,
                         Some(indices),
+                        lookup_flag,
+                        mark_filtering_set,
                         gdef,
                         masks=masks,
                         lookup_mask=lookup_mask,
@@ -1779,6 +1933,7 @@ fn apply_chain_subtable_format3(
                         changed = true
                       }
                     }
+                    i = i + 1
                   }
                   Ok(changed)
                 }
@@ -1796,6 +1951,7 @@ fn apply_chain_class_rule(
   data : BytesView,
   offset : Int,
   glyphs : Array[UInt],
+  clusters : Array[Int],
   index : Int,
   backtrack_class_def_base : Int,
   input_class_def_base : Int,
@@ -1932,6 +2088,7 @@ fn apply_chain_class_rule(
                       mark_filtering_set,
                       masks=masks,
                       lookup_mask=lookup_mask,
+                      allow_ignored_start=true,
                     )
                   }
                   let lookahead_indices = match lookahead_indices {
@@ -1981,9 +2138,12 @@ fn apply_chain_class_rule(
                     subst_count,
                     input_count,
                     glyphs,
+                    clusters,
                     indices[0],
                     lookup_list_offsets,
                     Some(indices),
+                    lookup_flag,
+                    mark_filtering_set,
                     gdef,
                     masks=masks,
                     lookup_mask=lookup_mask,
@@ -2003,6 +2163,7 @@ fn apply_chain_rule(
   data : BytesView,
   offset : Int,
   glyphs : Array[UInt],
+  clusters : Array[Int],
   index : Int,
   lookup_list_offsets : Array[Int],
   lookup_flag : Int,
@@ -2139,6 +2300,7 @@ fn apply_chain_rule(
                       mark_filtering_set,
                       masks=masks,
                       lookup_mask=lookup_mask,
+                      allow_ignored_start=true,
                     )
                   }
                   let lookahead_indices = match lookahead_indices {
@@ -2148,17 +2310,22 @@ fn apply_chain_rule(
                   }
                   for j in 0..<backtrack.length() {
                     let expected = backtrack[j]
-                    if expected != u16_to_int(glyphs[backtrack_indices[j]]) {
+                    let actual = u16_to_int(glyphs[backtrack_indices[j]])
+                    if expected != actual {
                       return Ok(false)
                     }
                   }
                   for j in 0..<input.length() {
-                    if input[j] != u16_to_int(glyphs[indices[j + 1]]) {
+                    let expected = input[j]
+                    let actual = u16_to_int(glyphs[indices[j + 1]])
+                    if expected != actual {
                       return Ok(false)
                     }
                   }
                   for j in 0..<lookahead.length() {
-                    if lookahead[j] != u16_to_int(glyphs[lookahead_indices[j]]) {
+                    let expected = lookahead[j]
+                    let actual = u16_to_int(glyphs[lookahead_indices[j]])
+                    if expected != actual {
                       return Ok(false)
                     }
                   }
@@ -2168,9 +2335,12 @@ fn apply_chain_rule(
                     subst_count,
                     input_count,
                     glyphs,
+                    clusters,
                     indices[0],
                     lookup_list_offsets,
                     Some(indices),
+                    lookup_flag,
+                    mark_filtering_set,
                     gdef,
                     masks=masks,
                     lookup_mask=lookup_mask,
@@ -2291,6 +2461,159 @@ fn apply_alternate_at(
     }
   }
   Ok(changed)
+}
+
+fn apply_multiple_at(
+  data : BytesView,
+  offsets : Array[Int],
+  glyphs : Array[UInt],
+  clusters : Array[Int],
+  index : Int,
+  lookup_flag : Int,
+  mark_filtering_set : Int?,
+  gdef : GdefTable?,
+  masks? : Array[UInt] = [],
+  lookup_mask? : UInt = 0xFFFFFFFFU,
+) -> Result[(Bool, Int), OtLayoutError] {
+  if index < 0 || index >= glyphs.length() {
+    return Err(InvalidFormat)
+  }
+  if clusters.length() != glyphs.length() {
+    return Err(InvalidFormat)
+  }
+  let has_masks = !masks.is_empty()
+  if has_masks && masks.length() != glyphs.length() {
+    return Err(InvalidFormat)
+  }
+  let ignored = should_ignore_glyph(
+    glyphs[index],
+    lookup_flag,
+    gdef,
+    mark_filtering_set,
+    masks=masks,
+    index=index,
+    lookup_mask=lookup_mask,
+  )
+  match ignored {
+    Err(err) => return Err(err)
+    Ok(true) => return Ok((false, 0))
+    Ok(false) => ()
+  }
+  let glyph = glyphs[index]
+  let result = find_multiple_substitution(data, offsets, glyph)
+  match result {
+    Err(err) => Err(err)
+    Ok(None) => Ok((false, 0))
+    Ok(Some(sequence)) => {
+      if sequence.is_empty() {
+        return Err(InvalidFormat)
+      }
+      if sequence.length() == 1 {
+        let value = sequence[0]
+        if value != glyph {
+          glyphs[index] = value
+          return Ok((true, 0))
+        }
+        return Ok((false, 0))
+      }
+      let cluster = clusters[index]
+      let mask_value = if has_masks { masks[index] } else { 0U }
+      glyphs[index] = sequence[0]
+      for i in 1..<sequence.length() {
+        let insert_index = index + i
+        glyphs.insert(insert_index, sequence[i])
+        clusters.insert(insert_index, cluster)
+        if has_masks {
+          masks.insert(insert_index, mask_value)
+        }
+      }
+      Ok((true, sequence.length() - 1))
+    }
+  }
+}
+
+fn apply_ligature_at(
+  data : BytesView,
+  offsets : Array[Int],
+  glyphs : Array[UInt],
+  clusters : Array[Int],
+  index : Int,
+  lookup_flag : Int,
+  mark_filtering_set : Int?,
+  gdef : GdefTable?,
+  masks? : Array[UInt] = [],
+  lookup_mask? : UInt = 0xFFFFFFFFU,
+) -> Result[(Bool, Int), OtLayoutError] {
+  if index < 0 || index >= glyphs.length() {
+    return Err(InvalidFormat)
+  }
+  if clusters.length() != glyphs.length() {
+    return Err(InvalidFormat)
+  }
+  let has_masks = !masks.is_empty()
+  if has_masks && masks.length() != glyphs.length() {
+    return Err(InvalidFormat)
+  }
+  let ignored = should_ignore_glyph(
+    glyphs[index],
+    lookup_flag,
+    gdef,
+    mark_filtering_set,
+    masks=masks,
+    index=index,
+    lookup_mask=lookup_mask,
+  )
+  match ignored {
+    Err(err) => return Err(err)
+    Ok(true) => return Ok((false, 0))
+    Ok(false) => ()
+  }
+  let result = find_ligature_match(
+    data,
+    offsets,
+    glyphs,
+    index,
+    lookup_flag,
+    mark_filtering_set,
+    gdef,
+    masks=masks,
+    lookup_mask=lookup_mask,
+  )
+  match result {
+    Err(err) => Err(err)
+    Ok(None) => Ok((false, 0))
+    Ok(Some((lig_glyph, indices))) => {
+      if indices.length() < 2 {
+        return Err(InvalidFormat)
+      }
+      let first = indices[0]
+      if first < 0 || first >= glyphs.length() {
+        return Err(InvalidFormat)
+      }
+      glyphs[first] = lig_glyph
+      if has_masks {
+        let mut lig_mask = 0U
+        for idx in indices {
+          lig_mask = lig_mask | masks[idx]
+        }
+        masks[first] = lig_mask
+      }
+      let mut j = indices.length() - 1
+      while j > 0 {
+        let remove_index = indices[j]
+        if remove_index < 0 || remove_index >= glyphs.length() {
+          return Err(InvalidFormat)
+        }
+        ignore(glyphs.remove(remove_index))
+        ignore(clusters.remove(remove_index))
+        if has_masks {
+          ignore(masks.remove(remove_index))
+        }
+        j = j - 1
+      }
+      Ok((true, 1 - indices.length()))
+    }
+  }
 }
 
 fn apply_reverse_chain_subtable_list(

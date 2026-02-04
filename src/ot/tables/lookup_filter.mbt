@@ -72,6 +72,7 @@ fn collect_forward_indices(
   mark_filtering_set : Int?,
   masks? : Array[UInt] = [],
   lookup_mask? : UInt = 0xFFFFFFFFU,
+  allow_ignored_start? : Bool = false,
 ) -> Result[Array[Int]?, OtLayoutError] {
   if count <= 0 {
     return Err(InvalidFormat)
@@ -79,13 +80,35 @@ fn collect_forward_indices(
   if start_index < 0 || start_index >= glyphs.length() {
     return Ok(None)
   }
+  let mut cursor = start_index
+  if allow_ignored_start {
+    while cursor < glyphs.length() {
+      let ignored = should_ignore_glyph(
+        glyphs[cursor],
+        lookup_flag,
+        gdef,
+        mark_filtering_set,
+        masks=masks,
+        index=cursor,
+        lookup_mask=lookup_mask,
+      )
+      match ignored {
+        Err(err) => return Err(err)
+        Ok(false) => break
+        Ok(true) => cursor = cursor + 1
+      }
+    }
+    if cursor >= glyphs.length() {
+      return Ok(None)
+    }
+  }
   let first_ignored = should_ignore_glyph(
-    glyphs[start_index],
+    glyphs[cursor],
     lookup_flag,
     gdef,
     mark_filtering_set,
     masks=masks,
-    index=start_index,
+    index=cursor,
     lookup_mask=lookup_mask,
   )
   match first_ignored {
@@ -93,8 +116,8 @@ fn collect_forward_indices(
     Ok(true) => Ok(None)
     Ok(false) => {
       let indices : Array[Int] = []
-      indices.push(start_index)
-      let mut cursor = start_index + 1
+      indices.push(cursor)
+      cursor = cursor + 1
       while indices.length() < count {
         if cursor >= glyphs.length() {
           return Ok(None)

@@ -1465,6 +1465,7 @@ fn apply_chain_pos_subtable_format3(
                         lookup_flag,
                         gdef,
                         mark_filtering_set,
+                        allow_ignored_start=true,
                       )
                     }
                     let lookahead = match lookahead_indices {
@@ -1688,6 +1689,7 @@ fn apply_chain_pos_class_rule(
                       lookup_flag,
                       gdef,
                       mark_filtering_set,
+                      allow_ignored_start=true,
                     )
                   }
                   let lookahead_indices = match lookahead_indices {
@@ -1887,6 +1889,7 @@ fn apply_chain_pos_rule(
                       lookup_flag,
                       gdef,
                       mark_filtering_set,
+                      allow_ignored_start=true,
                     )
                   }
                   let lookahead_indices = match lookahead_indices {
