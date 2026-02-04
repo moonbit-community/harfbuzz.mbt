@@ -7441,6 +7441,62 @@ fn parse_lookup_header(
   Ok((lookup_type, lookup_flag, mark_set, subtable_offsets))
 }
 
+fn lookup_subtable_range(
+  bytes_len : Int,
+  base : Int,
+  sub_offsets : Array[Int],
+  index : Int,
+) -> (Int, Int)? {
+  if index < 0 || index >= sub_offsets.length() {
+    return None
+  }
+  let start = sub_offsets[index]
+  if start <= 0 {
+    return None
+  }
+  let sub_base = base + start
+  if sub_base < 0 || sub_base >= bytes_len {
+    return None
+  }
+  let mut next_offset = bytes_len - base
+  for offset in sub_offsets {
+    if offset > start && offset < next_offset {
+      next_offset = offset
+    }
+  }
+  let sub_end = base + next_offset
+  if sub_end <= sub_base || sub_end > bytes_len {
+    return None
+  }
+  Some((sub_base, sub_end))
+}
+
+fn gsub_subtable_bytes(
+  bytes : Array[Byte],
+  base : Int,
+  sub_offsets : Array[Int],
+  index : Int,
+) -> Result[Array[Byte], SubsetError] {
+  let range = lookup_subtable_range(bytes.length(), base, sub_offsets, index)
+  match range {
+    None => Err(InvalidInput("invalid GSUB subtable bounds"))
+    Some((sub_base, sub_end)) => Ok(bytes[sub_base:sub_end].to_array())
+  }
+}
+
+fn gpos_subtable_bytes(
+  bytes : Array[Byte],
+  base : Int,
+  sub_offsets : Array[Int],
+  index : Int,
+) -> Result[Array[Byte], SubsetError] {
+  let range = lookup_subtable_range(bytes.length(), base, sub_offsets, index)
+  match range {
+    None => Err(InvalidInput("invalid GPOS subtable bounds"))
+    Some((sub_base, sub_end)) => Ok(bytes[sub_base:sub_end].to_array())
+  }
+}
+
 fn build_lookup_bytes(
   lookup_type : Int,
   lookup_flag : Int,
@@ -7715,16 +7771,10 @@ fn build_gsub_subset(
         let subtables : Array[Bytes] = []
         if lookup_type == 1 {
           for j in 0..<sub_offsets.length() {
-            let sub_base = base + sub_offsets[j]
-            let sub_end = if j + 1 < sub_offsets.length() {
-              base + sub_offsets[j + 1]
-            } else {
-              end
+            let sub_bytes = match gsub_subtable_bytes(bytes, base, sub_offsets, j) {
+              Err(err) => return Err(err)
+              Ok(value) => value
             }
-            if sub_base < 0 || sub_base >= end || sub_end <= sub_base || sub_end > end {
-              return Err(InvalidInput("invalid GSUB subtable bounds"))
-            }
-            let sub_bytes = bytes[sub_base:sub_end].to_array()
             let new_sub = match build_gsub_single_subtable(sub_bytes, plan) {
               Err(err) => return Err(err)
               Ok(value) => value
@@ -7739,16 +7789,10 @@ fn build_gsub_subset(
           }
         } else if lookup_type == 2 {
           for j in 0..<sub_offsets.length() {
-            let sub_base = base + sub_offsets[j]
-            let sub_end = if j + 1 < sub_offsets.length() {
-              base + sub_offsets[j + 1]
-            } else {
-              end
+            let sub_bytes = match gsub_subtable_bytes(bytes, base, sub_offsets, j) {
+              Err(err) => return Err(err)
+              Ok(value) => value
             }
-            if sub_base < 0 || sub_base >= end || sub_end <= sub_base || sub_end > end {
-              return Err(InvalidInput("invalid GSUB subtable bounds"))
-            }
-            let sub_bytes = bytes[sub_base:sub_end].to_array()
             let new_sub = match build_gsub_multiple_subtable(sub_bytes, plan) {
               Err(err) => return Err(err)
               Ok(value) => value
@@ -7763,16 +7807,10 @@ fn build_gsub_subset(
           }
         } else if lookup_type == 3 {
           for j in 0..<sub_offsets.length() {
-            let sub_base = base + sub_offsets[j]
-            let sub_end = if j + 1 < sub_offsets.length() {
-              base + sub_offsets[j + 1]
-            } else {
-              end
+            let sub_bytes = match gsub_subtable_bytes(bytes, base, sub_offsets, j) {
+              Err(err) => return Err(err)
+              Ok(value) => value
             }
-            if sub_base < 0 || sub_base >= end || sub_end <= sub_base || sub_end > end {
-              return Err(InvalidInput("invalid GSUB subtable bounds"))
-            }
-            let sub_bytes = bytes[sub_base:sub_end].to_array()
             let new_sub = match build_gsub_alternate_subtable(sub_bytes, plan) {
               Err(err) => return Err(err)
               Ok(value) => value
@@ -7787,16 +7825,10 @@ fn build_gsub_subset(
           }
         } else if lookup_type == 4 {
           for j in 0..<sub_offsets.length() {
-            let sub_base = base + sub_offsets[j]
-            let sub_end = if j + 1 < sub_offsets.length() {
-              base + sub_offsets[j + 1]
-            } else {
-              end
+            let sub_bytes = match gsub_subtable_bytes(bytes, base, sub_offsets, j) {
+              Err(err) => return Err(err)
+              Ok(value) => value
             }
-            if sub_base < 0 || sub_base >= end || sub_end <= sub_base || sub_end > end {
-              return Err(InvalidInput("invalid GSUB subtable bounds"))
-            }
-            let sub_bytes = bytes[sub_base:sub_end].to_array()
             let new_sub = match build_gsub_ligature_subtable(sub_bytes, plan) {
               Err(err) => return Err(err)
               Ok(value) => value
@@ -7811,16 +7843,10 @@ fn build_gsub_subset(
           }
         } else if lookup_type == 5 {
           for j in 0..<sub_offsets.length() {
-            let sub_base = base + sub_offsets[j]
-            let sub_end = if j + 1 < sub_offsets.length() {
-              base + sub_offsets[j + 1]
-            } else {
-              end
+            let sub_bytes = match gsub_subtable_bytes(bytes, base, sub_offsets, j) {
+              Err(err) => return Err(err)
+              Ok(value) => value
             }
-            if sub_base < 0 || sub_base >= end || sub_end <= sub_base || sub_end > end {
-              return Err(InvalidInput("invalid GSUB subtable bounds"))
-            }
-            let sub_bytes = bytes[sub_base:sub_end].to_array()
             let new_sub = match build_gsub_contextual_subtable(sub_bytes, plan) {
               Err(err) => return Err(err)
               Ok(value) => value
@@ -7835,16 +7861,10 @@ fn build_gsub_subset(
           }
         } else if lookup_type == 6 {
           for j in 0..<sub_offsets.length() {
-            let sub_base = base + sub_offsets[j]
-            let sub_end = if j + 1 < sub_offsets.length() {
-              base + sub_offsets[j + 1]
-            } else {
-              end
+            let sub_bytes = match gsub_subtable_bytes(bytes, base, sub_offsets, j) {
+              Err(err) => return Err(err)
+              Ok(value) => value
             }
-            if sub_base < 0 || sub_base >= end || sub_end <= sub_base || sub_end > end {
-              return Err(InvalidInput("invalid GSUB subtable bounds"))
-            }
-            let sub_bytes = bytes[sub_base:sub_end].to_array()
             let new_sub = match build_gsub_chaining_subtable(sub_bytes, plan) {
               Err(err) => return Err(err)
               Ok(value) => value
@@ -7859,16 +7879,10 @@ fn build_gsub_subset(
           }
         } else if lookup_type == 7 {
           for j in 0..<sub_offsets.length() {
-            let sub_base = base + sub_offsets[j]
-            let sub_end = if j + 1 < sub_offsets.length() {
-              base + sub_offsets[j + 1]
-            } else {
-              end
+            let sub_bytes = match gsub_subtable_bytes(bytes, base, sub_offsets, j) {
+              Err(err) => return Err(err)
+              Ok(value) => value
             }
-            if sub_base < 0 || sub_base >= end || sub_end <= sub_base || sub_end > end {
-              return Err(InvalidInput("invalid GSUB subtable bounds"))
-            }
-            let sub_bytes = bytes[sub_base:sub_end].to_array()
             let result = match build_gsub_extension_subtable(sub_bytes, plan) {
               Err(err) => return Err(err)
               Ok(value) => value
@@ -7891,16 +7905,10 @@ fn build_gsub_subset(
           }
         } else if lookup_type == 8 {
           for j in 0..<sub_offsets.length() {
-            let sub_base = base + sub_offsets[j]
-            let sub_end = if j + 1 < sub_offsets.length() {
-              base + sub_offsets[j + 1]
-            } else {
-              end
+            let sub_bytes = match gsub_subtable_bytes(bytes, base, sub_offsets, j) {
+              Err(err) => return Err(err)
+              Ok(value) => value
             }
-            if sub_base < 0 || sub_base >= end || sub_end <= sub_base || sub_end > end {
-              return Err(InvalidInput("invalid GSUB subtable bounds"))
-            }
-            let sub_bytes = bytes[sub_base:sub_end].to_array()
             let new_sub = match build_gsub_reverse_chaining_subtable(sub_bytes, plan) {
               Err(err) => return Err(err)
               Ok(value) => value
@@ -8061,16 +8069,10 @@ fn build_gpos_subset(
         let subtables : Array[Bytes] = []
         if lookup_type == 1 {
           for j in 0..<sub_offsets.length() {
-            let sub_base = base + sub_offsets[j]
-            let sub_end = if j + 1 < sub_offsets.length() {
-              base + sub_offsets[j + 1]
-            } else {
-              end
+            let sub_bytes = match gpos_subtable_bytes(bytes, base, sub_offsets, j) {
+              Err(err) => return Err(err)
+              Ok(value) => value
             }
-            if sub_base < 0 || sub_base >= end || sub_end <= sub_base || sub_end > end {
-              return Err(InvalidInput("invalid GPOS subtable bounds"))
-            }
-            let sub_bytes = bytes[sub_base:sub_end].to_array()
             let new_sub = match build_gpos_single_subtable(sub_bytes, plan) {
               Err(err) => return Err(err)
               Ok(value) => value
@@ -8085,16 +8087,10 @@ fn build_gpos_subset(
           }
         } else if lookup_type == 2 {
           for j in 0..<sub_offsets.length() {
-            let sub_base = base + sub_offsets[j]
-            let sub_end = if j + 1 < sub_offsets.length() {
-              base + sub_offsets[j + 1]
-            } else {
-              end
+            let sub_bytes = match gpos_subtable_bytes(bytes, base, sub_offsets, j) {
+              Err(err) => return Err(err)
+              Ok(value) => value
             }
-            if sub_base < 0 || sub_base >= end || sub_end <= sub_base || sub_end > end {
-              return Err(InvalidInput("invalid GPOS subtable bounds"))
-            }
-            let sub_bytes = bytes[sub_base:sub_end].to_array()
             let new_sub = match build_gpos_pair_subtable(sub_bytes, plan) {
               Err(err) => return Err(err)
               Ok(value) => value
@@ -8109,16 +8105,10 @@ fn build_gpos_subset(
           }
         } else if lookup_type == 3 {
           for j in 0..<sub_offsets.length() {
-            let sub_base = base + sub_offsets[j]
-            let sub_end = if j + 1 < sub_offsets.length() {
-              base + sub_offsets[j + 1]
-            } else {
-              end
+            let sub_bytes = match gpos_subtable_bytes(bytes, base, sub_offsets, j) {
+              Err(err) => return Err(err)
+              Ok(value) => value
             }
-            if sub_base < 0 || sub_base >= end || sub_end <= sub_base || sub_end > end {
-              return Err(InvalidInput("invalid GPOS subtable bounds"))
-            }
-            let sub_bytes = bytes[sub_base:sub_end].to_array()
             let new_sub = match build_gpos_cursive_subtable(sub_bytes, plan) {
               Err(err) => return Err(err)
               Ok(value) => value
@@ -8133,16 +8123,10 @@ fn build_gpos_subset(
           }
         } else if lookup_type == 4 {
           for j in 0..<sub_offsets.length() {
-            let sub_base = base + sub_offsets[j]
-            let sub_end = if j + 1 < sub_offsets.length() {
-              base + sub_offsets[j + 1]
-            } else {
-              end
+            let sub_bytes = match gpos_subtable_bytes(bytes, base, sub_offsets, j) {
+              Err(err) => return Err(err)
+              Ok(value) => value
             }
-            if sub_base < 0 || sub_base >= end || sub_end <= sub_base || sub_end > end {
-              return Err(InvalidInput("invalid GPOS subtable bounds"))
-            }
-            let sub_bytes = bytes[sub_base:sub_end].to_array()
             let new_sub = match build_gpos_mark_base_subtable(sub_bytes, plan) {
               Err(err) => return Err(err)
               Ok(value) => value
@@ -8157,16 +8141,10 @@ fn build_gpos_subset(
           }
         } else if lookup_type == 5 {
           for j in 0..<sub_offsets.length() {
-            let sub_base = base + sub_offsets[j]
-            let sub_end = if j + 1 < sub_offsets.length() {
-              base + sub_offsets[j + 1]
-            } else {
-              end
+            let sub_bytes = match gpos_subtable_bytes(bytes, base, sub_offsets, j) {
+              Err(err) => return Err(err)
+              Ok(value) => value
             }
-            if sub_base < 0 || sub_base >= end || sub_end <= sub_base || sub_end > end {
-              return Err(InvalidInput("invalid GPOS subtable bounds"))
-            }
-            let sub_bytes = bytes[sub_base:sub_end].to_array()
             let new_sub = match build_gpos_mark_ligature_subtable(sub_bytes, plan) {
               Err(err) => return Err(err)
               Ok(value) => value
@@ -8181,16 +8159,10 @@ fn build_gpos_subset(
           }
         } else if lookup_type == 6 {
           for j in 0..<sub_offsets.length() {
-            let sub_base = base + sub_offsets[j]
-            let sub_end = if j + 1 < sub_offsets.length() {
-              base + sub_offsets[j + 1]
-            } else {
-              end
+            let sub_bytes = match gpos_subtable_bytes(bytes, base, sub_offsets, j) {
+              Err(err) => return Err(err)
+              Ok(value) => value
             }
-            if sub_base < 0 || sub_base >= end || sub_end <= sub_base || sub_end > end {
-              return Err(InvalidInput("invalid GPOS subtable bounds"))
-            }
-            let sub_bytes = bytes[sub_base:sub_end].to_array()
             let new_sub = match build_gpos_mark_mark_subtable(sub_bytes, plan) {
               Err(err) => return Err(err)
               Ok(value) => value
@@ -8205,16 +8177,10 @@ fn build_gpos_subset(
           }
         } else if lookup_type == 7 {
           for j in 0..<sub_offsets.length() {
-            let sub_base = base + sub_offsets[j]
-            let sub_end = if j + 1 < sub_offsets.length() {
-              base + sub_offsets[j + 1]
-            } else {
-              end
+            let sub_bytes = match gpos_subtable_bytes(bytes, base, sub_offsets, j) {
+              Err(err) => return Err(err)
+              Ok(value) => value
             }
-            if sub_base < 0 || sub_base >= end || sub_end <= sub_base || sub_end > end {
-              return Err(InvalidInput("invalid GPOS subtable bounds"))
-            }
-            let sub_bytes = bytes[sub_base:sub_end].to_array()
             let new_sub = match build_gpos_contextual_subtable(sub_bytes, plan) {
               Err(err) => return Err(err)
               Ok(value) => value
@@ -8229,16 +8195,10 @@ fn build_gpos_subset(
           }
         } else if lookup_type == 8 {
           for j in 0..<sub_offsets.length() {
-            let sub_base = base + sub_offsets[j]
-            let sub_end = if j + 1 < sub_offsets.length() {
-              base + sub_offsets[j + 1]
-            } else {
-              end
+            let sub_bytes = match gpos_subtable_bytes(bytes, base, sub_offsets, j) {
+              Err(err) => return Err(err)
+              Ok(value) => value
             }
-            if sub_base < 0 || sub_base >= end || sub_end <= sub_base || sub_end > end {
-              return Err(InvalidInput("invalid GPOS subtable bounds"))
-            }
-            let sub_bytes = bytes[sub_base:sub_end].to_array()
             let new_sub = match build_gpos_chaining_subtable(sub_bytes, plan) {
               Err(err) => return Err(err)
               Ok(value) => value
@@ -8253,16 +8213,10 @@ fn build_gpos_subset(
           }
         } else if lookup_type == 9 {
           for j in 0..<sub_offsets.length() {
-            let sub_base = base + sub_offsets[j]
-            let sub_end = if j + 1 < sub_offsets.length() {
-              base + sub_offsets[j + 1]
-            } else {
-              end
+            let sub_bytes = match gpos_subtable_bytes(bytes, base, sub_offsets, j) {
+              Err(err) => return Err(err)
+              Ok(value) => value
             }
-            if sub_base < 0 || sub_base >= end || sub_end <= sub_base || sub_end > end {
-              return Err(InvalidInput("invalid GPOS subtable bounds"))
-            }
-            let sub_bytes = bytes[sub_base:sub_end].to_array()
             let result = match build_gpos_extension_subtable(sub_bytes, plan) {
               Err(err) => return Err(err)
               Ok(value) => value
