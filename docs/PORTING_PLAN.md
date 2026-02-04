@@ -65,6 +65,17 @@ Unicode data, variations, color/paint, and subsetting.
 - External integrations/bindings: `hb-ft.*`, `hb-icu.*`, `hb-glib.*`, `hb-gobject.*`, `hb-cairo.*`.
 - WASM API glue: `hb-wasm-*` (treat as optional binding layer).
 
+## API Test Exclusions / Gaps
+- hb-object private API (user-data, refcounting, immutability, inert objects):
+  MoonBit values are GC-managed and do not expose refcount hooks or user-data slots.
+  Upstream `test-object.c`, and user-data/refcount assertions in `test-blob.c`,
+  `test-map.c`, and `test-set.c` are excluded for now.
+- File-based APIs (blob/face create from file paths):
+  The MoonBit core runtime used here has no file I/O package, so
+  `hb_blob_create_from_file` / `hb_face_create_from_file` are not implemented.
+  Tests that depend on file-path loading (e.g. `test-face.c` file variants)
+  are excluded; tests use in-memory blobs instead.
+
 ## Data & Codegen Strategy
 - Reuse HarfBuzz generators where possible (`gen-ucd-table.py`, `gen-emoji-table.py`,
   `gen-tag-table.py`, `gen-*-table.py`).

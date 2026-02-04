@@ -13,12 +13,22 @@
       "alias": "font"
     },
     {
+      "path": "moonbit-community/harfbuzz/face",
+      "alias": "face"
+    },
+    {
       "path": "moonbit-community/harfbuzz/ot/shape",
       "alias": "ot_shape"
     },
     {
       "path": "moonbit-community/harfbuzz/aat/shape",
       "alias": "aat_shape"
+    }
+  ],
+  "test-import": [
+    {
+      "path": "moonbit-community/harfbuzz/face",
+      "alias": "face"
     }
   ]
 }
