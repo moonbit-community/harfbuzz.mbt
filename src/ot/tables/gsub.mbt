@@ -625,6 +625,7 @@ fn apply_context_subtable_format1(
                         rule_list_base + rule_count * 2 > data.length() {
                       return Err(UnexpectedEof)
                     }
+                    let mut advance = i + 1
                     for r in 0..<rule_count {
                       let rule_offset = read_u16_int(data, rule_list_base + r * 2)
                       match rule_offset {
@@ -634,7 +635,7 @@ fn apply_context_subtable_format1(
                             return Err(InvalidFormat)
                           }
                           let rule_base = rule_set_base + rule_offset
-                          let applied = match apply_context_rule(
+                          let result = match apply_context_rule(
                             data,
                             rule_base,
                             glyphs,
@@ -650,13 +651,24 @@ fn apply_context_subtable_format1(
                             Err(err) => return Err(err)
                             Ok(value) => value
                           }
-                          if applied {
-                            changed = true
+                          if result.matched {
+                            if result.changed {
+                              changed = true
+                            }
+                            advance = result.next_index
+                            if advance <= i {
+                              advance = i + 1
+                            }
+                            if advance > glyphs.length() {
+                              advance = glyphs.length()
+                            }
                             break
                           }
                         }
                       }
                     }
+                    i = advance
+                    continue
                   }
                 }
               }
@@ -770,6 +782,7 @@ fn apply_context_subtable_format2(
                             rule_list_base + rule_count * 2 > data.length() {
                           return Err(UnexpectedEof)
                         }
+                        let mut advance = i + 1
                         for r in 0..<rule_count {
                           let rule_offset = read_u16_int(
                             data,
@@ -782,7 +795,7 @@ fn apply_context_subtable_format2(
                                 continue
                               }
                               let rule_base = rule_set_base + rule_offset
-                              let applied = match apply_context_class_rule(
+                              let result = match apply_context_class_rule(
                                 data,
                                 rule_base,
                                 glyphs,
@@ -796,17 +809,27 @@ fn apply_context_subtable_format2(
                                 masks=masks,
                                 lookup_mask=lookup_mask,
                               ) {
-                                Err(InvalidFormat) => false
                                 Err(err) => return Err(err)
                                 Ok(value) => value
                               }
-                              if applied {
-                                changed = true
+                              if result.matched {
+                                if result.changed {
+                                  changed = true
+                                }
+                                advance = result.next_index
+                                if advance <= i {
+                                  advance = i + 1
+                                }
+                                if advance > glyphs.length() {
+                                  advance = glyphs.length()
+                                }
                                 break
                               }
                             }
                           }
                         }
+                        i = advance
+                        continue
                       }
                     }
                   }
@@ -897,6 +920,7 @@ fn apply_context_subtable_format3(
           }
         }
         if matched {
+          let len_before = glyphs.length()
           let applied = match apply_subst_lookup_records(
             data,
             record_base,
@@ -919,12 +943,34 @@ fn apply_context_subtable_format3(
           if applied {
             changed = true
           }
+          let delta = glyphs.length() - len_before
+          let mut advance = indices[indices.length() - 1] + 1 + delta
+          if advance <= i {
+            advance = i + 1
+          }
+          if advance > glyphs.length() {
+            advance = glyphs.length()
+          }
+          i = advance
+          continue
         }
         i = i + 1
       }
       Ok(changed)
     }
   }
+}
+
+///|
+priv struct ContextApplyResult {
+  matched : Bool
+  changed : Bool
+  next_index : Int
+}
+
+///|
+fn context_no_match(index : Int) -> ContextApplyResult {
+  ContextApplyResult::{ matched: false, changed: false, next_index: index + 1 }
 }
 
 ///|
@@ -941,7 +987,7 @@ fn apply_context_class_rule(
   gdef : GdefTable?,
   masks? : Array[UInt] = [],
   lookup_mask? : UInt = 0xFFFFFFFFU,
-) -> Result[Bool, OtLayoutError] {
+) -> Result[ContextApplyResult, OtLayoutError] {
   if offset < 0 || offset + 4 > data.length() {
     return Err(UnexpectedEof)
   }
@@ -966,7 +1012,7 @@ fn apply_context_class_rule(
       )
       let indices = match input_indices {
         Err(err) => return Err(err)
-        Ok(None) => return Ok(false)
+        Ok(None) => return Ok(context_no_match(index))
         Ok(Some(indices)) => indices
       }
       let class_list_base = offset + 4
@@ -985,15 +1031,18 @@ fn apply_context_class_rule(
               glyphs[indices[i + 1]],
             )
             match actual {
-              Err(InvalidFormat) => return Ok(false)
+              Err(InvalidFormat) => return Ok(context_no_match(index))
               Err(err) => return Err(err)
-              Ok(actual) => if actual != expected { return Ok(false) }
+              Ok(actual) => if actual != expected {
+                return Ok(context_no_match(index))
+              }
             }
           }
         }
       }
       let record_base = class_list_base + (glyph_count - 1) * 2
-      match apply_subst_lookup_records(
+      let len_before = glyphs.length()
+      let changed = match apply_subst_lookup_records(
         data,
         record_base,
         subst_count,
@@ -1009,10 +1058,19 @@ fn apply_context_class_rule(
         masks=masks,
         lookup_mask=lookup_mask,
       ) {
-        Err(InvalidFormat) => Ok(false)
-        Err(err) => Err(err)
-        Ok(value) => Ok(value)
+        Err(InvalidFormat) => return Ok(context_no_match(index))
+        Err(err) => return Err(err)
+        Ok(value) => value
       }
+      let delta = glyphs.length() - len_before
+      let mut next_index = indices[indices.length() - 1] + 1 + delta
+      if next_index <= index {
+        next_index = index + 1
+      }
+      if next_index > glyphs.length() {
+        next_index = glyphs.length()
+      }
+      Ok(ContextApplyResult::{ matched: true, changed, next_index })
     }
   }
 }
@@ -1133,7 +1191,7 @@ fn apply_context_rule(
   gdef : GdefTable?,
   masks? : Array[UInt] = [],
   lookup_mask? : UInt = 0xFFFFFFFFU,
-) -> Result[Bool, OtLayoutError] {
+) -> Result[ContextApplyResult, OtLayoutError] {
   if offset < 0 || offset + 4 > data.length() {
     return Err(UnexpectedEof)
   }
@@ -1158,7 +1216,7 @@ fn apply_context_rule(
       )
       let indices = match input_indices {
         Err(err) => return Err(err)
-        Ok(None) => return Ok(false)
+        Ok(None) => return Ok(context_no_match(index))
         Ok(Some(indices)) => indices
       }
       let input_base = offset + 4
@@ -1172,13 +1230,14 @@ fn apply_context_rule(
           Ok(expected) => {
             let actual = glyphs[indices[i + 1]]
             if expected != u16_to_int(actual) {
-              return Ok(false)
+              return Ok(context_no_match(index))
             }
           }
         }
       }
       let record_base = input_base + (glyph_count - 1) * 2
-      apply_subst_lookup_records(
+      let len_before = glyphs.length()
+      let changed = match apply_subst_lookup_records(
         data,
         record_base,
         subst_count,
@@ -1193,7 +1252,19 @@ fn apply_context_rule(
         gdef,
         masks=masks,
         lookup_mask=lookup_mask,
-      )
+      ) {
+        Err(err) => return Err(err)
+        Ok(value) => value
+      }
+      let delta = glyphs.length() - len_before
+      let mut next_index = indices[indices.length() - 1] + 1 + delta
+      if next_index <= index {
+        next_index = index + 1
+      }
+      if next_index > glyphs.length() {
+        next_index = glyphs.length()
+      }
+      Ok(ContextApplyResult::{ matched: true, changed, next_index })
     }
   }
 }
