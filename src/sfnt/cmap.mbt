@@ -17,6 +17,7 @@ pub fn CmapTable::parse(blob : @blob.Blob) -> Result[CmapTable, SfntError] {
     Ok(count) => {
       let mut chosen_offset : Int? = None
       let mut chosen_format : Int? = None
+      let mut chosen_rank = 0
       let mut variation_offset : Int? = None
       let mut offset = 4
       for _ in 0..<count {
@@ -33,14 +34,13 @@ pub fn CmapTable::parse(blob : @blob.Blob) -> Result[CmapTable, SfntError] {
                   if variation_offset is None {
                     variation_offset = Some(subtable_offset)
                   }
-                } else if format == 12 {
-                  if chosen_format is None || chosen_format == Some(4) {
+                } else {
+                  let rank = cmap_format_rank(format)
+                  if rank > chosen_rank {
+                    chosen_rank = rank
                     chosen_offset = Some(subtable_offset)
                     chosen_format = Some(format)
                   }
-                } else if format == 4 && chosen_offset is None {
-                  chosen_offset = Some(subtable_offset)
-                  chosen_format = Some(format)
                 }
               }
             }
@@ -57,6 +57,22 @@ pub fn CmapTable::parse(blob : @blob.Blob) -> Result[CmapTable, SfntError] {
   }
 }
 
+fn cmap_format_rank(format : Int) -> Int {
+  if format == 12 {
+    5
+  } else if format == 10 {
+    4
+  } else if format == 4 {
+    3
+  } else if format == 6 {
+    2
+  } else if format == 0 {
+    1
+  } else {
+    0
+  }
+}
+
 ///|
 /// Map a codepoint to a glyph id.
 pub fn CmapTable::glyph_for(
@@ -65,8 +81,14 @@ pub fn CmapTable::glyph_for(
 ) -> Result[UInt?, SfntError] {
   if self.format == 12 {
     glyph_for_format12(self.data, self.subtable_offset, codepoint)
+  } else if self.format == 10 {
+    glyph_for_format10(self.data, self.subtable_offset, codepoint)
   } else if self.format == 4 {
     glyph_for_format4(self.data, self.subtable_offset, codepoint)
+  } else if self.format == 6 {
+    glyph_for_format6(self.data, self.subtable_offset, codepoint)
+  } else if self.format == 0 {
+    glyph_for_format0(self.data, self.subtable_offset, codepoint)
   } else {
     Err(InvalidFormat)
   }
@@ -83,8 +105,23 @@ pub fn CmapTable::collect_nominal_mapping(
       Err(err) => Err(err)
       Ok(_) => Ok(map)
     }
+  } else if self.format == 10 {
+    match collect_format10(self.data, self.subtable_offset, map) {
+      Err(err) => Err(err)
+      Ok(_) => Ok(map)
+    }
   } else if self.format == 4 {
     match collect_format4(self.data, self.subtable_offset, map) {
+      Err(err) => Err(err)
+      Ok(_) => Ok(map)
+    }
+  } else if self.format == 6 {
+    match collect_format6(self.data, self.subtable_offset, map) {
+      Err(err) => Err(err)
+      Ok(_) => Ok(map)
+    }
+  } else if self.format == 0 {
+    match collect_format0(self.data, self.subtable_offset, map) {
       Err(err) => Err(err)
       Ok(_) => Ok(map)
     }
@@ -227,6 +264,175 @@ fn default_variation_mapping(
         base = base + 4
       }
       Ok(false)
+    }
+  }
+}
+
+///|
+fn glyph_for_format0(
+  data : BytesView,
+  offset : Int,
+  codepoint : UInt,
+) -> Result[UInt?, SfntError] {
+  if codepoint > 0xffU {
+    return Ok(None)
+  }
+  let base = offset + 6
+  if base < 0 || base + 256 > data.length() {
+    return Err(UnexpectedEof)
+  }
+  let idx = codepoint.reinterpret_as_int()
+  match read_u8_int(data, base + idx) {
+    Err(err) => Err(err)
+    Ok(glyph_id) => Ok(Some(glyph_id.reinterpret_as_uint()))
+  }
+}
+
+fn collect_format0(
+  data : BytesView,
+  offset : Int,
+  map : @common.CodepointMap,
+) -> Result[Unit, SfntError] {
+  let base = offset + 6
+  if base < 0 || base + 256 > data.length() {
+    return Err(UnexpectedEof)
+  }
+  for i in 0..<256 {
+    let gid = match read_u8_int(data, base + i) {
+      Err(err) => return Err(err)
+      Ok(value) => value
+    }
+    if gid != 0 {
+      map.set(i.reinterpret_as_uint(), gid.reinterpret_as_uint())
+    }
+  }
+  Ok(())
+}
+
+///|
+fn glyph_for_format6(
+  data : BytesView,
+  offset : Int,
+  codepoint : UInt,
+) -> Result[UInt?, SfntError] {
+  if codepoint > 0xffffU {
+    return Ok(None)
+  }
+  let first_code = read_u16_int(data, offset + 6)
+  let entry_count = read_u16_int(data, offset + 8)
+  match (first_code, entry_count) {
+    (Err(err), _) => Err(err)
+    (_, Err(err)) => Err(err)
+    (Ok(first_code), Ok(entry_count)) => {
+      if entry_count < 0 {
+        return Err(InvalidFormat)
+      }
+      let cp = u16_to_int(codepoint)
+      if cp < first_code || cp >= first_code + entry_count {
+        return Ok(None)
+      }
+      let index = cp - first_code
+      let base = offset + 10
+      let value = read_u16_int(data, base + index * 2)
+      match value {
+        Err(err) => Err(err)
+        Ok(glyph_id) => Ok(Some(glyph_id.reinterpret_as_uint()))
+      }
+    }
+  }
+}
+
+fn collect_format6(
+  data : BytesView,
+  offset : Int,
+  map : @common.CodepointMap,
+) -> Result[Unit, SfntError] {
+  let first_code = read_u16_int(data, offset + 6)
+  let entry_count = read_u16_int(data, offset + 8)
+  match (first_code, entry_count) {
+    (Err(err), _) => Err(err)
+    (_, Err(err)) => Err(err)
+    (Ok(first_code), Ok(entry_count)) => {
+      if entry_count < 0 {
+        return Err(InvalidFormat)
+      }
+      let base = offset + 10
+      for i in 0..<entry_count {
+        let value = read_u16_int(data, base + i * 2)
+        match value {
+          Err(err) => return Err(err)
+          Ok(glyph_id) =>
+            if glyph_id != 0 {
+              let cp = (first_code + i).reinterpret_as_uint()
+              map.set(cp, glyph_id.reinterpret_as_uint())
+            }
+        }
+      }
+      Ok(())
+    }
+  }
+}
+
+///|
+fn glyph_for_format10(
+  data : BytesView,
+  offset : Int,
+  codepoint : UInt,
+) -> Result[UInt?, SfntError] {
+  let start_code = read_u32_int(data, offset + 12)
+  let entry_count = read_u32_int(data, offset + 16)
+  match (start_code, entry_count) {
+    (Err(err), _) => Err(err)
+    (_, Err(err)) => Err(err)
+    (Ok(start_code), Ok(entry_count)) => {
+      if entry_count < 0 {
+        return Err(InvalidFormat)
+      }
+      let start = start_code.reinterpret_as_uint()
+      let count = entry_count.reinterpret_as_uint()
+      let end = start + count
+      if codepoint < start || codepoint >= end {
+        return Ok(None)
+      }
+      let index = (codepoint - start).reinterpret_as_int()
+      let base = offset + 20
+      let value = read_u16_int(data, base + index * 2)
+      match value {
+        Err(err) => Err(err)
+        Ok(glyph_id) => Ok(Some(glyph_id.reinterpret_as_uint()))
+      }
+    }
+  }
+}
+
+fn collect_format10(
+  data : BytesView,
+  offset : Int,
+  map : @common.CodepointMap,
+) -> Result[Unit, SfntError] {
+  let start_code = read_u32_int(data, offset + 12)
+  let entry_count = read_u32_int(data, offset + 16)
+  match (start_code, entry_count) {
+    (Err(err), _) => Err(err)
+    (_, Err(err)) => Err(err)
+    (Ok(start_code), Ok(entry_count)) => {
+      if entry_count < 0 {
+        return Err(InvalidFormat)
+      }
+      let start = start_code.reinterpret_as_uint()
+      let base = offset + 20
+      for i in 0..<entry_count {
+        let value = read_u16_int(data, base + i * 2)
+        match value {
+          Err(err) => return Err(err)
+          Ok(glyph_id) =>
+            if glyph_id != 0 {
+              let cp = start + i.reinterpret_as_uint()
+              map.set(cp, glyph_id.reinterpret_as_uint())
+            }
+        }
+      }
+      Ok(())
     }
   }
 }

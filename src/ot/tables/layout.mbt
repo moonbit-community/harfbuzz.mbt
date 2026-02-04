@@ -149,14 +149,19 @@ fn select_lookup_offsets_internal(
   let selected_features : Array[Int] = []
   match required_feature {
     None => ()
-    Some(feature) => push_unique_int(selected_features, feature)
+    Some(feature) =>
+      if feature >= 0 && feature < layout.feature_list.records.length() {
+        push_unique_int(selected_features, feature)
+      }
   }
   for feature in feature_indices {
     if !has_filter {
-      push_unique_int(selected_features, feature)
+      if feature >= 0 && feature < layout.feature_list.records.length() {
+        push_unique_int(selected_features, feature)
+      }
     } else {
       if feature < 0 || feature >= layout.feature_list.records.length() {
-        return Err(InvalidFormat)
+        continue
       }
       let record = layout.feature_list.records[feature]
       if tag_in_list(record.tag, feature_tags) {
@@ -167,7 +172,7 @@ fn select_lookup_offsets_internal(
   let lookup_indices : Array[Int] = []
   for feature_index in selected_features {
     if feature_index < 0 || feature_index >= layout.feature_list.records.length() {
-      return Err(InvalidFormat)
+      continue
     }
     let record = layout.feature_list.records[feature_index]
     let lookup_list = match parse_feature_table(layout.data, record.offset) {
@@ -181,7 +186,7 @@ fn select_lookup_offsets_internal(
   let lookup_offsets : Array[Int] = []
   for lookup_index in lookup_indices {
     if lookup_index < 0 || lookup_index >= layout.lookup_list.offsets.length() {
-      return Err(InvalidFormat)
+      continue
     }
     lookup_offsets.push(layout.lookup_list.offsets[lookup_index])
   }
@@ -208,12 +213,15 @@ fn select_lookup_offsets_for_feature_internal(
   if include_required {
     match required_feature {
       None => ()
-      Some(feature) => push_unique_int(selected_features, feature)
+      Some(feature) =>
+        if feature >= 0 && feature < layout.feature_list.records.length() {
+          push_unique_int(selected_features, feature)
+        }
     }
   }
   for feature_index in feature_indices {
     if feature_index < 0 || feature_index >= layout.feature_list.records.length() {
-      return Err(InvalidFormat)
+      continue
     }
     let record = layout.feature_list.records[feature_index]
     if record.tag == feature_tag {
@@ -223,7 +231,7 @@ fn select_lookup_offsets_for_feature_internal(
   let lookup_indices : Array[Int] = []
   for feature_index in selected_features {
     if feature_index < 0 || feature_index >= layout.feature_list.records.length() {
-      return Err(InvalidFormat)
+      continue
     }
     let record = layout.feature_list.records[feature_index]
     let lookup_list = match parse_feature_table(layout.data, record.offset) {
@@ -237,7 +245,7 @@ fn select_lookup_offsets_for_feature_internal(
   let lookup_offsets : Array[Int] = []
   for lookup_index in lookup_indices {
     if lookup_index < 0 || lookup_index >= layout.lookup_list.offsets.length() {
-      return Err(InvalidFormat)
+      continue
     }
     lookup_offsets.push(layout.lookup_list.offsets[lookup_index])
   }

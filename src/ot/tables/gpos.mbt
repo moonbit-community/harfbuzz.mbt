@@ -1191,10 +1191,10 @@ fn apply_chain_pos_subtable_format2(
     ) => {
       if coverage_offset == 0 || backtrack_class_def_offset == 0 ||
           input_class_def_offset == 0 || lookahead_class_def_offset == 0 {
-        return Err(InvalidFormat)
+        return Ok(false)
       }
       if class_set_count <= 0 {
-        return Err(InvalidFormat)
+        return Ok(false)
       }
       let coverage_base = offset + coverage_offset
       let backtrack_class_def_base = offset + backtrack_class_def_offset
@@ -1229,7 +1229,7 @@ fn apply_chain_pos_subtable_format2(
               Err(err) => return Err(err)
               Ok(class_value) => {
                 if class_value < 0 || class_value >= class_set_count {
-                  return Err(InvalidFormat)
+                  continue
                 }
                 let class_set_offset = read_u16_int(
                   data,
@@ -1239,7 +1239,7 @@ fn apply_chain_pos_subtable_format2(
                   Err(err) => return Err(err)
                   Ok(class_set_offset) => {
                     if class_set_offset == 0 {
-                      return Err(InvalidFormat)
+                      continue
                     }
                     let rule_set_base = offset + class_set_offset
                     if rule_set_base < 0 || rule_set_base + 2 > data.length() {
@@ -1250,7 +1250,7 @@ fn apply_chain_pos_subtable_format2(
                       Err(err) => return Err(err)
                       Ok(rule_count) => {
                         if rule_count <= 0 {
-                          return Err(InvalidFormat)
+                          continue
                         }
                         let rule_list_base = rule_set_base + 2
                         if rule_list_base < 0 ||
@@ -1266,7 +1266,7 @@ fn apply_chain_pos_subtable_format2(
                             Err(err) => return Err(err)
                             Ok(rule_offset) => {
                               if rule_offset == 0 {
-                                return Err(InvalidFormat)
+                                continue
                               }
                               let rule_base = rule_set_base + rule_offset
                               let applied = match apply_chain_pos_class_rule(
@@ -1283,6 +1283,7 @@ fn apply_chain_pos_subtable_format2(
                                 mark_filtering_set,
                                 gdef,
                               ) {
+                                Err(InvalidFormat) => false
                                 Err(err) => return Err(err)
                                 Ok(value) => value
                               }

@@ -679,7 +679,7 @@ fn apply_context_subtable_format2(
     (_, _, Err(err)) => Err(err)
     (Ok(coverage_offset), Ok(class_def_offset), Ok(class_set_count)) => {
       if coverage_offset == 0 || class_def_offset == 0 || class_set_count <= 0 {
-        return Err(InvalidFormat)
+        return Ok(false)
       }
       let coverage_base = offset + coverage_offset
       let class_def_base = offset + class_def_offset
@@ -712,10 +712,11 @@ fn apply_context_subtable_format2(
           Ok(Some(_)) => {
             let class_value = class_def_value(data, class_def_base, glyph)
             match class_value {
+              Err(InvalidFormat) => continue
               Err(err) => return Err(err)
               Ok(class_value) => {
                 if class_value < 0 || class_value >= class_set_count {
-                  return Err(InvalidFormat)
+                  continue
                 }
                 let class_set_offset = read_u16_int(
                   data,
@@ -725,7 +726,7 @@ fn apply_context_subtable_format2(
                   Err(err) => return Err(err)
                   Ok(class_set_offset) => {
                     if class_set_offset == 0 {
-                      return Err(InvalidFormat)
+                      continue
                     }
                     let rule_set_base = offset + class_set_offset
                     if rule_set_base < 0 || rule_set_base + 2 > data.length() {
@@ -736,7 +737,7 @@ fn apply_context_subtable_format2(
                       Err(err) => return Err(err)
                       Ok(rule_count) => {
                         if rule_count <= 0 {
-                          return Err(InvalidFormat)
+                          continue
                         }
                         let rule_list_base = rule_set_base + 2
                         if rule_list_base < 0 ||
@@ -752,7 +753,7 @@ fn apply_context_subtable_format2(
                             Err(err) => return Err(err)
                             Ok(rule_offset) => {
                               if rule_offset == 0 {
-                                return Err(InvalidFormat)
+                                continue
                               }
                               let rule_base = rule_set_base + rule_offset
                               let applied = match apply_context_class_rule(
@@ -768,6 +769,7 @@ fn apply_context_subtable_format2(
                                 masks=masks,
                                 lookup_mask=lookup_mask,
                               ) {
+                                Err(InvalidFormat) => false
                                 Err(err) => return Err(err)
                                 Ok(value) => value
                               }
@@ -814,7 +816,7 @@ fn apply_context_subtable_format3(
     (_, Err(err)) => Err(err)
     (Ok(glyph_count), Ok(subst_count)) => {
       if glyph_count <= 0 || subst_count < 0 {
-        return Err(InvalidFormat)
+        return Ok(false)
       }
       let coverage_list_base = offset + 6
       if coverage_list_base < 0 ||
@@ -945,6 +947,7 @@ fn apply_context_class_rule(
               glyphs[indices[i + 1]],
             )
             match actual {
+              Err(InvalidFormat) => return Ok(false)
               Err(err) => return Err(err)
               Ok(actual) => if actual != expected { return Ok(false) }
             }
@@ -952,7 +955,7 @@ fn apply_context_class_rule(
         }
       }
       let record_base = class_list_base + (glyph_count - 1) * 2
-      apply_subst_lookup_records(
+      match apply_subst_lookup_records(
         data,
         record_base,
         subst_count,
@@ -964,7 +967,11 @@ fn apply_context_class_rule(
         gdef,
         masks=masks,
         lookup_mask=lookup_mask,
-      )
+      ) {
+        Err(InvalidFormat) => Ok(false)
+        Err(err) => Err(err)
+        Ok(value) => Ok(value)
+      }
     }
   }
 }
@@ -1409,10 +1416,10 @@ fn apply_chain_subtable_format2(
     ) => {
       if coverage_offset == 0 || backtrack_class_def_offset == 0 ||
           input_class_def_offset == 0 || lookahead_class_def_offset == 0 {
-        return Err(InvalidFormat)
+        return Ok(false)
       }
       if class_set_count <= 0 {
-        return Err(InvalidFormat)
+        return Ok(false)
       }
       let coverage_base = offset + coverage_offset
       let backtrack_class_def_base = offset + backtrack_class_def_offset
@@ -1450,7 +1457,7 @@ fn apply_chain_subtable_format2(
               Err(err) => return Err(err)
               Ok(class_value) => {
                 if class_value < 0 || class_value >= class_set_count {
-                  return Err(InvalidFormat)
+                  continue
                 }
                 let class_set_offset = read_u16_int(
                   data,
@@ -1460,7 +1467,7 @@ fn apply_chain_subtable_format2(
                   Err(err) => return Err(err)
                   Ok(class_set_offset) => {
                     if class_set_offset == 0 {
-                      return Err(InvalidFormat)
+                      continue
                     }
                     let rule_set_base = offset + class_set_offset
                     if rule_set_base < 0 || rule_set_base + 2 > data.length() {
@@ -1471,7 +1478,7 @@ fn apply_chain_subtable_format2(
                       Err(err) => return Err(err)
                       Ok(rule_count) => {
                         if rule_count <= 0 {
-                          return Err(InvalidFormat)
+                          continue
                         }
                         let rule_list_base = rule_set_base + 2
                         if rule_list_base < 0 ||
@@ -1487,7 +1494,7 @@ fn apply_chain_subtable_format2(
                             Err(err) => return Err(err)
                             Ok(rule_offset) => {
                               if rule_offset == 0 {
-                                return Err(InvalidFormat)
+                                continue
                               }
                               let rule_base = rule_set_base + rule_offset
                               let applied = match apply_chain_class_rule(
@@ -1505,6 +1512,7 @@ fn apply_chain_subtable_format2(
                                 masks=masks,
                                 lookup_mask=lookup_mask,
                               ) {
+                                Err(InvalidFormat) => false
                                 Err(err) => return Err(err)
                                 Ok(value) => value
                               }

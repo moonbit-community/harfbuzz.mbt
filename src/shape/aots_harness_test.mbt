@@ -81,12 +81,14 @@ test "shape aots fixtures" {
   let mut mismatched = 0
   for case in aots_test_cases {
     match run_aots_case(case) {
-      Err(_) => skipped = skipped + 1
+      Err(_) => {
+        skipped = skipped + 1
+      }
       Ok(actual) =>
         if actual != case.expected {
           mismatched = mismatched + 1
         }
     }
   }
-  inspect((aots_skipped_cases, skipped, mismatched), content="(3, 55, 29)")
+  inspect((aots_skipped_cases, skipped, mismatched), content="(3, 0, 32)")
 }

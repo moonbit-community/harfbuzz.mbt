@@ -410,13 +410,27 @@ fn advance_for_codepoint(
     Ok(Some(glyph)) =>
       if horizontal {
         match font.glyph_h_advance(glyph) {
-          Err(err) => Err(Font(err))
           Ok(value) => Ok(Some(value))
+          Err(err) => {
+            let glyph_count = font.get_face().get_glyph_count()
+            if glyph_count > 0 && glyph.reinterpret_as_int() >= glyph_count {
+              Ok(Some(0))
+            } else {
+              Err(Font(err))
+            }
+          }
         }
       } else {
         match font.glyph_v_advance(glyph) {
-          Err(err) => Err(Font(err))
           Ok(value) => Ok(Some(value))
+          Err(err) => {
+            let glyph_count = font.get_face().get_glyph_count()
+            if glyph_count > 0 && glyph.reinterpret_as_int() >= glyph_count {
+              Ok(Some(0))
+            } else {
+              Err(Font(err))
+            }
+          }
         }
       }
   }
@@ -1709,8 +1723,15 @@ fn default_position(
 ) -> Result[GlyphPosition, ShapeError] {
   if buffer.direction.is_vertical() {
     let advance = match font.glyph_v_advance(glyph) {
-      Err(err) => return Err(Font(err))
       Ok(value) => value
+      Err(err) => {
+        let glyph_count = font.get_face().get_glyph_count()
+        if glyph_count > 0 && glyph.reinterpret_as_int() >= glyph_count {
+          0
+        } else {
+          return Err(Font(err))
+        }
+      }
     }
     Ok(GlyphPosition::{
       x_advance: 0,
@@ -1720,8 +1741,15 @@ fn default_position(
     })
   } else {
     let advance = match font.glyph_h_advance(glyph) {
-      Err(err) => return Err(Font(err))
       Ok(value) => value
+      Err(err) => {
+        let glyph_count = font.get_face().get_glyph_count()
+        if glyph_count > 0 && glyph.reinterpret_as_int() >= glyph_count {
+          0
+        } else {
+          return Err(Font(err))
+        }
+      }
     }
     Ok(GlyphPosition::{
       x_advance: advance,
