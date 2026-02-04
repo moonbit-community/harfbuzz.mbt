@@ -60,7 +60,7 @@ The ItemVariationStore bytes are copied through unchanged if present.
 - COLR v1 subsetting remaps base glyph IDs and paint glyph references, but drops
   the clip list and does not prune layer list entries.
 - sbix subsetting copies glyph records as-is (including any `dupe` payloads).
-- CBDT/CBLC subsetting supports index subtable format 1 only.
+- CBDT/CBLC subsetting supports index subtable formats 1 and 3; other formats are skipped.
 - gvar/HVAR/VVAR/VARC subsetting keeps ItemVariationStore/axis/condition bytes
   unchanged; VARC drops components whose glyphs are not in the subset.
 - Layout tables that reference glyph IDs are not subset yet (except `VORG`,
@@ -69,6 +69,18 @@ The ItemVariationStore bytes are copied through unchanged if present.
   format 0/2/3); they are only preserved when the subset keeps all glyphs.
 - `loca` is always written in long format.
 - `cmap` is rebuilt only from the supplied codepoints.
+
+## Subset data test coverage
+
+The subset data harness in `src/subset/subset_data_test.mbt` exercises
+fixtures from `refs/harfbuzz/test/subset/data`.
+Current exclusions:
+
+- Suites skipped in `scripts/gen_subset_smoke_data.py` (`SKIP_SUITES`), mostly
+  covering layout-heavy or variable-font cases not yet supported by the subset
+  data harness.
+- Subsets with `*` or `no-unicodes`, and cases with non-default `OPTIONS`.
+- `basics.tests` is limited to `Roboto-Regular.abc.ttf` (see `SUITE_FONT_ALLOW`).
 
 ## Usage
 
