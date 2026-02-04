@@ -343,6 +343,373 @@ fn dump_table_diff(expected : Bytes, actual : Bytes) -> Unit {
   }
 }
 
+fn table_tags_string(data : Bytes) -> String {
+  let num_tables = read_u16_dbg(data[:], 4)
+  let tags : Array[String] = []
+  match num_tables {
+    None => ()
+    Some(num_tables) => {
+      for i in 0..<num_tables {
+        let base = 12 + i * 16
+        let tag = read_tag_dbg(data[:], base)
+        match tag {
+          None => ()
+          Some(tag) => tags.push(tag)
+        }
+      }
+    }
+  }
+  tags.sort()
+  tags.join(",")
+}
+
+fn table_diff_tags(expected : Bytes, actual : Bytes) -> String {
+  let num_tables = read_u16_dbg(expected[:], 4)
+  let diffs : Array[String] = []
+  match num_tables {
+    None => ()
+    Some(num_tables) => {
+      for i in 0..<num_tables {
+        let base = 12 + i * 16
+        let tag = read_tag_dbg(expected[:], base)
+        match tag {
+          None => ()
+          Some(tag) => {
+            let exp = table_slice(expected, tag)
+            let act = table_slice(actual, tag)
+            match (exp, act) {
+              (Some(exp), Some(act)) =>
+                if exp != act {
+                  diffs.push(tag)
+                }
+              (Some(_), None) => diffs.push(tag)
+              (None, Some(_)) => diffs.push(tag)
+              _ => ()
+            }
+          }
+        }
+      }
+    }
+  }
+  diffs.sort()
+  diffs.join(",")
+}
+
+fn cmap_summary(data : Bytes) -> String {
+  let cmap = table_slice(data, "cmap")
+  match cmap {
+    None => "none"
+    Some(cmap) => {
+      let view = cmap[:]
+      let num_tables = read_u16_dbg(view, 2)
+      let entries : Array[String] = []
+      match num_tables {
+        None => ()
+        Some(num_tables) => {
+          for i in 0..<num_tables {
+            let rec_base = 4 + i * 8
+            let platform = read_u16_dbg(view, rec_base)
+            let encoding = read_u16_dbg(view, rec_base + 2)
+            let offset = read_u32_dbg(view, rec_base + 4)
+            match (platform, encoding, offset) {
+              (Some(platform), Some(encoding), Some(offset)) => {
+                let format = read_u16_dbg(view, offset)
+                match format {
+                  None => ()
+                  Some(format) => {
+                    entries.push("\{platform}/\{encoding}:\{format}")
+                  }
+                }
+              }
+              _ => ()
+            }
+          }
+        }
+      }
+      entries.sort()
+      entries.join(",")
+    }
+  }
+}
+
+fn cmap_record_order(data : Bytes) -> String {
+  let cmap = table_slice(data, "cmap")
+  match cmap {
+    None => "none"
+    Some(cmap) => {
+      let view = cmap[:]
+      let num_tables = read_u16_dbg(view, 2)
+      let entries : Array[String] = []
+      match num_tables {
+        None => ()
+        Some(num_tables) => {
+          for i in 0..<num_tables {
+            let rec_base = 4 + i * 8
+            let platform = read_u16_dbg(view, rec_base)
+            let encoding = read_u16_dbg(view, rec_base + 2)
+            let offset = read_u32_dbg(view, rec_base + 4)
+            match (platform, encoding, offset) {
+              (Some(platform), Some(encoding), Some(offset)) => {
+                let format = read_u16_dbg(view, offset)
+                match format {
+                  None => ()
+                  Some(format) => entries.push("\{platform}/\{encoding}:\{format}")
+                }
+              }
+              _ => ()
+            }
+          }
+        }
+      }
+      entries.join(",")
+    }
+  }
+}
+fn cmap_length_summary(data : Bytes) -> String {
+  let cmap = table_slice(data, "cmap")
+  match cmap {
+    None => "none"
+    Some(cmap) => {
+      let view = cmap[:]
+      let num_tables = read_u16_dbg(view, 2)
+      let entries : Array[String] = []
+      match num_tables {
+        None => ()
+        Some(num_tables) => {
+          for i in 0..<num_tables {
+            let rec_base = 4 + i * 8
+            let platform = read_u16_dbg(view, rec_base)
+            let encoding = read_u16_dbg(view, rec_base + 2)
+            let offset = read_u32_dbg(view, rec_base + 4)
+            match (platform, encoding, offset) {
+              (Some(platform), Some(encoding), Some(offset)) => {
+                let format = read_u16_dbg(view, offset)
+                match format {
+                  None => ()
+                  Some(format) => {
+                    let length = if format == 14 {
+                      read_u32_dbg(view, offset + 2)
+                    } else if format == 12 {
+                      read_u32_dbg(view, offset + 4)
+                    } else if format == 4 {
+                      let short_len = read_u16_dbg(view, offset + 2)
+                      short_len
+                    } else {
+                      None
+                    }
+                    match length {
+                      None => ()
+                      Some(length) =>
+                        entries.push("\{platform}/\{encoding}:\{format}:\{length}")
+                    }
+                  }
+                }
+              }
+              _ => ()
+            }
+          }
+        }
+      }
+      entries.sort()
+      entries.join(",")
+    }
+  }
+}
+
+fn cmap_header_summary(data : Bytes) -> String {
+  let cmap = table_slice(data, "cmap")
+  match cmap {
+    None => "none"
+    Some(cmap) => {
+      let view = cmap[:]
+      let version = read_u16_dbg(view, 0)
+      let num_tables = read_u16_dbg(view, 2)
+      let entries : Array[String] = []
+      match num_tables {
+        None => ()
+        Some(num_tables) => {
+          for i in 0..<num_tables {
+            let rec_base = 4 + i * 8
+            let platform = read_u16_dbg(view, rec_base)
+            let encoding = read_u16_dbg(view, rec_base + 2)
+            let offset = read_u32_dbg(view, rec_base + 4)
+            match (platform, encoding, offset) {
+              (Some(platform), Some(encoding), Some(offset)) =>
+                entries.push("\{platform}/\{encoding}@\{offset}")
+              _ => ()
+            }
+          }
+        }
+      }
+      let ver = match version {
+        None => "?"
+        Some(value) => value.to_string()
+      }
+      let num = match num_tables {
+        None => "?"
+        Some(value) => value.to_string()
+      }
+      let joined = entries.join(",")
+      "\{ver}|\{num}|\{joined}"
+    }
+  }
+}
+fn cmap_records(data : Bytes) -> Array[(Int, Int, Int, Bytes)] {
+  let cmap = table_slice(data, "cmap")
+  let records : Array[(Int, Int, Int, Bytes)] = []
+  match cmap {
+    None => ()
+    Some(cmap) => {
+      let view = cmap[:]
+      let num_tables = read_u16_dbg(view, 2)
+      match num_tables {
+        None => ()
+        Some(num_tables) => {
+          for i in 0..<num_tables {
+            let rec_base = 4 + i * 8
+            let platform = read_u16_dbg(view, rec_base)
+            let encoding = read_u16_dbg(view, rec_base + 2)
+            let offset = read_u32_dbg(view, rec_base + 4)
+            match (platform, encoding, offset) {
+              (Some(platform), Some(encoding), Some(offset)) => {
+                let format = read_u16_dbg(view, offset)
+                match format {
+                  None => ()
+                  Some(format) => {
+                    let length = if format == 14 {
+                      read_u32_dbg(view, offset + 2)
+                    } else if format == 12 {
+                      read_u32_dbg(view, offset + 4)
+                    } else if format == 4 {
+                      read_u16_dbg(view, offset + 2)
+                    } else {
+                      None
+                    }
+                    match length {
+                      None => ()
+                      Some(length) =>
+                        if offset + length <= cmap.length() {
+                          let bytes = cmap[offset:offset + length].to_bytes()
+                          records.push((platform, encoding, format, bytes))
+                        }
+                    }
+                  }
+                }
+              }
+              _ => ()
+            }
+          }
+        }
+      }
+    }
+  }
+  records
+}
+
+fn cmap_diff_records(expected : Bytes, actual : Bytes) -> String {
+  let actual_map : Map[String, Bytes] = {}
+  for entry in cmap_records(actual) {
+    let (platform, encoding, format, bytes) = entry
+    let key = "\{platform}/\{encoding}:\{format}"
+    actual_map[key] = bytes
+  }
+  let diffs : Array[String] = []
+  for entry in cmap_records(expected) {
+    let (platform, encoding, format, bytes) = entry
+    let key = "\{platform}/\{encoding}:\{format}"
+    match actual_map.get(key) {
+      None => diffs.push(key)
+      Some(act_bytes) =>
+        if act_bytes != bytes {
+          diffs.push(key)
+        }
+    }
+  }
+  diffs.sort()
+  diffs.join(",")
+}
+
+fn cblc_summary(data : Bytes) -> String {
+  let cblc = table_slice(data, "CBLC")
+  match cblc {
+    None => "none"
+    Some(cblc) => {
+      if cblc.length() < 8 {
+        return "invalid"
+      }
+      let major = read_u16_dbg(cblc[:], 0)
+      let minor = read_u16_dbg(cblc[:], 2)
+      let num_sizes = read_u32_dbg(cblc[:], 4)
+      let major_str = match major {
+        None => "?"
+        Some(value) => value.to_string()
+      }
+      let minor_str = match minor {
+        None => "?"
+        Some(value) => value.to_string()
+      }
+      let size_str = match num_sizes {
+        None => "?"
+        Some(value) => value.to_string()
+      }
+      let entries : Array[String] = []
+      match num_sizes {
+        None => ()
+        Some(num_sizes) => {
+          let size_base = 8
+          let size_len = 48
+          if size_base + num_sizes * size_len > cblc.length() {
+            return "\{major_str}.\{minor_str} sizes=\{size_str} invalid"
+          }
+          for i in 0..<num_sizes {
+            let rec_offset = size_base + i * size_len
+            let list_offset = read_u32_dbg(cblc[:], rec_offset)
+            let list_size = read_u32_dbg(cblc[:], rec_offset + 4)
+            let subtable_count = read_u32_dbg(cblc[:], rec_offset + 8)
+            let mut detail = "\{i}:"
+            match (list_offset, list_size, subtable_count) {
+              (Some(list_offset), Some(list_size), Some(subtable_count)) => {
+                detail = "\{detail}list=\{list_size} subtables=\{subtable_count}"
+                if list_offset + list_size <= cblc.length() && list_size >= 8 {
+                  let ranges : Array[String] = []
+                  for j in 0..<subtable_count {
+                    let sub_rec = list_offset + j * 8
+                    let first = read_u16_dbg(cblc[:], sub_rec)
+                    let last = read_u16_dbg(cblc[:], sub_rec + 2)
+                    let sub_offset = read_u32_dbg(cblc[:], sub_rec + 4)
+                    match (first, last, sub_offset) {
+                      (Some(first), Some(last), Some(sub_offset)) => {
+                        let mut range = "\{first}-\{last}@\{sub_offset}"
+                        let sub_base = list_offset + sub_offset
+                        if sub_base + 8 <= cblc.length() {
+                          let index_format = read_u16_dbg(cblc[:], sub_base)
+                          let image_format = read_u16_dbg(cblc[:], sub_base + 2)
+                          match (index_format, image_format) {
+                            (Some(index_format), Some(image_format)) =>
+                              range = "\{range}(\{index_format}/\{image_format})"
+                            _ => ()
+                          }
+                        }
+                        ranges.push(range)
+                      }
+                      _ => ()
+                    }
+                  }
+                  let ranges_joined = ranges.join(",")
+                  detail = "\{detail} ranges=\{ranges_joined}"
+                }
+              }
+              _ => ()
+            }
+            entries.push(detail)
+          }
+        }
+      }
+      let joined = entries.join(";")
+      "\{major_str}.\{minor_str} sizes=\{size_str} \{joined}"
+    }
+  }
+}
 fn dump_dir_checksum_diff(expected : Bytes, actual : Bytes) -> Unit {
   let num_tables = read_u16_dbg(expected[:], 4)
   match num_tables {
@@ -498,13 +865,57 @@ test "subset data fixtures" {
       let font = @font.Font::new(face)
       let input = @subset.SubsetInput::from_codepoints(codepoints)
       let actual = match @subset.subset(font, input) {
-        Err(_) => {
+        Err(err) => {
+          if case.suite == "cbdt.tests" {
+            fail(
+              "subset error \{case.suite} \{case.font} \{case.profile} \{case.subset} \{err}",
+            )
+          }
           mismatched = mismatched + 1
           continue
         }
         Ok(value) => value
       }
       if actual != expected {
+        if case.suite == "cbdt.tests" {
+          let exp_cblc = table_slice(expected, "CBLC")
+          let act_cblc = table_slice(actual, "CBLC")
+          let exp_cbdt = table_slice(expected, "CBDT")
+          let act_cbdt = table_slice(actual, "CBDT")
+          let exp_tags = table_tags_string(expected)
+          let act_tags = table_tags_string(actual)
+          let diff_tags = table_diff_tags(expected, actual)
+          let exp_cblc_summary = cblc_summary(expected)
+          let act_cblc_summary = cblc_summary(actual)
+          let exp_cmap = cmap_summary(expected)
+          let act_cmap = cmap_summary(actual)
+          let exp_cmap_order = cmap_record_order(expected)
+          let act_cmap_order = cmap_record_order(actual)
+          let exp_cmap_header = cmap_header_summary(expected)
+          let act_cmap_header = cmap_header_summary(actual)
+          let exp_cmap_len = cmap_length_summary(expected)
+          let act_cmap_len = cmap_length_summary(actual)
+          let cmap_record_diff = cmap_diff_records(expected, actual)
+          let exp_cblc_len = match exp_cblc {
+            None => -1
+            Some(bytes) => bytes.length()
+          }
+          let act_cblc_len = match act_cblc {
+            None => -1
+            Some(bytes) => bytes.length()
+          }
+          let exp_cbdt_len = match exp_cbdt {
+            None => -1
+            Some(bytes) => bytes.length()
+          }
+          let act_cbdt_len = match act_cbdt {
+            None => -1
+            Some(bytes) => bytes.length()
+          }
+          fail(
+            "subset mismatch \{case.suite} \{case.font} \{case.profile} \{case.subset} CBLC \{exp_cblc_len}/\{act_cblc_len} CBDT \{exp_cbdt_len}/\{act_cbdt_len} cblc exp=\{exp_cblc_summary} act=\{act_cblc_summary} diff=\{diff_tags} cmap exp=\{exp_cmap} act=\{act_cmap} cmap_order exp=\{exp_cmap_order} act=\{act_cmap_order} cmap_len exp=\{exp_cmap_len} act=\{act_cmap_len} cmap_diff=\{cmap_record_diff} cmap_header exp=\{exp_cmap_header} act=\{act_cmap_header} tags exp=\{exp_tags} act=\{act_tags}",
+          )
+        }
         println(
           "mismatch \{case.suite} \{case.font} \{case.profile} \{case.subset}",
         )

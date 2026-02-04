@@ -370,6 +370,12 @@ fn push_u16(bytes : Array[Byte], value : Int) -> Unit {
   bytes.push((value & 0xff).to_byte())
 }
 
+fn push_u24(bytes : Array[Byte], value : Int) -> Unit {
+  bytes.push(((value >> 16) & 0xff).to_byte())
+  bytes.push(((value >> 8) & 0xff).to_byte())
+  bytes.push((value & 0xff).to_byte())
+}
+
 ///|
 fn push_i16(bytes : Array[Byte], value : Int) -> Unit {
   let adjusted = if value < 0 { value + 0x10000 } else { value }
@@ -864,10 +870,16 @@ fn build_cmap_table_multi(subtables : Array[(Int, Int, Bytes)]) -> Bytes {
       table_indices.push(found)
     } else {
       unique_tables.push(table)
-      unique_offsets.push(offset)
       table_indices.push(unique_tables.length() - 1)
-      offset = offset + table.length()
     }
+  }
+  for _ in 0..<unique_tables.length() {
+    unique_offsets.push(0)
+  }
+  for i in 0..<unique_tables.length() {
+    let idx = unique_tables.length() - 1 - i
+    unique_offsets[idx] = offset
+    offset = offset + unique_tables[idx].length()
   }
   for i in 0..<subtables.length() {
     let (platform, encoding, _) = subtables[i]
@@ -876,7 +888,9 @@ fn build_cmap_table_multi(subtables : Array[(Int, Int, Bytes)]) -> Bytes {
     push_u16(bytes, encoding)
     push_u32(bytes, unique_offsets[table_index])
   }
-  for table in unique_tables {
+  for i in 0..<unique_tables.length() {
+    let idx = unique_tables.length() - 1 - i
+    let table = unique_tables[idx]
     for b in table {
       bytes.push(b)
     }
@@ -947,6 +961,250 @@ fn build_cmap_format12(groups : Array[(UInt, UInt, UInt)]) -> Bytes {
     push_u32(bytes, start_gid.reinterpret_as_int())
   }
   Bytes::from_array(bytes)
+}
+
+fn build_format14_ranges(values : Array[Int]) -> Array[(Int, Int)] {
+  if values.is_empty() {
+    return []
+  }
+  let sorted : Array[Int] = []
+  for value in values {
+    sorted.push(value)
+  }
+  sorted.sort()
+  let ranges : Array[(Int, Int)] = []
+  let mut i = 0
+  while i < sorted.length() {
+    let start = sorted[i]
+    let mut end = start
+    let mut j = i + 1
+    while j < sorted.length() {
+      let next = sorted[j]
+      if next == end {
+        j = j + 1
+        continue
+      }
+      if next != end + 1 {
+        break
+      }
+      if end - start >= 255 {
+        break
+      }
+      end = next
+      j = j + 1
+    }
+    ranges.push((start, end - start))
+    i = j
+  }
+  ranges
+}
+
+fn build_cmap_format14_subset(
+  bytes : Array[Byte],
+  plan : SubsetPlan,
+) -> Result[Bytes?, SubsetError] {
+  if bytes.length() < 10 {
+    return Err(InvalidInput("invalid cmap format14 table"))
+  }
+  let format = match read_u16(bytes, 0) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  if format != 14 {
+    return Err(InvalidInput("invalid cmap format14 format"))
+  }
+  let length = match read_u32(bytes, 2) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  if length < 10 || length > bytes.length() {
+    return Err(InvalidInput("invalid cmap format14 length"))
+  }
+  let record_count = match read_u32(bytes, 6) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  let record_base = 10
+  if record_base + record_count * 11 > length {
+    return Err(InvalidInput("invalid cmap format14 record bounds"))
+  }
+  let retained : Map[Int, Bool] = {}
+  for entry in plan.codepoint_map {
+    let (codepoint, _) = entry
+    retained[codepoint.reinterpret_as_int()] = true
+  }
+  let records : Array[(Int, Array[(Int, Int)], Array[(Int, Int)])] = []
+  for i in 0..<record_count {
+    let rec_offset = record_base + i * 11
+    let selector = match read_u24(bytes, rec_offset) {
+      Err(err) => return Err(err)
+      Ok(value) => value
+    }
+    let default_offset = match read_u32(bytes, rec_offset + 3) {
+      Err(err) => return Err(err)
+      Ok(value) => value
+    }
+    let non_default_offset = match read_u32(bytes, rec_offset + 7) {
+      Err(err) => return Err(err)
+      Ok(value) => value
+    }
+    let default_values : Array[Int] = []
+    if default_offset != 0 {
+      if default_offset + 4 > length {
+        return Err(InvalidInput("invalid cmap format14 default offset"))
+      }
+      let range_count = match read_u32(bytes, default_offset) {
+        Err(err) => return Err(err)
+        Ok(value) => value
+      }
+      let range_base = default_offset + 4
+      if range_base + range_count * 4 > length {
+        return Err(InvalidInput("invalid cmap format14 default ranges"))
+      }
+      for j in 0..<range_count {
+        let entry_offset = range_base + j * 4
+        let start = match read_u24(bytes, entry_offset) {
+          Err(err) => return Err(err)
+          Ok(value) => value
+        }
+        let additional = match read_u8(bytes, entry_offset + 3) {
+          Err(err) => return Err(err)
+          Ok(value) => value
+        }
+        let end = start + additional
+        let mut value = start
+        while value <= end {
+          if retained.get(value) is Some(_) {
+            default_values.push(value)
+          }
+          value = value + 1
+        }
+      }
+    }
+    let non_default_values : Array[(Int, Int)] = []
+    if non_default_offset != 0 {
+      if non_default_offset + 4 > length {
+        return Err(InvalidInput("invalid cmap format14 non-default offset"))
+      }
+      let mapping_count = match read_u32(bytes, non_default_offset) {
+        Err(err) => return Err(err)
+        Ok(value) => value
+      }
+      let mapping_base = non_default_offset + 4
+      if mapping_base + mapping_count * 5 > length {
+        return Err(InvalidInput("invalid cmap format14 non-default mappings"))
+      }
+      for j in 0..<mapping_count {
+        let entry_offset = mapping_base + j * 5
+        let unicode = match read_u24(bytes, entry_offset) {
+          Err(err) => return Err(err)
+          Ok(value) => value
+        }
+        let glyph = match read_u16(bytes, entry_offset + 3) {
+          Err(err) => return Err(err)
+          Ok(value) => value
+        }
+        if retained.get(unicode) is Some(_) {
+          if glyph >= 0 && glyph < plan.old_to_new.length() {
+            let new_gid = plan.old_to_new[glyph]
+            if new_gid >= 0 {
+              non_default_values.push((unicode, new_gid))
+            }
+          }
+        }
+      }
+    }
+    if !default_values.is_empty() || !non_default_values.is_empty() {
+      let default_ranges = build_format14_ranges(default_values)
+      non_default_values.sort_by((a, b) => a.0 - b.0)
+      records.push((selector, default_ranges, non_default_values))
+    }
+  }
+  if records.is_empty() {
+    return Ok(None)
+  }
+  let default_tables : Array[Bytes?] = []
+  let non_default_tables : Array[Bytes?] = []
+  for record in records {
+    let (_, ranges, mappings) = record
+    if ranges.is_empty() {
+      default_tables.push(None)
+    } else {
+      let table_bytes : Array[Byte] = []
+      push_u32(table_bytes, ranges.length())
+      for range in ranges {
+        let (start, count) = range
+        push_u24(table_bytes, start)
+        table_bytes.push((count & 0xff).to_byte())
+      }
+      default_tables.push(Some(Bytes::from_array(table_bytes)))
+    }
+    if mappings.is_empty() {
+      non_default_tables.push(None)
+    } else {
+      let table_bytes : Array[Byte] = []
+      push_u32(table_bytes, mappings.length())
+      for entry in mappings {
+        let (unicode, gid) = entry
+        push_u24(table_bytes, unicode)
+        push_u16(table_bytes, gid)
+      }
+      non_default_tables.push(Some(Bytes::from_array(table_bytes)))
+    }
+  }
+  let record_count_out = records.length()
+  let header_len = 10 + record_count_out * 11
+  let mut cursor = header_len
+  let default_offsets : Array[Int] = []
+  let non_default_offsets : Array[Int] = []
+  for i in 0..<record_count_out {
+    let default_offset = match default_tables[i] {
+      None => 0
+      Some(bytes) => {
+        let offset = cursor
+        cursor = cursor + bytes.length()
+        offset
+      }
+    }
+    let non_default_offset = match non_default_tables[i] {
+      None => 0
+      Some(bytes) => {
+        let offset = cursor
+        cursor = cursor + bytes.length()
+        offset
+      }
+    }
+    default_offsets.push(default_offset)
+    non_default_offsets.push(non_default_offset)
+  }
+  let out : Array[Byte] = []
+  push_u16(out, 14)
+  push_u32(out, 0)
+  push_u32(out, record_count_out)
+  for i in 0..<record_count_out {
+    let (selector, _, _) = records[i]
+    push_u24(out, selector)
+    push_u32(out, default_offsets[i])
+    push_u32(out, non_default_offsets[i])
+  }
+  for i in 0..<record_count_out {
+    match default_tables[i] {
+      None => ()
+      Some(bytes) =>
+        for b in bytes {
+          out.push(b)
+        }
+    }
+    match non_default_tables[i] {
+      None => ()
+      Some(bytes) =>
+        for b in bytes {
+          out.push(b)
+        }
+    }
+  }
+  write_u32(out, 2, out.length())
+  Ok(Some(Bytes::from_array(out)))
 }
 
 ///|
@@ -1167,8 +1425,9 @@ fn cmap_format4_covers(
 
 fn build_cmap_from_pairs(
   face : @face.Face,
-  pairs : Array[(UInt, Int)],
+  plan : SubsetPlan,
 ) -> Bytes? {
+  let pairs = plan.codepoint_map
   if pairs.is_empty() {
     return None
   }
@@ -1189,11 +1448,101 @@ fn build_cmap_from_pairs(
     }
   }
   let mut use_format12 = !bmp_only
-  if bmp_only {
-    let cmap_blob = match face.reference_table_optional(tag_cmap) {
-      Err(_) => None
-      Ok(value) => value
+  let format4_records : Array[(Int, Int)] = []
+  let format12_records : Array[(Int, Int)] = []
+  let format14_records : Array[(Int, Int, Bytes)] = []
+  let original_records : Array[(Int, Int, Int, Bytes?)] = []
+  let mut format14_subset : Bytes? = None
+  let cmap_blob = match face.reference_table_optional(tag_cmap) {
+    Err(_) => None
+    Ok(value) => value
+  }
+  let cmap_bytes_opt = match cmap_blob {
+    None => None
+    Some(blob) => Some(blob.as_view().to_bytes().to_array())
+  }
+  match cmap_bytes_opt {
+    None => ()
+    Some(cmap_bytes) => {
+      let num_tables = match read_u16(cmap_bytes, 2) {
+        Err(_) => None
+        Ok(value) => Some(value)
+      }
+      match num_tables {
+        None => ()
+        Some(num_tables) => {
+          for i in 0..<num_tables {
+            let record_base = 4 + i * 8
+            let platform = match read_u16(cmap_bytes, record_base) {
+              Err(_) => None
+              Ok(value) => Some(value)
+            }
+            let encoding = match read_u16(cmap_bytes, record_base + 2) {
+              Err(_) => None
+              Ok(value) => Some(value)
+            }
+            let offset = match read_u32(cmap_bytes, record_base + 4) {
+              Err(_) => None
+              Ok(value) => Some(value)
+            }
+            match (platform, encoding, offset) {
+              (Some(platform), Some(encoding), Some(offset)) => {
+                let format = match read_u16(cmap_bytes, offset) {
+                  Err(_) => None
+                  Ok(value) => Some(value)
+                }
+                match format {
+                  None => ()
+                  Some(4) => {
+                    format4_records.push((platform, encoding))
+                    original_records.push((platform, encoding, 4, None))
+                  }
+                  Some(12) => {
+                    format12_records.push((platform, encoding))
+                    original_records.push((platform, encoding, 12, None))
+                  }
+                  Some(14) => {
+                    let length = match read_u32(cmap_bytes, offset + 2) {
+                      Err(_) => None
+                      Ok(value) => Some(value)
+                    }
+                    match length {
+                      None => ()
+                      Some(length) =>
+                        if offset + length <= cmap_bytes.length() {
+                          let bytes = cmap_bytes[offset:offset + length].to_array()
+                          let subset_bytes = match format14_subset {
+                            None =>
+                              match build_cmap_format14_subset(bytes, plan) {
+                                Err(_) => None
+                                Ok(value) => {
+                                  format14_subset = value
+                                  value
+                                }
+                              }
+                            Some(bytes) => Some(bytes)
+                          }
+                          match subset_bytes {
+                            None => ()
+                            Some(bytes) => {
+                              format14_records.push((platform, encoding, bytes))
+                              original_records.push((platform, encoding, 14, Some(bytes)))
+                            }
+                          }
+                        }
+                    }
+                  }
+                  Some(other) => original_records.push((platform, encoding, other, None))
+                }
+              }
+              _ => ()
+            }
+          }
+        }
+      }
     }
+  }
+  if bmp_only {
     match cmap_blob {
       None => ()
       Some(blob) => {
@@ -1220,17 +1569,84 @@ fn build_cmap_from_pairs(
     }
   }
   let subtables : Array[(Int, Int, Bytes)] = []
-  if use_format12 {
-    let table = build_cmap_format12(groups)
-    subtables.push((0, 4, table))
-    subtables.push((3, 10, table))
-  } else {
-    match build_cmap_format4(groups) {
-      None => ()
-      Some(table) => {
-        subtables.push((0, 3, table))
-        subtables.push((3, 1, table))
+  let mut used_format = false
+  let mut used_format14 = false
+  if !original_records.is_empty() {
+    if use_format12 {
+      let table = build_cmap_format12(groups)
+      for record in original_records {
+        let (platform, encoding, format, bytes_opt) = record
+        if format == 12 {
+          subtables.push((platform, encoding, table))
+          used_format = true
+        } else if format == 14 {
+          match bytes_opt {
+            None => ()
+            Some(bytes) => {
+              subtables.push((platform, encoding, bytes))
+              used_format14 = true
+            }
+          }
+        }
       }
+    } else {
+      match build_cmap_format4(groups) {
+        None => ()
+        Some(table) => {
+          for record in original_records {
+            let (platform, encoding, format, bytes_opt) = record
+            if format == 4 {
+              subtables.push((platform, encoding, table))
+              used_format = true
+            } else if format == 14 {
+              match bytes_opt {
+                None => ()
+                Some(bytes) => {
+                  subtables.push((platform, encoding, bytes))
+                  used_format14 = true
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  if use_format12 {
+    if !used_format {
+      let table = build_cmap_format12(groups)
+      if format12_records.is_empty() {
+        subtables.push((0, 4, table))
+        subtables.push((3, 10, table))
+      } else {
+        for record in format12_records {
+          let (platform, encoding) = record
+          subtables.push((platform, encoding, table))
+        }
+      }
+    }
+  } else {
+    if !used_format {
+      match build_cmap_format4(groups) {
+        None => ()
+        Some(table) => {
+          if format4_records.is_empty() {
+            subtables.push((0, 3, table))
+            subtables.push((3, 1, table))
+          } else {
+            for record in format4_records {
+              let (platform, encoding) = record
+              subtables.push((platform, encoding, table))
+            }
+          }
+        }
+      }
+    }
+  }
+  if !used_format14 {
+    for entry in format14_records {
+      let (platform, encoding, table) = entry
+      subtables.push((platform, encoding, table))
     }
   }
   Some(build_cmap_table_multi(subtables))
@@ -1744,13 +2160,7 @@ fn add_optional_cblc_cbdt(
   tables : Array[(@common.Tag, Bytes)],
   identity : Bool,
 ) -> Result[Unit, SubsetError] {
-  if identity {
-    match add_optional_table(face, tag_cblc, tables) {
-      Err(err) => return Err(err)
-      Ok(_) => ()
-    }
-    return add_optional_table(face, tag_cbdt, tables)
-  }
+  let _ = identity
   let pair = match build_cblc_cbdt_subset(face, plan) {
     Err(err) => return Err(err)
     Ok(value) => value
@@ -2219,25 +2629,38 @@ pub fn build_plan(
     Err(err) => return Err(Sfnt(err))
     Ok(value) => value
   }
-  let loca_blob = match table_blob(face, tag_loca, "loca") {
-    Err(err) => return Err(err)
+  let glyf_blob = match face.reference_table_optional(tag_glyf) {
+    Err(err) => return Err(Face(err))
     Ok(value) => value
   }
-  let glyf_blob = match table_blob(face, tag_glyf, "glyf") {
-    Err(err) => return Err(err)
+  let loca_blob = match face.reference_table_optional(tag_loca) {
+    Err(err) => return Err(Face(err))
     Ok(value) => value
   }
-  let loca = match @sfnt.LocaTable::parse(
-    loca_blob.as_view(),
-    maxp.num_glyphs,
-    head.index_to_loc_format,
-  ) {
-    Err(err) => return Err(Sfnt(err))
-    Ok(value) => value
-  }
-  let glyf = match @sfnt.GlyfTable::parse(glyf_blob) {
-    Err(err) => return Err(Sfnt(err))
-    Ok(value) => value
+  let mut loca : @sfnt.LocaTable? = None
+  let mut glyf : @sfnt.GlyfTable? = None
+  match glyf_blob {
+    None => ()
+    Some(glyf_blob) => {
+      let loca_blob = match loca_blob {
+        None => return Err(Unsupported("missing loca table"))
+        Some(value) => value
+      }
+      let parsed_loca = match @sfnt.LocaTable::parse(
+        loca_blob.as_view(),
+        maxp.num_glyphs,
+        head.index_to_loc_format,
+      ) {
+        Err(err) => return Err(Sfnt(err))
+        Ok(value) => value
+      }
+      let parsed_glyf = match @sfnt.GlyfTable::parse(glyf_blob) {
+        Err(err) => return Err(Sfnt(err))
+        Ok(value) => value
+      }
+      loca = Some(parsed_loca)
+      glyf = Some(parsed_glyf)
+    }
   }
   let math_variant_refs = match face.reference_table_optional(tag_math) {
     Err(err) => return Err(Face(err))
@@ -2272,28 +2695,33 @@ pub fn build_plan(
         }
     }
   }
-  let mut idx = 0
-  while idx < queue.length() {
-    let gid = queue[idx]
-    idx = idx + 1
-    if gid + 1 >= loca.offsets.length() {
-      continue
-    }
-    let start = loca.offsets[gid]
-    let end = loca.offsets[gid + 1]
-    let length = end - start
-    let components = match glyf.glyph_composite_components(start, length) {
-      Err(err) => return Err(Sfnt(err))
-      Ok(value) => value
-    }
-    match components {
-      None => ()
-      Some(components) => {
-        for comp in components {
-          add_gid(comp.glyph)
+  match (loca, glyf) {
+    (Some(loca), Some(glyf)) => {
+      let mut idx = 0
+      while idx < queue.length() {
+        let gid = queue[idx]
+        idx = idx + 1
+        if gid + 1 >= loca.offsets.length() {
+          continue
+        }
+        let start = loca.offsets[gid]
+        let end = loca.offsets[gid + 1]
+        let length = end - start
+        let components = match glyf.glyph_composite_components(start, length) {
+          Err(err) => return Err(Sfnt(err))
+          Ok(value) => value
+        }
+        match components {
+          None => ()
+          Some(components) => {
+            for comp in components {
+              add_gid(comp.glyph)
+            }
+          }
         }
       }
     }
+    _ => ()
   }
   let glyphs : Array[UInt] = []
   for gid in 0..<selected.length() {
@@ -2360,20 +2788,38 @@ fn build_vmetrics_subset(
         Err(err) => return Err(Sfnt(err))
         Ok(value) => value
       }
-      let new_vmtx : Array[Byte] = []
+      let advances : Array[Int] = []
+      let tsbs : Array[Int] = []
       for old_gid in plan.glyphs {
         let gid = old_gid.reinterpret_as_int()
         if gid < 0 || gid >= vmtx.advances.length() {
           return Err(InvalidInput("glyph id out of range"))
         }
-        let advance = vmtx.advances[gid]
-        let tsb = vmtx.tsbs[gid]
-        push_u16(new_vmtx, advance)
-        push_i16(new_vmtx, tsb)
+        advances.push(vmtx.advances[gid])
+        tsbs.push(vmtx.tsbs[gid])
+      }
+      if advances.is_empty() {
+        return Err(InvalidInput("empty subset"))
+      }
+      let last_advance = advances[advances.length() - 1]
+      let mut last_diff = -1
+      for i in 0..<advances.length() {
+        if advances[i] != last_advance {
+          last_diff = i
+        }
+      }
+      let num_vmetrics = if last_diff < 0 { 1 } else { last_diff + 2 }
+      let new_vmtx : Array[Byte] = []
+      for i in 0..<num_vmetrics {
+        push_u16(new_vmtx, advances[i])
+        push_i16(new_vmtx, tsbs[i])
+      }
+      for i in num_vmetrics..<advances.length() {
+        push_i16(new_vmtx, tsbs[i])
       }
       let vhea_bytes = vhea_blob.as_view().to_bytes().to_array()
       if vhea_bytes.length() >= 36 {
-        write_u16(vhea_bytes, 34, plan.glyphs.length())
+        write_u16(vhea_bytes, 34, num_vmetrics)
       }
       Ok(Some((Bytes::from_array(vhea_bytes), Bytes::from_array(new_vmtx))))
     }
@@ -3347,6 +3793,8 @@ fn build_sbix_subset(
 }
 
 priv struct CblcStrike {
+  start_gid : Int
+  end_gid : Int
   metrics : Array[Byte]
   ppem_x : Int
   ppem_y : Int
@@ -3490,6 +3938,7 @@ fn build_cblc_cbdt_subset(
       let strikes : Array[CblcStrike] = []
       let old_glyph_count = plan.old_to_new.length()
       for i in 0..<num_sizes {
+        let mut strike_has_data = false
         let record_offset = size_base + i * size_record_len
         let list_offset = match read_u32(cblc_bytes, record_offset) {
           Err(err) => return Err(err)
@@ -3526,8 +3975,7 @@ fn build_cblc_cbdt_subset(
         if list_offset + record_len > cblc_bytes.length() {
           return Err(InvalidInput("invalid CBLC index subtable records"))
         }
-        let glyph_offsets : Array[Int] = Array::make(old_glyph_count, -1)
-        let glyph_lengths : Array[Int] = Array::make(old_glyph_count, 0)
+        let list_records : Array[(Int, Int, Array[Byte])] = []
         let mut image_format = -1
         for j in 0..<subtable_count {
           let rec_offset = list_offset + j * 8
@@ -3554,7 +4002,7 @@ fn build_cblc_cbdt_subset(
             Err(err) => return Err(err)
             Ok(value) => value
           }
-          if index_format != 1 {
+          if index_format != 1 && index_format != 3 {
             continue
           }
           let sub_image_format = match read_u16(cblc_bytes, subtable_base + 2) {
@@ -3575,17 +4023,29 @@ fn build_cblc_cbdt_subset(
             continue
           }
           let offsets_base = subtable_base + 8
-          if offsets_base + num_offsets * 4 > cblc_bytes.length() {
+          let offset_unit = if index_format == 1 { 4 } else { 2 }
+          if offsets_base + num_offsets * offset_unit > cblc_bytes.length() {
             return Err(InvalidInput("invalid CBLC offset array"))
           }
           let offsets : Array[Int] = []
-          for k in 0..<num_offsets {
-            let off = match read_u32(cblc_bytes, offsets_base + k * 4) {
-              Err(err) => return Err(err)
-              Ok(value) => value
+          if index_format == 1 {
+            for k in 0..<num_offsets {
+              let off = match read_u32(cblc_bytes, offsets_base + k * 4) {
+                Err(err) => return Err(err)
+                Ok(value) => value
+              }
+              offsets.push(off)
             }
-            offsets.push(off)
+          } else {
+            for k in 0..<num_offsets {
+              let off = match read_u16(cblc_bytes, offsets_base + k * 2) {
+                Err(err) => return Err(err)
+                Ok(value) => value
+              }
+              offsets.push(off)
+            }
           }
+          let entries : Array[(Int, Array[Byte])] = []
           for k in 0..<(num_offsets - 1) {
             let gid = first + k
             if gid < 0 || gid >= old_glyph_count {
@@ -3593,68 +4053,139 @@ fn build_cblc_cbdt_subset(
             }
             let start = offsets[k]
             let end = offsets[k + 1]
-            if end <= start {
+            let length = end - start
+            if length < 0 {
+              continue
+            }
+            let new_gid = plan.old_to_new[gid]
+            if new_gid < 0 {
+              continue
+            }
+            if length == 0 {
+              entries.push((new_gid, []))
               continue
             }
             let abs_offset = image_data_offset + start
-            let length = end - start
             if abs_offset < 0 || abs_offset + length > cbdt_bytes.length() {
               return Err(InvalidInput("invalid CBDT data offset"))
             }
-            glyph_offsets[gid] = abs_offset
-            glyph_lengths[gid] = length
+            let data = cbdt_bytes[abs_offset:abs_offset + length].to_array()
+            entries.push((new_gid, data))
           }
-        }
-        if image_format < 0 {
-          continue
-        }
-        let new_offsets : Array[Int] = []
-        let strike_data : Array[Byte] = []
-        let mut data_cursor = 0
-        let mut has_data = false
-        for new_gid in 0..<new_glyph_count {
-          let old_gid = plan.glyphs[new_gid].reinterpret_as_int()
-          if old_gid < 0 || old_gid >= glyph_offsets.length() {
-            return Err(InvalidInput("glyph id out of range"))
-          }
-          let start = glyph_offsets[old_gid]
-          let length = glyph_lengths[old_gid]
-          if start < 0 || length <= 0 {
-            new_offsets.push(data_cursor)
+          if entries.is_empty() {
             continue
           }
-          new_offsets.push(data_cursor)
-          let end = start + length
-          if start < 0 || end > cbdt_bytes.length() {
-            return Err(InvalidInput("invalid CBDT glyph bounds"))
+          entries.sort_by((a, b) => a.0 - b.0)
+          let unique_entries : Array[(Int, Array[Byte])] = []
+          let mut last_seen = -1
+          for entry in entries {
+            let gid = entry.0
+            if gid == last_seen {
+              continue
+            }
+            unique_entries.push(entry)
+            last_seen = gid
           }
-          for idx in start..<end {
-            strike_data.push(cbdt_bytes[idx])
-          }
-          data_cursor = data_cursor + length
-          has_data = true
+          let entries = unique_entries
+          let mut run_start = 0
+          let mut idx = 1
+          while idx <= entries.length() {
+            let new_run =
+              idx == entries.length() ||
+              entries[idx].0 != entries[idx - 1].0 + 1
+            if new_run {
+              let run_entries = entries[run_start:idx].to_array()
+              let first_gid = run_entries[0].0
+              let last_gid = run_entries[run_entries.length() - 1].0
+              let offsets_out : Array[Int] = []
+              let mut data_cursor = 0
+              let strike_data : Array[Byte] = []
+              for entry in run_entries {
+                offsets_out.push(data_cursor)
+                let (_, data) = entry
+                for b in data {
+                  strike_data.push(b)
+                }
+                data_cursor = data_cursor + data.length()
+              }
+              offsets_out.push(data_cursor)
+              let image_data_offset = cbdt_cursor
+              for b in strike_data {
+                cbdt_out.push(b)
+              }
+              if strike_data.length() > 0 {
+                strike_has_data = true
+              }
+              cbdt_cursor = cbdt_cursor + strike_data.length()
+              let subtable : Array[Byte] = []
+              push_u16(subtable, index_format)
+              push_u16(subtable, image_format)
+              push_u32(subtable, image_data_offset)
+              for offset in offsets_out {
+                if index_format == 1 {
+                  push_u32(subtable, offset)
+                } else {
+                  if offset > 0xFFFF {
+                    return Err(InvalidInput("CBLC offset overflow"))
+                  }
+                  push_u16(subtable, offset)
+                }
+              }
+              let unit_size = if index_format == 1 { 4 } else { 2 }
+              let expected_len = 8 + offsets_out.length() * unit_size
+              let subtable_bytes =
+                if subtable.length() == expected_len {
+                  subtable
+                } else if subtable.length() > expected_len {
+                  subtable[0:expected_len].to_array()
+                } else {
+                  return Err(InvalidInput("CBLC subtable length mismatch"))
+                }
+              let padded_len = align4(subtable_bytes.length())
+              if padded_len > subtable_bytes.length() {
+                pad_to(subtable_bytes, padded_len)
+              }
+          list_records.push((first_gid, last_gid, subtable_bytes))
+          run_start = idx
         }
-        if !has_data {
+        idx = idx + 1
+          }
+        }
+        if list_records.is_empty() {
           continue
         }
-        let image_data_offset = cbdt_cursor
-        for b in strike_data {
-          cbdt_out.push(b)
+        let mut strike_start = list_records[0].0
+        let mut strike_end = list_records[0].1
+        for rec in list_records {
+          if rec.0 < strike_start {
+            strike_start = rec.0
+          }
+          if rec.1 > strike_end {
+            strike_end = rec.1
+          }
         }
-        cbdt_cursor = cbdt_cursor + strike_data.length()
-        let subtable : Array[Byte] = []
-        push_u16(subtable, 1)
-        push_u16(subtable, image_format)
-        push_u32(subtable, image_data_offset)
-        for offset in new_offsets {
-          push_u32(subtable, offset)
-        }
-        push_u32(subtable, data_cursor)
         let list : Array[Byte] = []
-        push_u16(list, 0)
-        push_u16(list, new_glyph_count - 1)
-        push_u32(list, 8)
+        let subtable : Array[Byte] = []
+        let mut cursor = list_records.length() * 8
+        for rec in list_records {
+          let (first_gid, last_gid, subtable_bytes) = rec
+          push_u16(list, first_gid)
+          push_u16(list, last_gid)
+          push_u32(list, cursor)
+          cursor = cursor + subtable_bytes.length()
+        }
+        for rec in list_records {
+          let (_, _, subtable_bytes) = rec
+          for b in subtable_bytes {
+            subtable.push(b)
+          }
+        }
+        if !strike_has_data {
+          continue
+        }
         strikes.push(CblcStrike::{
+          start_gid: strike_start,
+          end_gid: strike_end,
           metrics,
           ppem_x,
           ppem_y,
@@ -3666,31 +4197,56 @@ fn build_cblc_cbdt_subset(
         })
       }
       if strikes.is_empty() {
-        return Ok(None)
+        let out : Array[Byte] = []
+        push_u16(out, major)
+        push_u16(out, minor)
+        push_u32(out, 0)
+        return Ok(Some((Bytes::from_array(out), Bytes::from_array(cbdt_out))))
       }
       let out : Array[Byte] = []
       push_u16(out, major)
       push_u16(out, minor)
       push_u32(out, strikes.length())
+      let list_order : Array[Int] = []
+      for i in 0..<strikes.length() {
+        list_order.push(i)
+      }
+      list_order.sort_by((a, b) => {
+        let diff = strikes[a].ppem_y - strikes[b].ppem_y
+        if diff != 0 {
+          diff
+        } else {
+          let diff_x = strikes[a].ppem_x - strikes[b].ppem_x
+          if diff_x != 0 { diff_x } else { a - b }
+        }
+      })
+      let list_offsets : Array[Int] = Array::make(strikes.length(), 0)
       let mut cursor = 8 + strikes.length() * size_record_len
-      for strike in strikes {
+      for idx in list_order {
+        let strike = strikes[idx]
+        list_offsets[idx] = cursor
+        cursor = cursor + strike.list.length() + strike.subtable.length()
+      }
+      for i in 0..<strikes.length() {
+        let strike = strikes[i]
         let list_size = strike.list.length() + strike.subtable.length()
-        push_u32(out, cursor)
+        let subtable_count = strike.list.length() / 8
+        push_u32(out, list_offsets[i])
         push_u32(out, list_size)
-        push_u32(out, 1)
+        push_u32(out, subtable_count)
         push_u32(out, strike.color_ref)
         for b in strike.metrics {
           out.push(b)
         }
-        push_u16(out, 0)
-        push_u16(out, new_glyph_count - 1)
+        push_u16(out, strike.start_gid)
+        push_u16(out, strike.end_gid)
         out.push(strike.ppem_x.to_byte())
         out.push(strike.ppem_y.to_byte())
         out.push(strike.bit_depth.to_byte())
         out.push(strike.flags.to_byte())
-        cursor = cursor + list_size
       }
-      for strike in strikes {
+      for idx in list_order {
+        let strike = strikes[idx]
         for b in strike.list {
           out.push(b)
         }
@@ -11004,7 +11560,29 @@ pub fn subset(
               }
               subset_cff2_with_plan(font, plan, cff)
             }
-            None => Err(Unsupported("missing outline table"))
+            None => {
+              let has_cblc = match face.reference_table_optional(tag_cblc) {
+                Err(err) => return Err(Face(err))
+                Ok(value) => value
+              }
+              let has_cbdt = match face.reference_table_optional(tag_cbdt) {
+                Err(err) => return Err(Face(err))
+                Ok(value) => value
+              }
+              let has_sbix = match face.reference_table_optional(tag_sbix) {
+                Err(err) => return Err(Face(err))
+                Ok(value) => value
+              }
+              if has_cblc is Some(_) || has_cbdt is Some(_) || has_sbix is Some(_) {
+                let plan = match build_plan(font, input) {
+                  Err(err) => return Err(err)
+                  Ok(value) => value
+                }
+                subset_bitmap_with_plan(font, plan)
+              } else {
+                Err(Unsupported("missing outline table"))
+              }
+            }
           }
       }
     }
@@ -11160,7 +11738,7 @@ pub fn subset_with_plan(
     write_u16(hhea_bytes, 34, num_hmetrics)
   }
 
-  let cmap_bytes = build_cmap_from_pairs(face, plan.codepoint_map)
+  let cmap_bytes = build_cmap_from_pairs(face, plan)
   let identity = is_identity_subset(plan, maxp.num_glyphs)
 
   let tables : Array[(@common.Tag, Bytes)] = [
@@ -11170,6 +11748,170 @@ pub fn subset_with_plan(
     (tag_hmtx, new_hmtx),
     (tag_loca, Bytes::from_array(new_loca)),
     (tag_glyf, Bytes::from_array(glyf_bytes)),
+  ]
+  match vmetrics {
+    None => ()
+    Some((vhea_bytes, vmtx_bytes)) => {
+      tables.push((tag_vhea, vhea_bytes))
+      tables.push((tag_vmtx, vmtx_bytes))
+    }
+  }
+  match vorg_bytes {
+    None => ()
+    Some(vorg) => tables.push((tag_vorg, vorg))
+  }
+  match cmap_bytes {
+    None => ()
+    Some(cmap) => tables.push((tag_cmap, cmap))
+  }
+  match add_identity_passthrough_tables(face, tables, identity) {
+    Err(err) => return Err(err)
+    Ok(_) => ()
+  }
+  match add_optional_gsub(face, plan, tables, identity) {
+    Err(err) => return Err(err)
+    Ok(_) => ()
+  }
+  match add_optional_gpos(face, plan, tables, identity) {
+    Err(err) => return Err(err)
+    Ok(_) => ()
+  }
+  match add_optional_post(face, plan, tables, identity) {
+    Err(err) => return Err(err)
+    Ok(_) => ()
+  }
+  match add_optional_name(face, tables, identity) {
+    Err(err) => return Err(err)
+    Ok(_) => ()
+  }
+  match add_optional_hdmx(face, maxp, plan, tables, identity) {
+    Err(err) => return Err(err)
+    Ok(_) => ()
+  }
+  match add_optional_kern(face, plan, tables, identity) {
+    Err(err) => return Err(err)
+    Ok(_) => ()
+  }
+  match add_optional_colr(face, plan, tables, identity) {
+    Err(err) => return Err(err)
+    Ok(_) => ()
+  }
+  match add_optional_svg(face, plan, tables, identity) {
+    Err(err) => return Err(err)
+    Ok(_) => ()
+  }
+  match add_optional_sbix(face, plan, tables, identity) {
+    Err(err) => return Err(err)
+    Ok(_) => ()
+  }
+  match add_optional_cblc_cbdt(face, plan, tables, identity) {
+    Err(err) => return Err(err)
+    Ok(_) => ()
+  }
+  match add_optional_gdef(face, plan, tables, identity) {
+    Err(err) => return Err(err)
+    Ok(_) => ()
+  }
+  match add_optional_math(face, plan, tables, identity) {
+    Err(err) => return Err(err)
+    Ok(_) => ()
+  }
+  match add_optional_gvar(face, plan, tables, identity) {
+    Err(err) => return Err(err)
+    Ok(_) => ()
+  }
+  match add_optional_hvar(face, plan, tables, identity) {
+    Err(err) => return Err(err)
+    Ok(_) => ()
+  }
+  match add_optional_vvar(face, plan, tables, identity) {
+    Err(err) => return Err(err)
+    Ok(_) => ()
+  }
+  match add_optional_varc(face, plan, tables, identity) {
+    Err(err) => return Err(err)
+    Ok(_) => ()
+  }
+  match add_optional_os2(face, plan, tables) {
+    Err(err) => return Err(err)
+    Ok(_) => ()
+  }
+  match add_passthrough_tables(face, tables) {
+    Err(err) => return Err(err)
+    Ok(_) => ()
+  }
+  Ok(build_sfnt(tables))
+}
+
+fn subset_bitmap_with_plan(
+  font : @font.Font,
+  plan : SubsetPlan,
+) -> Result[Bytes, SubsetError] {
+  let face = font.get_face()
+  let head_blob = match table_blob(face, tag_head, "head") {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  let maxp_blob = match table_blob(face, tag_maxp, "maxp") {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  let hhea_blob = match table_blob(face, tag_hhea, "hhea") {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  let hmtx_blob = match table_blob(face, tag_hmtx, "hmtx") {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  let maxp = match @sfnt.MaxpTable::parse(maxp_blob.as_view()) {
+    Err(err) => return Err(Sfnt(err))
+    Ok(value) => value
+  }
+  let hhea = match @sfnt.HheaTable::parse(hhea_blob.as_view()) {
+    Err(err) => return Err(Sfnt(err))
+    Ok(value) => value
+  }
+  let hmtx = match @sfnt.HmtxTable::parse(
+    hmtx_blob.as_view(),
+    maxp.num_glyphs,
+    hhea.number_of_hmetrics,
+  ) {
+    Err(err) => return Err(Sfnt(err))
+    Ok(value) => value
+  }
+  let vmetrics = match build_vmetrics_subset(face, maxp, plan) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  let vorg_bytes = match build_vorg_subset(face, plan) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+
+  let (new_hmtx, num_hmetrics) = match build_hmtx_subset(hmtx, plan) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+
+  let head_bytes = head_blob.as_view().to_bytes().to_array()
+  let maxp_bytes = maxp_blob.as_view().to_bytes().to_array()
+  if maxp_bytes.length() >= 6 {
+    write_u16(maxp_bytes, 4, plan.glyphs.length())
+  }
+  let hhea_bytes = hhea_blob.as_view().to_bytes().to_array()
+  if hhea_bytes.length() >= 36 {
+    write_u16(hhea_bytes, 34, num_hmetrics)
+  }
+
+  let cmap_bytes = build_cmap_from_pairs(face, plan)
+  let identity = is_identity_subset(plan, maxp.num_glyphs)
+
+  let tables : Array[(@common.Tag, Bytes)] = [
+    (tag_head, Bytes::from_array(head_bytes)),
+    (tag_maxp, Bytes::from_array(maxp_bytes)),
+    (tag_hhea, Bytes::from_array(hhea_bytes)),
+    (tag_hmtx, new_hmtx),
   ]
   match vmetrics {
     None => ()
@@ -11336,7 +12078,7 @@ fn subset_cff1_with_plan(
     Ok(value) => value
   }
 
-  let cmap_bytes = build_cmap_from_pairs(face, plan.codepoint_map)
+  let cmap_bytes = build_cmap_from_pairs(face, plan)
   let identity = is_identity_subset(plan, maxp.num_glyphs)
 
   let tables : Array[(@common.Tag, Bytes)] = [
@@ -11503,7 +12245,7 @@ fn subset_cff2_with_plan(
     Ok(value) => value
   }
 
-  let cmap_bytes = build_cmap_from_pairs(face, plan.codepoint_map)
+  let cmap_bytes = build_cmap_from_pairs(face, plan)
   let identity = is_identity_subset(plan, maxp.num_glyphs)
 
   let tables : Array[(@common.Tag, Bytes)] = [

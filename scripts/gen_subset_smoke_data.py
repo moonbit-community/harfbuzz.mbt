@@ -14,7 +14,6 @@ SUPPORTED_PROFILE = "default.txt"
 SKIP_SUBSETS = {"*", "no-unicodes"}
 MAX_MAP_BYTES = 1_000_000
 SKIP_SUITES = {
-    "cbdt.tests",
     "cff-japanese.tests",
     "colr.tests",
     "colr_glyphs.tests",
