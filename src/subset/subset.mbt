@@ -85,6 +85,9 @@ let tag_gasp : @common.Tag = @common.Tag::from_chars('g', 'a', 's', 'p')
 let tag_vdmx : @common.Tag = @common.Tag::from_chars('V', 'D', 'M', 'X')
 
 ///|
+let tag_hdmx : @common.Tag = @common.Tag::from_chars('h', 'd', 'm', 'x')
+
+///|
 let tag_fvar : @common.Tag = @common.Tag::from_chars('f', 'v', 'a', 'r')
 
 ///|
@@ -115,7 +118,6 @@ let tag_gpos : @common.Tag = @common.Tag::from_chars('G', 'P', 'O', 'S')
 let tag_gdef : @common.Tag = @common.Tag::from_chars('G', 'D', 'E', 'F')
 
 ///|
-let tag_base : @common.Tag = @common.Tag::from_chars('B', 'A', 'S', 'E')
 
 ///|
 let tag_jstf : @common.Tag = @common.Tag::from_chars('J', 'S', 'T', 'F')
@@ -603,32 +605,34 @@ fn cmap_search_params(seg_count : Int) -> (Int, Int, Int) {
 }
 
 fn build_sfnt_bytes(
-  tags : Array[@common.Tag],
-  table_bytes : Array[Array[Byte]],
-  offsets : Array[Int],
-  checksums : Array[UInt],
+  dir_tags : Array[@common.Tag],
+  dir_checksums : Array[UInt],
+  dir_offsets : Array[Int],
+  dir_lengths : Array[Int],
+  data_bytes : Array[Array[Byte]],
+  data_offsets : Array[Int],
 ) -> Bytes {
   let bytes : Array[Byte] = []
   push_u32(bytes, 0x00010000)
-  push_u16(bytes, tags.length())
-  let (search_range, entry_selector, range_shift) = sfnt_search_params(tags.length())
+  push_u16(bytes, dir_tags.length())
+  let (search_range, entry_selector, range_shift) = sfnt_search_params(dir_tags.length())
   push_u16(bytes, search_range)
   push_u16(bytes, entry_selector)
   push_u16(bytes, range_shift)
-  for i in 0..<tags.length() {
-    let tag = tags[i]
+  for i in 0..<dir_tags.length() {
+    let tag = dir_tags[i]
     let (b1, b2, b3, b4) = tag.bytes()
     bytes.push(b1)
     bytes.push(b2)
     bytes.push(b3)
     bytes.push(b4)
-    push_u32_uint(bytes, checksums[i])
-    push_u32(bytes, offsets[i])
-    push_u32(bytes, table_bytes[i].length())
+    push_u32_uint(bytes, dir_checksums[i])
+    push_u32(bytes, dir_offsets[i])
+    push_u32(bytes, dir_lengths[i])
   }
-  for i in 0..<table_bytes.length() {
-    pad_to(bytes, offsets[i])
-    for b in table_bytes[i] {
+  for i in 0..<data_bytes.length() {
+    pad_to(bytes, data_offsets[i])
+    for b in data_bytes[i] {
       bytes.push(b)
     }
   }
@@ -638,50 +642,92 @@ fn build_sfnt_bytes(
 
 ///|
 fn build_sfnt(tables : Array[(@common.Tag, Bytes)]) -> Bytes {
-  let sorted : Array[(@common.Tag, Bytes)] = []
+  let data_sorted : Array[(@common.Tag, Bytes)] = []
   for entry in tables {
-    sorted.push(entry)
+    data_sorted.push(entry)
   }
-  sorted.sort_by((a, b) => {
-    let (tag_a, _) = a
-    let (tag_b, _) = b
-    compare_tags(tag_a, tag_b)
+  data_sorted.sort_by((a, b) => {
+    let (tag_a, bytes_a) = a
+    let (tag_b, bytes_b) = b
+    let len_a = bytes_a.length()
+    let len_b = bytes_b.length()
+    if len_a != len_b {
+      len_a - len_b
+    } else {
+      compare_tags(tag_a, tag_b)
+    }
   })
-  let tags : Array[@common.Tag] = []
-  let table_bytes : Array[Array[Byte]] = []
-  for entry in sorted {
+  let data_tags : Array[@common.Tag] = []
+  let data_bytes : Array[Array[Byte]] = []
+  for entry in data_sorted {
     let (tag, table) = entry
-    tags.push(tag)
-    table_bytes.push(table.to_array())
+    data_tags.push(tag)
+    data_bytes.push(table.to_array())
   }
-  let mut offset = 12 + tags.length() * 16
-  let offsets : Array[Int] = []
-  for i in 0..<table_bytes.length() {
+  let mut offset = 12 + data_tags.length() * 16
+  let data_offsets : Array[Int] = []
+  for i in 0..<data_bytes.length() {
     offset = align4(offset)
-    offsets.push(offset)
-    offset = offset + table_bytes[i].length()
+    data_offsets.push(offset)
+    offset = offset + data_bytes[i].length()
   }
   let mut head_index = -1
-  for i in 0..<tags.length() {
-    if tags[i] == tag_head {
+  for i in 0..<data_tags.length() {
+    if data_tags[i] == tag_head {
       head_index = i
       break
     }
   }
-  if head_index >= 0 && table_bytes[head_index].length() >= 12 {
-    write_u32_uint(table_bytes[head_index], 8, 0U)
+  if head_index >= 0 && data_bytes[head_index].length() >= 12 {
+    write_u32_uint(data_bytes[head_index], 8, 0U)
   }
-  let checksums : Array[UInt] = []
-  for table in table_bytes {
-    checksums.push(checksum_bytes(table))
+  let data_checksums : Array[UInt] = []
+  for table in data_bytes {
+    data_checksums.push(checksum_bytes(table))
   }
-  let mut bytes = build_sfnt_bytes(tags, table_bytes, offsets, checksums)
-  if head_index >= 0 && table_bytes[head_index].length() >= 12 {
+  let dir_tags : Array[@common.Tag] = []
+  for entry in tables {
+    let (tag, _) = entry
+    dir_tags.push(tag)
+  }
+  dir_tags.sort_by(compare_tags)
+  let dir_checksums : Array[UInt] = []
+  let dir_offsets : Array[Int] = []
+  let dir_lengths : Array[Int] = []
+  for tag in dir_tags {
+    let mut idx = -1
+    for i in 0..<data_tags.length() {
+      if data_tags[i] == tag {
+        idx = i
+        break
+      }
+    }
+    if idx >= 0 {
+      dir_checksums.push(data_checksums[idx])
+      dir_offsets.push(data_offsets[idx])
+      dir_lengths.push(data_bytes[idx].length())
+    }
+  }
+  let mut bytes = build_sfnt_bytes(
+    dir_tags,
+    dir_checksums,
+    dir_offsets,
+    dir_lengths,
+    data_bytes,
+    data_offsets,
+  )
+  if head_index >= 0 && data_bytes[head_index].length() >= 12 {
     let total = checksum_bytes(bytes.to_array())
     let adjust = 0xB1B0AFBAU - total
-    write_u32_uint(table_bytes[head_index], 8, adjust)
-    checksums[head_index] = checksum_bytes(table_bytes[head_index])
-    bytes = build_sfnt_bytes(tags, table_bytes, offsets, checksums)
+    write_u32_uint(data_bytes[head_index], 8, adjust)
+    bytes = build_sfnt_bytes(
+      dir_tags,
+      dir_checksums,
+      dir_offsets,
+      dir_lengths,
+      data_bytes,
+      data_offsets,
+    )
   }
   bytes
 }
@@ -691,20 +737,35 @@ fn build_cmap_table_multi(subtables : Array[(Int, Int, Bytes)]) -> Bytes {
   push_u16(bytes, 0)
   push_u16(bytes, subtables.length())
   let mut offset = 4 + subtables.length() * 8
-  let offsets : Array[Int] = []
+  let table_indices : Array[Int] = []
+  let unique_tables : Array[Bytes] = []
+  let unique_offsets : Array[Int] = []
   for entry in subtables {
     let (_, _, table) = entry
-    offsets.push(offset)
-    offset = offset + table.length()
+    let mut found = -1
+    for i in 0..<unique_tables.length() {
+      if unique_tables[i] == table {
+        found = i
+        break
+      }
+    }
+    if found >= 0 {
+      table_indices.push(found)
+    } else {
+      unique_tables.push(table)
+      unique_offsets.push(offset)
+      table_indices.push(unique_tables.length() - 1)
+      offset = offset + table.length()
+    }
   }
   for i in 0..<subtables.length() {
     let (platform, encoding, _) = subtables[i]
+    let table_index = table_indices[i]
     push_u16(bytes, platform)
     push_u16(bytes, encoding)
-    push_u32(bytes, offsets[i])
+    push_u32(bytes, unique_offsets[table_index])
   }
-  for entry in subtables {
-    let (_, _, table) = entry
+  for table in unique_tables {
     for b in table {
       bytes.push(b)
     }
@@ -826,7 +887,177 @@ fn build_format12_groups(
 }
 
 ///|
-fn build_cmap_from_pairs(pairs : Array[(UInt, Int)]) -> Bytes? {
+fn cmap_find_format4_offset(data : BytesView) -> Result[Int?, SubsetError] {
+  let bytes = data.to_bytes().to_array()
+  let num_tables = read_u16(bytes, 2)
+  match num_tables {
+    Err(err) => Err(err)
+    Ok(count) => {
+      if count < 0 {
+        return Err(InvalidInput("invalid cmap table"))
+      }
+      let mut offset = 4
+      let mut found : Int? = None
+      for _ in 0..<count {
+        let platform_id = read_u16(bytes, offset)
+        let encoding_id = read_u16(bytes, offset + 2)
+        let sub_offset = read_u32(bytes, offset + 4)
+        match (platform_id, encoding_id, sub_offset) {
+          (Err(err), _, _) => return Err(err)
+          (_, Err(err), _) => return Err(err)
+          (_, _, Err(err)) => return Err(err)
+          (Ok(platform_id), Ok(encoding_id), Ok(sub_offset)) => {
+            if sub_offset < 0 || sub_offset + 2 > bytes.length() {
+              offset = offset + 8
+              continue
+            }
+            let format = read_u16(bytes, sub_offset)
+            match format {
+              Err(err) => return Err(err)
+              Ok(format) => {
+                if format == 4 {
+                  if platform_id == 0 && encoding_id == 3 {
+                    return Ok(Some(sub_offset))
+                  }
+                  if platform_id == 3 && encoding_id == 1 && found is None {
+                    found = Some(sub_offset)
+                  }
+                }
+              }
+            }
+          }
+        }
+        offset = offset + 8
+      }
+      Ok(found)
+    }
+  }
+}
+
+fn cmap_has_format12(data : BytesView) -> Result[Bool, SubsetError] {
+  let bytes = data.to_bytes().to_array()
+  let num_tables = read_u16(bytes, 2)
+  match num_tables {
+    Err(err) => Err(err)
+    Ok(count) => {
+      if count < 0 {
+        return Err(InvalidInput("invalid cmap table"))
+      }
+      let mut offset = 4
+      for _ in 0..<count {
+        let platform_id = read_u16(bytes, offset)
+        let encoding_id = read_u16(bytes, offset + 2)
+        let sub_offset = read_u32(bytes, offset + 4)
+        match (platform_id, encoding_id, sub_offset) {
+          (Err(err), _, _) => return Err(err)
+          (_, Err(err), _) => return Err(err)
+          (_, _, Err(err)) => return Err(err)
+          (Ok(platform_id), Ok(encoding_id), Ok(sub_offset)) => {
+            if sub_offset < 0 || sub_offset + 2 > bytes.length() {
+              offset = offset + 8
+              continue
+            }
+            let format = read_u16(bytes, sub_offset)
+            match format {
+              Err(err) => return Err(err)
+              Ok(format) => {
+                if format == 12 &&
+                   ((platform_id == 0 && encoding_id == 4) ||
+                   (platform_id == 3 && encoding_id == 10)) {
+                  return Ok(true)
+                }
+              }
+            }
+          }
+        }
+        offset = offset + 8
+      }
+      Ok(false)
+    }
+  }
+}
+
+fn cmap_format4_covers(
+  data : BytesView,
+  offset : Int,
+  codepoints : Array[UInt],
+) -> Result[Bool, SubsetError] {
+  let bytes = data.to_bytes().to_array()
+  for cp in codepoints {
+    if cp > 0xFFFFU {
+      return Ok(false)
+    }
+    let seg_count_x2 = read_u16(bytes, offset + 6)
+    match seg_count_x2 {
+      Err(err) => return Err(err)
+      Ok(seg_count_x2) => {
+        let seg_count = seg_count_x2 / 2
+        let end_code_offset = offset + 14
+        let start_code_offset = end_code_offset + seg_count * 2 + 2
+        let id_delta_offset = start_code_offset + seg_count * 2
+        let id_range_offset_offset = id_delta_offset + seg_count * 2
+        let mut found = false
+        for i in 0..<seg_count {
+          let end_code = read_u16(bytes, end_code_offset + i * 2)
+          let start_code = read_u16(bytes, start_code_offset + i * 2)
+          match (end_code, start_code) {
+            (Err(err), _) => return Err(err)
+            (_, Err(err)) => return Err(err)
+            (Ok(end_code), Ok(start_code)) => {
+              let cp_int = cp.reinterpret_as_int()
+              if cp_int >= start_code && cp_int <= end_code {
+                let id_delta = read_i16(bytes, id_delta_offset + i * 2)
+                let id_range_offset = read_u16(
+                  bytes,
+                  id_range_offset_offset + i * 2,
+                )
+                match (id_delta, id_range_offset) {
+                  (Err(err), _) => return Err(err)
+                  (_, Err(err)) => return Err(err)
+                  (Ok(id_delta), Ok(id_range_offset)) => {
+                    if id_range_offset == 0 {
+                      let gid = (cp_int + id_delta) & 0xffff
+                      if gid != 0 {
+                        found = true
+                      }
+                    } else {
+                      let glyph_index_offset = id_range_offset_offset +
+                        i * 2 +
+                        id_range_offset +
+                        (cp_int - start_code) * 2
+                      let glyph_id = read_u16(bytes, glyph_index_offset)
+                      match glyph_id {
+                        Err(err) => return Err(err)
+                        Ok(glyph_id) => {
+                          if glyph_id != 0 {
+                            let gid = (glyph_id + id_delta) & 0xffff
+                            if gid != 0 {
+                              found = true
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+                break
+              }
+            }
+          }
+        }
+        if !found {
+          return Ok(false)
+        }
+      }
+    }
+  }
+  Ok(true)
+}
+
+fn build_cmap_from_pairs(
+  face : @face.Face,
+  pairs : Array[(UInt, Int)],
+) -> Bytes? {
   if pairs.is_empty() {
     return None
   }
@@ -838,6 +1069,7 @@ fn build_cmap_from_pairs(pairs : Array[(UInt, Int)]) -> Bytes? {
     }
   }
   let groups = build_format12_groups(dedup)
+  let codepoints = dedup.map(pair => pair.0)
   let mut bmp_only = true
   for pair in dedup {
     if pair.0 > 0xFFFFU {
@@ -845,14 +1077,51 @@ fn build_cmap_from_pairs(pairs : Array[(UInt, Int)]) -> Bytes? {
       break
     }
   }
-  let subtables : Array[(Int, Int, Bytes)] = []
+  let mut use_format12 = !bmp_only
   if bmp_only {
-    match build_cmap_format4(groups) {
+    let cmap_blob = match face.reference_table_optional(tag_cmap) {
+      Err(_) => None
+      Ok(value) => value
+    }
+    match cmap_blob {
       None => ()
-      Some(table) => subtables.push((3, 1, table))
+      Some(blob) => {
+        let data = blob.as_view()
+        let has_format12 = match cmap_has_format12(data) {
+          Err(_) => false
+          Ok(value) => value
+        }
+        if has_format12 {
+          let format4_offset = match cmap_find_format4_offset(data) {
+            Err(_) => None
+            Ok(value) => value
+          }
+          match format4_offset {
+            None => use_format12 = true
+            Some(format4_offset) =>
+              match cmap_format4_covers(data, format4_offset, codepoints) {
+                Err(_) => ()
+                Ok(covers) => use_format12 = !covers
+              }
+          }
+        }
+      }
     }
   }
-  subtables.push((3, 10, build_cmap_format12(groups)))
+  let subtables : Array[(Int, Int, Bytes)] = []
+  if use_format12 {
+    let table = build_cmap_format12(groups)
+    subtables.push((0, 4, table))
+    subtables.push((3, 10, table))
+  } else {
+    match build_cmap_format4(groups) {
+      None => ()
+      Some(table) => {
+        subtables.push((0, 3, table))
+        subtables.push((3, 1, table))
+      }
+    }
+  }
   Some(build_cmap_table_multi(subtables))
 }
 
@@ -880,6 +1149,284 @@ fn add_optional_table(
     Ok(Some(blob)) => {
       tables.push((tag, blob.as_view().to_bytes()))
       Ok(())
+    }
+  }
+}
+
+fn build_name_subset(
+  blob : @blob.Blob,
+) -> Result[Bytes?, SubsetError] {
+  let bytes = blob.as_view().to_bytes().to_array()
+  if bytes.length() < 6 {
+    return Ok(None)
+  }
+  let format = match read_u16(bytes, 0) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  let count = match read_u16(bytes, 2) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  let string_offset = match read_u16(bytes, 4) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  if format < 0 || format > 1 || count < 0 {
+    return Err(InvalidInput("invalid name table"))
+  }
+  let record_base = 6
+  let record_len = 12
+  if record_base + count * record_len > bytes.length() {
+    return Err(InvalidInput("invalid name records"))
+  }
+  let records : Array[(Int, Int, Int, Int, Bytes, Int)] = []
+  for i in 0..<count {
+    let rec_offset = record_base + i * record_len
+    let platform_id = match read_u16(bytes, rec_offset) {
+      Err(err) => return Err(err)
+      Ok(value) => value
+    }
+    let encoding_id = match read_u16(bytes, rec_offset + 2) {
+      Err(err) => return Err(err)
+      Ok(value) => value
+    }
+    let language_id = match read_u16(bytes, rec_offset + 4) {
+      Err(err) => return Err(err)
+      Ok(value) => value
+    }
+    let name_id = match read_u16(bytes, rec_offset + 6) {
+      Err(err) => return Err(err)
+      Ok(value) => value
+    }
+    let length = match read_u16(bytes, rec_offset + 8) {
+      Err(err) => return Err(err)
+      Ok(value) => value
+    }
+    let offset = match read_u16(bytes, rec_offset + 10) {
+      Err(err) => return Err(err)
+      Ok(value) => value
+    }
+    if platform_id == 3 &&
+       encoding_id == 1 &&
+       language_id == 0x0409 &&
+       name_id >= 0 &&
+       name_id <= 6 {
+      if length < 0 || offset < 0 {
+        return Err(InvalidInput("invalid name record"))
+      }
+      let str_start = string_offset + offset
+      let str_end = str_start + length
+      if str_end > bytes.length() {
+        return Err(InvalidInput("invalid name string"))
+      }
+      let value = bytes[str_start:str_end].to_array()
+      records.push((
+        platform_id,
+        encoding_id,
+        language_id,
+        name_id,
+        Bytes::from_array(value),
+        offset,
+      ))
+    }
+  }
+  if records.is_empty() {
+    return Ok(None)
+  }
+  records.sort_by((a, b) => {
+    if a.0 != b.0 {
+      return a.0 - b.0
+    }
+    if a.1 != b.1 {
+      return a.1 - b.1
+    }
+    if a.2 != b.2 {
+      return a.2 - b.2
+    }
+    a.3 - b.3
+  })
+  let string_entries : Array[(Bytes, Int)] = []
+  for record in records {
+    let value = record.4
+    let mut found = -1
+    for i in 0..<string_entries.length() {
+      if string_entries[i].0 == value {
+        found = i
+        break
+      }
+    }
+    if found >= 0 {
+      let existing_offset = string_entries[found].1
+      if record.5 > existing_offset {
+        string_entries[found] = (value, record.5)
+      }
+    } else {
+      string_entries.push((value, record.5))
+    }
+  }
+  string_entries.sort_by((a, b) => b.1 - a.1)
+  let string_bytes : Array[Byte] = []
+  let entry_offsets : Array[Int] = []
+  for entry in string_entries {
+    entry_offsets.push(string_bytes.length())
+    for b in entry.0 {
+      string_bytes.push(b)
+    }
+  }
+  let out : Array[Byte] = []
+  push_u16(out, 0)
+  push_u16(out, records.length())
+  let new_string_offset = 6 + records.length() * 12
+  push_u16(out, new_string_offset)
+  for record in records {
+    let value = record.4
+    let mut new_offset = 0
+    for i in 0..<string_entries.length() {
+      if string_entries[i].0 == value {
+        new_offset = entry_offsets[i]
+        break
+      }
+    }
+    push_u16(out, record.0)
+    push_u16(out, record.1)
+    push_u16(out, record.2)
+    push_u16(out, record.3)
+    push_u16(out, value.length())
+    push_u16(out, new_offset)
+  }
+  for b in string_bytes {
+    out.push(b)
+  }
+  Ok(Some(Bytes::from_array(out)))
+}
+
+fn add_optional_name(
+  face : @face.Face,
+  tables : Array[(@common.Tag, Bytes)],
+  _identity : Bool,
+) -> Result[Unit, SubsetError] {
+  let blob = match face.reference_table_optional(tag_name) {
+    Err(err) => return Err(Face(err))
+    Ok(value) => value
+  }
+  match blob {
+    None => Ok(())
+    Some(blob) => {
+      match build_name_subset(blob) {
+        Err(err) => Err(err)
+        Ok(None) => Ok(())
+        Ok(Some(bytes)) => {
+          tables.push((tag_name, bytes))
+          Ok(())
+        }
+      }
+    }
+  }
+}
+
+fn build_hdmx_subset(
+  blob : @blob.Blob,
+  maxp : @sfnt.MaxpTable,
+  plan : SubsetPlan,
+) -> Result[Bytes?, SubsetError] {
+  let bytes = blob.as_view().to_bytes().to_array()
+  if bytes.length() < 8 {
+    return Ok(None)
+  }
+  let version = match read_u16(bytes, 0) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  let num_records = match read_u16(bytes, 2) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  let record_size = match read_u32(bytes, 4) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  if num_records < 0 || record_size <= 0 {
+    return Err(InvalidInput("invalid hdmx header"))
+  }
+  if 8 + num_records * record_size > bytes.length() {
+    return Err(InvalidInput("invalid hdmx record size"))
+  }
+  let glyph_count = plan.glyphs.length()
+  if glyph_count <= 0 {
+    return Ok(None)
+  }
+  let mut new_record_size = 2 + glyph_count
+  let rem = new_record_size & 3
+  if rem != 0 {
+    new_record_size = new_record_size + (4 - rem)
+  }
+  let out : Array[Byte] = []
+  push_u16(out, version)
+  push_u16(out, num_records)
+  push_u32(out, new_record_size)
+  for i in 0..<num_records {
+    let base = 8 + i * record_size
+    if base + 2 > bytes.length() {
+      return Err(InvalidInput("invalid hdmx record"))
+    }
+    let ppem = bytes[base]
+    let widths_base = base + 2
+    if widths_base + maxp.num_glyphs > base + record_size {
+      return Err(InvalidInput("invalid hdmx widths"))
+    }
+    let widths : Array[Int] = []
+    let mut max_width = 0
+    for old_gid in plan.glyphs {
+      let gid = old_gid.reinterpret_as_int()
+      if gid < 0 || gid >= maxp.num_glyphs {
+        return Err(InvalidInput("glyph id out of range"))
+      }
+      let width = bytes[widths_base + gid].to_int()
+      widths.push(width)
+      if width > max_width {
+        max_width = width
+      }
+    }
+    out.push(ppem)
+    out.push(max_width.to_byte())
+    for width in widths {
+      out.push(width.to_byte())
+    }
+    let pad = new_record_size - (2 + widths.length())
+    for _ in 0..<pad {
+      out.push(b'\x00')
+    }
+  }
+  Ok(Some(Bytes::from_array(out)))
+}
+
+fn add_optional_hdmx(
+  face : @face.Face,
+  maxp : @sfnt.MaxpTable,
+  plan : SubsetPlan,
+  tables : Array[(@common.Tag, Bytes)],
+  identity : Bool,
+) -> Result[Unit, SubsetError] {
+  let blob = match face.reference_table_optional(tag_hdmx) {
+    Err(err) => return Err(Face(err))
+    Ok(value) => value
+  }
+  match blob {
+    None => Ok(())
+    Some(blob) => {
+      if identity {
+        tables.push((tag_hdmx, blob.as_view().to_bytes()))
+        return Ok(())
+      }
+      match build_hdmx_subset(blob, maxp, plan) {
+        Err(err) => Err(err)
+        Ok(None) => Ok(())
+        Ok(Some(bytes)) => {
+          tables.push((tag_hdmx, bytes))
+          Ok(())
+        }
+      }
     }
   }
 }
@@ -913,6 +1460,28 @@ fn add_optional_os2(
         let max_val = if max_cp > 0xFFFFU { 0xFFFF } else { max_cp.reinterpret_as_int() }
         write_u16(bytes, 64, min_val)
         write_u16(bytes, 66, max_val)
+        let orig1 = match read_u32(bytes, 42) {
+          Ok(value) => value.reinterpret_as_uint()
+          Err(_) => 0U
+        }
+        let orig2 = match read_u32(bytes, 46) {
+          Ok(value) => value.reinterpret_as_uint()
+          Err(_) => 0U
+        }
+        let orig3 = match read_u32(bytes, 50) {
+          Ok(value) => value.reinterpret_as_uint()
+          Err(_) => 0U
+        }
+        let orig4 = match read_u32(bytes, 54) {
+          Ok(value) => value.reinterpret_as_uint()
+          Err(_) => 0U
+        }
+        let (new1, new2, new3, new4) =
+          os2_unicode_ranges_from_codepoints(plan.codepoint_map[:])
+        write_u32_uint(bytes, 42, orig1 & new1)
+        write_u32_uint(bytes, 46, orig2 & new2)
+        write_u32_uint(bytes, 50, orig3 & new3)
+        write_u32_uint(bytes, 54, orig4 & new4)
       }
       tables.push((tag_os2, Bytes::from_array(bytes)))
       Ok(())
@@ -920,78 +1489,22 @@ fn add_optional_os2(
   }
 }
 
-fn build_post_subset(
-  blob : @blob.Blob,
-  post : @sfnt.PostTable,
-  plan : SubsetPlan,
-) -> Bytes? {
-  let indices = match post.glyph_name_indices {
-    None => return None
-    Some(value) => value
-  }
-  let names = match post.custom_names {
-    None => return None
-    Some(value) => value
-  }
-  if plan.glyphs.is_empty() {
-    return None
-  }
+fn build_post_format3(blob : @blob.Blob) -> Bytes? {
   let header = blob.as_view().to_bytes().to_array()
   if header.length() < 32 {
     return None
   }
-  let new_custom : Array[Bytes] = []
-  let old_to_new : Array[Int] = Array::make(names.length(), -1)
-  let new_indices : Array[Int] = []
-  for old_gid in plan.glyphs {
-    let gid = old_gid.reinterpret_as_int()
-    if gid < 0 || gid >= indices.length() {
-      return None
-    }
-    let index = indices[gid]
-    if index < 0 {
-      return None
-    }
-    if index < 258 {
-      new_indices.push(index)
-    } else {
-      let custom_index = index - 258
-      if custom_index < 0 || custom_index >= names.length() {
-        return None
-      }
-      let mut mapped = old_to_new[custom_index]
-      if mapped < 0 {
-        mapped = new_custom.length()
-        old_to_new[custom_index] = mapped
-        new_custom.push(names[custom_index])
-      }
-      new_indices.push(258 + mapped)
-    }
-  }
+  write_u32(header, 0, 0x00030000)
   let out : Array[Byte] = []
   for i in 0..<32 {
     out.push(header[i])
-  }
-  push_u16(out, plan.glyphs.length())
-  for index in new_indices {
-    push_u16(out, index)
-  }
-  for name in new_custom {
-    let length = name.length()
-    if length > 255 {
-      return None
-    }
-    out.push(length.to_byte())
-    for b in name {
-      out.push(b)
-    }
   }
   Some(Bytes::from_array(out))
 }
 
 fn add_optional_post(
   face : @face.Face,
-  plan : SubsetPlan,
+  _plan : SubsetPlan,
   tables : Array[(@common.Tag, Bytes)],
   identity : Bool,
 ) -> Result[Unit, SubsetError] {
@@ -1014,7 +1527,7 @@ fn add_optional_post(
             return Ok(())
           }
           if post.version == 0x00020000 {
-            match build_post_subset(blob, post, plan) {
+            match build_post_format3(blob) {
               None => ()
               Some(bytes) => tables.push((tag_post, bytes))
             }
@@ -1145,11 +1658,8 @@ fn add_optional_gdef(
   face : @face.Face,
   plan : SubsetPlan,
   tables : Array[(@common.Tag, Bytes)],
-  identity : Bool,
+  _identity : Bool,
 ) -> Result[Unit, SubsetError] {
-  if identity {
-    return add_optional_table(face, tag_gdef, tables)
-  }
   let bytes = match build_gdef_subset(face, plan) {
     Err(err) => return Err(err)
     Ok(value) => value
@@ -1255,11 +1765,8 @@ fn add_optional_gsub(
   face : @face.Face,
   plan : SubsetPlan,
   tables : Array[(@common.Tag, Bytes)],
-  identity : Bool,
+  _identity : Bool,
 ) -> Result[Unit, SubsetError] {
-  if identity {
-    return Ok(())
-  }
   let bytes = match build_gsub_subset(face, plan) {
     Err(err) => return Err(err)
     Ok(value) => value
@@ -1277,11 +1784,8 @@ fn add_optional_gpos(
   face : @face.Face,
   plan : SubsetPlan,
   tables : Array[(@common.Tag, Bytes)],
-  identity : Bool,
+  _identity : Bool,
 ) -> Result[Unit, SubsetError] {
-  if identity {
-    return Ok(())
-  }
   let bytes = match build_gpos_subset(face, plan) {
     Err(err) => return Err(err)
     Ok(value) => value
@@ -1316,9 +1820,6 @@ fn add_identity_passthrough_tables(
     return Ok(())
   }
   let tags : Array[@common.Tag] = [
-    tag_gsub,
-    tag_gpos,
-    tag_base,
     tag_jstf,
     tag_morx,
     tag_mort,
@@ -1351,7 +1852,6 @@ fn add_passthrough_tables(
   tables : Array[(@common.Tag, Bytes)],
 ) -> Result[Unit, SubsetError] {
   let tags : Array[@common.Tag] = [
-    tag_name,
     tag_cvt,
     tag_fpgm,
     tag_prep,
@@ -1647,6 +2147,42 @@ fn build_vmetrics_subset(
     }
     _ => Ok(None)
   }
+}
+
+fn build_hmtx_subset(
+  hmtx : @sfnt.HmtxTable,
+  plan : SubsetPlan,
+) -> Result[(Bytes, Int), SubsetError] {
+  let advances : Array[Int] = []
+  let lsbs : Array[Int] = []
+  for old_gid in plan.glyphs {
+    let gid = old_gid.reinterpret_as_int()
+    if gid < 0 || gid >= hmtx.advances.length() {
+      return Err(InvalidInput("glyph id out of range"))
+    }
+    advances.push(hmtx.advances[gid])
+    lsbs.push(hmtx.lsbs[gid])
+  }
+  if advances.is_empty() {
+    return Err(InvalidInput("empty subset"))
+  }
+  let last_advance = advances[advances.length() - 1]
+  let mut last_diff = -1
+  for i in 0..<advances.length() {
+    if advances[i] != last_advance {
+      last_diff = i
+    }
+  }
+  let num_hmetrics = if last_diff < 0 { 1 } else { last_diff + 2 }
+  let out : Array[Byte] = []
+  for i in 0..<num_hmetrics {
+    push_u16(out, advances[i])
+    push_i16(out, lsbs[i])
+  }
+  for i in num_hmetrics..<advances.length() {
+    push_i16(out, lsbs[i])
+  }
+  Ok((Bytes::from_array(out), num_hmetrics))
 }
 
 fn build_vorg_subset(
@@ -3940,7 +4476,6 @@ fn build_class_def_subset(
     return Ok(None)
   }
   let class_values : Array[Int] = []
-  let mut max_class = 0
   for i in 0..<glyph_count {
     let old_gid = plan.glyphs[i].reinterpret_as_int()
     let class_value = match class_def_value_subset(bytes, offset, old_gid) {
@@ -3948,21 +4483,76 @@ fn build_class_def_subset(
       Ok(value) => value
     }
     class_values.push(class_value)
-    if class_value > max_class {
-      max_class = class_value
+  }
+  Ok(build_class_def_from_values(class_values, false))
+}
+
+fn build_class_def_from_values(
+  class_values : Array[Int],
+  allow_empty : Bool,
+) -> Bytes? {
+  if class_values.is_empty() {
+    return None
+  }
+  let mut first_non_zero = -1
+  let mut last_non_zero = -1
+  for i in 0..<class_values.length() {
+    if class_values[i] != 0 {
+      if first_non_zero < 0 {
+        first_non_zero = i
+      }
+      last_non_zero = i
     }
   }
-  if max_class == 0 {
-    return Ok(None)
+  if first_non_zero < 0 {
+    if !allow_empty {
+      return None
+    }
+    let out : Array[Byte] = []
+    push_u16(out, 2)
+    push_u16(out, 0)
+    return Some(Bytes::from_array(out))
   }
-  let out : Array[Byte] = []
-  push_u16(out, 1)
-  push_u16(out, 0)
-  push_u16(out, glyph_count)
-  for value in class_values {
-    push_u16(out, value)
+  let start = first_non_zero
+  let end = last_non_zero
+  let count = end - start + 1
+  let format1 : Array[Byte] = []
+  push_u16(format1, 1)
+  push_u16(format1, start)
+  push_u16(format1, count)
+  for i in start..<(end + 1) {
+    push_u16(format1, class_values[i])
   }
-  Ok(Some(Bytes::from_array(out)))
+  let ranges : Array[(Int, Int, Int)] = []
+  let mut idx = 0
+  while idx < class_values.length() {
+    let value = class_values[idx]
+    if value == 0 {
+      idx = idx + 1
+      continue
+    }
+    let mut range_end = idx
+    while range_end + 1 < class_values.length() &&
+          class_values[range_end + 1] == value {
+      range_end = range_end + 1
+    }
+    ranges.push((idx, range_end, value))
+    idx = range_end + 1
+  }
+  let format2 : Array[Byte] = []
+  push_u16(format2, 2)
+  push_u16(format2, ranges.length())
+  for range in ranges {
+    let (range_start, range_end, value) = range
+    push_u16(format2, range_start)
+    push_u16(format2, range_end)
+    push_u16(format2, value)
+  }
+  if format2.length() < format1.length() {
+    Some(Bytes::from_array(format2))
+  } else {
+    Some(Bytes::from_array(format1))
+  }
 }
 
 fn parse_coverage_subset(
@@ -4107,6 +4697,7 @@ fn build_mark_glyph_sets_subset(
   }
   let offsets_base = offset + 4
   let coverages : Array[Bytes] = []
+  let mut any_nonempty = false
   for i in 0..<set_count {
     let cov_offset = match read_u16(bytes, offsets_base + i * 2) {
       Err(err) => return Err(err)
@@ -4131,7 +4722,13 @@ fn build_mark_glyph_sets_subset(
         mapped.push(new_gid)
       }
     }
+    if !mapped.is_empty() {
+      any_nonempty = true
+    }
     coverages.push(build_coverage_subset(mapped))
+  }
+  if !any_nonempty {
+    return Ok(None)
   }
   let out : Array[Byte] = []
   push_u16(out, 1)
@@ -5552,15 +6149,6 @@ fn build_gpos_single_subtable(
   }
 }
 
-fn value_record_is_zero(record : Array[Byte]) -> Bool {
-  for b in record {
-    if b != 0 {
-      return false
-    }
-  }
-  true
-}
-
 fn build_gpos_pair_format1(
   value_format1 : Int,
   value_format2 : Int,
@@ -5766,50 +6354,130 @@ fn build_gpos_pair_subtable(
     if matrix_base + class1_count * class1_record_size > bytes.length() {
       return Err(InvalidInput("invalid GPOS class pair records"))
     }
-    let records : Array[(Int, Array[(Int, Bytes)])] = []
+    let coverage_pairs : Array[(Int, Int)] = []
     for glyph in coverage {
       if glyph < 0 || glyph >= plan.old_to_new.length() {
         return Err(InvalidInput("glyph id out of range"))
       }
-      let new_first = plan.old_to_new[glyph]
-      if new_first < 0 {
-        continue
+      let new_gid = plan.old_to_new[glyph]
+      if new_gid >= 0 {
+        coverage_pairs.push((new_gid, glyph))
       }
-      let class1 = match class_def_value_subset(bytes, class1_base, glyph) {
+    }
+    if coverage_pairs.is_empty() {
+      return Ok(None)
+    }
+    coverage_pairs.sort_by((a, b) => a.0 - b.0)
+    let coverage_new : Array[Int] = []
+    let old_class1_indices : Array[Int] = []
+    let class_values1 : Array[Int] = Array::make(plan.glyphs.length(), 0)
+    for i in 0..<coverage_pairs.length() {
+      let (new_gid, old_gid) = coverage_pairs[i]
+      coverage_new.push(new_gid)
+      class_values1[new_gid] = i
+      let class1 = match class_def_value_subset(bytes, class1_base, old_gid) {
         Err(err) => return Err(err)
         Ok(value) => value
       }
       let class1_index = if class1 >= class1_count { 0 } else { class1 }
-      let pairs : Array[(Int, Bytes)] = []
-      for old_second in plan.glyphs {
-        let second_gid = old_second.reinterpret_as_int()
-        let class2 = match class_def_value_subset(bytes, class2_base, second_gid) {
-          Err(err) => return Err(err)
-          Ok(value) => value
+      old_class1_indices.push(class1_index)
+    }
+    let coverage_bytes = build_coverage_subset(coverage_new)
+    let class_def1_bytes = match build_class_def_from_values(class_values1, true) {
+      None => return Ok(None)
+      Some(value) => value
+    }
+    let class_values2 : Array[Int] = []
+    for old_gid in plan.glyphs {
+      let gid = old_gid.reinterpret_as_int()
+      let class2 = match class_def_value_subset(bytes, class2_base, gid) {
+        Err(err) => return Err(err)
+        Ok(value) => value
+      }
+      let class2_index = if class2 >= class2_count { 0 } else { class2 }
+      class_values2.push(class2_index)
+    }
+    let used_classes : Array[Int] = []
+    for value in class_values2 {
+      if value > 0 {
+        let mut exists = false
+        for seen in used_classes {
+          if seen == value {
+            exists = true
+            break
+          }
         }
-        let class2_index = if class2 >= class2_count { 0 } else { class2 }
-        let record_index = class1_index * class2_count + class2_index
+        if !exists {
+          used_classes.push(value)
+        }
+      }
+    }
+    used_classes.sort()
+    let class_values2_new : Array[Int] = []
+    let old_class2_for_new : Array[Int] = [0]
+    for value in used_classes {
+      old_class2_for_new.push(value)
+    }
+    for value in class_values2 {
+      if value == 0 {
+        class_values2_new.push(0)
+      } else {
+        let mut mapped = 0
+        for i in 0..<used_classes.length() {
+          if used_classes[i] == value {
+            mapped = i + 1
+            break
+          }
+        }
+        class_values2_new.push(mapped)
+      }
+    }
+    let new_class2_count = old_class2_for_new.length()
+    let class_def2_bytes = match build_class_def_from_values(class_values2_new, true) {
+      None => return Ok(None)
+      Some(value) => value
+    }
+    let matrix_bytes : Array[Byte] = []
+    for i in 0..<coverage_pairs.length() {
+      let class1_index = old_class1_indices[i]
+      for j in 0..<new_class2_count {
+        let old_class2 = old_class2_for_new[j]
+        let record_index = class1_index * class2_count + old_class2
         let record_offset = matrix_base + record_index * class_record_size
         if record_offset < 0 || record_offset + class_record_size > bytes.length() {
           return Err(InvalidInput("invalid GPOS class pair record"))
         }
-        let record_bytes = bytes[record_offset:record_offset + class_record_size].to_array()
-        if value_record_is_zero(record_bytes) {
-          continue
-        }
-        let new_second = plan.old_to_new[second_gid]
-        if new_second >= 0 {
-          pairs.push((new_second, Bytes::from_array(record_bytes)))
+        let record_bytes = bytes[record_offset:record_offset + class_record_size]
+        for b in record_bytes {
+          matrix_bytes.push(b)
         }
       }
-      if !pairs.is_empty() {
-        records.push((new_first, pairs))
-      }
     }
-    if records.is_empty() {
-      return Ok(None)
+    let out : Array[Byte] = []
+    push_u16(out, 2)
+    let coverage_offset = 16 + matrix_bytes.length()
+    let class_def2_offset = coverage_offset + coverage_bytes.length()
+    let class_def1_offset = class_def2_offset + class_def2_bytes.length()
+    push_u16(out, coverage_offset)
+    push_u16(out, value_format1)
+    push_u16(out, value_format2)
+    push_u16(out, class_def1_offset)
+    push_u16(out, class_def2_offset)
+    push_u16(out, coverage_pairs.length())
+    push_u16(out, new_class2_count)
+    for b in matrix_bytes {
+      out.push(b)
     }
-    return Ok(Some(build_gpos_pair_format1(value_format1, value_format2, records)))
+    for b in coverage_bytes {
+      out.push(b)
+    }
+    for b in class_def2_bytes {
+      out.push(b)
+    }
+    for b in class_def1_bytes {
+      out.push(b)
+    }
+    return Ok(Some(Bytes::from_array(out)))
   } else {
     Ok(None)
   }
@@ -6803,6 +7471,159 @@ fn build_lookup_bytes(
   Ok(Bytes::from_array(out))
 }
 
+fn push_langsys_no_features(out : Array[Byte]) -> Unit {
+  push_u16(out, 0)
+  push_u16(out, 0xFFFF)
+  push_u16(out, 0)
+}
+
+fn build_script_table_no_features(
+  has_default : Bool,
+  lang_tags : Array[Int],
+) -> Bytes {
+  let lang_count = lang_tags.length()
+  let header_len = 4 + lang_count * 6
+  let mut cursor = header_len
+  let default_offset = if has_default { cursor } else { 0 }
+  if has_default {
+    cursor = cursor + 6
+  }
+  let offsets : Array[Int] = []
+  for _ in 0..<lang_count {
+    offsets.push(cursor)
+    cursor = cursor + 6
+  }
+  let out : Array[Byte] = []
+  push_u16(out, default_offset)
+  push_u16(out, lang_count)
+  for i in 0..<lang_count {
+    push_u32(out, lang_tags[i])
+    push_u16(out, offsets[i])
+  }
+  if has_default {
+    push_langsys_no_features(out)
+  }
+  for _ in 0..<lang_count {
+    push_langsys_no_features(out)
+  }
+  Bytes::from_array(out)
+}
+
+fn build_script_list_no_features(
+  script_bytes : Array[Byte],
+) -> Result[Bytes, SubsetError] {
+  if script_bytes.length() < 2 {
+    return Err(InvalidInput("invalid script list"))
+  }
+  let script_count = match read_u16(script_bytes, 0) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  if script_count < 0 {
+    return Err(InvalidInput("invalid script count"))
+  }
+  let records : Array[(Int, Bool, Array[Int])] = []
+  for i in 0..<script_count {
+    let record_base = 2 + i * 6
+    if record_base + 6 > script_bytes.length() {
+      return Err(InvalidInput("invalid script record"))
+    }
+    let tag = match read_u32(script_bytes, record_base) {
+      Err(err) => return Err(err)
+      Ok(value) => value
+    }
+    let offset = match read_u16(script_bytes, record_base + 4) {
+      Err(err) => return Err(err)
+      Ok(value) => value
+    }
+    if offset < 0 || offset >= script_bytes.length() {
+      return Err(InvalidInput("invalid script record offset"))
+    }
+    let script_base = offset
+    let default_offset = match read_u16(script_bytes, script_base) {
+      Err(err) => return Err(err)
+      Ok(value) => value
+    }
+    let lang_count = match read_u16(script_bytes, script_base + 2) {
+      Err(err) => return Err(err)
+      Ok(value) => value
+    }
+    if lang_count < 0 {
+      return Err(InvalidInput("invalid script langsys count"))
+    }
+    let lang_tags : Array[Int] = []
+    for j in 0..<lang_count {
+      let lang_base = script_base + 4 + j * 6
+      if lang_base + 6 > script_bytes.length() {
+        return Err(InvalidInput("invalid langsys record"))
+      }
+      let lang_tag = match read_u32(script_bytes, lang_base) {
+        Err(err) => return Err(err)
+        Ok(value) => value
+      }
+      lang_tags.push(lang_tag)
+    }
+    records.push((tag, default_offset != 0, lang_tags))
+  }
+  let record_tables : Array[Bytes] = []
+  for record in records {
+    record_tables.push(build_script_table_no_features(record.1, record.2))
+  }
+  let unique_tables : Array[(Int, Int, Bytes)] = []
+  for table_bytes in record_tables {
+    let mut exists = false
+    for entry in unique_tables {
+      if entry.2 == table_bytes {
+        exists = true
+        break
+      }
+    }
+    if !exists {
+      unique_tables.push((table_bytes.length(), unique_tables.length(), table_bytes))
+    }
+  }
+  unique_tables.sort_by((a, b) => {
+    let diff = a.0 - b.0
+    if diff != 0 {
+      diff
+    } else {
+      a.1 - b.1
+    }
+  })
+  let mut cursor = 2 + script_count * 6
+  let script_tables : Array[Bytes] = []
+  let script_offsets : Array[Int] = []
+  for entry in unique_tables {
+    let table_bytes = entry.2
+    script_tables.push(table_bytes)
+    script_offsets.push(cursor)
+    cursor = cursor + table_bytes.length()
+  }
+  let record_offsets : Array[Int] = []
+  for table_bytes in record_tables {
+    let mut offset = 0
+    for i in 0..<script_tables.length() {
+      if script_tables[i] == table_bytes {
+        offset = script_offsets[i]
+        break
+      }
+    }
+    record_offsets.push(offset)
+  }
+  let out : Array[Byte] = []
+  push_u16(out, script_count)
+  for i in 0..<records.length() {
+    push_u32(out, records[i].0)
+    push_u16(out, record_offsets[i])
+  }
+  for table_bytes in script_tables {
+    for b in table_bytes {
+      out.push(b)
+    }
+  }
+  Ok(Bytes::from_array(out))
+}
+
 fn build_gsub_subset(
   face : @face.Face,
   plan : SubsetPlan,
@@ -7105,7 +7926,23 @@ fn build_gsub_subset(
         lookup_bytes_list.push(lookup_bytes)
       }
       if kept_subtables == 0 {
-        return Ok(None)
+        let script_list = match build_script_list_no_features(script_bytes) {
+          Err(err) => return Err(err)
+          Ok(value) => value
+        }
+        let out : Array[Byte] = []
+        push_u32(out, version)
+        let script_new_offset = 10
+        let feature_new_offset = script_new_offset + script_list.length()
+        let lookup_new_offset = feature_new_offset
+        push_u16(out, script_new_offset)
+        push_u16(out, feature_new_offset)
+        push_u16(out, lookup_new_offset)
+        for b in script_list {
+          out.push(b)
+        }
+        push_u16(out, 0)
+        return Ok(Some(Bytes::from_array(out)))
       }
       let lookup_list_bytes = match build_lookup_list_bytes(lookup_bytes_list) {
         Err(err) => return Err(err)
@@ -8323,6 +9160,9 @@ pub fn subset_with_plan(
   for old_gid in plan.glyphs {
     new_offsets.push(offset)
     let gid = old_gid.reinterpret_as_int()
+    if gid == 0 {
+      continue
+    }
     if gid + 1 >= loca.offsets.length() {
       return Err(InvalidInput("glyph id out of range"))
     }
@@ -8339,37 +9179,49 @@ pub fn subset_with_plan(
         glyf_bytes.push(b)
       }
       offset = offset + length
-      if (offset & 3) != 0 {
-        let pad = 4 - (offset & 3)
-        for _ in 0..<pad {
-          glyf_bytes.push(b'\x00')
-        }
-        offset = offset + pad
+      if (offset & 1) != 0 {
+        glyf_bytes.push(b'\x00')
+        offset = offset + 1
       }
     }
   }
   new_offsets.push(offset)
 
-  let new_loca : Array[Byte] = []
+  let mut use_short_loca = true
+  let mut max_offset = 0
   for loc in new_offsets {
-    push_u32(new_loca, loc)
+    if (loc & 1) != 0 {
+      use_short_loca = false
+      break
+    }
+    if loc > max_offset {
+      max_offset = loc
+    }
+  }
+  if use_short_loca {
+    if (max_offset / 2) > 0xFFFF {
+      use_short_loca = false
+    }
+  }
+  let new_loca : Array[Byte] = []
+  if use_short_loca {
+    for loc in new_offsets {
+      push_u16(new_loca, loc / 2)
+    }
+  } else {
+    for loc in new_offsets {
+      push_u32(new_loca, loc)
+    }
   }
 
-  let new_hmtx : Array[Byte] = []
-  for old_gid in plan.glyphs {
-    let gid = old_gid.reinterpret_as_int()
-    if gid < 0 || gid >= hmtx.advances.length() {
-      return Err(InvalidInput("glyph id out of range"))
-    }
-    let advance = hmtx.advances[gid]
-    let lsb = hmtx.lsbs[gid]
-    push_u16(new_hmtx, advance)
-    push_i16(new_hmtx, lsb)
+  let (new_hmtx, num_hmetrics) = match build_hmtx_subset(hmtx, plan) {
+    Err(err) => return Err(err)
+    Ok(value) => value
   }
 
   let head_bytes = head_blob.as_view().to_bytes().to_array()
   if head_bytes.length() >= 52 {
-    write_u16(head_bytes, 50, 1)
+    write_u16(head_bytes, 50, if use_short_loca { 0 } else { 1 })
   }
   let maxp_bytes = maxp_blob.as_view().to_bytes().to_array()
   if maxp_bytes.length() >= 6 {
@@ -8377,17 +9229,17 @@ pub fn subset_with_plan(
   }
   let hhea_bytes = hhea_blob.as_view().to_bytes().to_array()
   if hhea_bytes.length() >= 36 {
-    write_u16(hhea_bytes, 34, plan.glyphs.length())
+    write_u16(hhea_bytes, 34, num_hmetrics)
   }
 
-  let cmap_bytes = build_cmap_from_pairs(plan.codepoint_map)
+  let cmap_bytes = build_cmap_from_pairs(face, plan.codepoint_map)
   let identity = is_identity_subset(plan, maxp.num_glyphs)
 
   let tables : Array[(@common.Tag, Bytes)] = [
     (tag_head, Bytes::from_array(head_bytes)),
     (tag_maxp, Bytes::from_array(maxp_bytes)),
     (tag_hhea, Bytes::from_array(hhea_bytes)),
-    (tag_hmtx, Bytes::from_array(new_hmtx)),
+    (tag_hmtx, new_hmtx),
     (tag_loca, Bytes::from_array(new_loca)),
     (tag_glyf, Bytes::from_array(glyf_bytes)),
   ]
@@ -8418,15 +9270,15 @@ pub fn subset_with_plan(
     Err(err) => return Err(err)
     Ok(_) => ()
   }
-  match add_optional_gpos(face, plan, tables, identity) {
-    Err(err) => return Err(err)
-    Ok(_) => ()
-  }
-  match add_optional_gpos(face, plan, tables, identity) {
-    Err(err) => return Err(err)
-    Ok(_) => ()
-  }
   match add_optional_post(face, plan, tables, identity) {
+    Err(err) => return Err(err)
+    Ok(_) => ()
+  }
+  match add_optional_name(face, tables, identity) {
+    Err(err) => return Err(err)
+    Ok(_) => ()
+  }
+  match add_optional_hdmx(face, maxp, plan, tables, identity) {
     Err(err) => return Err(err)
     Ok(_) => ()
   }
@@ -8528,16 +9380,9 @@ fn subset_cff1_with_plan(
     Ok(value) => value
   }
 
-  let new_hmtx : Array[Byte] = []
-  for old_gid in plan.glyphs {
-    let gid = old_gid.reinterpret_as_int()
-    if gid < 0 || gid >= hmtx.advances.length() {
-      return Err(InvalidInput("glyph id out of range"))
-    }
-    let advance = hmtx.advances[gid]
-    let lsb = hmtx.lsbs[gid]
-    push_u16(new_hmtx, advance)
-    push_i16(new_hmtx, lsb)
+  let (new_hmtx, num_hmetrics) = match build_hmtx_subset(hmtx, plan) {
+    Err(err) => return Err(err)
+    Ok(value) => value
   }
 
   let head_bytes = head_blob.as_view().to_bytes().to_array()
@@ -8547,7 +9392,7 @@ fn subset_cff1_with_plan(
   }
   let hhea_bytes = hhea_blob.as_view().to_bytes().to_array()
   if hhea_bytes.length() >= 36 {
-    write_u16(hhea_bytes, 34, plan.glyphs.length())
+    write_u16(hhea_bytes, 34, num_hmetrics)
   }
 
   let glyph_ids : Array[Int] = []
@@ -8559,14 +9404,14 @@ fn subset_cff1_with_plan(
     Ok(value) => value
   }
 
-  let cmap_bytes = build_cmap_from_pairs(plan.codepoint_map)
+  let cmap_bytes = build_cmap_from_pairs(face, plan.codepoint_map)
   let identity = is_identity_subset(plan, maxp.num_glyphs)
 
   let tables : Array[(@common.Tag, Bytes)] = [
     (tag_head, Bytes::from_array(head_bytes)),
     (tag_maxp, Bytes::from_array(maxp_bytes)),
     (tag_hhea, Bytes::from_array(hhea_bytes)),
-    (tag_hmtx, Bytes::from_array(new_hmtx)),
+    (tag_hmtx, new_hmtx),
     (tag_cff, cff_bytes),
   ]
   match vmetrics {
@@ -8593,6 +9438,10 @@ fn subset_cff1_with_plan(
     Ok(_) => ()
   }
   match add_optional_post(face, plan, tables, identity) {
+    Err(err) => return Err(err)
+    Ok(_) => ()
+  }
+  match add_optional_name(face, tables, identity) {
     Err(err) => return Err(err)
     Ok(_) => ()
   }
@@ -8694,16 +9543,9 @@ fn subset_cff2_with_plan(
     Ok(value) => value
   }
 
-  let new_hmtx : Array[Byte] = []
-  for old_gid in plan.glyphs {
-    let gid = old_gid.reinterpret_as_int()
-    if gid < 0 || gid >= hmtx.advances.length() {
-      return Err(InvalidInput("glyph id out of range"))
-    }
-    let advance = hmtx.advances[gid]
-    let lsb = hmtx.lsbs[gid]
-    push_u16(new_hmtx, advance)
-    push_i16(new_hmtx, lsb)
+  let (new_hmtx, num_hmetrics) = match build_hmtx_subset(hmtx, plan) {
+    Err(err) => return Err(err)
+    Ok(value) => value
   }
 
   let head_bytes = head_blob.as_view().to_bytes().to_array()
@@ -8713,7 +9555,7 @@ fn subset_cff2_with_plan(
   }
   let hhea_bytes = hhea_blob.as_view().to_bytes().to_array()
   if hhea_bytes.length() >= 36 {
-    write_u16(hhea_bytes, 34, plan.glyphs.length())
+    write_u16(hhea_bytes, 34, num_hmetrics)
   }
 
   let glyph_ids : Array[Int] = []
@@ -8725,14 +9567,14 @@ fn subset_cff2_with_plan(
     Ok(value) => value
   }
 
-  let cmap_bytes = build_cmap_from_pairs(plan.codepoint_map)
+  let cmap_bytes = build_cmap_from_pairs(face, plan.codepoint_map)
   let identity = is_identity_subset(plan, maxp.num_glyphs)
 
   let tables : Array[(@common.Tag, Bytes)] = [
     (tag_head, Bytes::from_array(head_bytes)),
     (tag_maxp, Bytes::from_array(maxp_bytes)),
     (tag_hhea, Bytes::from_array(hhea_bytes)),
-    (tag_hmtx, Bytes::from_array(new_hmtx)),
+    (tag_hmtx, new_hmtx),
     (tag_cff2, cff_bytes),
   ]
   match vmetrics {
@@ -8759,6 +9601,10 @@ fn subset_cff2_with_plan(
     Ok(_) => ()
   }
   match add_optional_post(face, plan, tables, identity) {
+    Err(err) => return Err(err)
+    Ok(_) => ()
+  }
+  match add_optional_name(face, tables, identity) {
     Err(err) => return Err(err)
     Ok(_) => ()
   }

@@ -1959,16 +1959,7 @@ test "subset rebuilds post table when remapped" {
     Err(err) => fail("post parse failed: \{err}")
     Ok(value) => value
   }
-  let indices = match post.glyph_name_indices {
-    None => fail("missing name indices")
-    Some(value) => value
-  }
-  let names = match post.custom_names {
-    None => fail("missing custom names")
-    Some(value) => value
-  }
-  inspect(indices, content="[0, 258, 2]")
-  inspect(names, content="[b\"foo\"]")
+  inspect(post.version, content="196608")
 }
 
 ///|

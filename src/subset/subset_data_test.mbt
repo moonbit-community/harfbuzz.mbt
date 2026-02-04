@@ -233,6 +233,205 @@ fn expected_key(case : SubsetDataCase, codepoints : Array[UInt]) -> String? {
   }
 }
 
+fn read_u16_dbg(data : BytesView, offset : Int) -> Int? {
+  if offset < 0 || offset + 2 > data.length() {
+    return None
+  }
+  let b0 = data[offset].to_int()
+  let b1 = data[offset + 1].to_int()
+  Some((b0 << 8) | b1)
+}
+
+fn read_u32_dbg(data : BytesView, offset : Int) -> Int? {
+  if offset < 0 || offset + 4 > data.length() {
+    return None
+  }
+  let b0 = data[offset].to_int()
+  let b1 = data[offset + 1].to_int()
+  let b2 = data[offset + 2].to_int()
+  let b3 = data[offset + 3].to_int()
+  Some((b0 << 24) | (b1 << 16) | (b2 << 8) | b3)
+}
+
+fn read_tag_dbg(data : BytesView, offset : Int) -> String? {
+  if offset < 0 || offset + 4 > data.length() {
+    return None
+  }
+  let sb = StringBuilder::new()
+  for i in 0..<4 {
+    sb.write_char(data[offset + i].to_int().unsafe_to_char())
+  }
+  Some(sb.to_string())
+}
+
+fn table_slice(data : Bytes, tag : String) -> Bytes? {
+  let num_tables = read_u16_dbg(data[:], 4)
+  match num_tables {
+    None => None
+    Some(num_tables) => {
+      for i in 0..<num_tables {
+        let base = 12 + i * 16
+        let rec_tag = read_tag_dbg(data[:], base)
+        let offset = read_u32_dbg(data[:], base + 8)
+        let length = read_u32_dbg(data[:], base + 12)
+        match (rec_tag, offset, length) {
+          (Some(rec_tag), Some(offset), Some(length)) =>
+            if rec_tag == tag && offset >= 0 && length >= 0 &&
+               offset + length <= data.length() {
+              return Some(data[offset:offset + length].to_bytes())
+            }
+          _ => ()
+        }
+      }
+      None
+    }
+  }
+}
+
+fn dump_table_diff(expected : Bytes, actual : Bytes) -> Unit {
+  let num_tables = read_u16_dbg(expected[:], 4)
+  match num_tables {
+    None => ()
+    Some(num_tables) => {
+      for i in 0..<num_tables {
+        let base = 12 + i * 16
+        let tag = read_tag_dbg(expected[:], base)
+        match tag {
+          None => ()
+          Some(tag) => {
+            let exp = table_slice(expected, tag)
+            let act = table_slice(actual, tag)
+            match (exp, act) {
+              (Some(exp), Some(act)) =>
+                if exp != act {
+                  println("  table diff \{tag} len exp=\{exp.length()} act=\{act.length()}")
+                }
+              (Some(exp), None) =>
+                println("  table missing \{tag} exp len=\{exp.length()}")
+              (None, Some(act)) =>
+                println("  table extra \{tag} act len=\{act.length()}")
+              _ => ()
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+fn dump_dir_checksum_diff(expected : Bytes, actual : Bytes) -> Unit {
+  let num_tables = read_u16_dbg(expected[:], 4)
+  match num_tables {
+    None => ()
+    Some(num_tables) => {
+      for i in 0..<num_tables {
+        let base = 12 + i * 16
+        let tag = read_tag_dbg(expected[:], base)
+        let exp_checksum = read_u32_dbg(expected[:], base + 4)
+        match tag {
+          None => ()
+          Some(tag) => {
+            let act_num_tables = read_u16_dbg(actual[:], 4)
+            match act_num_tables {
+              None => ()
+              Some(act_num_tables) => {
+                for j in 0..<act_num_tables {
+                  let act_base = 12 + j * 16
+                  let act_tag = read_tag_dbg(actual[:], act_base)
+                  if act_tag == Some(tag) {
+                    let act_checksum = read_u32_dbg(actual[:], act_base + 4)
+                    if exp_checksum != act_checksum {
+                      println(
+                        "  dir checksum diff \{tag} exp=\{exp_checksum} act=\{act_checksum}",
+                      )
+                    }
+                    break
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+fn dump_dir_offset_diff(expected : Bytes, actual : Bytes) -> Unit {
+  let num_tables = read_u16_dbg(expected[:], 4)
+  match num_tables {
+    None => ()
+    Some(num_tables) => {
+      for i in 0..<num_tables {
+        let base = 12 + i * 16
+        let tag = read_tag_dbg(expected[:], base)
+        let exp_offset = read_u32_dbg(expected[:], base + 8)
+        let exp_len = read_u32_dbg(expected[:], base + 12)
+        match tag {
+          None => ()
+          Some(tag) => {
+            let act_num_tables = read_u16_dbg(actual[:], 4)
+            match act_num_tables {
+              None => ()
+              Some(act_num_tables) => {
+                for j in 0..<act_num_tables {
+                  let act_base = 12 + j * 16
+                  let act_tag = read_tag_dbg(actual[:], act_base)
+                  if act_tag == Some(tag) {
+                    let act_offset = read_u32_dbg(actual[:], act_base + 8)
+                    let act_len = read_u32_dbg(actual[:], act_base + 12)
+                    if exp_offset != act_offset || exp_len != act_len {
+                      println(
+                        "  dir offset diff \{tag} exp=\{exp_offset}/\{exp_len} act=\{act_offset}/\{act_len}",
+                      )
+                    }
+                    break
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+fn dump_tag_diff(expected : Bytes, actual : Bytes) -> Unit {
+  let exp_tags : Map[String, Bool] = {}
+  let exp_count = read_u16_dbg(expected[:], 4)
+  match exp_count {
+    None => ()
+    Some(exp_count) => {
+      for i in 0..<exp_count {
+        let base = 12 + i * 16
+        let tag = read_tag_dbg(expected[:], base)
+        match tag {
+          None => ()
+          Some(tag) => exp_tags[tag] = true
+        }
+      }
+    }
+  }
+  let act_count = read_u16_dbg(actual[:], 4)
+  match act_count {
+    None => ()
+    Some(act_count) => {
+      for i in 0..<act_count {
+        let base = 12 + i * 16
+        let tag = read_tag_dbg(actual[:], base)
+        match tag {
+          None => ()
+          Some(tag) =>
+            if exp_tags.get(tag) is None {
+              println("  extra table \{tag}")
+            }
+        }
+      }
+    }
+  }
+}
+
 ///|
 test "subset data smoke" {
   let mut ran = 0
@@ -292,11 +491,17 @@ test "subset data smoke" {
         Ok(value) => value
       }
       if actual != expected {
+        println(
+          "mismatch \{case.suite} \{case.font} \{case.profile} \{case.subset}",
+        )
+        dump_tag_diff(expected, actual)
+        dump_dir_checksum_diff(expected, actual)
+        dump_dir_offset_diff(expected, actual)
+        dump_table_diff(expected, actual)
         mismatched = mismatched + 1
       }
       ran = ran + 1
     }
   }
-  // Mismatch count captures known differences with upstream subset outputs.
-  inspect((ran, skipped, mismatched), content="(4, 0, 4)")
+  inspect((ran, skipped, mismatched), content="(4, 0, 0)")
 }
