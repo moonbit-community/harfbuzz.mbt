@@ -20,6 +20,27 @@ pub fn SubsetInput::from_codepoints(
   SubsetInput::{ codepoints }
 }
 
+fn expand_bidi_codepoints(codepoints : Array[UInt]) -> Array[UInt] {
+  let seen : Map[Int, Bool] = {}
+  let expanded : Array[UInt] = []
+  for cp in codepoints {
+    let key = cp.reinterpret_as_int()
+    if seen.get(key) is None {
+      seen[key] = true
+      expanded.push(cp)
+    }
+    let mirror = @unicode.mirroring(cp)
+    if mirror != cp {
+      let mirror_key = mirror.reinterpret_as_int()
+      if seen.get(mirror_key) is None {
+        seen[mirror_key] = true
+        expanded.push(mirror)
+      }
+    }
+  }
+  expanded
+}
+
 ///|
 pub struct SubsetPlan {
   glyphs : Array[UInt]
@@ -186,6 +207,94 @@ let tag_vorg : @common.Tag = @common.Tag::from_chars('V', 'O', 'R', 'G')
 
 ///|
 let tag_varc : @common.Tag = @common.Tag::from_chars('V', 'A', 'R', 'C')
+
+fn tag_value(a : Char, b : Char, c : Char, d : Char) -> Int {
+  @common.Tag::from_chars(a, b, c, d).to_uint().reinterpret_as_int()
+}
+
+let default_layout_features : Array[Int] = [
+  tag_value('r', 'v', 'r', 'n'),
+  tag_value('c', 'c', 'm', 'p'),
+  tag_value('l', 'i', 'g', 'a'),
+  tag_value('l', 'o', 'c', 'l'),
+  tag_value('m', 'a', 'r', 'k'),
+  tag_value('m', 'k', 'm', 'k'),
+  tag_value('r', 'l', 'i', 'g'),
+  tag_value('f', 'r', 'a', 'c'),
+  tag_value('n', 'u', 'm', 'r'),
+  tag_value('d', 'n', 'o', 'm'),
+  tag_value('c', 'a', 'l', 't'),
+  tag_value('c', 'l', 'i', 'g'),
+  tag_value('c', 'u', 'r', 's'),
+  tag_value('k', 'e', 'r', 'n'),
+  tag_value('r', 'c', 'l', 't'),
+  tag_value('v', 'a', 'l', 't'),
+  tag_value('v', 'e', 'r', 't'),
+  tag_value('v', 'k', 'r', 'n'),
+  tag_value('v', 'p', 'a', 'l'),
+  tag_value('v', 'r', 't', '2'),
+  tag_value('l', 't', 'r', 'a'),
+  tag_value('l', 't', 'r', 'm'),
+  tag_value('r', 't', 'l', 'a'),
+  tag_value('r', 't', 'l', 'm'),
+  tag_value('r', 'a', 'n', 'd'),
+  tag_value('j', 'a', 'l', 't'),
+  tag_value('c', 'h', 'w', 's'),
+  tag_value('v', 'c', 'h', 'w'),
+  tag_value('h', 'a', 'l', 't'),
+  tag_value('v', 'h', 'a', 'l'),
+  tag_value('H', 'a', 'r', 'f'),
+  tag_value('H', 'A', 'R', 'F'),
+  tag_value('B', 'u', 'z', 'z'),
+  tag_value('B', 'U', 'Z', 'Z'),
+  tag_value('i', 'n', 'i', 't'),
+  tag_value('m', 'e', 'd', 'i'),
+  tag_value('f', 'i', 'n', 'a'),
+  tag_value('i', 's', 'o', 'l'),
+  tag_value('m', 'e', 'd', '2'),
+  tag_value('f', 'i', 'n', '2'),
+  tag_value('f', 'i', 'n', '3'),
+  tag_value('c', 's', 'w', 'h'),
+  tag_value('m', 's', 'e', 't'),
+  tag_value('s', 't', 'c', 'h'),
+  tag_value('l', 'j', 'm', 'o'),
+  tag_value('v', 'j', 'm', 'o'),
+  tag_value('t', 'j', 'm', 'o'),
+  tag_value('a', 'b', 'v', 's'),
+  tag_value('b', 'l', 'w', 's'),
+  tag_value('a', 'b', 'v', 'm'),
+  tag_value('b', 'l', 'w', 'm'),
+  tag_value('n', 'u', 'k', 't'),
+  tag_value('a', 'k', 'h', 'n'),
+  tag_value('r', 'p', 'h', 'f'),
+  tag_value('r', 'k', 'r', 'f'),
+  tag_value('p', 'r', 'e', 'f'),
+  tag_value('b', 'l', 'w', 'f'),
+  tag_value('h', 'a', 'l', 'f'),
+  tag_value('a', 'b', 'v', 'f'),
+  tag_value('p', 's', 't', 'f'),
+  tag_value('c', 'f', 'a', 'r'),
+  tag_value('v', 'a', 't', 'u'),
+  tag_value('c', 'j', 'c', 't'),
+  tag_value('i', 'n', 'i', 't'),
+  tag_value('p', 'r', 'e', 's'),
+  tag_value('a', 'b', 'v', 's'),
+  tag_value('b', 'l', 'w', 's'),
+  tag_value('p', 's', 't', 's'),
+  tag_value('h', 'a', 'l', 'n'),
+  tag_value('d', 'i', 's', 't'),
+  tag_value('a', 'b', 'v', 'm'),
+  tag_value('b', 'l', 'w', 'm'),
+]
+
+fn is_default_layout_feature(tag : Int) -> Bool {
+  for value in default_layout_features {
+    if value == tag {
+      return true
+    }
+  }
+  false
+}
 
 ///|
 fn read_u16(bytes : Array[Byte], offset : Int) -> Result[Int, SubsetError] {
@@ -2091,7 +2200,8 @@ pub fn build_plan(
     }
   }
   add_gid(0)
-  for codepoint in input.codepoints {
+  let expanded_codepoints = expand_bidi_codepoints(input.codepoints)
+  for codepoint in expanded_codepoints {
     let gid = match font.glyph_for_codepoint(codepoint) {
       Err(err) => return Err(Font(err))
       Ok(value) => value
@@ -2202,7 +2312,7 @@ pub fn build_plan(
     }
   }
   let codepoint_map : Array[(UInt, Int)] = []
-  for codepoint in input.codepoints {
+  for codepoint in expanded_codepoints {
     let gid = match font.glyph_for_codepoint(codepoint) {
       Err(err) => return Err(Font(err))
       Ok(value) => value
@@ -7873,6 +7983,488 @@ fn build_script_list_no_features(
   Ok(Bytes::from_array(out))
 }
 
+priv struct FeatureEntry {
+  tag : Int
+  params : Int
+  lookup_indices : Array[Int]
+}
+
+priv struct LangSysData {
+  req_feature : Int
+  feature_indices : Array[Int]
+}
+
+priv struct ScriptEntry {
+  tag : Int
+  default_lang : LangSysData?
+  languages : Array[(Int, LangSysData)]
+}
+
+fn parse_feature_list_bytes(
+  feature_bytes : Array[Byte],
+) -> Result[Array[FeatureEntry], SubsetError] {
+  if feature_bytes.length() < 2 {
+    return Err(InvalidInput("invalid feature list"))
+  }
+  let feature_count = match read_u16(feature_bytes, 0) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  if feature_count < 0 {
+    return Err(InvalidInput("invalid feature count"))
+  }
+  let features : Array[FeatureEntry] = []
+  for i in 0..<feature_count {
+    let record_base = 2 + i * 6
+    if record_base + 6 > feature_bytes.length() {
+      return Err(InvalidInput("invalid feature record"))
+    }
+    let tag = match read_u32(feature_bytes, record_base) {
+      Err(err) => return Err(err)
+      Ok(value) => value
+    }
+    let offset = match read_u16(feature_bytes, record_base + 4) {
+      Err(err) => return Err(err)
+      Ok(value) => value
+    }
+    if offset < 0 || offset >= feature_bytes.length() {
+      return Err(InvalidInput("invalid feature offset"))
+    }
+    let table_base = offset
+    if table_base + 4 > feature_bytes.length() {
+      return Err(InvalidInput("invalid feature table"))
+    }
+    let params = match read_u16(feature_bytes, table_base) {
+      Err(err) => return Err(err)
+      Ok(value) => value
+    }
+    let lookup_count = match read_u16(feature_bytes, table_base + 2) {
+      Err(err) => return Err(err)
+      Ok(value) => value
+    }
+    if lookup_count < 0 {
+      return Err(InvalidInput("invalid feature lookup count"))
+    }
+    let lookup_base = table_base + 4
+    if lookup_base + lookup_count * 2 > feature_bytes.length() {
+      return Err(InvalidInput("invalid feature lookup indices"))
+    }
+    let lookup_indices : Array[Int] = []
+    for j in 0..<lookup_count {
+      let lookup_index = match read_u16(feature_bytes, lookup_base + j * 2) {
+        Err(err) => return Err(err)
+        Ok(value) => value
+      }
+      lookup_indices.push(lookup_index)
+    }
+    features.push(FeatureEntry::{
+      tag: tag,
+      params: params,
+      lookup_indices: lookup_indices,
+    })
+  }
+  Ok(features)
+}
+
+fn build_feature_list_bytes(features : Array[FeatureEntry]) -> Bytes {
+  let out : Array[Byte] = []
+  push_u16(out, features.length())
+  let mut cursor = 2 + features.length() * 6
+  let offsets : Array[Int] = []
+  for feature in features {
+    offsets.push(cursor)
+    cursor = cursor + 4 + feature.lookup_indices.length() * 2
+  }
+  for i in 0..<features.length() {
+    push_u32(out, features[i].tag)
+    push_u16(out, offsets[i])
+  }
+  for feature in features {
+    push_u16(out, feature.params)
+    push_u16(out, feature.lookup_indices.length())
+    for index in feature.lookup_indices {
+      push_u16(out, index)
+    }
+  }
+  Bytes::from_array(out)
+}
+
+fn parse_langsys_bytes(
+  bytes : Array[Byte],
+  offset : Int,
+) -> Result[LangSysData, SubsetError] {
+  if offset < 0 || offset + 6 > bytes.length() {
+    return Err(InvalidInput("invalid LangSys offset"))
+  }
+  let _lookup_order = match read_u16(bytes, offset) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  let req_feature = match read_u16(bytes, offset + 2) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  let feature_count = match read_u16(bytes, offset + 4) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  if feature_count < 0 {
+    return Err(InvalidInput("invalid LangSys feature count"))
+  }
+  let feature_base = offset + 6
+  if feature_base + feature_count * 2 > bytes.length() {
+    return Err(InvalidInput("invalid LangSys feature indices"))
+  }
+  let feature_indices : Array[Int] = []
+  for i in 0..<feature_count {
+    let index = match read_u16(bytes, feature_base + i * 2) {
+      Err(err) => return Err(err)
+      Ok(value) => value
+    }
+    feature_indices.push(index)
+  }
+  Ok(LangSysData::{
+    req_feature: req_feature,
+    feature_indices: feature_indices,
+  })
+}
+
+fn parse_script_list_bytes(
+  script_bytes : Array[Byte],
+) -> Result[Array[ScriptEntry], SubsetError] {
+  if script_bytes.length() < 2 {
+    return Err(InvalidInput("invalid script list"))
+  }
+  let script_count = match read_u16(script_bytes, 0) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  if script_count < 0 {
+    return Err(InvalidInput("invalid script count"))
+  }
+  let entries : Array[ScriptEntry] = []
+  for i in 0..<script_count {
+    let record_base = 2 + i * 6
+    if record_base + 6 > script_bytes.length() {
+      return Err(InvalidInput("invalid script record"))
+    }
+    let tag = match read_u32(script_bytes, record_base) {
+      Err(err) => return Err(err)
+      Ok(value) => value
+    }
+    let offset = match read_u16(script_bytes, record_base + 4) {
+      Err(err) => return Err(err)
+      Ok(value) => value
+    }
+    if offset < 0 || offset >= script_bytes.length() {
+      return Err(InvalidInput("invalid script offset"))
+    }
+    let script_base = offset
+    if script_base + 4 > script_bytes.length() {
+      return Err(InvalidInput("invalid script table"))
+    }
+    let default_offset = match read_u16(script_bytes, script_base) {
+      Err(err) => return Err(err)
+      Ok(value) => value
+    }
+    let lang_count = match read_u16(script_bytes, script_base + 2) {
+      Err(err) => return Err(err)
+      Ok(value) => value
+    }
+    if lang_count < 0 {
+      return Err(InvalidInput("invalid script langsys count"))
+    }
+    let lang_record_base = script_base + 4
+    if lang_record_base + lang_count * 6 > script_bytes.length() {
+      return Err(InvalidInput("invalid script langsys records"))
+    }
+    let default_lang : LangSysData? = if default_offset == 0 {
+      None
+    } else {
+      let default_base = script_base + default_offset
+      Some(match parse_langsys_bytes(script_bytes, default_base) {
+        Err(err) => return Err(err)
+        Ok(value) => value
+      })
+    }
+    let languages : Array[(Int, LangSysData)] = []
+    for j in 0..<lang_count {
+      let entry_base = lang_record_base + j * 6
+      let lang_tag = match read_u32(script_bytes, entry_base) {
+        Err(err) => return Err(err)
+        Ok(value) => value
+      }
+      let lang_offset = match read_u16(script_bytes, entry_base + 4) {
+        Err(err) => return Err(err)
+        Ok(value) => value
+      }
+      if lang_offset <= 0 || script_base + lang_offset >= script_bytes.length() {
+        return Err(InvalidInput("invalid langsys offset"))
+      }
+      let lang_base = script_base + lang_offset
+      let langsys = match parse_langsys_bytes(script_bytes, lang_base) {
+        Err(err) => return Err(err)
+        Ok(value) => value
+      }
+      languages.push((lang_tag, langsys))
+    }
+    entries.push(ScriptEntry::{
+      tag: tag,
+      default_lang: default_lang,
+      languages: languages,
+    })
+  }
+  Ok(entries)
+}
+
+fn build_langsys_bytes(lang : LangSysData) -> Bytes {
+  let out : Array[Byte] = []
+  push_u16(out, 0)
+  push_u16(out, lang.req_feature)
+  push_u16(out, lang.feature_indices.length())
+  for index in lang.feature_indices {
+    push_u16(out, index)
+  }
+  Bytes::from_array(out)
+}
+
+fn build_script_table_filtered(
+  default_lang : LangSysData?,
+  languages : Array[(Int, LangSysData)],
+) -> Bytes {
+  let lang_count = languages.length()
+  let header_len = 4 + lang_count * 6
+  let mut cursor = header_len
+  let default_bytes = match default_lang {
+    None => None
+    Some(lang) => Some(build_langsys_bytes(lang))
+  }
+  let lang_tags : Array[Int] = []
+  let lang_tables : Array[Bytes] = []
+  for entry in languages {
+    let (tag, lang) = entry
+    lang_tags.push(tag)
+    lang_tables.push(build_langsys_bytes(lang))
+  }
+  let default_offset = match default_bytes {
+    None => 0
+    Some(bytes) => {
+      let offset = cursor
+      cursor = cursor + bytes.length()
+      offset
+    }
+  }
+  let offsets : Array[Int] = []
+  for table_bytes in lang_tables {
+    offsets.push(cursor)
+    cursor = cursor + table_bytes.length()
+  }
+  let out : Array[Byte] = []
+  push_u16(out, default_offset)
+  push_u16(out, lang_count)
+  for i in 0..<lang_count {
+    push_u32(out, lang_tags[i])
+    push_u16(out, offsets[i])
+  }
+  match default_bytes {
+    None => ()
+    Some(bytes) => {
+      for b in bytes {
+        out.push(b)
+      }
+    }
+  }
+  for table_bytes in lang_tables {
+    for b in table_bytes {
+      out.push(b)
+    }
+  }
+  Bytes::from_array(out)
+}
+
+fn build_script_list_filtered(
+  entries : Array[ScriptEntry],
+) -> Bytes {
+  let record_count = entries.length()
+  let record_tags : Array[Int] = []
+  let record_tables : Array[Bytes] = []
+  for entry in entries {
+    record_tags.push(entry.tag)
+    record_tables.push(build_script_table_filtered(entry.default_lang, entry.languages))
+  }
+  let unique_tables : Array[(Int, Int, Bytes)] = []
+  for table_bytes in record_tables {
+    let mut exists = false
+    for entry in unique_tables {
+      if entry.2 == table_bytes {
+        exists = true
+        break
+      }
+    }
+    if !exists {
+      unique_tables.push((table_bytes.length(), unique_tables.length(), table_bytes))
+    }
+  }
+  unique_tables.sort_by((a, b) => {
+    let diff = a.0 - b.0
+    if diff != 0 {
+      diff
+    } else {
+      a.1 - b.1
+    }
+  })
+  let mut cursor = 2 + record_count * 6
+  let script_tables : Array[Bytes] = []
+  let script_offsets : Array[Int] = []
+  for entry in unique_tables {
+    let table_bytes = entry.2
+    script_tables.push(table_bytes)
+    script_offsets.push(cursor)
+    cursor = cursor + table_bytes.length()
+  }
+  let record_offsets : Array[Int] = []
+  for table_bytes in record_tables {
+    let mut offset = 0
+    for i in 0..<script_tables.length() {
+      if script_tables[i] == table_bytes {
+        offset = script_offsets[i]
+        break
+      }
+    }
+    record_offsets.push(offset)
+  }
+  let out : Array[Byte] = []
+  push_u16(out, record_count)
+  for i in 0..<record_count {
+    push_u32(out, record_tags[i])
+    push_u16(out, record_offsets[i])
+  }
+  for table_bytes in script_tables {
+    for b in table_bytes {
+      out.push(b)
+    }
+  }
+  Bytes::from_array(out)
+}
+
+fn map_langsys_features(
+  lang : LangSysData,
+  feature_map : Array[Int],
+) -> Result[LangSysData, SubsetError] {
+  let mut req_feature = lang.req_feature
+  if req_feature != 0xFFFF {
+    if req_feature < 0 || req_feature >= feature_map.length() {
+      return Err(InvalidInput("invalid LangSys feature index"))
+    }
+    let mapped = feature_map[req_feature]
+    req_feature = if mapped < 0 { 0xFFFF } else { mapped }
+  }
+  let new_indices : Array[Int] = []
+  for index in lang.feature_indices {
+    if index < 0 || index >= feature_map.length() {
+      return Err(InvalidInput("invalid LangSys feature index"))
+    }
+    let mapped = feature_map[index]
+    if mapped >= 0 {
+      new_indices.push(mapped)
+    }
+  }
+  Ok(LangSysData::{
+    req_feature: req_feature,
+    feature_indices: new_indices,
+  })
+}
+
+fn filter_layout_tables(
+  script_bytes : Array[Byte],
+  feature_bytes : Array[Byte],
+  lookup_bytes_list : Array[Bytes],
+) -> Result[(Bytes, Bytes, Array[Bytes])?, SubsetError] {
+  let features = match parse_feature_list_bytes(feature_bytes) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  if features.is_empty() {
+    return Ok(None)
+  }
+  let feature_map : Array[Int] = Array::make(features.length(), -1)
+  let kept_features : Array[FeatureEntry] = []
+  for i in 0..<features.length() {
+    let feature = features[i]
+    if is_default_layout_feature(feature.tag) {
+      feature_map[i] = kept_features.length()
+      kept_features.push(feature)
+    }
+  }
+  if kept_features.is_empty() {
+    return Ok(None)
+  }
+  let lookup_used : Array[Bool] = Array::make(lookup_bytes_list.length(), false)
+  for feature in kept_features {
+    for index in feature.lookup_indices {
+      if index < 0 || index >= lookup_used.length() {
+        return Err(InvalidInput("invalid feature lookup index"))
+      }
+      lookup_used[index] = true
+    }
+  }
+  let lookup_map : Array[Int] = Array::make(lookup_used.length(), -1)
+  let filtered_lookups : Array[Bytes] = []
+  for i in 0..<lookup_used.length() {
+    if lookup_used[i] {
+      lookup_map[i] = filtered_lookups.length()
+      filtered_lookups.push(lookup_bytes_list[i])
+    }
+  }
+  let remapped_features : Array[FeatureEntry] = []
+  for feature in kept_features {
+    let new_indices : Array[Int] = []
+    for index in feature.lookup_indices {
+      let mapped = lookup_map[index]
+      if mapped < 0 {
+        return Err(InvalidInput("invalid feature lookup index"))
+      }
+      new_indices.push(mapped)
+    }
+    remapped_features.push(FeatureEntry::{
+      tag: feature.tag,
+      params: feature.params,
+      lookup_indices: new_indices,
+    })
+  }
+  let scripts = match parse_script_list_bytes(script_bytes) {
+    Err(err) => return Err(err)
+    Ok(value) => value
+  }
+  let mapped_scripts : Array[ScriptEntry] = []
+  for script in scripts {
+    let default_lang = match script.default_lang {
+      None => None
+      Some(lang) => Some(match map_langsys_features(lang, feature_map) {
+        Err(err) => return Err(err)
+        Ok(value) => value
+      })
+    }
+    let languages : Array[(Int, LangSysData)] = []
+    for entry in script.languages {
+      let (lang_tag, lang) = entry
+      let mapped = match map_langsys_features(lang, feature_map) {
+        Err(err) => return Err(err)
+        Ok(value) => value
+      }
+      languages.push((lang_tag, mapped))
+    }
+    mapped_scripts.push(ScriptEntry::{
+      tag: script.tag,
+      default_lang: default_lang,
+      languages: languages,
+    })
+  }
+  let script_list = build_script_list_filtered(mapped_scripts)
+  let feature_list = build_feature_list_bytes(remapped_features)
+  Ok(Some((script_list, feature_list, filtered_lookups)))
+}
+
 fn build_gsub_subset(
   face : @face.Face,
   plan : SubsetPlan,
@@ -8145,28 +8737,59 @@ fn build_gsub_subset(
         push_u16(out, 0)
         return Ok(Some(Bytes::from_array(out)))
       }
-      let lookup_list_bytes = match build_lookup_list_bytes(lookup_bytes_list) {
+      let filtered = match filter_layout_tables(
+        script_bytes,
+        feature_bytes,
+        lookup_bytes_list,
+      ) {
         Err(err) => return Err(err)
         Ok(value) => value
       }
-      let out : Array[Byte] = []
-      push_u32(out, version)
-      let script_new_offset = 10
-      let feature_new_offset = script_new_offset + script_bytes.length()
-      let lookup_new_offset = feature_new_offset + feature_bytes.length()
-      push_u16(out, script_new_offset)
-      push_u16(out, feature_new_offset)
-      push_u16(out, lookup_new_offset)
-      for b in script_bytes {
-        out.push(b)
+      match filtered {
+        None => {
+          let script_list = match build_script_list_no_features(script_bytes, false) {
+            Err(err) => return Err(err)
+            Ok(value) => value
+          }
+          let out : Array[Byte] = []
+          push_u32(out, version)
+          let script_new_offset = 10
+          let feature_new_offset = script_new_offset + script_list.length()
+          let lookup_new_offset = feature_new_offset
+          push_u16(out, script_new_offset)
+          push_u16(out, feature_new_offset)
+          push_u16(out, lookup_new_offset)
+          for b in script_list {
+            out.push(b)
+          }
+          push_u16(out, 0)
+          Ok(Some(Bytes::from_array(out)))
+        }
+        Some((script_list, feature_list, filtered_lookups)) => {
+          let lookup_list_bytes = match build_lookup_list_bytes(filtered_lookups) {
+            Err(err) => return Err(err)
+            Ok(value) => value
+          }
+          let out : Array[Byte] = []
+          push_u32(out, version)
+          let script_new_offset = 10
+          let feature_new_offset = script_new_offset + script_list.length()
+          let lookup_new_offset = feature_new_offset + feature_list.length()
+          push_u16(out, script_new_offset)
+          push_u16(out, feature_new_offset)
+          push_u16(out, lookup_new_offset)
+          for b in script_list {
+            out.push(b)
+          }
+          for b in feature_list {
+            out.push(b)
+          }
+          for b in lookup_list_bytes {
+            out.push(b)
+          }
+          Ok(Some(Bytes::from_array(out)))
+        }
       }
-      for b in feature_bytes {
-        out.push(b)
-      }
-      for b in lookup_list_bytes {
-        out.push(b)
-      }
-      Ok(Some(Bytes::from_array(out)))
     }
   }
 }
@@ -8461,28 +9084,59 @@ fn build_gpos_subset(
         push_u16(out, 0)
         return Ok(Some(Bytes::from_array(out)))
       }
-      let lookup_list_bytes = match build_lookup_list_bytes(lookup_bytes_list) {
+      let filtered = match filter_layout_tables(
+        script_bytes,
+        feature_bytes,
+        lookup_bytes_list,
+      ) {
         Err(err) => return Err(err)
         Ok(value) => value
       }
-      let out : Array[Byte] = []
-      push_u32(out, version)
-      let script_new_offset = 10
-      let feature_new_offset = script_new_offset + script_bytes.length()
-      let lookup_new_offset = feature_new_offset + feature_bytes.length()
-      push_u16(out, script_new_offset)
-      push_u16(out, feature_new_offset)
-      push_u16(out, lookup_new_offset)
-      for b in script_bytes {
-        out.push(b)
+      match filtered {
+        None => {
+          let script_list = match build_script_list_no_features(script_bytes, true) {
+            Err(err) => return Err(err)
+            Ok(value) => value
+          }
+          let out : Array[Byte] = []
+          push_u32(out, version)
+          let script_new_offset = 10
+          let feature_new_offset = script_new_offset + script_list.length()
+          let lookup_new_offset = feature_new_offset
+          push_u16(out, script_new_offset)
+          push_u16(out, feature_new_offset)
+          push_u16(out, lookup_new_offset)
+          for b in script_list {
+            out.push(b)
+          }
+          push_u16(out, 0)
+          Ok(Some(Bytes::from_array(out)))
+        }
+        Some((script_list, feature_list, filtered_lookups)) => {
+          let lookup_list_bytes = match build_lookup_list_bytes(filtered_lookups) {
+            Err(err) => return Err(err)
+            Ok(value) => value
+          }
+          let out : Array[Byte] = []
+          push_u32(out, version)
+          let script_new_offset = 10
+          let feature_new_offset = script_new_offset + script_list.length()
+          let lookup_new_offset = feature_new_offset + feature_list.length()
+          push_u16(out, script_new_offset)
+          push_u16(out, feature_new_offset)
+          push_u16(out, lookup_new_offset)
+          for b in script_list {
+            out.push(b)
+          }
+          for b in feature_list {
+            out.push(b)
+          }
+          for b in lookup_list_bytes {
+            out.push(b)
+          }
+          Ok(Some(Bytes::from_array(out)))
+        }
       }
-      for b in feature_bytes {
-        out.push(b)
-      }
-      for b in lookup_list_bytes {
-        out.push(b)
-      }
-      Ok(Some(Bytes::from_array(out)))
     }
   }
 }
@@ -10148,7 +10802,8 @@ fn build_plan_cff1(
     }
   }
   add_gid(0)
-  for codepoint in input.codepoints {
+  let expanded_codepoints = expand_bidi_codepoints(input.codepoints)
+  for codepoint in expanded_codepoints {
     let gid = match font.glyph_for_codepoint(codepoint) {
       Err(err) => return Err(Font(err))
       Ok(value) => value
@@ -10195,7 +10850,7 @@ fn build_plan_cff1(
     }
   }
   let codepoint_map : Array[(UInt, Int)] = []
-  for codepoint in input.codepoints {
+  for codepoint in expanded_codepoints {
     let gid = match font.glyph_for_codepoint(codepoint) {
       Err(err) => return Err(Font(err))
       Ok(value) => value
@@ -10244,7 +10899,8 @@ fn build_plan_cff2(
     selected[gid] = true
   }
   add_gid(0)
-  for codepoint in input.codepoints {
+  let expanded_codepoints = expand_bidi_codepoints(input.codepoints)
+  for codepoint in expanded_codepoints {
     let gid = match font.glyph_for_codepoint(codepoint) {
       Err(err) => return Err(Font(err))
       Ok(value) => value
@@ -10275,7 +10931,7 @@ fn build_plan_cff2(
     }
   }
   let codepoint_map : Array[(UInt, Int)] = []
-  for codepoint in input.codepoints {
+  for codepoint in expanded_codepoints {
     let gid = match font.glyph_for_codepoint(codepoint) {
       Err(err) => return Err(Font(err))
       Ok(value) => value
