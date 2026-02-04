@@ -293,14 +293,25 @@ fn apply_gpos(
       Ok(value) => value
     }
     let glyphs : Array[UInt] = []
+    let clusters : Array[Int] = []
     for info in buffer.infos {
       glyphs.push(info.codepoint)
+      clusters.push(info.cluster)
+    }
+    let advances_x : Array[Int] = []
+    let advances_y : Array[Int] = []
+    for pos in buffer.positions {
+      advances_x.push(pos.x_advance)
+      advances_y.push(pos.y_advance)
     }
     let deltas = match gdef {
       None =>
         match gpos.position_deltas_with_lookups(
           glyphs[:],
           gpos_lookups[:],
+          clusters=clusters[:],
+          advances_x=advances_x[:],
+          advances_y=advances_y[:],
         ) {
           Err(err) => return Err(Layout(err))
           Ok(value) => value
@@ -310,6 +321,9 @@ fn apply_gpos(
           glyphs[:],
           gpos_lookups[:],
           gdef=gdef,
+          clusters=clusters[:],
+          advances_x=advances_x[:],
+          advances_y=advances_y[:],
         ) {
           Err(err) => return Err(Layout(err))
           Ok(value) => value

@@ -1234,8 +1234,10 @@ pub fn Buffer::apply_kerx(
     Ok(value) => value
   }
   let glyphs : Array[UInt] = []
+  let clusters : Array[Int] = []
   for info in self.infos {
     glyphs.push(info.codepoint)
+    clusters.push(info.cluster)
   }
   let contour_point = (glyph, point_index) => {
     match font.glyph_contour_point_for_origin(glyph, point_index) {
@@ -1315,8 +1317,10 @@ pub fn Buffer::apply_gpos(
     Ok(value) => value
   }
   let glyphs : Array[UInt] = []
+  let clusters : Array[Int] = []
   for info in self.infos {
     glyphs.push(info.codepoint)
+    clusters.push(info.cluster)
   }
   let script_tag = self.script.to_tag()
   let lang_tag = language_to_ot_tag(self.language)
@@ -1349,11 +1353,20 @@ pub fn Buffer::apply_gpos(
     Err(err) => return Err(Layout(err))
     Ok(value) => value
   }
+  let advances_x : Array[Int] = []
+  let advances_y : Array[Int] = []
+  for pos in self.positions {
+    advances_x.push(pos.x_advance)
+    advances_y.push(pos.y_advance)
+  }
   let deltas = match gdef {
     None =>
       match gpos.position_deltas_with_lookups(
         glyphs[:],
         lookup_offsets[:],
+        clusters=clusters[:],
+        advances_x=advances_x[:],
+        advances_y=advances_y[:],
       ) {
         Err(err) => return Err(Layout(err))
         Ok(value) => value
@@ -1363,6 +1376,9 @@ pub fn Buffer::apply_gpos(
         glyphs[:],
         lookup_offsets[:],
         gdef=gdef,
+        clusters=clusters[:],
+        advances_x=advances_x[:],
+        advances_y=advances_y[:],
       ) {
         Err(err) => return Err(Layout(err))
         Ok(value) => value
@@ -1549,14 +1565,25 @@ fn Buffer::shape_ot_with_options(
       Ok(value) => value
     }
     let glyphs : Array[UInt] = []
+    let clusters : Array[Int] = []
     for info in self.infos {
       glyphs.push(info.codepoint)
+      clusters.push(info.cluster)
+    }
+    let advances_x : Array[Int] = []
+    let advances_y : Array[Int] = []
+    for pos in self.positions {
+      advances_x.push(pos.x_advance)
+      advances_y.push(pos.y_advance)
     }
     let deltas = match gdef {
       None =>
         match gpos.position_deltas_with_lookups(
           glyphs[:],
           gpos_lookups,
+          clusters=clusters[:],
+          advances_x=advances_x[:],
+          advances_y=advances_y[:],
         ) {
           Err(err) => return Err(Layout(err))
           Ok(value) => value
@@ -1566,6 +1593,9 @@ fn Buffer::shape_ot_with_options(
           glyphs[:],
           gpos_lookups,
           gdef=gdef,
+          clusters=clusters[:],
+          advances_x=advances_x[:],
+          advances_y=advances_y[:],
         ) {
           Err(err) => return Err(Layout(err))
           Ok(value) => value
