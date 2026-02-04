@@ -63,6 +63,9 @@ fn run_aots_case(case : AotsTestCase) -> Result[String, String] {
   let feature = @common.Tag::from_chars('t', 'e', 's', 't')
   buffer.set_gsub_features([feature])
   buffer.set_gpos_features([feature])
+  if !case.feature_values.is_empty() {
+    buffer.set_gsub_feature_values(feature, case.feature_values)
+  }
   match buffer.shape_ot(font) {
     Err(err) => return Err("shape error for \{case.font}: \{err}")
     Ok(_) => ()
@@ -90,5 +93,5 @@ test "shape aots fixtures" {
         }
     }
   }
-  inspect((aots_skipped_cases, skipped, mismatched), content="(3, 0, 0)")
+  inspect((aots_skipped_cases, skipped, mismatched), content="(0, 0, 0)")
 }

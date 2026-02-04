@@ -97,6 +97,7 @@ pub fn GsubTable::apply_with_lookups_and_masks(
   gdef? : GdefTable,
   masks? : Array[UInt] = [],
   lookup_mask? : UInt = 0xFFFFFFFFU,
+  alt_values? : Array[Int] = [],
 ) -> Result[(Array[UInt], Array[Int], Array[UInt], Bool), OtLayoutError] {
   if clusters.length() != glyphs.length() {
     return Err(InvalidFormat)
@@ -165,6 +166,7 @@ pub fn GsubTable::apply_with_lookups_and_masks(
             gdef,
             masks=current_masks,
             lookup_mask=lookup_mask,
+            alt_values=alt_values,
           ) {
             Err(err) => return Err(err)
             Ok(value) => value
@@ -3047,6 +3049,7 @@ fn apply_alternate_subtable_list(
   gdef : GdefTable?,
   masks? : Array[UInt] = [],
   lookup_mask? : UInt = 0xFFFFFFFFU,
+  alt_values? : Array[Int] = [],
 ) -> Result[Bool, OtLayoutError] {
   let mut changed = false
   for offset in offsets {
@@ -3059,6 +3062,7 @@ fn apply_alternate_subtable_list(
       gdef,
       masks=masks,
       lookup_mask=lookup_mask,
+      alt_values=alt_values,
     )
     match result {
       Err(err) => return Err(err)
@@ -3078,8 +3082,10 @@ fn apply_alternate_subtable(
   gdef : GdefTable?,
   masks? : Array[UInt] = [],
   lookup_mask? : UInt = 0xFFFFFFFFU,
+  alt_values? : Array[Int] = [],
 ) -> Result[Bool, OtLayoutError] {
   let mut changed = false
+  let has_alt_values = !alt_values.is_empty()
   for i in 0..<glyphs.length() {
     let glyph = glyphs[i]
     let ignored = should_ignore_glyph(
@@ -3096,7 +3102,15 @@ fn apply_alternate_subtable(
       Ok(true) => continue
       Ok(false) => ()
     }
-    let next = alternate_substitute_format1(data, offset, glyph)
+    let alt_value = if has_alt_values && i < alt_values.length() {
+      alt_values[i]
+    } else {
+      1
+    }
+    if alt_value <= 0 {
+      continue
+    }
+    let next = alternate_substitute_format1(data, offset, glyph, alt_index=alt_value)
     match next {
       Err(err) => return Err(err)
       Ok(None) => ()
@@ -3116,6 +3130,7 @@ fn alternate_substitute_format1(
   data : BytesView,
   offset : Int,
   glyph : UInt,
+  alt_index? : Int = 1,
 ) -> Result[UInt?, OtLayoutError] {
   if glyph > 0xffffU {
     return Ok(None)
@@ -3172,10 +3187,19 @@ fn alternate_substitute_format1(
                   if alt_base < 0 || alt_base + glyph_count * 2 > data.length() {
                     return Err(UnexpectedEof)
                   }
-                  let first = read_u16_int(data, alt_base)
-                  match first {
+                  let chosen =
+                    if alt_index <= 1 {
+                      1
+                    } else if alt_index > glyph_count {
+                      glyph_count
+                    } else {
+                      alt_index
+                    }
+                  let chosen_offset = alt_base + (chosen - 1) * 2
+                  let chosen_value = read_u16_int(data, chosen_offset)
+                  match chosen_value {
                     Err(err) => Err(err)
-                    Ok(first) => Ok(Some(first.reinterpret_as_uint()))
+                    Ok(value) => Ok(Some(value.reinterpret_as_uint()))
                   }
                 }
               }

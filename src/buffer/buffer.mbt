@@ -16,6 +16,12 @@ pub struct GlyphPosition {
 } derive(Eq, Show, ToJson)
 
 ///|
+struct FeatureValues {
+  tag : @common.Tag
+  values : Array[Int]
+} derive(Show, ToJson)
+
+///|
 pub suberror ShapeError {
   Font(@font.FontError)
   Layout(@ot_tables.OtLayoutError)
@@ -33,6 +39,7 @@ pub struct Buffer {
   mut gpos_features : Array[@common.Tag]
   mut gsub_features_default : Bool
   mut gpos_features_default : Bool
+  mut gsub_feature_values : FeatureValues?
   mut preserve_default_ignorables : Bool
   mut remove_default_ignorables : Bool
   mut not_found_variation_selector : UInt?
@@ -51,6 +58,7 @@ pub fn Buffer::new() -> Buffer {
     gpos_features: default_feature_tags(@common.direction_ltr),
     gsub_features_default: true,
     gpos_features_default: true,
+    gsub_feature_values: None,
     preserve_default_ignorables: false,
     remove_default_ignorables: false,
     not_found_variation_selector: None,
@@ -261,6 +269,16 @@ pub fn Buffer::set_gsub_features(
 ) -> Unit {
   self.gsub_features = features
   self.gsub_features_default = false
+}
+
+///|
+/// Set per-glyph GSUB feature values for a specific tag.
+pub fn Buffer::set_gsub_feature_values(
+  self : Buffer,
+  tag : @common.Tag,
+  values : Array[Int],
+) -> Unit {
+  self.gsub_feature_values = Some(FeatureValues::{ tag, values })
 }
 
 ///|
@@ -1504,34 +1522,80 @@ fn Buffer::shape_ot_with_options(
       Err(err) => return Err(Font(err))
       Ok(value) => value
     }
+    let gsub_masks : Array[UInt] = []
+    let mut gsub_alt_values : Array[Int] = []
+    match self.gsub_feature_values {
+      None => ()
+      Some(feature_values) => {
+        if !feature_values.values.is_empty() && feature_values.values.length() == self.infos.length() {
+          gsub_alt_values = feature_values.values
+          for value in gsub_alt_values {
+            gsub_masks.push(if value > 0 { 1U } else { 0U })
+          }
+        }
+      }
+    }
+    let use_feature_values = !gsub_masks.is_empty()
     let glyphs : Array[UInt] = []
     let clusters : Array[Int] = []
     for info in self.infos {
       glyphs.push(info.codepoint)
       clusters.push(info.cluster)
     }
-    let result = match gdef {
-      None =>
-        match gsub.apply_with_lookups(
-          glyphs,
-          clusters,
-          map.gsub_lookups(),
-        ) {
-          Err(err) => return Err(Layout(err))
-          Ok(value) => value
+    let (next_glyphs, next_clusters, changed) =
+      if use_feature_values {
+        let result = match gdef {
+          None =>
+            match gsub.apply_with_lookups_and_masks(
+              glyphs,
+              clusters,
+              map.gsub_lookups(),
+              masks=gsub_masks,
+              lookup_mask=1U,
+              alt_values=gsub_alt_values,
+            ) {
+              Err(err) => return Err(Layout(err))
+              Ok(value) => value
+            }
+          Some(gdef) =>
+            match gsub.apply_with_lookups_and_masks(
+              glyphs,
+              clusters,
+              map.gsub_lookups(),
+              gdef=gdef,
+              masks=gsub_masks,
+              lookup_mask=1U,
+              alt_values=gsub_alt_values,
+            ) {
+              Err(err) => return Err(Layout(err))
+              Ok(value) => value
+            }
         }
-      Some(gdef) =>
-        match gsub.apply_with_lookups(
-          glyphs,
-          clusters,
-          map.gsub_lookups(),
-          gdef=gdef,
-        ) {
-          Err(err) => return Err(Layout(err))
-          Ok(value) => value
+        let (glyphs, clusters, _, changed) = result
+        (glyphs, clusters, changed)
+      } else {
+        match gdef {
+          None =>
+            match gsub.apply_with_lookups(
+              glyphs,
+              clusters,
+              map.gsub_lookups(),
+            ) {
+              Err(err) => return Err(Layout(err))
+              Ok(value) => value
+            }
+          Some(gdef) =>
+            match gsub.apply_with_lookups(
+              glyphs,
+              clusters,
+              map.gsub_lookups(),
+              gdef=gdef,
+            ) {
+              Err(err) => return Err(Layout(err))
+              Ok(value) => value
+            }
         }
-    }
-    let (next_glyphs, next_clusters, changed) = result
+      }
     if changed || next_glyphs.length() != self.infos.length() {
       let same_len = next_glyphs.length() == self.infos.length()
       let new_infos : Array[GlyphInfo] = []

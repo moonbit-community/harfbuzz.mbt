@@ -12,6 +12,11 @@ OUT_FONTS = ROOT / "src/shape/aots_fonts_gen.mbt"
 OUT_CASES = ROOT / "src/shape/aots_cases_gen.mbt"
 
 FEATURE_RE = re.compile(r'--features=\"([^\"]+)\"')
+FEATURE_ITEM_RE = re.compile(
+    r'^(?P<sign>[+-])?(?P<tag>[A-Za-z0-9]{4})'
+    r'(?:\[(?P<range>[0-9:]+)\])?'
+    r'(?:=(?P<value>[0-9]+))?$'
+)
 
 
 def chunk_escape(data: bytes, chunk_size: int = 120) -> Iterable[str]:
@@ -68,6 +73,46 @@ def parse_input(codepoints: str) -> list[str]:
     return items
 
 
+def parse_feature_values(feature_str: str, length: int) -> list[int]:
+    if feature_str == "test":
+        return []
+    values = [0 for _ in range(length)]
+    for item in feature_str.split(","):
+        item = item.strip()
+        if not item:
+            continue
+        m = FEATURE_ITEM_RE.match(item)
+        if not m:
+            raise ValueError(f"unexpected feature item: {item}")
+        tag = m.group("tag")
+        if tag != "test":
+            raise ValueError(f"unsupported feature tag: {tag}")
+        sign = m.group("sign") or "+"
+        enabled = sign != "-"
+        value = int(m.group("value") or "1")
+        if not enabled:
+            value = 0
+        range_spec = m.group("range")
+        if range_spec is None:
+            for i in range(length):
+                values[i] = value
+            continue
+        if ":" in range_spec:
+            start_s, end_s = range_spec.split(":", 1)
+            start = int(start_s) if start_s else 0
+            end = int(end_s) if end_s else length
+        else:
+            start = int(range_spec)
+            end = start + 1
+        if start < 0:
+            start = 0
+        if end > length:
+            end = length
+        for i in range(start, end):
+            values[i] = value
+    return values
+
+
 def emit_cases() -> None:
     cases: list[str] = []
     skipped = 0
@@ -82,20 +127,21 @@ def emit_cases() -> None:
             font_path, opts, text, expected = parts[0], parts[1], parts[2], parts[3]
             m = FEATURE_RE.search(opts)
             features = m.group(1) if m else ""
-            if features != "test":
-                skipped += 1
-                continue
+            input_items = parse_input(text)
+            feature_values = parse_feature_values(features, len(input_items))
             no_positions = "--no-positions" in opts
             no_advances = "--ned" in opts or "--no-advances" in opts
             font_name = pathlib.Path(font_path).name
-            input_items = parse_input(text)
             input_literal = ", ".join(input_items)
             expected_literal = expected.replace("\\", "\\\\").replace('"', '\\"')
+            feature_literal = ", ".join(str(value) for value in feature_values)
+            feature_literal = f"[{feature_literal}]"
             cases.append(
                 "  AotsTestCase::{ "
                 f'font: "{font_name}", '
                 f"input: [{input_literal}], "
                 f'expected: "{expected_literal}", '
+                f"feature_values: {feature_literal}, "
                 f"no_positions: {str(no_positions).lower()}, "
                 f"no_advances: {str(no_advances).lower()} "
                 "},"
