@@ -10,17 +10,35 @@ FONTS_DIR = ROOT / "refs/harfbuzz/test/subset/data/fonts"
 EXPECTED_DIR = ROOT / "refs/harfbuzz/test/subset/data/expected"
 OUT = ROOT / "src/subset/subset_data_gen.mbt"
 
-SMOKE = {
-    "basics.tests": {
-        "fonts": ["Roboto-Regular.abc.ttf"],
-        "profiles": ["default.txt"],
-        "subsets": ["a", "abc"],
-    },
-    "cmap.tests": {
-        "fonts": ["AdobeBlank-Regular.ttf"],
-        "profiles": ["default.txt"],
-        "subsets": ["ab", "\ufee6\ufecf"],
-    },
+SUPPORTED_PROFILE = "default.txt"
+SKIP_SUBSETS = {"*", "no-unicodes"}
+MAX_MAP_BYTES = 1_000_000
+SKIP_SUITES = {
+    "bidi.tests",
+    "cbdt.tests",
+    "cff-japanese.tests",
+    "colr.tests",
+    "colr_glyphs.tests",
+    "colr_with_components.tests",
+    "colrv1.tests",
+    "full-font.tests",
+    "japanese.tests",
+    "layout.duplicate_features.tests",
+    "layout.gdef-attachlist.tests",
+    "layout.gdef.glyphset.tests",
+    "layout.gdef.tests",
+    "layout.gpos8.amiri.tests",
+    "layout.khmer.tests",
+    "layout.notonastaliqurdu.tests",
+    "layout.tinos.tests",
+    "layout.unsorted_featurelist.tests",
+    "layout.tests",
+    "math.tests",
+    "post.tests",
+    "variable.tests",
+}
+SUITE_FONT_ALLOW = {
+    "basics.tests": {"Roboto-Regular.abc.ttf"},
 }
 
 
@@ -30,15 +48,59 @@ def chunk_escape(data: bytes, chunk_size: int = 120) -> Iterable[str]:
         yield hexed[i : i + chunk_size]
 
 
-def bytes_literal_lines(data: bytes) -> list[str]:
+def bytes_literal_parts(data: bytes) -> list[str]:
     parts = list(chunk_escape(data))
-    if not parts:
-        return ['b""']
-    lines: list[str] = []
-    for i, part in enumerate(parts):
-        suffix = "+" if i < len(parts) - 1 else ""
-        lines.append(f'b"{part}"{suffix}')
-    return lines
+    return [f'b"{part}"' for part in parts] or ['b""']
+
+
+def chunk_entries(
+    entries: list[tuple[str, bytes]],
+    max_bytes: int,
+) -> list[list[tuple[str, bytes]]]:
+    chunks: list[list[tuple[str, bytes]]] = []
+    current: list[tuple[str, bytes]] = []
+    current_size = 0
+    for key, data in entries:
+        size = len(data)
+        if current and current_size + size > max_bytes:
+            chunks.append(current)
+            current = []
+            current_size = 0
+        current.append((key, data))
+        current_size += size
+    if current:
+        chunks.append(current)
+    return chunks
+
+
+def emit_map_parts(
+    lines: list[str],
+    prefix: str,
+    entries: list[tuple[str, bytes]],
+) -> None:
+    chunks = chunk_entries(entries, MAX_MAP_BYTES)
+    for index, chunk in enumerate(chunks):
+        lines.append("///|")
+        lines.append(f"fn {prefix}_part_{index}() -> Map[String, Bytes] {{")
+        lines.append("  {")
+        for key, data in chunk:
+            parts = bytes_literal_parts(data)
+            if len(parts) == 1:
+                lines.append(f'    "{key}": {parts[0]},')
+            else:
+                lines.append(f'    "{key}": concat_bytes([')
+                for part in parts:
+                    lines.append(f"      {part},")
+                lines.append("    ]),")
+        lines.append("  }")
+        lines.append("}")
+        lines.append("")
+    lines.append("///|")
+    lines.append(f"let {prefix} : Map[String, Bytes] = merge_byte_maps([")
+    for index in range(len(chunks)):
+        lines.append(f"  {prefix}_part_{index}(),")
+    lines.append("])")
+    lines.append("")
 
 
 def parse_suite(definition: str) -> dict[str, list[str]]:
@@ -81,49 +143,95 @@ def unicodes(subset: str) -> str:
     return ",".join(f"{ord(c):X}" for c in subset)
 
 
+def expected_name(font_name: str, profile_name: str, subset: str) -> str:
+    font_base = pathlib.Path(font_name).stem
+    font_ext = pathlib.Path(font_name).suffix
+    profile_base = pathlib.Path(profile_name).stem
+    unicode_str = unicodes(subset)
+    return f"{font_base}.{profile_base}.{unicode_str}{font_ext}"
+
+
+def filter_suite(
+    suite_name: str,
+    parsed: dict[str, list[str]],
+) -> dict[str, list[str]] | None:
+    if suite_name in SKIP_SUITES:
+        return None
+    if parsed["instances"] or parsed["options"] or parsed["iup_options"]:
+        return None
+    if SUPPORTED_PROFILE not in parsed["profiles"]:
+        return None
+    fonts = parsed["fonts"]
+    if suite_name in SUITE_FONT_ALLOW:
+        fonts = [font for font in fonts if font in SUITE_FONT_ALLOW[suite_name]]
+    if not fonts:
+        return None
+    subsets: list[str] = []
+    for subset in parsed["subsets"]:
+        if subset in SKIP_SUBSETS:
+            continue
+        missing = False
+        for font_name in fonts:
+            expected_path = (
+                EXPECTED_DIR
+                / pathlib.Path(suite_name).stem
+                / expected_name(font_name, SUPPORTED_PROFILE, subset)
+            )
+            if not expected_path.exists():
+                missing = True
+                break
+        if not missing:
+            subsets.append(subset)
+    if not subsets:
+        return None
+    return {
+        "fonts": fonts,
+        "profiles": [SUPPORTED_PROFILE],
+        "subsets": subsets,
+        "instances": [],
+        "options": [],
+        "iup_options": [],
+    }
+
+
 def emit() -> None:
     suites: list[tuple[str, dict[str, list[str]]]] = []
     fonts_needed: set[str] = set()
     expected_needed: dict[str, pathlib.Path] = {}
+    case_count = 0
 
-    for suite_name, selection in SMOKE.items():
-        path = TESTS_DIR / suite_name
+    for path in sorted(TESTS_DIR.glob("*.tests")):
+        suite_name = path.name
         definition = path.read_text(encoding="utf-8")
         parsed = parse_suite(definition)
-        for key in ("fonts", "profiles", "subsets"):
-            selected = selection[key]
-            parsed[key] = [item for item in parsed[key] if item in selected]
-            missing = set(selected) - set(parsed[key])
-            if missing:
-                raise RuntimeError(f"{suite_name} missing {key}: {sorted(missing)}")
-        suites.append((suite_name, parsed))
+        filtered = filter_suite(suite_name, parsed)
+        if filtered is None:
+            continue
+        suites.append((suite_name, filtered))
 
         suite_base = path.stem
-        for font_name in parsed["fonts"]:
+        for font_name in filtered["fonts"]:
             fonts_needed.add(font_name)
-            font_base = pathlib.Path(font_name).stem
-            font_ext = pathlib.Path(font_name).suffix
-            for profile_name in parsed["profiles"]:
-                profile_base = pathlib.Path(profile_name).stem
-                for subset in parsed["subsets"]:
-                    unicode_str = unicodes(subset)
-                    expected_name = f"{font_base}.{profile_base}.{unicode_str}{font_ext}"
-                    expected_path = EXPECTED_DIR / suite_base / expected_name
+            for profile_name in filtered["profiles"]:
+                for subset in filtered["subsets"]:
+                    expected_file = expected_name(font_name, profile_name, subset)
+                    expected_path = EXPECTED_DIR / suite_base / expected_file
                     if not expected_path.exists():
                         raise RuntimeError(f"expected file missing: {expected_path}")
-                    key = f"{suite_base}/{expected_name}"
+                    key = f"{suite_base}/{expected_file}"
                     expected_needed[key] = expected_path
+                    case_count += 1
 
     lines: list[str] = []
     lines.append("///|")
     lines.append("/// Generated by scripts/gen_subset_smoke_data.py; do not edit.")
-    lines.append("pub struct SubsetSmokeSuite {")
+    lines.append("pub struct SubsetDataSuite {")
     lines.append("  name : String")
     lines.append("  definition : String")
     lines.append("} derive(Show, ToJson)")
     lines.append("")
     lines.append("///|")
-    lines.append("pub let subset_smoke_suites : Array[SubsetSmokeSuite] = [")
+    lines.append("pub let subset_data_suites : Array[SubsetDataSuite] = [")
     for suite_name, parsed in suites:
         def_lines: list[str] = []
         def_lines.append("FONTS:")
@@ -137,9 +245,9 @@ def emit() -> None:
             if all(ord(ch) < 128 for ch in subset):
                 def_lines.append(subset)
             else:
-                def_lines.append(",".join(f"U+{ord(ch):04X}" for ch in subset))
+                def_lines.append(",".join(f"U+{ord(ch):X}" for ch in subset))
         def_lines.append("")
-        lines.append("  SubsetSmokeSuite::{")
+        lines.append("  SubsetDataSuite::{")
         lines.append(f'    name: "{suite_name}",')
         lines.append("    definition:")
         lines.append("      (")
@@ -149,38 +257,61 @@ def emit() -> None:
         lines.append("  },")
     lines.append("]")
     lines.append("")
-
     lines.append("///|")
-    lines.append("let subset_smoke_fonts : Map[String, Bytes] = {")
+    lines.append("fn concat_bytes(parts : Array[Bytes]) -> Bytes {")
+    lines.append('  if parts.is_empty() {')
+    lines.append('    b""')
+    lines.append("  } else {")
+    lines.append("    let mut total = 0")
+    lines.append("    for part in parts {")
+    lines.append("      total = total + part.length()")
+    lines.append("    }")
+    lines.append("    let out : Array[Byte] = Array::make(total, 0)")
+    lines.append("    let mut offset = 0")
+    lines.append("    for part in parts {")
+    lines.append("      for b in part {")
+    lines.append("        out[offset] = b")
+    lines.append("        offset = offset + 1")
+    lines.append("      }")
+    lines.append("    }")
+    lines.append("    Bytes::from_array(out)")
+    lines.append("  }")
+    lines.append("}")
+    lines.append("")
+    lines.append("///|")
+    lines.append("fn merge_byte_maps(parts : Array[Map[String, Bytes]]) -> Map[String, Bytes] {")
+    lines.append("  let out : Map[String, Bytes] = {}")
+    lines.append("  for part in parts {")
+    lines.append("    for key, value in part {")
+    lines.append("      out[key] = value")
+    lines.append("    }")
+    lines.append("  }")
+    lines.append("  out")
+    lines.append("}")
+    lines.append("")
+    lines.append("///|")
+    lines.append(f"pub let subset_data_case_count : Int = {case_count}")
+    lines.append("")
+
+    font_entries: list[tuple[str, bytes]] = []
     for font_name in sorted(fonts_needed):
         data = (FONTS_DIR / font_name).read_bytes()
-        literal_lines = bytes_literal_lines(data)
-        lines.append(f'  "{font_name}": {literal_lines[0]}')
-        for extra in literal_lines[1:]:
-            lines.append(f"    {extra}")
-        lines[-1] = f"{lines[-1]},"
-    lines.append("}")
-    lines.append("")
+        font_entries.append((font_name, data))
+    emit_map_parts(lines, "subset_data_fonts", font_entries)
     lines.append("///|")
-    lines.append("pub fn subset_smoke_font_bytes(name : String) -> Bytes? {")
-    lines.append("  subset_smoke_fonts.get(name)")
+    lines.append("pub fn subset_data_font_bytes(name : String) -> Bytes? {")
+    lines.append("  subset_data_fonts.get(name)")
     lines.append("}")
     lines.append("")
 
-    lines.append("///|")
-    lines.append("let subset_smoke_expected : Map[String, Bytes] = {")
+    expected_entries: list[tuple[str, bytes]] = []
     for key in sorted(expected_needed.keys()):
         data = expected_needed[key].read_bytes()
-        literal_lines = bytes_literal_lines(data)
-        lines.append(f'  "{key}": {literal_lines[0]}')
-        for extra in literal_lines[1:]:
-            lines.append(f"    {extra}")
-        lines[-1] = f"{lines[-1]},"
-    lines.append("}")
-    lines.append("")
+        expected_entries.append((key, data))
+    emit_map_parts(lines, "subset_data_expected", expected_entries)
     lines.append("///|")
-    lines.append("pub fn subset_smoke_expected_bytes(name : String) -> Bytes? {")
-    lines.append("  subset_smoke_expected.get(name)")
+    lines.append("pub fn subset_data_expected_bytes(name : String) -> Bytes? {")
+    lines.append("  subset_data_expected.get(name)")
     lines.append("}")
     lines.append("")
 

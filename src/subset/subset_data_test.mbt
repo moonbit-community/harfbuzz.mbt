@@ -210,27 +210,51 @@ fn codepoints_hex(codepoints : Array[UInt]) -> String {
 }
 
 ///|
-fn subset_unicodes(spec : String, codepoints : Array[UInt]) -> String? {
-  if spec == "*" || spec == "no-unicodes" {
-    return None
+fn expected_unicode_label(spec : String, codepoints : Array[UInt]) -> String {
+  if spec == "*" {
+    return "all"
+  }
+  if spec == "no-unicodes" {
+    return "no-unicodes"
   }
   if spec.has_prefix("U+") {
-    return Some(spec.replace_all(old="U+", new=""))
+    return spec.replace_all(old="U+", new="")
   }
-  Some(codepoints_hex(codepoints))
+  codepoints_hex(codepoints)
+}
+
+fn instance_suffix(instance : String, iup_optimize : Bool) -> String {
+  if instance.is_empty() {
+    return ""
+  }
+  let replaced = instance.replace_all(old=":", new="-")
+  let mut count = 0
+  let sb = StringBuilder::new()
+  sb.write_char('.')
+  for part_view in replaced.split(",") {
+    if count >= 6 {
+      break
+    }
+    if count > 0 {
+      sb.write_char(',')
+    }
+    sb.write_string(part_view.to_string())
+    count = count + 1
+  }
+  if iup_optimize {
+    sb.write_string(".iup_optimize")
+  }
+  sb.to_string()
 }
 
 ///|
-fn expected_key(case : SubsetDataCase, codepoints : Array[UInt]) -> String? {
+fn expected_key(case : SubsetDataCase, codepoints : Array[UInt]) -> String {
   let (suite_base, _) = split_extension(case.suite)
   let (font_base, font_ext) = split_extension(case.font)
   let (profile_base, _) = split_extension(case.profile)
-  let unicode = subset_unicodes(case.subset, codepoints)
-  match unicode {
-    None => None
-    Some(unicode) =>
-      Some("\{suite_base}/\{font_base}.\{profile_base}.\{unicode}\{font_ext}")
-  }
+  let unicode = expected_unicode_label(case.subset, codepoints)
+  let suffix = instance_suffix(case.instance, case.iup_optimize)
+  "\{suite_base}/\{font_base}.\{profile_base}.\{unicode}\{suffix}\{font_ext}"
 }
 
 fn read_u16_dbg(data : BytesView, offset : Int) -> Int? {
@@ -433,18 +457,15 @@ fn dump_tag_diff(expected : Bytes, actual : Bytes) -> Unit {
 }
 
 ///|
-test "subset data smoke" {
+test "subset data fixtures" {
   let mut ran = 0
   let mut skipped = 0
   let mut mismatched = 0
-  for suite in subset_smoke_suites {
+  for suite in subset_data_suites {
     let parsed = parse_suite(suite.definition)
     let cases = build_cases(suite.name, parsed)
     for case in cases {
-      if case.profile != "default.txt" ||
-          case.instance != "" ||
-          !case.options.is_empty() ||
-          case.iup_optimize {
+      if !case.options.is_empty() {
         skipped = skipped + 1
         continue
       }
@@ -457,14 +478,7 @@ test "subset data smoke" {
         Some(value) => value
       }
       let key = expected_key(case, codepoints)
-      let key = match key {
-        None => {
-          skipped = skipped + 1
-          continue
-        }
-        Some(value) => value
-      }
-      let expected = subset_smoke_expected_bytes(key)
+      let expected = subset_data_expected_bytes(key)
       let expected = match expected {
         None => {
           skipped = skipped + 1
@@ -472,7 +486,7 @@ test "subset data smoke" {
         }
         Some(value) => value
       }
-      let font_bytes = subset_smoke_font_bytes(case.font)
+      let font_bytes = subset_data_font_bytes(case.font)
       let font_bytes = match font_bytes {
         None => {
           skipped = skipped + 1
@@ -503,5 +517,6 @@ test "subset data smoke" {
       ran = ran + 1
     }
   }
-  inspect((ran, skipped, mismatched), content="(4, 0, 0)")
+  let expected = "(\{subset_data_case_count}, 0, 0)"
+  inspect((ran, skipped, mismatched), content=expected)
 }
