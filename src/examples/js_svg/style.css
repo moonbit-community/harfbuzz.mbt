@@ -1,0 +1,84 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, sans-serif;
+  background: #f5f6f8;
+  color: #1f2328;
+}
+
+.page {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 24px;
+  display: grid;
+  gap: 16px;
+}
+
+.panel {
+  background: white;
+  border: 1px solid #d9dee5;
+  border-radius: 12px;
+  padding: 16px;
+  display: grid;
+  gap: 12px;
+}
+
+.file-input {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+}
+
+.file-input input[type="file"] {
+  font-weight: normal;
+}
+
+.drop-zone {
+  border: 2px dashed #b5bcc8;
+  border-radius: 10px;
+  padding: 24px;
+  text-align: center;
+  color: #4b5563;
+  background: #f9fafb;
+}
+
+.drop-zone.dragover {
+  border-color: #4c6ef5;
+  background: #eef2ff;
+  color: #1d4ed8;
+}
+
+.row {
+  display: grid;
+  gap: 6px;
+  font-weight: 600;
+}
+
+.row input[type="text"] {
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid #c7ccd4;
+  font-size: 16px;
+}
+
+.status {
+  font-size: 14px;
+  color: #374151;
+}
+
+.output {
+  background: white;
+  border: 1px solid #d9dee5;
+  border-radius: 12px;
+  padding: 16px;
+  min-height: 240px;
+}
+
+.svg-output svg {
+  width: 100%;
+  height: auto;
+}

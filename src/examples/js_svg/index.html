@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>harfbuzz.mbt SVG demo</title>
+    <link rel="stylesheet" href="style.css">
+  </head>
+  <body>
+    <main class="page">
+      <h1>harfbuzz.mbt SVG demo</h1>
+      <section class="panel">
+        <label class="file-input">
+          <input id="font-input" type="file" accept=".ttf,.otf,.ttc">
+          Choose a font file
+        </label>
+        <div id="drop-zone" class="drop-zone">
+          Drag and drop a font file here
+        </div>
+        <label class="row" for="text-input">
+          <span>Text</span>
+          <input id="text-input" type="text" value="Hello harfbuzz.mbt">
+        </label>
+        <div id="status" class="status"></div>
+      </section>
+      <section class="output">
+        <div id="svg-output" class="svg-output"></div>
+      </section>
+    </main>
+    <script type="module" src="../../../_build/js/release/build/examples/js_svg/js_svg.js"></script>
+  </body>
+</html>

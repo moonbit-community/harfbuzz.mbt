@@ -1,0 +1,13 @@
+{
+  "is_main": true,
+  "targets": {
+    "main_js.mbt": ["js"],
+    "main_stub.mbt": ["native", "llvm", "wasm", "wasm-gc"]
+  },
+  "import": [
+    { "path": "moonbit-community/harfbuzz/buffer", "alias": "hb_buffer" },
+    { "path": "moonbit-community/harfbuzz/draw", "alias": "hb_draw" },
+    { "path": "moonbit-community/harfbuzz/font", "alias": "hb_font" },
+    { "path": "moonbit-community/harfbuzz/shape", "alias": "hb_shape" }
+  ]
+}
