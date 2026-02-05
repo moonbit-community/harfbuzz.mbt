@@ -6,7 +6,7 @@ target.
 ## Build
 
 ```bash
-moon build --target
+moon build --target js
 ```
 
 ## Run
