@@ -6,7 +6,7 @@ target.
 ## Build
 
 ```bash
-moon build --target js src/examples/js_svg
+moon build --target
 ```
 
 ## Run
