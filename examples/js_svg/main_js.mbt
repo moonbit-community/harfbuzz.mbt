@@ -57,7 +57,7 @@ extern "js" fn event_stop_propagation(ev : JsEvent) -> Unit =
   #| (ev) => { ev.stopPropagation(); }
 
 ///|
-extern "js" fn event_first_file(ev : JsEvent) -> JsFile? =
+extern "js" fn event_first_file(ev : JsEvent) -> JsFile =
   #| (ev) => {
   #|   const files = ev?.dataTransfer?.files ?? ev?.target?.files;
   #|   return (files && files.length) ? files[0] : null;
@@ -144,14 +144,12 @@ struct SvgPen {
 }
 
 ///|
-fn SvgPen::new(ctx : SvgContext, offset_x : Double, offset_y : Double) -> SvgPen {
-  SvgPen::{
-    ctx: ctx,
-    sb: StringBuilder::new(),
-    has_cmd: false,
-    offset_x: offset_x,
-    offset_y: offset_y,
-  }
+fn SvgPen::new(
+  ctx : SvgContext,
+  offset_x : Double,
+  offset_y : Double,
+) -> SvgPen {
+  SvgPen::{ ctx, sb: StringBuilder::new(), has_cmd: false, offset_x, offset_y }
 }
 
 ///|
@@ -196,7 +194,12 @@ fn SvgPen::transform(self : SvgPen, x : Double, y : Double) -> (Double, Double) 
 }
 
 ///|
-fn svg_move_to(pen : SvgPen, _st : @hb_draw.DrawState, x : Double, y : Double) -> Unit {
+fn svg_move_to(
+  pen : SvgPen,
+  _st : @hb_draw.DrawState,
+  x : Double,
+  y : Double,
+) -> Unit {
   let (tx, ty) = pen.transform(x, y)
   pen.start_cmd('M')
   pen.write_pair(tx, ty)
@@ -204,7 +207,12 @@ fn svg_move_to(pen : SvgPen, _st : @hb_draw.DrawState, x : Double, y : Double) -
 }
 
 ///|
-fn svg_line_to(pen : SvgPen, _st : @hb_draw.DrawState, x : Double, y : Double) -> Unit {
+fn svg_line_to(
+  pen : SvgPen,
+  _st : @hb_draw.DrawState,
+  x : Double,
+  y : Double,
+) -> Unit {
   let (tx, ty) = pen.transform(x, y)
   pen.start_cmd('L')
   pen.write_pair(tx, ty)
@@ -394,15 +402,13 @@ fn load_font(app : AppState, ui : AppUi, file : JsFile) -> Unit {
   element_set_text(ui.status, "Loading font...")
   read_file_bytes(
     file,
-    (data) => {
+    data => {
       let bytes = Bytes::from_array(data)
       app.font_bytes = Some(bytes)
       app.font_name = file_name(file)
       render_if_ready(app, ui)
     },
-    (err) => {
-      element_set_text(ui.status, "Font load failed: \{err}")
-    },
+    err => element_set_text(ui.status, "Font load failed: \{err}"),
   )
 }
 
@@ -417,37 +423,31 @@ fn main {
   }
   let app = AppState::{ font_bytes: None, font_name: "" }
   element_set_text(ui.status, "Drop a font file to start.")
-  add_event_listener(ui.file_input, "change", (ev) => {
-    match event_first_file(ev) {
-      None => ()
-      Some(file) => load_font(app, ui, file)
-    }
+  add_event_listener(ui.file_input, "change", ev => {
+    let file = event_first_file(ev)
+    load_font(app, ui, file)
   })
-  add_event_listener(ui.text_input, "input", (_ev) => {
-    render_if_ready(app, ui)
-  })
-  add_event_listener(ui.drop_zone, "dragenter", (ev) => {
+  add_event_listener(ui.text_input, "input", _ev => render_if_ready(app, ui))
+  add_event_listener(ui.drop_zone, "dragenter", ev => {
     event_prevent_default(ev)
     event_stop_propagation(ev)
     element_add_class(ui.drop_zone, "dragover")
   })
-  add_event_listener(ui.drop_zone, "dragover", (ev) => {
+  add_event_listener(ui.drop_zone, "dragover", ev => {
     event_prevent_default(ev)
     event_stop_propagation(ev)
     element_add_class(ui.drop_zone, "dragover")
   })
-  add_event_listener(ui.drop_zone, "dragleave", (ev) => {
+  add_event_listener(ui.drop_zone, "dragleave", ev => {
     event_prevent_default(ev)
     event_stop_propagation(ev)
     element_remove_class(ui.drop_zone, "dragover")
   })
-  add_event_listener(ui.drop_zone, "drop", (ev) => {
+  add_event_listener(ui.drop_zone, "drop", ev => {
     event_prevent_default(ev)
     event_stop_propagation(ev)
     element_remove_class(ui.drop_zone, "dragover")
-    match event_first_file(ev) {
-      None => ()
-      Some(file) => load_font(app, ui, file)
-    }
+    let file = event_first_file(ev)
+    load_font(app, ui, file)
   })
 }
