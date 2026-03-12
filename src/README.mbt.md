@@ -3,6 +3,11 @@
 This is the MoonBit port of HarfBuzz. The module name in `moon.mod.json` is a
 placeholder and can be updated once the publishing owner is decided.
 
+## Licence
+
+Code in this directory is part of the harfbuzz.mbt project and is
+licenced under the Old MIT licence; see the top‑level `COPYING` file.
+
 ## Examples
 
 - JS SVG demo: `src/examples/js_svg`

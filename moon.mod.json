@@ -2,6 +2,7 @@
   "name": "moonbit-community/harfbuzz",
   "version": "0.0.0",
   "description": "MoonBit port of HarfBuzz.",
+  "license": "MIT",
   "repository": "",
   "keywords": ["harfbuzz", "text", "shaping", "font"],
   "source": "src",
