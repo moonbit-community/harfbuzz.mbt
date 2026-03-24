@@ -34,7 +34,7 @@ jobs:
 
       - name: publish
         env:
-          SECRET: ${{ secrets.MOONCAKES_MOONBITLANG_TOKEN }}
+          SECRET: ${{ secrets.MOONCAKES_MOONBIT_COMMUNITY_TOKEN }}
         run: |
           echo "$SECRET" > ~/.moon/credentials.json
           moon publish
