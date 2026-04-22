@@ -1,0 +1,25 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "moonbit-community/harfbuzz/ot/map"
+
+import {
+  "moonbit-community/harfbuzz/common",
+  "moonbit-community/harfbuzz/ot/tables",
+}
+
+// Values
+
+// Errors
+
+// Types and methods
+pub struct OtMap {
+  gsub_lookups : Array[Int]
+  gpos_lookups : Array[Int]
+}
+pub fn OtMap::gpos_lookups(Self) -> ArrayView[Int]
+pub fn OtMap::gsub_lookups(Self) -> ArrayView[Int]
+pub fn OtMap::new(@tables.GsubTable?, @tables.GposTable?, @common.Tag, language_tag? : @common.Tag, gsub_features? : Array[@common.Tag], gpos_features? : Array[@common.Tag]) -> Result[Self, @tables.OtLayoutError]
+
+// Type aliases
+
+// Traits
+

@@ -1,0 +1,312 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "moonbit-community/harfbuzz/aat"
+
+import {
+  "moonbitlang/core/debug",
+}
+
+// Values
+
+// Errors
+pub suberror AatError {
+  UnexpectedEof
+  InvalidFormat
+} derive(Eq, ToJson, @debug.Debug)
+
+// Types and methods
+pub struct Anchor {
+  x : Int
+  y : Int
+} derive(Eq, ToJson, @debug.Debug)
+
+pub struct AnkrTable {
+  version : Int
+  lookup : LookupTable
+  anchor_offset : Int
+  data : Bytes
+} derive(ToJson, @debug.Debug)
+pub fn AnkrTable::get_anchor(Self, UInt, Int) -> Anchor?
+pub fn AnkrTable::has_data(Self) -> Bool
+pub fn AnkrTable::parse(BytesView, Int) -> Result[Self, AatError]
+
+pub enum BslnData {
+  Format0(Array[Int])
+  Format1(Array[Int], LookupTable)
+  Format2(Int, Array[Int])
+  Format3(Int, Array[Int], LookupTable)
+} derive(ToJson, @debug.Debug)
+
+pub struct BslnTable {
+  version : Int
+  format : Int
+  default_baseline : Int
+  data : BslnData
+} derive(ToJson, @debug.Debug)
+pub fn BslnTable::has_data(Self) -> Bool
+pub fn BslnTable::parse(BytesView, Int) -> Result[Self, AatError]
+
+pub(all) enum ClassTable {
+  Lookup(LookupTable)
+  Array(UInt, Array[Int])
+} derive(Eq, ToJson, @debug.Debug)
+
+pub(all) enum ContextualSubstitutions {
+  Lookups(Array[LookupTable])
+  Values(Int, Array[UInt])
+} derive(Eq, ToJson, @debug.Debug)
+
+pub(all) struct ContextualSubtable {
+  coverage_flags : Int
+  sub_feature_flags : UInt
+  table : StateTable
+  substitutions : ContextualSubstitutions
+} derive(Eq, ToJson, @debug.Debug)
+
+pub struct FeatFeatureName {
+  feature : Int
+  name_id : Int
+  flags : Int
+  settings : Array[FeatSettingName]
+} derive(Eq, ToJson, @debug.Debug)
+pub fn FeatFeatureName::default_setting(Self) -> FeatSettingName?
+pub fn FeatFeatureName::default_setting_index(Self) -> Int?
+pub fn FeatFeatureName::is_exclusive(Self) -> Bool
+
+pub struct FeatSettingName {
+  setting : Int
+  name_id : Int
+} derive(Eq, ToJson, @debug.Debug)
+
+pub struct FeatTable {
+  version : Int
+  features : Array[FeatFeatureName]
+} derive(ToJson, @debug.Debug)
+pub fn FeatTable::feature(Self, Int) -> FeatFeatureName?
+pub fn FeatTable::feature_types(Self) -> Array[Int]
+pub fn FeatTable::has_data(Self) -> Bool
+pub fn FeatTable::parse(BytesView) -> Result[Self, AatError]
+
+pub(all) struct InsertionSubtable {
+  coverage_flags : Int
+  sub_feature_flags : UInt
+  table : StateTable
+  insertion_action : Array[UInt]
+} derive(Eq, ToJson, @debug.Debug)
+
+pub struct JustTable {
+  version : Int
+  format : Int
+  horiz : JustificationHeader?
+  vert : JustificationHeader?
+} derive(ToJson, @debug.Debug)
+pub fn JustTable::has_data(Self) -> Bool
+pub fn JustTable::parse(BytesView, Int) -> Result[Self, AatError]
+
+pub struct JustificationHeader {
+  class_table_offset : Int
+  wdc_table_offset : Int
+  pc_table_offset : Int
+  lookup : LookupTable?
+} derive(ToJson, @debug.Debug)
+
+pub struct KerxAdjustment {
+  x_advance : Int
+  y_advance : Int
+  x_offset : Int
+  y_offset : Int
+} derive(Eq, ToJson, @debug.Debug)
+
+pub struct KerxFormat1 {
+  table : StateTable
+  actions : Array[Int]
+} derive(ToJson, @debug.Debug)
+
+pub struct KerxFormat2 {
+  row_width : Int
+  left : LookupTable
+  right : LookupTable
+  values : Array[Int]
+} derive(ToJson, @debug.Debug)
+
+pub struct KerxFormat4 {
+  table : StateTable
+  flags : UInt
+  actions : Array[Int]
+} derive(ToJson, @debug.Debug)
+
+pub struct KerxFormat6 {
+  row_index : LookupTable
+  column_index : LookupTable
+  values : Array[Int]
+  long_values : Bool
+} derive(ToJson, @debug.Debug)
+
+pub struct KerxPair {
+  left : UInt
+  right : UInt
+  value : Int
+} derive(Eq, ToJson, @debug.Debug)
+
+pub enum KerxSubtable {
+  Format0(KerxSubtableHeader, Array[KerxPair])
+  Format1(KerxSubtableHeader, KerxFormat1)
+  Format2(KerxSubtableHeader, KerxFormat2)
+  Format4(KerxSubtableHeader, KerxFormat4)
+  Format6(KerxSubtableHeader, KerxFormat6)
+} derive(ToJson, @debug.Debug)
+
+pub struct KerxSubtableHeader {
+  coverage : UInt
+  tuple_count : Int
+} derive(Eq, ToJson, @debug.Debug)
+
+pub struct KerxTable {
+  version : Int
+  subtables : Array[KerxSubtable]
+} derive(ToJson, @debug.Debug)
+pub fn KerxTable::apply_scaled(Self, Array[UInt], Bool, Int, Int, Int, AnkrTable?, contour_point? : (UInt, Int) -> (Int, Int)?) -> Array[KerxAdjustment]
+pub fn KerxTable::has_data(Self) -> Bool
+pub fn KerxTable::kern_value(Self, UInt, UInt, Bool) -> Int
+pub fn KerxTable::parse(BytesView, Int) -> Result[Self, AatError]
+
+pub(all) struct LigatureSubtable {
+  coverage_flags : Int
+  sub_feature_flags : UInt
+  table : StateTable
+  lig_actions : Array[UInt]
+  components : Array[UInt]
+  ligatures : Array[UInt]
+  lig_action_offset : Int
+  component_offset_words : Int
+  ligature_offset : Int
+} derive(Eq, ToJson, @debug.Debug)
+
+pub(all) struct LookupSegmentArray {
+  first : UInt
+  last : UInt
+  values : Array[UInt]
+} derive(Eq, ToJson, @debug.Debug)
+
+pub(all) struct LookupSegmentSingle {
+  first : UInt
+  last : UInt
+  value : UInt
+} derive(Eq, ToJson, @debug.Debug)
+
+pub(all) struct LookupSingle {
+  glyph : UInt
+  value : UInt
+} derive(Eq, ToJson, @debug.Debug)
+
+pub(all) enum LookupTable {
+  Format0(Array[UInt])
+  Format2(Array[LookupSegmentSingle])
+  Format4(Array[LookupSegmentArray])
+  Format6(Array[LookupSingle])
+  Format8(UInt, Array[UInt])
+  Format10(Int, UInt, Array[UInt])
+} derive(Eq, ToJson, @debug.Debug)
+
+pub struct LtagTable {
+  version : Int
+  flags : Int
+  tags : Array[Bytes]
+} derive(ToJson, @debug.Debug)
+pub fn LtagTable::has_data(Self) -> Bool
+pub fn LtagTable::parse(BytesView) -> Result[Self, AatError]
+pub fn LtagTable::tags(Self) -> ArrayView[Bytes]
+
+pub struct MortTable {
+  version : Int
+  subtables : Array[MorxSubtable]
+} derive(Eq, ToJson, @debug.Debug)
+pub fn MortTable::apply(Self, Array[UInt], Array[Int], Bool) -> Bool
+pub fn MortTable::has_data(Self) -> Bool
+pub fn MortTable::parse(BytesView, Int) -> Result[Self, AatError]
+
+pub(all) enum MorxSubtable {
+  Noncontextual(NoncontextualSubtable)
+  Rearrangement(RearrangementSubtable)
+  Contextual(ContextualSubtable)
+  Ligature(LigatureSubtable)
+  Insertion(InsertionSubtable)
+} derive(Eq, ToJson, @debug.Debug)
+
+pub struct MorxTable {
+  version : Int
+  subtables : Array[MorxSubtable]
+} derive(Eq, ToJson, @debug.Debug)
+pub fn MorxTable::apply(Self, Array[UInt], Array[Int], Bool) -> Bool
+pub fn MorxTable::has_data(Self) -> Bool
+pub fn MorxTable::parse(BytesView, Int) -> Result[Self, AatError]
+
+pub(all) struct NoncontextualSubtable {
+  coverage_flags : Int
+  sub_feature_flags : UInt
+  lookup : LookupTable
+} derive(Eq, ToJson, @debug.Debug)
+
+pub struct OpbdTable {
+  version : Int
+  format : Int
+  lookup : LookupTable
+  data : BytesView
+} derive(ToJson, @debug.Debug)
+pub fn OpbdTable::bounds(Self, UInt, contour_point? : (UInt, Int) -> (Int, Int)?) -> Result[OpticalBounds?, AatError]
+pub fn OpbdTable::has_data(Self) -> Bool
+pub fn OpbdTable::parse(BytesView, Int) -> Result[Self, AatError]
+
+pub struct OpticalBounds {
+  left : Int
+  top : Int
+  right : Int
+  bottom : Int
+} derive(Eq, ToJson, @debug.Debug)
+
+pub(all) struct RearrangementSubtable {
+  coverage_flags : Int
+  sub_feature_flags : UInt
+  table : StateTable
+} derive(Eq, ToJson, @debug.Debug)
+
+pub(all) struct StateEntry {
+  new_state : Int
+  flags : Int
+  data1 : Int
+  data2 : Int
+} derive(Eq, ToJson, @debug.Debug)
+
+pub(all) struct StateTable {
+  n_classes : Int
+  class_table : ClassTable
+  state_array : Array[Int]
+  entries : Array[StateEntry]
+  state_array_offset : Int
+  extended : Bool
+} derive(Eq, ToJson, @debug.Debug)
+
+pub(all) struct TrackData {
+  track_table : Array[TrackTableEntry]
+  size_table : Array[Int]
+} derive(Eq, ToJson, @debug.Debug)
+
+pub(all) struct TrackTableEntry {
+  track : Int
+  name_id : Int
+  values : Array[Int]
+} derive(Eq, ToJson, @debug.Debug)
+
+pub struct TrakTable {
+  version : Int
+  format : Int
+  horiz : TrackData?
+  vert : TrackData?
+} derive(Eq, ToJson, @debug.Debug)
+pub fn TrakTable::has_data(Self) -> Bool
+pub fn TrakTable::parse(BytesView) -> Result[Self, AatError]
+pub fn TrakTable::tracking(Self, Double, Bool, track? : Double) -> Double
+
+// Type aliases
+
+// Traits
+

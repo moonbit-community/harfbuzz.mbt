@@ -1,0 +1,69 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "moonbit-community/harfbuzz/paint"
+
+import {
+  "moonbitlang/core/debug",
+}
+
+// Values
+pub let var_idx_none : UInt
+
+// Errors
+
+// Types and methods
+pub(all) struct Affine2x3 {
+  xx : Int
+  yx : Int
+  xy : Int
+  yy : Int
+  dx : Int
+  dy : Int
+  var_idx_base : UInt?
+} derive(Eq, ToJson, @debug.Debug)
+
+pub struct Color {
+  r : Int
+  g : Int
+  b : Int
+  a : Int
+} derive(Eq, ToJson, @debug.Debug)
+pub fn Color::from_bgra(Int, Int, Int, Int) -> Self
+
+pub(all) struct ColorLine {
+  extend : Int
+  stops : Array[ColorStop]
+} derive(Eq, ToJson, @debug.Debug)
+
+pub(all) struct ColorStop {
+  offset : Int
+  palette_index : Int
+  alpha : Int
+  var_idx_base : UInt?
+} derive(Eq, ToJson, @debug.Debug)
+
+pub(all) enum Paint {
+  ColrLayers(Int, Int)
+  Solid(Int, Int, UInt?)
+  LinearGradient(ColorLine, Int, Int, Int, Int, Int, Int, UInt?)
+  RadialGradient(ColorLine, Int, Int, Int, Int, Int, Int, UInt?)
+  SweepGradient(ColorLine, Int, Int, Int, Int, UInt?)
+  Glyph(Int, Paint)
+  ColrGlyph(Int)
+  Transform(Affine2x3, Paint)
+  Translate(Int, Int, UInt?, Paint)
+  Scale(Int, Int, UInt?, Paint)
+  ScaleAroundCenter(Int, Int, Int, Int, UInt?, Paint)
+  ScaleUniform(Int, UInt?, Paint)
+  ScaleUniformAroundCenter(Int, Int, Int, UInt?, Paint)
+  Rotate(Int, UInt?, Paint)
+  RotateAroundCenter(Int, Int, Int, UInt?, Paint)
+  Skew(Int, Int, UInt?, Paint)
+  SkewAroundCenter(Int, Int, Int, Int, UInt?, Paint)
+  Composite(Int, Paint, Paint)
+} derive(ToJson, @debug.Debug)
+
+// Type aliases
+pub type VarIdx = UInt
+
+// Traits
+

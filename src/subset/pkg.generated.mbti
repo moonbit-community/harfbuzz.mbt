@@ -1,0 +1,48 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "moonbit-community/harfbuzz/subset"
+
+import {
+  "moonbit-community/harfbuzz/font",
+  "moonbitlang/core/debug",
+}
+
+// Values
+pub fn build_plan(@font.Font, SubsetInput) -> Result[SubsetPlan, SubsetError]
+
+pub fn subset(@font.Font, SubsetInput) -> Result[Bytes, SubsetError]
+
+pub let subset_data_case_count : Int
+
+pub fn subset_data_expected_bytes(String) -> Bytes?
+
+pub fn subset_data_font_bytes(String) -> Bytes?
+
+pub let subset_data_suites : Array[SubsetDataSuite]
+
+pub fn subset_with_plan(@font.Font, SubsetPlan) -> Result[Bytes, SubsetError]
+
+// Errors
+type SubsetError derive(Eq, ToJson, @debug.Debug)
+
+// Types and methods
+pub struct SubsetDataSuite {
+  name : String
+  definition : String
+} derive(ToJson, @debug.Debug)
+
+pub struct SubsetInput {
+  codepoints : Array[UInt]
+} derive(ToJson, @debug.Debug)
+pub fn SubsetInput::from_codepoints(Array[UInt]) -> Self
+
+pub struct SubsetPlan {
+  glyphs : Array[UInt]
+  old_to_new : Array[Int]
+  codepoint_map : Array[(UInt, Int)]
+  gsub_mask : Array[Bool]
+} derive(ToJson, @debug.Debug)
+
+// Type aliases
+
+// Traits
+

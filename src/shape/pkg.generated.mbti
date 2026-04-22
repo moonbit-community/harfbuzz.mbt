@@ -1,0 +1,46 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "moonbit-community/harfbuzz/shape"
+
+import {
+  "moonbit-community/harfbuzz/buffer",
+  "moonbit-community/harfbuzz/common",
+  "moonbit-community/harfbuzz/font",
+  "moonbitlang/core/debug",
+}
+
+// Values
+pub fn aots_font_bytes(String) -> Bytes?
+
+pub let aots_skipped_cases : Int
+
+pub let aots_test_cases : Array[AotsTestCase]
+
+pub fn available_shapers() -> Array[String]
+
+pub fn shape(@font.Font, @buffer.Buffer, shapers? : Array[String]) -> Result[Unit, @buffer.ShapeError]
+
+// Errors
+
+// Types and methods
+pub struct AotsTestCase {
+  font : String
+  input : Array[UInt]
+  expected : String
+  feature_values : Array[Int]
+  no_positions : Bool
+  no_advances : Bool
+} derive(ToJson, @debug.Debug)
+
+pub struct ShapePlan {
+  shaper : String
+  direction : @common.Direction
+  script : @common.Script
+  language : @common.Language
+}
+pub fn ShapePlan::from_buffer(@buffer.Buffer, shapers? : Array[String]) -> Self
+pub fn ShapePlan::shape(Self, @font.Font, @buffer.Buffer) -> Result[Unit, @buffer.ShapeError]
+
+// Type aliases
+
+// Traits
+

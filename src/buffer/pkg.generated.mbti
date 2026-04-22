@@ -1,0 +1,117 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "moonbit-community/harfbuzz/buffer"
+
+import {
+  "moonbit-community/harfbuzz/common",
+  "moonbit-community/harfbuzz/font",
+  "moonbit-community/harfbuzz/ot/tables",
+  "moonbitlang/core/debug",
+}
+
+// Values
+
+// Errors
+pub suberror ShapeError {
+  Font(@font.FontError)
+  Layout(@tables.OtLayoutError)
+} derive(Eq, ToJson, @debug.Debug)
+
+// Types and methods
+pub struct Buffer {
+  mut infos : Array[GlyphInfo]
+  mut positions : Array[GlyphPosition]
+  mut direction : @common.Direction
+  mut script : @common.Script
+  mut language : @common.Language
+  mut gsub_features : Array[@common.Tag]
+  mut gpos_features : Array[@common.Tag]
+  mut gsub_features_default : Bool
+  mut gpos_features_default : Bool
+  mut gsub_feature_values : FeatureValues?
+  mut preserve_default_ignorables : Bool
+  mut remove_default_ignorables : Bool
+  mut not_found_variation_selector : UInt?
+} derive(ToJson, @debug.Debug)
+pub fn Buffer::add_char(Self, Char, cluster? : Int) -> Unit
+pub fn Buffer::add_codepoint(Self, UInt, cluster? : Int) -> Unit
+pub fn Buffer::add_string(Self, String) -> Unit
+pub fn Buffer::add_tracking(Self, Int, Bool) -> Unit
+pub fn Buffer::apply_gpos(Self, @font.Font, include_all_features? : Bool, adjust_mark_offsets? : Bool) -> Result[Bool, ShapeError]
+pub fn Buffer::apply_kerx(Self, @font.Font) -> Result[Unit, ShapeError]
+pub fn Buffer::apply_morx(Self, @font.Font) -> Result[Unit, ShapeError]
+pub fn Buffer::apply_trak(Self, @font.Font) -> Result[Unit, ShapeError]
+pub fn Buffer::clear(Self) -> Unit
+pub fn Buffer::get_direction(Self) -> @common.Direction
+pub fn Buffer::get_language(Self) -> @common.Language
+pub fn Buffer::get_not_found_variation_selector(Self) -> UInt?
+pub fn Buffer::get_script(Self) -> @common.Script
+pub fn Buffer::gpos_features(Self) -> ArrayView[@common.Tag]
+pub fn Buffer::gsub_features(Self) -> ArrayView[@common.Tag]
+pub fn Buffer::guess_segment_properties(Self) -> Unit
+pub fn Buffer::has_kerx(Self, @font.Font) -> Result[Bool, ShapeError]
+pub fn Buffer::infos(Self) -> ArrayView[GlyphInfo]
+pub fn Buffer::is_empty(Self) -> Bool
+pub fn Buffer::len(Self) -> Int
+pub fn Buffer::merge_clusters(Self, Int, Int) -> Unit
+pub fn Buffer::merge_combining_mark_clusters(Self) -> Unit
+pub fn Buffer::new() -> Self
+pub fn Buffer::normalize(Self) -> Unit
+pub fn Buffer::positions(Self) -> ArrayView[GlyphPosition]
+pub fn Buffer::replace_glyphs(Self, Array[GlyphInfo], positions? : Array[GlyphPosition]) -> Bool
+pub fn Buffer::serialize(Self, format? : BufferSerializeFormat, mode? : BufferSerializeMode, start? : Int, end? : Int, no_positions? : Bool, no_clusters? : Bool, no_advances? : Bool) -> String
+pub fn Buffer::set_direction(Self, @common.Direction) -> Unit
+pub fn Buffer::set_gpos_features(Self, Array[@common.Tag]) -> Unit
+pub fn Buffer::set_gsub_feature_values(Self, @common.Tag, Array[Int]) -> Unit
+pub fn Buffer::set_gsub_features(Self, Array[@common.Tag]) -> Unit
+pub fn Buffer::set_language(Self, @common.Language) -> Unit
+pub fn Buffer::set_not_found_variation_selector(Self, UInt?) -> Unit
+pub fn Buffer::set_preserve_default_ignorables(Self, Bool) -> Unit
+pub fn Buffer::set_remove_default_ignorables(Self, Bool) -> Unit
+pub fn Buffer::set_script(Self, @common.Script) -> Unit
+pub fn Buffer::shape_arabic(Self, @font.Font) -> Result[Unit, ShapeError]
+pub fn Buffer::shape_basic(Self, @font.Font) -> Result[Unit, ShapeError]
+pub fn Buffer::shape_hangul(Self, @font.Font) -> Result[Unit, ShapeError]
+pub fn Buffer::shape_hebrew(Self, @font.Font) -> Result[Unit, ShapeError]
+pub fn Buffer::shape_indic(Self, @font.Font) -> Result[Unit, ShapeError]
+pub fn Buffer::shape_khmer(Self, @font.Font) -> Result[Unit, ShapeError]
+pub fn Buffer::shape_myanmar(Self, @font.Font) -> Result[Unit, ShapeError]
+pub fn Buffer::shape_ot(Self, @font.Font, fallback_position? : Bool) -> Result[Unit, ShapeError]
+pub fn Buffer::shape_thai(Self, @font.Font) -> Result[Unit, ShapeError]
+pub fn Buffer::shape_use(Self, @font.Font, script_tag? : @common.Tag) -> Result[Unit, ShapeError]
+pub fn Buffer::verify(Self) -> Bool
+
+pub(all) enum BufferSerializeFormat {
+  Invalid
+  Text
+  Json
+} derive(Eq, @debug.Debug)
+pub fn BufferSerializeFormat::from_string(String, len? : Int) -> Self
+pub fn BufferSerializeFormat::to_string(Self) -> String?
+
+pub(all) enum BufferSerializeMode {
+  Glyphs
+  Unicode
+} derive(Eq, @debug.Debug)
+pub fn BufferSerializeMode::from_string(String, len? : Int) -> Self
+
+type FeatureValues derive(ToJson, @debug.Debug)
+
+type GlyphExtents derive(@debug.Debug)
+
+pub struct GlyphInfo {
+  codepoint : UInt
+  cluster : Int
+  unicode : UInt
+} derive(Eq, ToJson, @debug.Debug)
+
+pub struct GlyphPosition {
+  x_advance : Int
+  y_advance : Int
+  x_offset : Int
+  y_offset : Int
+} derive(Eq, ToJson, @debug.Debug)
+
+// Type aliases
+
+// Traits
+
