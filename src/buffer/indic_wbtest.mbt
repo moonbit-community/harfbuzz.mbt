@@ -47,5 +47,5 @@ test "indic reorder by positions with joiner attach" {
   for info in buffer.infos() {
     result.push(info.codepoint)
   }
-  inspect(result, content="[10, 11, 12]")
+  @debug.debug_inspect(result, content="[10, 11, 12]")
 }

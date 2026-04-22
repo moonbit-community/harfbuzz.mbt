@@ -18,7 +18,7 @@ pub struct HvarTable {
   adv_map : DeltaSetIndexMap?
   lsb_map : DeltaSetIndexMap?
   rsb_map : DeltaSetIndexMap?
-} derive(Show, ToJson)
+} derive(Debug, ToJson)
 
 fn parse_map_optional(data : BytesView, offset : Int) -> Result[DeltaSetIndexMap?, VarError] {
   if offset == 0 {

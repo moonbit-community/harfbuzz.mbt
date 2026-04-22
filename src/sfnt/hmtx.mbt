@@ -17,7 +17,7 @@
 pub struct HmtxTable {
   advances : Array[Int]
   lsbs : Array[Int]
-} derive(Show, ToJson)
+} derive(Debug, ToJson)
 
 ///|
 /// Parse hmtx table bytes.

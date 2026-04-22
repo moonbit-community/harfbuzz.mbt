@@ -55,7 +55,7 @@ fn build_item_variation_store() -> Bytes {
 ///|
 test "item variation store delta" {
   let store = match ItemVariationStore::parse(build_item_variation_store()) {
-    Err(err) => fail("parse failed: \{err}")
+    Err(err) => fail("parse failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let full = store.get_delta(0U, [16384])
@@ -64,5 +64,5 @@ test "item variation store delta" {
   let full_int = full.round().to_int()
   let half_int = half.round().to_int()
   let zero_int = zero.round().to_int()
-  inspect((full_int, half_int, zero_int), content="(100, 50, 0)")
+  @debug.debug_inspect((full_int, half_int, zero_int), content="(100, 50, 0)")
 }

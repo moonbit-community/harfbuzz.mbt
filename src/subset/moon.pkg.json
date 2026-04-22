@@ -1,5 +1,10 @@
 {
   "import": [
+    "moonbitlang/core/debug",
+    {
+      "path": "moonbit-community/harfbuzz/blob",
+      "alias": "blob"
+    },
     {
       "path": "moonbit-community/harfbuzz/common",
       "alias": "common"
@@ -13,16 +18,12 @@
       "alias": "font"
     },
     {
-      "path": "moonbit-community/harfbuzz/sfnt",
-      "alias": "sfnt"
-    },
-    {
-      "path": "moonbit-community/harfbuzz/blob",
-      "alias": "blob"
-    },
-    {
       "path": "moonbit-community/harfbuzz/ot/cff",
       "alias": "ot_cff"
+    },
+    {
+      "path": "moonbit-community/harfbuzz/sfnt",
+      "alias": "sfnt"
     },
     {
       "path": "moonbit-community/harfbuzz/unicode",

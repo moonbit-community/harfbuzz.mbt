@@ -281,7 +281,7 @@ struct ExpectedGlyph {
   x_advance : Int
   x_offset : Int
   y_offset : Int
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 fn bytes_to_ascii_string(bytes : Bytes) -> String {
@@ -338,7 +338,7 @@ fn shape_with_aat(
     buffer.add_codepoint(cp)
   }
   match @shape.shape(font, buffer, shapers=["aat"]) {
-    Err(err) => fail("shape failed: \{err}")
+    Err(err) => fail("shape failed: \{@debug.to_string(err)}")
     Ok(_) => ()
   }
   buffer
@@ -550,7 +550,7 @@ test "aat morx fixture MORXTwentyeight" {
     [0x41U, 0x78U, 0x45U, 0x79U, 0x44U, 0x79U, 0x79U],
   )
   let post = match font.post() {
-    Err(err) => fail("post error: \{err}")
+    Err(err) => fail("post error: \{@debug.to_string(err)}")
     Ok(None) => fail("missing post table")
     Ok(Some(value)) => value
   }
@@ -573,7 +573,7 @@ test "aat morx fixture Tamil" {
     [0x0B95U, 0x0BCDU, 0x0020U, 0x0B9AU, 0x0BCDU],
   )
   let post = match font.post() {
-    Err(err) => fail("post error: \{err}")
+    Err(err) => fail("post error: \{@debug.to_string(err)}")
     Ok(None) => fail("missing post table")
     Ok(Some(value)) => value
   }

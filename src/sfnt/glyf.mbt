@@ -20,7 +20,7 @@ pub struct GlyphBounds {
   y_min : Int
   x_max : Int
   y_max : Int
-} derive(Eq, Show, ToJson)
+} derive(Eq, Debug, ToJson)
 
 ///|
 /// Outline point from glyf data.
@@ -29,7 +29,7 @@ pub struct GlyphPoint {
   mut y : Double
   flag : Int
   mut is_end_point : Bool
-} derive(Show, ToJson)
+} derive(Debug, ToJson)
 
 ///|
 pub fn GlyphPoint::new(
@@ -76,7 +76,7 @@ pub fn GlyphBounds::new(
 /// Parsed glyf table (raw view).
 pub struct GlyfTable {
   data : BytesView
-} derive(Show, ToJson)
+} derive(Debug, ToJson)
 
 ///|
 pub struct CompositeComponent {
@@ -93,7 +93,7 @@ pub struct CompositeComponent {
   is_anchored : Bool
   use_my_metrics : Bool
   scaled_offset : Bool
-} derive(Show, ToJson)
+} derive(Debug, ToJson)
 
 ///|
 /// Parse glyf table from its blob.

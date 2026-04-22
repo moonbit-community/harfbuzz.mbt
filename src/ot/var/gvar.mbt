@@ -22,7 +22,7 @@ pub struct GvarTable {
   data_offset : Int
   offsets : Array[Int]
   data : Bytes
-} derive(Show, ToJson)
+} derive(Debug, ToJson)
 
 fn parse_offsets(
   data : BytesView,

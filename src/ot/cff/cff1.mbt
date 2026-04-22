@@ -51,7 +51,7 @@ pub struct Cff1Table {
   private_size : Int
   charset_offset : Int
   charset_map : Map[Int, Int]?
-} derive(Eq, Show, ToJson)
+} derive(Eq, Debug, ToJson)
 
 ///|
 pub fn Cff1Table::parse(data : BytesView) -> Result[Cff1Table, CffError] {

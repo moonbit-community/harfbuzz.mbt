@@ -16,7 +16,7 @@
 /// Language tag (BCP 47), stored in canonical lowercase form.
 pub struct Language {
   tag : String
-} derive(Eq, Show, ToJson)
+} derive(Eq, Debug, ToJson)
 
 ///|
 /// Invalid language value.

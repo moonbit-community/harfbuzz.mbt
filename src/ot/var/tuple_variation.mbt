@@ -19,7 +19,7 @@ struct TupleHeader {
   peak : Array[Int]
   start : Array[Int]?
   end : Array[Int]?
-} derive(Show, ToJson)
+} derive(Debug, ToJson)
 
 ///|
 fn TupleHeader::has_private_points(self : TupleHeader) -> Bool {
@@ -34,7 +34,7 @@ pub struct TupleVariation {
   indices : Array[Int]?
   deltas_x : Array[Int]
   deltas_y : Array[Int]?
-} derive(Show, ToJson)
+} derive(Debug, ToJson)
 
 ///|
 fn coord_at(coords : Array[Int], index : Int) -> Int {
@@ -102,7 +102,7 @@ pub struct TupleVariationData {
   shared_points_size : Int
   data_offset : Int
   data : Bytes
-} derive(Show, ToJson)
+} derive(Debug, ToJson)
 
 ///|
 fn clone_int_array(values : Array[Int]) -> Array[Int] {

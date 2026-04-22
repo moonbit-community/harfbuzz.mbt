@@ -17,7 +17,7 @@
 pub struct HeadTable {
   units_per_em : Int
   index_to_loc_format : Int
-} derive(Eq, Show, ToJson)
+} derive(Eq, Debug, ToJson)
 
 ///|
 /// Parse head table bytes.

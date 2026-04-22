@@ -138,23 +138,23 @@ fn build_varc_component_table() -> Bytes {
 ///|
 test "varc component parse" {
   let varc = match VarcTable::parse(build_varc_component_table()[:]) {
-    Err(err) => fail("parse failed: \{err}")
+    Err(err) => fail("parse failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let comps = match varc.glyph_components(5, [0, 0, 0], [0, 0, 0]) {
-    Err(err) => fail("components failed: \{err}")
+    Err(err) => fail("components failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  inspect(comps.length(), content="1")
+  @debug.debug_inspect(comps.length(), content="1")
   let comp = comps[0]
-  inspect(comp.glyph, content="7")
-  inspect(comp.axis_indices, content="[1, 2]")
-  inspect(comp.axis_values.map(v => v.round().to_int()), content="[8192, 16384]")
-  inspect(comp.coords, content="[0, 8192, 16384]")
+  @debug.debug_inspect(comp.glyph, content="7")
+  @debug.debug_inspect(comp.axis_indices, content="[1, 2]")
+  @debug.debug_inspect(comp.axis_values.map(v => v.round().to_int()), content="[8192, 16384]")
+  @debug.debug_inspect(comp.coords, content="[0, 8192, 16384]")
   let tx = comp.transform.translate_x.round().to_int()
   let sx = (comp.transform.scale_x * 1000.0).round().to_int()
   let sy = (comp.transform.scale_y * 1000.0).round().to_int()
-  inspect((tx, sx, sy), content="(50, 1000, 1000)")
+  @debug.debug_inspect((tx, sx, sy), content="(50, 1000, 1000)")
   let (bx0, by0, bx1, by1) = comp.transform.apply_to_bounds(0.0, 0.0, 10.0, 20.0)
-  inspect((bx0.round().to_int(), by0.round().to_int(), bx1.round().to_int(), by1.round().to_int()), content="(50, 0, 60, 20)")
+  @debug.debug_inspect((bx0.round().to_int(), by0.round().to_int(), bx1.round().to_int(), by1.round().to_int()), content="(50, 0, 60, 20)")
 }

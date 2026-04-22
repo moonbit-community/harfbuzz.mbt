@@ -97,11 +97,11 @@ fn build_hvar_bytes() -> Bytes {
 ///|
 test "hvar lsb rsb deltas" {
   let hvar = match HvarTable::parse(build_hvar_bytes()) {
-    Err(err) => fail("parse failed: \{err}")
+    Err(err) => fail("parse failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let coords : Array[Int] = [16384]
   let lsb = hvar.lsb_delta(1U, coords).round().to_int()
   let rsb = hvar.rsb_delta(1U, coords).round().to_int()
-  inspect((lsb, rsb), content="(20, 10)")
+  @debug.debug_inspect((lsb, rsb), content="(20, 10)")
 }

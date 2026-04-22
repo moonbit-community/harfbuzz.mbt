@@ -20,13 +20,13 @@ pub struct NameRecord {
   language_id : Int
   name_id : Int
   value : Bytes
-} derive(Show, ToJson)
+} derive(Debug, ToJson)
 
 ///|
 /// Parsed name table (subset).
 pub struct NameTable {
   records : Array[NameRecord]
-} derive(Show, ToJson)
+} derive(Debug, ToJson)
 
 ///|
 /// Parse name table bytes (format 0/1; string decoding is caller's responsibility).

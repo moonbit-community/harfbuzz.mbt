@@ -20,7 +20,7 @@ pub struct Face {
   mut upem : Int
   mut glyph_count : Int
   mut tables : Map[@common.Tag, @blob.Blob]
-} derive(Show, ToJson)
+} derive(Debug, ToJson)
 
 ///|
 /// Return the number of faces in a blob.

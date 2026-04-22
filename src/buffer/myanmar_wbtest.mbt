@@ -35,5 +35,5 @@ test "myanmar reorder prebase and left matra" {
   for info in buffer.infos() {
     result.push(info.codepoint)
   }
-  inspect(result, content="[12, 11, 10, 13]")
+  @debug.debug_inspect(result, content="[12, 11, 10, 13]")
 }

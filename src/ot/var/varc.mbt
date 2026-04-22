@@ -21,7 +21,7 @@ pub struct VarcTable {
   axis_indices_offset : Int
   glyph_records_offset : Int
   data : Bytes
-} derive(Show, ToJson)
+} derive(Debug, ToJson)
 
 ///|
 pub enum VarcCondition {
@@ -30,14 +30,14 @@ pub enum VarcCondition {
   And(Array[VarcCondition])
   Or(Array[VarcCondition])
   Not(VarcCondition)
-} derive(Show, ToJson)
+} derive(Debug, ToJson)
 
 struct CffIndex {
   count : Int
   off_size : Int
   offsets : Array[Int]
   data : Bytes
-} derive(Show, ToJson)
+} derive(Debug, ToJson)
 
 fn validate_offset(offset : Int, length : Int) -> Result[Unit, VarError] {
   if offset < 0 || offset > length {

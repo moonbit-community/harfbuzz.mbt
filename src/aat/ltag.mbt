@@ -18,7 +18,7 @@ pub struct LtagTable {
   version : Int
   flags : Int
   tags : Array[Bytes]
-} derive(Show, ToJson)
+} derive(Debug, ToJson)
 
 ///|
 pub fn LtagTable::has_data(self : LtagTable) -> Bool {

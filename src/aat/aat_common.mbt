@@ -16,7 +16,7 @@
 pub suberror AatError {
   UnexpectedEof
   InvalidFormat
-} derive(Eq, Show, ToJson)
+} derive(Eq, Debug, ToJson)
 
 fn read_u16(data : BytesView, offset : Int) -> Result[UInt, AatError] {
   if offset < 0 || offset + 2 > data.length() {

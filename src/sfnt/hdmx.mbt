@@ -18,14 +18,14 @@ pub struct HdmxRecord {
   pixel_size : Int
   max_width : Int
   widths : Array[Int]
-} derive(Show, ToJson)
+} derive(Debug, ToJson)
 
 ///|
 /// Parsed hdmx table.
 pub struct HdmxTable {
   version : Int
   records : Array[HdmxRecord]
-} derive(Show, ToJson)
+} derive(Debug, ToJson)
 
 ///|
 /// Parse hdmx table bytes.

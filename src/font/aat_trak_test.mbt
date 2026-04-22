@@ -176,12 +176,12 @@ fn build_font_bytes_aat_trak() -> Bytes {
 test "aat trak parse" {
   let font = Font::from_bytes(build_font_bytes_aat_trak())
   let trak = match font.trak() {
-    Err(err) => fail("trak parse failed: \{err}")
+    Err(err) => fail("trak parse failed: \{@debug.to_string(err)}")
     Ok(None) => fail("trak table missing")
     Ok(Some(trak)) => trak
   }
   assert_true(trak.has_data())
   assert_eq(trak.format, 0)
   assert_true(trak.horiz is Some(_))
-  inspect(trak.tracking(12.0, true), content="0")
+  @debug.debug_inspect(trak.tracking(12.0, true), content="0")
 }

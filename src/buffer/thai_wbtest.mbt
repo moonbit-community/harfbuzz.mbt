@@ -24,7 +24,7 @@ test "thai preprocess sara am reorder" {
   for info in buffer.infos() {
     cps.push(info.codepoint)
   }
-  inspect(cps, content="[3604, 3661, 3659, 3634]")
+  @debug.debug_inspect(cps, content="[3604, 3661, 3659, 3634]")
 }
 
 fn thai_test_push_u16(bytes : Array[Byte], value : Int) -> Unit {
@@ -259,7 +259,7 @@ test "thai fallback pua snapshot" {
   buffer.add_codepoint(0x0E48U)
   let result = buffer.shape_thai(font)
   match result {
-    Err(err) => fail("shape error: \{err}")
+    Err(err) => fail("shape error: \{@debug.to_string(err)}")
     Ok(_) => ()
   }
   let infos = buffer.infos()
@@ -301,7 +301,7 @@ test "thai fallback pua base replacement snapshot" {
   buffer.add_codepoint(0x0E38U)
   let result = buffer.shape_thai(font)
   match result {
-    Err(err) => fail("shape error: \{err}")
+    Err(err) => fail("shape error: \{@debug.to_string(err)}")
     Ok(_) => ()
   }
   let infos = buffer.infos()
@@ -349,7 +349,7 @@ test "thai fallback skipped with gsub snapshot" {
   buffer.add_codepoint(0x0E48U)
   let result = buffer.shape_thai(font)
   match result {
-    Err(err) => fail("shape error: \{err}")
+    Err(err) => fail("shape error: \{@debug.to_string(err)}")
     Ok(_) => ()
   }
   let infos = buffer.infos()

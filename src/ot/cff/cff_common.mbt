@@ -16,7 +16,7 @@
 pub suberror CffError {
   UnexpectedEof
   InvalidFormat
-} derive(Eq, Show, ToJson)
+} derive(Eq, Debug, ToJson)
 
 ///|
 fn read_u8_int(data : BytesView, offset : Int) -> Result[Int, CffError] {

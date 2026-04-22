@@ -22,13 +22,13 @@ pub struct KerxPair {
   left : UInt
   right : UInt
   value : Int
-} derive(Eq, Show, ToJson)
+} derive(Eq, Debug, ToJson)
 
 ///|
 pub struct KerxFormat1 {
   table : StateTable
   actions : Array[Int]
-} derive(Show, ToJson)
+} derive(Debug, ToJson)
 
 ///|
 pub struct KerxFormat2 {
@@ -36,14 +36,14 @@ pub struct KerxFormat2 {
   left : LookupTable
   right : LookupTable
   values : Array[Int]
-} derive(Show, ToJson)
+} derive(Debug, ToJson)
 
 ///|
 pub struct KerxFormat4 {
   table : StateTable
   flags : UInt
   actions : Array[Int]
-} derive(Show, ToJson)
+} derive(Debug, ToJson)
 
 ///|
 pub struct KerxFormat6 {
@@ -51,7 +51,7 @@ pub struct KerxFormat6 {
   column_index : LookupTable
   values : Array[Int]
   long_values : Bool
-} derive(Show, ToJson)
+} derive(Debug, ToJson)
 
 ///|
 pub struct KerxAdjustment {
@@ -59,13 +59,13 @@ pub struct KerxAdjustment {
   y_advance : Int
   x_offset : Int
   y_offset : Int
-} derive(Eq, Show, ToJson)
+} derive(Eq, Debug, ToJson)
 
 ///|
 pub struct KerxSubtableHeader {
   coverage : UInt
   tuple_count : Int
-} derive(Eq, Show, ToJson)
+} derive(Eq, Debug, ToJson)
 
 ///|
 pub enum KerxSubtable {
@@ -74,13 +74,13 @@ pub enum KerxSubtable {
   Format2(KerxSubtableHeader, KerxFormat2)
   Format4(KerxSubtableHeader, KerxFormat4)
   Format6(KerxSubtableHeader, KerxFormat6)
-} derive(Show, ToJson)
+} derive(Debug, ToJson)
 
 ///|
 pub struct KerxTable {
   version : Int
   subtables : Array[KerxSubtable]
-} derive(Show, ToJson)
+} derive(Debug, ToJson)
 
 fn coverage_type(coverage : UInt) -> Int {
   (coverage & coverage_type_mask).reinterpret_as_int()

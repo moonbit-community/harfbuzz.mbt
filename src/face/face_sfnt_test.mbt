@@ -183,10 +183,10 @@ test "face references sfnt table" {
   let sfnt_bytes = build_sfnt_with_table(tag, table_bytes)
   let face = Face::from_bytes(sfnt_bytes)
   let table = match face.reference_table(tag) {
-    Err(err) => fail("missing table: \{err}")
+    Err(err) => fail("missing table: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  inspect(table.to_bytes(), content="b\"\\x0a\\x0b\"")
+  @debug.debug_inspect(table.to_bytes(), content="b\"\\x0a\\x0b\"")
 }
 
 ///|
@@ -198,15 +198,15 @@ test "face references ttc tables by index" {
   let face0 = Face::from_bytes(ttc, index=0)
   let face1 = Face::from_bytes(ttc, index=1)
   let table0 = match face0.reference_table(tag) {
-    Err(err) => fail("missing table: \{err}")
+    Err(err) => fail("missing table: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let table1 = match face1.reference_table(tag) {
-    Err(err) => fail("missing table: \{err}")
+    Err(err) => fail("missing table: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  inspect(table0.to_bytes(), content="b\"\\x0a\"")
-  inspect(table1.to_bytes(), content="b\"\\x0b\\x0c\"")
+  @debug.debug_inspect(table0.to_bytes(), content="b\"\\x0a\"")
+  @debug.debug_inspect(table1.to_bytes(), content="b\"\\x0b\\x0c\"")
 }
 
 ///|
@@ -217,16 +217,16 @@ test "face set_index resets cached tables" {
   let ttc = build_ttc([font0, font1])
   let face = Face::from_bytes(ttc, index=0)
   let table0 = match face.reference_table(tag) {
-    Err(err) => fail("missing table: \{err}")
+    Err(err) => fail("missing table: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   face.set_index(1)
   let table1 = match face.reference_table(tag) {
-    Err(err) => fail("missing table: \{err}")
+    Err(err) => fail("missing table: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  inspect(table0.to_bytes(), content="b\"\\x01\"")
-  inspect(table1.to_bytes(), content="b\"\\x02\"")
+  @debug.debug_inspect(table0.to_bytes(), content="b\"\\x01\"")
+  @debug.debug_inspect(table1.to_bytes(), content="b\"\\x02\"")
 }
 
 ///|
@@ -239,31 +239,31 @@ test "face table tags listing" {
   let sfnt = build_sfnt_with_tables(tables)
   let face = Face::from_bytes(sfnt)
   let (total0, tags0) = match face.table_tags() {
-    Err(err) => fail("table tags error: \{err}")
+    Err(err) => fail("table tags error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  inspect(total0, content="3")
+  @debug.debug_inspect(total0, content="3")
   let names0 : Array[String] = []
   for tag in tags0 {
     names0.push(tag.to_string())
   }
-  inspect(names0, content="[\"cvt \", \"fpgm\", \"gasp\"]")
+  @debug.debug_inspect(names0, content="[\"cvt \", \"fpgm\", \"gasp\"]")
   let (total1, tags1) = match face.table_tags(start_offset=1, count=1) {
-    Err(err) => fail("table tags error: \{err}")
+    Err(err) => fail("table tags error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  inspect(total1, content="3")
+  @debug.debug_inspect(total1, content="3")
   let names1 : Array[String] = []
   for tag in tags1 {
     names1.push(tag.to_string())
   }
-  inspect(names1, content="[\"fpgm\"]")
+  @debug.debug_inspect(names1, content="[\"fpgm\"]")
   let (total2, tags2) = match face.table_tags(start_offset=3, count=2) {
-    Err(err) => fail("table tags error: \{err}")
+    Err(err) => fail("table tags error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  inspect(total2, content="3")
-  inspect(tags2.length(), content="0")
+  @debug.debug_inspect(total2, content="3")
+  @debug.debug_inspect(tags2.length(), content="0")
 }
 
 ///|
@@ -274,18 +274,18 @@ test "face collect unicodes format12" {
   ])
   let face = Face::from_bytes(sfnt)
   let set = match face.collect_unicodes() {
-    Err(err) => fail("collect unicodes error: \{err}")
+    Err(err) => fail("collect unicodes error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  inspect(set.to_sorted_array(), content="[97, 98, 99]")
+  @debug.debug_inspect(set.to_sorted_array(), content="[97, 98, 99]")
   let map = match face.collect_nominal_glyph_mapping() {
-    Err(err) => fail("collect mapping error: \{err}")
+    Err(err) => fail("collect mapping error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  inspect(map.population(), content="3")
-  inspect(map.get(0x61U), content="1")
-  inspect(map.get(0x62U), content="2")
-  inspect(map.get(0x63U), content="3")
+  @debug.debug_inspect(map.population(), content="3")
+  @debug.debug_inspect(map.get(0x61U), content="1")
+  @debug.debug_inspect(map.get(0x62U), content="2")
+  @debug.debug_inspect(map.get(0x63U), content="3")
 }
 
 ///|
@@ -297,8 +297,8 @@ test "face collect unicodes format4" {
   ])
   let face = Face::from_bytes(sfnt)
   let set = match face.collect_unicodes() {
-    Err(err) => fail("collect unicodes error: \{err}")
+    Err(err) => fail("collect unicodes error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  inspect(set.to_sorted_array(), content="[97, 98, 99]")
+  @debug.debug_inspect(set.to_sorted_array(), content="[97, 98, 99]")
 }

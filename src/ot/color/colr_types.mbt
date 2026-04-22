@@ -17,7 +17,7 @@
 pub struct ColrLayer {
   glyph_id : Int
   color_index : Int
-} derive(Eq, Show, ToJson)
+} derive(Eq, Debug, ToJson)
 
 ///|
 /// COLRv0 base glyph record.
@@ -25,14 +25,14 @@ pub struct ColrBaseGlyph {
   glyph_id : Int
   first_layer_index : Int
   num_layers : Int
-} derive(Eq, Show, ToJson)
+} derive(Eq, Debug, ToJson)
 
 ///|
 /// COLRv1 base glyph -> paint record.
 pub struct BaseGlyphPaintRecord {
   glyph_id : Int
   paint_offset : Int
-} derive(Eq, Show, ToJson)
+} derive(Eq, Debug, ToJson)
 
 ///|
 /// Clip box data (format 1 or 2).
@@ -43,7 +43,7 @@ pub struct ClipBox {
   x_max : Int
   y_max : Int
   var_idx_base : @paint.VarIdx?
-} derive(Eq, Show, ToJson)
+} derive(Eq, Debug, ToJson)
 
 ///|
 /// Clip record for a glyph range.
@@ -51,14 +51,14 @@ pub struct ClipRecord {
   start_glyph_id : Int
   end_glyph_id : Int
   clip_box : ClipBox
-} derive(Eq, Show, ToJson)
+} derive(Eq, Debug, ToJson)
 
 ///|
 /// Clip list (format 1) for COLRv1.
 pub struct ClipList {
   format : Int
   records : Array[ClipRecord]
-} derive(Eq, Show, ToJson)
+} derive(Eq, Debug, ToJson)
 
 ///|
 /// Clip extents for a glyph (y-bearing is y_max).
@@ -67,4 +67,4 @@ pub struct ClipExtents {
   y_bearing : Int
   width : Int
   height : Int
-} derive(Eq, Show, ToJson)
+} derive(Eq, Debug, ToJson)

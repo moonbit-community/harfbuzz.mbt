@@ -23,7 +23,7 @@ pub(all) struct NoncontextualSubtable {
   coverage_flags : Int
   sub_feature_flags : UInt
   lookup : LookupTable
-} derive(Eq, Show, ToJson)
+} derive(Eq, Debug, ToJson)
 
 ///|
 pub(all) struct StateEntry {
@@ -31,13 +31,13 @@ pub(all) struct StateEntry {
   flags : Int
   data1 : Int
   data2 : Int
-} derive(Eq, Show, ToJson)
+} derive(Eq, Debug, ToJson)
 
 ///|
 pub(all) enum ClassTable {
   Lookup(LookupTable)
   Array(UInt, Array[Int])
-} derive(Eq, Show, ToJson)
+} derive(Eq, Debug, ToJson)
 
 ///|
 pub(all) struct StateTable {
@@ -47,20 +47,20 @@ pub(all) struct StateTable {
   entries : Array[StateEntry]
   state_array_offset : Int
   extended : Bool
-} derive(Eq, Show, ToJson)
+} derive(Eq, Debug, ToJson)
 
 ///|
 pub(all) struct RearrangementSubtable {
   coverage_flags : Int
   sub_feature_flags : UInt
   table : StateTable
-} derive(Eq, Show, ToJson)
+} derive(Eq, Debug, ToJson)
 
 ///|
 pub(all) enum ContextualSubstitutions {
   Lookups(Array[LookupTable])
   Values(Int, Array[UInt])
-} derive(Eq, Show, ToJson)
+} derive(Eq, Debug, ToJson)
 
 ///|
 pub(all) struct ContextualSubtable {
@@ -68,7 +68,7 @@ pub(all) struct ContextualSubtable {
   sub_feature_flags : UInt
   table : StateTable
   substitutions : ContextualSubstitutions
-} derive(Eq, Show, ToJson)
+} derive(Eq, Debug, ToJson)
 
 ///|
 pub(all) struct LigatureSubtable {
@@ -81,7 +81,7 @@ pub(all) struct LigatureSubtable {
   lig_action_offset : Int
   component_offset_words : Int
   ligature_offset : Int
-} derive(Eq, Show, ToJson)
+} derive(Eq, Debug, ToJson)
 
 ///|
 pub(all) struct InsertionSubtable {
@@ -89,7 +89,7 @@ pub(all) struct InsertionSubtable {
   sub_feature_flags : UInt
   table : StateTable
   insertion_action : Array[UInt]
-} derive(Eq, Show, ToJson)
+} derive(Eq, Debug, ToJson)
 
 ///|
 pub(all) enum MorxSubtable {
@@ -98,19 +98,19 @@ pub(all) enum MorxSubtable {
   Contextual(ContextualSubtable)
   Ligature(LigatureSubtable)
   Insertion(InsertionSubtable)
-} derive(Eq, Show, ToJson)
+} derive(Eq, Debug, ToJson)
 
 ///|
 pub struct MorxTable {
   version : Int
   subtables : Array[MorxSubtable]
-} derive(Eq, Show, ToJson)
+} derive(Eq, Debug, ToJson)
 
 ///|
 pub struct MortTable {
   version : Int
   subtables : Array[MorxSubtable]
-} derive(Eq, Show, ToJson)
+} derive(Eq, Debug, ToJson)
 
 fn coverage_flags_from(coverage : UInt, extended : Bool) -> Int {
   if extended {

@@ -16,29 +16,29 @@
 pub struct SparseVarRegionAxis {
   axis_index : Int
   axis : VarRegionAxis
-} derive(Eq, Show, ToJson)
+} derive(Eq, Debug, ToJson)
 
 ///|
 pub struct SparseVariationRegion {
   axes : Array[SparseVarRegionAxis]
-} derive(Eq, Show, ToJson)
+} derive(Eq, Debug, ToJson)
 
 ///|
 pub struct SparseVarRegionList {
   regions : Array[SparseVariationRegion]
-} derive(Eq, Show, ToJson)
+} derive(Eq, Debug, ToJson)
 
 ///|
 pub struct MultiVarData {
   region_indices : Array[Int]
   delta_sets : CffIndex
-} derive(Show, ToJson)
+} derive(Debug, ToJson)
 
 ///|
 pub struct MultiItemVariationStore {
   region_list : SparseVarRegionList
   data_sets : Array[MultiVarData]
-} derive(Show, ToJson)
+} derive(Debug, ToJson)
 
 fn SparseVariationRegion::evaluate(self : SparseVariationRegion, coords : ArrayView[Int]) -> Double {
   let mut scalar = 1.0

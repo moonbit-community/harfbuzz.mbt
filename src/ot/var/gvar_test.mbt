@@ -70,23 +70,23 @@ fn build_gvar_with_tuple() -> Bytes {
 ///|
 test "gvar parse offsets" {
   let gvar = match GvarTable::parse(build_gvar_bytes()) {
-    Err(err) => fail("parse failed: \{err}")
+    Err(err) => fail("parse failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let g0 = gvar.glyph_variation_data(0)
   let g1 = gvar.glyph_variation_data(1)
-  inspect(g0.map(bytes => bytes.to_array().map(b => b.to_int())), content="Some([1, 2])")
-  inspect(g1.map(bytes => bytes.to_array().map(b => b.to_int())), content="Some([3, 4, 5, 6])")
+  @debug.debug_inspect(g0.map(bytes => bytes.to_array().map(b => b.to_int())), content="Some([1, 2])")
+  @debug.debug_inspect(g1.map(bytes => bytes.to_array().map(b => b.to_int())), content="Some([3, 4, 5, 6])")
 }
 
 ///|
 test "gvar glyph deltas" {
   let gvar = match GvarTable::parse(build_gvar_with_tuple()) {
-    Err(err) => fail("parse failed: \{err}")
+    Err(err) => fail("parse failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let deltas = match gvar.glyph_deltas(0, [16384], 4) {
-    Err(err) => fail("delta failed: \{err}")
+    Err(err) => fail("delta failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let deltas_x = deltas.0.map(delta => delta.round().to_int())
@@ -94,6 +94,6 @@ test "gvar glyph deltas" {
     None => []
     Some(values) => values.map(delta => delta.round().to_int())
   }
-  inspect(deltas_x, content="[0, 50, 0, -20]")
-  inspect(deltas_y, content="[0, 10, 0, 0]")
+  @debug.debug_inspect(deltas_x, content="[0, 50, 0, -20]")
+  @debug.debug_inspect(deltas_y, content="[0, 10, 0, 0]")
 }

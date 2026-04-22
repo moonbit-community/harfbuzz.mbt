@@ -20,7 +20,7 @@ pub struct AxisRecord {
   max_value : Double
   flags : Int
   name_id : Int
-} derive(Eq, Show, ToJson)
+} derive(Eq, Debug, ToJson)
 
 ///|
 pub struct InstanceRecord {
@@ -28,13 +28,13 @@ pub struct InstanceRecord {
   flags : Int
   coordinates : Array[Double]
   postscript_name_id : Int?
-} derive(Eq, Show, ToJson)
+} derive(Eq, Debug, ToJson)
 
 ///|
 pub struct FvarTable {
   axes : Array[AxisRecord]
   instances : Array[InstanceRecord]
-} derive(Eq, Show, ToJson)
+} derive(Eq, Debug, ToJson)
 
 ///|
 pub fn FvarTable::axes(self : FvarTable) -> ArrayView[AxisRecord] {

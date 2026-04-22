@@ -19,7 +19,7 @@ pub enum OutlinePointKind {
   LineTo
   QuadraticTo
   CubicTo
-} derive(Eq, Show, ToJson)
+} derive(Eq, Debug, ToJson)
 
 ///|
 /// Outline point with type.
@@ -27,7 +27,7 @@ pub struct OutlinePoint {
   mut x : Double
   mut y : Double
   kind : OutlinePointKind
-} derive(Eq, Show, ToJson)
+} derive(Eq, Debug, ToJson)
 
 ///|
 pub fn OutlinePoint::new(x : Double, y : Double, kind : OutlinePointKind) -> OutlinePoint {
@@ -53,7 +53,7 @@ fn OutlineVector::normalize_len(self : OutlineVector) -> Double {
 pub struct Outline {
   points : Array[OutlinePoint]
   contours : Array[Int]
-} derive(Show, ToJson)
+} derive(Debug, ToJson)
 
 ///|
 pub fn Outline::new() -> Outline {

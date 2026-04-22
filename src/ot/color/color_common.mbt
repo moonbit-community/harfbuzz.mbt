@@ -17,7 +17,7 @@ pub suberror ColorError {
   UnexpectedEof
   InvalidFormat
   Var(@ot_var.VarError)
-} derive(Eq, Show, ToJson)
+} derive(Eq, Debug, ToJson)
 
 fn read_u8_int(data : BytesView, offset : Int) -> Result[Int, ColorError] {
   if offset < 0 || offset + 1 > data.length() {

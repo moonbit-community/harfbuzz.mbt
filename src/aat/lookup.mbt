@@ -17,20 +17,20 @@ pub(all) struct LookupSegmentSingle {
   first : UInt
   last : UInt
   value : UInt
-} derive(Eq, Show, ToJson)
+} derive(Eq, Debug, ToJson)
 
 ///|
 pub(all) struct LookupSegmentArray {
   first : UInt
   last : UInt
   values : Array[UInt]
-} derive(Eq, Show, ToJson)
+} derive(Eq, Debug, ToJson)
 
 ///|
 pub(all) struct LookupSingle {
   glyph : UInt
   value : UInt
-} derive(Eq, Show, ToJson)
+} derive(Eq, Debug, ToJson)
 
 ///|
 pub(all) enum LookupTable {
@@ -40,7 +40,7 @@ pub(all) enum LookupTable {
   Format6(Array[LookupSingle])
   Format8(UInt, Array[UInt])
   Format10(Int, UInt, Array[UInt])
-} derive(Eq, Show, ToJson)
+} derive(Eq, Debug, ToJson)
 
 fn within_range(glyph : UInt, first : UInt, last : UInt) -> Bool {
   glyph >= first && glyph <= last

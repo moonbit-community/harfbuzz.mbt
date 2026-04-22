@@ -271,50 +271,50 @@ fn build_ankr_for_kerx() -> Bytes {
 test "aat kerx format0" {
   let data = build_kerx_format0()
   let kerx = match KerxTable::parse(data[:], 10) {
-    Err(err) => fail("kerx parse failed: \{err}")
+    Err(err) => fail("kerx parse failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   assert_true(kerx.has_data())
-  inspect(kerx.kern_value(1U, 2U, true), content="-50")
-  inspect(kerx.kern_value(2U, 1U, true), content="0")
+  @debug.debug_inspect(kerx.kern_value(1U, 2U, true), content="-50")
+  @debug.debug_inspect(kerx.kern_value(2U, 1U, true), content="0")
 }
 
 ///|
 test "aat kerx format1" {
   let data = build_kerx_format1()
   let kerx = match KerxTable::parse(data[:], 10) {
-    Err(err) => fail("kerx parse failed: \{err}")
+    Err(err) => fail("kerx parse failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let glyphs : Array[UInt] = [1U, 2U]
   let adjustments = kerx.apply_scaled(glyphs, true, 1, 1, 1, None)
-  inspect(adjustments[0].x_advance, content="-50")
-  inspect(adjustments[0].x_offset, content="-50")
-  inspect(adjustments[1].x_advance, content="0")
+  @debug.debug_inspect(adjustments[0].x_advance, content="-50")
+  @debug.debug_inspect(adjustments[0].x_offset, content="-50")
+  @debug.debug_inspect(adjustments[1].x_advance, content="0")
 }
 
 ///|
 test "aat kerx format4 anchor" {
   let data = build_kerx_format4()
   let kerx = match KerxTable::parse(data[:], 10) {
-    Err(err) => fail("kerx parse failed: \{err}")
+    Err(err) => fail("kerx parse failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let ankr = match AnkrTable::parse(build_ankr_for_kerx()[:], 10) {
-    Err(err) => fail("ankr parse failed: \{err}")
+    Err(err) => fail("ankr parse failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let glyphs : Array[UInt] = [1U, 2U]
   let adjustments = kerx.apply_scaled(glyphs, true, 1, 1, 1, Some(ankr))
-  inspect(adjustments[1].x_offset, content="-5")
-  inspect(adjustments[1].y_offset, content="15")
+  @debug.debug_inspect(adjustments[1].x_offset, content="-5")
+  @debug.debug_inspect(adjustments[1].y_offset, content="15")
 }
 
 ///|
 test "aat kerx format4 control points" {
   let data = build_kerx_format4_control_points()
   let kerx = match KerxTable::parse(data[:], 10) {
-    Err(err) => fail("kerx parse failed: \{err}")
+    Err(err) => fail("kerx parse failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let glyphs : Array[UInt] = [1U, 2U]
@@ -336,20 +336,20 @@ test "aat kerx format4 control points" {
     None,
     contour_point=contour_point,
   )
-  inspect(adjustments[1].x_offset, content="-10")
-  inspect(adjustments[1].y_offset, content="-5")
+  @debug.debug_inspect(adjustments[1].x_offset, content="-10")
+  @debug.debug_inspect(adjustments[1].y_offset, content="-5")
 }
 
 ///|
 test "aat kerx format6 long values" {
   let data = build_kerx_format6_long()
   let kerx = match KerxTable::parse(data[:], 3) {
-    Err(err) => fail("kerx parse failed: \{err}")
+    Err(err) => fail("kerx parse failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let glyphs : Array[UInt] = [1U, 2U]
   let adjustments = kerx.apply_scaled(glyphs, true, 1, 1, 1, None)
-  inspect(adjustments[0].x_advance, content="1500")
-  inspect(adjustments[1].x_advance, content="1500")
-  inspect(adjustments[1].x_offset, content="1500")
+  @debug.debug_inspect(adjustments[0].x_advance, content="1500")
+  @debug.debug_inspect(adjustments[1].x_advance, content="1500")
+  @debug.debug_inspect(adjustments[1].x_offset, content="1500")
 }

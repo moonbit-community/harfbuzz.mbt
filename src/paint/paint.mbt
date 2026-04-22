@@ -84,4 +84,4 @@ pub(all) enum Paint {
     Paint,
   )
   Composite(Int, Paint, Paint)
-} derive(Show, ToJson)
+} derive(Debug, ToJson)

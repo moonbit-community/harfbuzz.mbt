@@ -18,7 +18,7 @@ pub struct KernPair {
   left : UInt
   right : UInt
   value : Int
-} derive(Eq, Show, ToJson)
+} derive(Eq, Debug, ToJson)
 
 ///|
 /// Parsed kern subtable (format 0/2).
@@ -31,7 +31,7 @@ pub struct KernSubtable {
   pairs : Array[KernPair]
   format2 : KernSubtableFormat2?
   format3 : KernSubtableFormat3?
-} derive(Show, ToJson)
+} derive(Debug, ToJson)
 
 ///|
 /// Kern class table (format 2).
@@ -39,7 +39,7 @@ pub struct KernClassTable {
   first_glyph : Int
   classes : Array[Int]
   class_count : Int
-} derive(Show, ToJson)
+} derive(Debug, ToJson)
 
 ///|
 /// Kern subtable format 2 (class-based).
@@ -49,7 +49,7 @@ pub struct KernSubtableFormat2 {
   right : KernClassTable
   right_class_count : Int
   values : Array[Int]
-} derive(Show, ToJson)
+} derive(Debug, ToJson)
 
 ///|
 /// Kern subtable format 3 (class-based, byte indices).
@@ -62,13 +62,13 @@ pub struct KernSubtableFormat3 {
   left_class : Array[Int]
   right_class : Array[Int]
   kern_index : Array[Int]
-} derive(Show, ToJson)
+} derive(Debug, ToJson)
 
 ///|
 /// Parsed kern table (subset).
 pub struct KernTable {
   subtables : Array[KernSubtable]
-} derive(Show, ToJson)
+} derive(Debug, ToJson)
 
 ///|
 fn parse_kern_subtable_format0(

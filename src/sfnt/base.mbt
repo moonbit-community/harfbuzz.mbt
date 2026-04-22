@@ -18,7 +18,7 @@ pub enum BaseCoord {
   Format1(Int)
   Format2(Int, Int, Int)
   Format3(Int, Int)
-} derive(Show, ToJson)
+} derive(Debug, ToJson)
 
 ///|
 /// Feature min/max record.
@@ -26,7 +26,7 @@ pub struct FeatMinMaxRecord {
   tag : @common.Tag
   min_coord : BaseCoord?
   max_coord : BaseCoord?
-} derive(Show, ToJson)
+} derive(Debug, ToJson)
 
 ///|
 /// Min/max table.
@@ -34,21 +34,21 @@ pub struct MinMax {
   min_coord : BaseCoord?
   max_coord : BaseCoord?
   records : Array[FeatMinMaxRecord]
-} derive(Show, ToJson)
+} derive(Debug, ToJson)
 
 ///|
 /// Base values table.
 pub struct BaseValues {
   default_index : Int
   base_coords : Array[BaseCoord?]
-} derive(Show, ToJson)
+} derive(Debug, ToJson)
 
 ///|
 /// Base language system record.
 pub struct BaseLangSysRecord {
   tag : @common.Tag
   min_max : MinMax?
-} derive(Show, ToJson)
+} derive(Debug, ToJson)
 
 ///|
 /// Base script table.
@@ -56,33 +56,33 @@ pub struct BaseScript {
   base_values : BaseValues?
   default_min_max : MinMax?
   lang_sys_records : Array[BaseLangSysRecord]
-} derive(Show, ToJson)
+} derive(Debug, ToJson)
 
 ///|
 /// Base script record.
 pub struct BaseScriptRecord {
   tag : @common.Tag
   base_script : BaseScript?
-} derive(Show, ToJson)
+} derive(Debug, ToJson)
 
 ///|
 /// Base script list.
 pub struct BaseScriptList {
   records : Array[BaseScriptRecord]
-} derive(Show, ToJson)
+} derive(Debug, ToJson)
 
 ///|
 /// Base tag list.
 pub struct BaseTagList {
   tags : Array[@common.Tag]
-} derive(Show, ToJson)
+} derive(Debug, ToJson)
 
 ///|
 /// Axis table.
 pub struct Axis {
   base_tags : BaseTagList?
   base_scripts : BaseScriptList?
-} derive(Show, ToJson)
+} derive(Debug, ToJson)
 
 ///|
 /// Parsed BASE table.
@@ -92,7 +92,7 @@ pub struct BaseTable {
   h_axis : Axis?
   v_axis : Axis?
   var_store_offset : Int?
-} derive(Show, ToJson)
+} derive(Debug, ToJson)
 
 ///|
 fn parse_base_coord(data : BytesView, offset : Int) -> Result[BaseCoord, SfntError] {

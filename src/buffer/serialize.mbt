@@ -17,13 +17,13 @@ pub(all) enum BufferSerializeFormat {
   Invalid
   Text
   Json
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 pub(all) enum BufferSerializeMode {
   Glyphs
   Unicode
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 pub fn BufferSerializeMode::from_string(

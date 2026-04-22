@@ -19,12 +19,12 @@ pub enum MemoryMode {
   Readonly
   Writable
   ReadonlyMayMakeWritable
-} derive(Eq, Show, ToJson)
+} derive(Eq, Debug, ToJson)
 
 ///|
 suberror BlobError {
   OutOfBounds
-} derive(Eq, Show, ToJson)
+} derive(Eq, Debug, ToJson)
 
 ///|
 /// Blob wraps binary data with a view range.
@@ -33,7 +33,7 @@ pub struct Blob {
   offset : Int
   length : Int
   mode : MemoryMode
-} derive(Eq, Show, ToJson)
+} derive(Eq, Debug, ToJson)
 
 ///|
 /// Create a blob from bytes.

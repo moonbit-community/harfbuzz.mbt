@@ -18,7 +18,7 @@ pub struct CffBounds {
   y_min : Double
   x_max : Double
   y_max : Double
-} derive(Eq, Show, ToJson)
+} derive(Eq, Debug, ToJson)
 
 priv struct CffBoundsBuilder {
   mut has_bounds : Bool

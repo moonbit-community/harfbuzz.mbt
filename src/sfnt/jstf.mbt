@@ -16,13 +16,13 @@
 /// Justification modification list.
 pub struct JstfModList {
   indices : Array[Int]
-} derive(Show, ToJson)
+} derive(Debug, ToJson)
 
 ///|
 /// Justification max table (offsets to GPOS lookups).
 pub struct JstfMax {
   lookup_offsets : Array[Int]
-} derive(Show, ToJson)
+} derive(Debug, ToJson)
 
 ///|
 /// Justification priority table.
@@ -37,20 +37,20 @@ pub struct JstfPriority {
   extension_enable_gpos : JstfModList?
   extension_disable_gpos : JstfModList?
   extension_jstf_max : JstfMax?
-} derive(Show, ToJson)
+} derive(Debug, ToJson)
 
 ///|
 /// Justification language system table.
 pub struct JstfLangSys {
   priorities : Array[JstfPriority?]
-} derive(Show, ToJson)
+} derive(Debug, ToJson)
 
 ///|
 /// Justification language system record.
 pub struct JstfLangSysRecord {
   tag : @common.Tag
   lang_sys : JstfLangSys?
-} derive(Show, ToJson)
+} derive(Debug, ToJson)
 
 ///|
 /// Justification script table.
@@ -58,14 +58,14 @@ pub struct JstfScript {
   extender_glyphs : Array[Int]
   default_lang_sys : JstfLangSys?
   lang_sys_records : Array[JstfLangSysRecord]
-} derive(Show, ToJson)
+} derive(Debug, ToJson)
 
 ///|
 /// Justification script record.
 pub struct JstfScriptRecord {
   tag : @common.Tag
   script : JstfScript?
-} derive(Show, ToJson)
+} derive(Debug, ToJson)
 
 ///|
 /// Parsed JSTF table.
@@ -73,7 +73,7 @@ pub struct JstfTable {
   major_version : Int
   minor_version : Int
   scripts : Array[JstfScriptRecord]
-} derive(Show, ToJson)
+} derive(Debug, ToJson)
 
 ///|
 fn parse_jstf_mod_list(data : BytesView, offset : Int) -> Result[JstfModList, SfntError] {

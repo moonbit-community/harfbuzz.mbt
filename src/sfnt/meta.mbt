@@ -17,7 +17,7 @@
 pub struct MetaRecord {
   tag : @common.Tag
   data : Bytes
-} derive(Show, ToJson)
+} derive(Debug, ToJson)
 
 ///|
 /// Parsed meta table.
@@ -25,7 +25,7 @@ pub struct MetaTable {
   version : Int
   flags : Int
   records : Array[MetaRecord]
-} derive(Show, ToJson)
+} derive(Debug, ToJson)
 
 ///|
 /// Parse meta table bytes.

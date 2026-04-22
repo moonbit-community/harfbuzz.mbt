@@ -24,7 +24,7 @@ pub struct ColrTable {
   var_idx_map : @ot_var.DeltaSetIndexMap?
   var_store : @ot_var.ItemVariationStore?
   data : BytesView
-} derive(Show, ToJson)
+} derive(Debug, ToJson)
 
 ///|
 /// Parse COLR table data.

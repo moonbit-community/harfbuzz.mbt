@@ -61,7 +61,7 @@ struct GlyphExtents {
   mut y_bearing : Int
   mut width : Int
   mut height : Int
-} derive(Show)
+} derive(Debug)
 
 let cc_attached_below_left : Int = 200
 let cc_attached_below : Int = 202

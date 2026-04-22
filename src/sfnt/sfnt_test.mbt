@@ -66,15 +66,15 @@ test "sfnt parse single table" {
   let sfnt_bytes = build_sfnt_with_table(tag, table_bytes)
   let blob = @blob.Blob::from_bytes(sfnt_bytes)
   let sfnt = match @sfnt.Sfnt::parse(blob) {
-    Err(err) => fail("parse error: \{err}")
+    Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  inspect(sfnt.tables().length(), content="1")
+  @debug.debug_inspect(sfnt.tables().length(), content="1")
   let table = match sfnt.table(tag) {
-    Err(err) => fail("missing table: \{err}")
+    Err(err) => fail("missing table: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  inspect(table.to_bytes(), content="b\"\\x01\\x02\\x03\"")
+  @debug.debug_inspect(table.to_bytes(), content="b\"\\x01\\x02\\x03\"")
 }
 
 ///|
@@ -83,9 +83,9 @@ test "sfnt table not found" {
   let sfnt_bytes = build_sfnt_with_table(tag, [0x00])
   let blob = @blob.Blob::from_bytes(sfnt_bytes)
   let sfnt = match @sfnt.Sfnt::parse(blob) {
-    Err(err) => fail("parse error: \{err}")
+    Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let res : Result[@blob.Blob, @sfnt.SfntError] = sfnt.table(@common.tag_none)
-  inspect(res, content="Err(TableNotFound)")
+  @debug.debug_inspect(res, content="Err(TableNotFound)")
 }

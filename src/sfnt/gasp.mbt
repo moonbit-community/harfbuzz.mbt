@@ -17,14 +17,14 @@
 pub struct GaspRange {
   max_ppem : Int
   behavior : Int
-} derive(Eq, Show, ToJson)
+} derive(Eq, Debug, ToJson)
 
 ///|
 /// Parsed gasp table.
 pub struct GaspTable {
   version : Int
   ranges : Array[GaspRange]
-} derive(Show, ToJson)
+} derive(Debug, ToJson)
 
 ///|
 /// Parse gasp table bytes (version 0/1).

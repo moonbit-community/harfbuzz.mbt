@@ -1,7 +1,8 @@
 {
   "import": [
-    "moonbitlang/core/encoding/utf8",
     "moonbit-community/harfbuzz/blob",
+    "moonbitlang/core/debug",
+    "moonbitlang/core/encoding/utf8",
     {
       "path": "moonbit-community/harfbuzz/common",
       "alias": "common"

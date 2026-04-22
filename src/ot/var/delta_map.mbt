@@ -18,7 +18,7 @@ pub struct DeltaSetIndexMap {
   width : Int
   inner_bit_count : Int
   map_data : Bytes
-} derive(Eq, Show, ToJson)
+} derive(Eq, Debug, ToJson)
 
 fn parse_format0(
   data : BytesView,

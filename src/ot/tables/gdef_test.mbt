@@ -61,42 +61,42 @@ fn build_gdef_table_format1_2() -> Bytes {
 test "gdef parse class defs and mark sets" {
   let bytes = build_gdef_table_format1_2()
   let gdef = match GdefTable::parse(@blob.Blob::from_bytes(bytes)) {
-    Err(err) => fail("parse error: \{err}")
+    Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let class3 = match gdef.glyph_class(3U) {
-    Err(err) => fail("glyph class error: \{err}")
+    Err(err) => fail("glyph class error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let class4 = match gdef.glyph_class(4U) {
-    Err(err) => fail("glyph class error: \{err}")
+    Err(err) => fail("glyph class error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let class2 = match gdef.glyph_class(2U) {
-    Err(err) => fail("glyph class error: \{err}")
+    Err(err) => fail("glyph class error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  inspect(class3, content="1")
-  inspect(class4, content="2")
-  inspect(class2, content="0")
+  @debug.debug_inspect(class3, content="1")
+  @debug.debug_inspect(class4, content="2")
+  @debug.debug_inspect(class2, content="0")
   let mark_class5 = match gdef.mark_attach_class(5U) {
-    Err(err) => fail("mark class error: \{err}")
+    Err(err) => fail("mark class error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let mark_class4 = match gdef.mark_attach_class(4U) {
-    Err(err) => fail("mark class error: \{err}")
+    Err(err) => fail("mark class error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  inspect(mark_class5, content="3")
-  inspect(mark_class4, content="0")
+  @debug.debug_inspect(mark_class5, content="3")
+  @debug.debug_inspect(mark_class4, content="0")
   let in_set = match gdef.mark_glyph_set_contains(0, 5U) {
-    Err(err) => fail("mark set error: \{err}")
+    Err(err) => fail("mark set error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let not_in_set = match gdef.mark_glyph_set_contains(0, 3U) {
-    Err(err) => fail("mark set error: \{err}")
+    Err(err) => fail("mark set error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  inspect(in_set, content="true")
-  inspect(not_in_set, content="false")
+  @debug.debug_inspect(in_set, content="true")
+  @debug.debug_inspect(not_in_set, content="false")
 }

@@ -20,7 +20,7 @@ pub struct DrawState {
   mut path_start_y : Double
   mut current_x : Double
   mut current_y : Double
-} derive(Show, ToJson)
+} derive(Debug, ToJson)
 
 ///|
 pub fn DrawState::new() -> DrawState {
@@ -411,7 +411,7 @@ pub struct DrawExtents {
   mut ymin : Double
   mut xmax : Double
   mut ymax : Double
-} derive(Show, ToJson)
+} derive(Debug, ToJson)
 
 ///|
 pub fn DrawExtents::new() -> DrawExtents {

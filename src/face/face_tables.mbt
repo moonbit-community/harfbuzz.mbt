@@ -19,7 +19,7 @@ suberror FaceTableError {
   InvalidFaceIndex
   UnexpectedEof
   InvalidFormat
-} derive(Eq, Show, ToJson)
+} derive(Eq, Debug, ToJson)
 
 ///|
 fn read_u32(data : BytesView, offset : Int) -> Result[Int, FaceTableError] {

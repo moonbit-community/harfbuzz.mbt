@@ -26,7 +26,7 @@ pub struct PostTable {
   max_mem_type1 : Int
   glyph_name_indices : Array[Int]?
   custom_names : Array[Bytes]?
-} derive(Show, ToJson)
+} derive(Debug, ToJson)
 
 ///|
 fn read_i32(data : BytesView, offset : Int) -> Result[Int, SfntError] {

@@ -33,7 +33,7 @@ pub struct Os2Table {
   max_context : Int?
   lower_optical_point_size : Int?
   upper_optical_point_size : Int?
-} derive(Show, ToJson)
+} derive(Debug, ToJson)
 
 ///|
 fn os2_required_len(version : Int) -> Int {

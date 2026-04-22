@@ -23,7 +23,7 @@ test "vowel constraints insert dotted circle for devanagari pair" {
   for info in buffer.infos() {
     cps.push(info.codepoint)
   }
-  inspect(cps, content="[2309, 9676, 2366]")
+  @debug.debug_inspect(cps, content="[2309, 9676, 2366]")
 }
 
 ///|
@@ -38,5 +38,5 @@ test "vowel constraints insert dotted circle after devanagari ra virama" {
   for info in buffer.infos() {
     cps.push(info.codepoint)
   }
-  inspect(cps, content="[2352, 2381, 9676, 2311]")
+  @debug.debug_inspect(cps, content="[2352, 2381, 9676, 2311]")
 }

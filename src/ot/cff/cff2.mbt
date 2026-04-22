@@ -37,7 +37,7 @@ let op_vsindexdict_cff2 : Int = 0x16
 pub struct Cff2PrivateDict {
   local_subrs : CffIndex?
   ivs : Int
-} derive(Eq, Show, ToJson)
+} derive(Eq, Debug, ToJson)
 
 ///|
 pub struct Cff2Table {
@@ -53,7 +53,7 @@ pub struct Cff2Table {
   vstore_offset : Int
   top_dict_offset : Int
   top_dict_size : Int
-} derive(Eq, Show, ToJson)
+} derive(Eq, Debug, ToJson)
 
 ///|
 pub fn Cff2Table::parse(data : BytesView) -> Result[Cff2Table, CffError] {

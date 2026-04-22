@@ -597,7 +597,7 @@ fn build_font_bytes_noto_handwriting_colr1() -> Bytes {
 test "cpal v0 parse" {
   let font = Font::from_bytes(build_font_bytes_cpal_v0())
   let cpal = match font.cpal() {
-    Err(err) => fail("cpal v0 parse failed: \{err}")
+    Err(err) => fail("cpal v0 parse failed: \{@debug.to_string(err)}")
     Ok(None) => fail("cpal v0 table missing")
     Ok(Some(cpal)) => cpal
   }
@@ -612,7 +612,7 @@ test "cpal v0 parse" {
 test "cpal v1 parse" {
   let font = Font::from_bytes(build_font_bytes_cpal_v1())
   let cpal = match font.cpal() {
-    Err(err) => fail("cpal v1 parse failed: \{err}")
+    Err(err) => fail("cpal v1 parse failed: \{@debug.to_string(err)}")
     Ok(None) => fail("cpal v1 table missing")
     Ok(Some(cpal)) => cpal
   }
@@ -634,7 +634,7 @@ test "cpal v1 parse" {
 test "colr v0 parse" {
   let font = Font::from_bytes(build_font_bytes_chromacheck_colr())
   let colr = match font.colr() {
-    Err(err) => fail("colr v0 parse failed: \{err}")
+    Err(err) => fail("colr v0 parse failed: \{@debug.to_string(err)}")
     Ok(None) => fail("colr table missing")
     Ok(Some(colr)) => colr
   }
@@ -652,7 +652,7 @@ test "colr v0 parse" {
 test "colr v1 parse" {
   let font = Font::from_bytes(build_font_bytes_noto_handwriting_colr1())
   let colr = match font.colr() {
-    Err(err) => fail("colr v1 parse failed: \{err}")
+    Err(err) => fail("colr v1 parse failed: \{@debug.to_string(err)}")
     Ok(None) => fail("colr table missing")
     Ok(Some(colr)) => colr
   }
@@ -661,7 +661,7 @@ test "colr v1 parse" {
   let record = colr.base_glyph_paints[0]
   let paint = colr.paint_at(record.paint_offset)
   match paint {
-    Err(err) => fail("paint parse failed: \{err}")
+    Err(err) => fail("paint parse failed: \{@debug.to_string(err)}")
     Ok(_) => ()
   }
 }
@@ -670,17 +670,17 @@ test "colr v1 parse" {
 test "colr v1 walk paint" {
   let font = Font::from_bytes(build_font_bytes_noto_handwriting_colr1())
   let colr = match font.colr() {
-    Err(err) => fail("colr v1 parse failed: \{err}")
+    Err(err) => fail("colr v1 parse failed: \{@debug.to_string(err)}")
     Ok(None) => fail("colr table missing")
     Ok(Some(colr)) => colr
   }
   let record = colr.base_glyph_paints[0]
   let paint = match colr.paint_at(record.paint_offset) {
-    Err(err) => fail("paint parse failed: \{err}")
+    Err(err) => fail("paint parse failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let count = match colr.walk_paint(paint, (_, _) => true) {
-    Err(err) => fail("walk paint failed: \{err}")
+    Err(err) => fail("walk paint failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   assert_true(count > 0)
@@ -690,7 +690,7 @@ test "colr v1 walk paint" {
 test "colr clip extents none for v0" {
   let font = Font::from_bytes(build_font_bytes_chromacheck_colr())
   let colr = match font.colr() {
-    Err(err) => fail("colr v0 parse failed: \{err}")
+    Err(err) => fail("colr v0 parse failed: \{@debug.to_string(err)}")
     Ok(None) => fail("colr table missing")
     Ok(Some(colr)) => colr
   }

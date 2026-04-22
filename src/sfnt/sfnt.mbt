@@ -17,7 +17,7 @@ pub suberror SfntError {
   UnexpectedEof
   InvalidFormat
   TableNotFound
-} derive(Eq, Show, ToJson)
+} derive(Eq, Debug, ToJson)
 
 ///|
 /// Table directory entry.
@@ -25,14 +25,14 @@ pub struct TableRecord {
   tag : @common.Tag
   offset : Int
   length : Int
-} derive(Eq, Show, ToJson)
+} derive(Eq, Debug, ToJson)
 
 ///|
 /// SFNT font directory.
 pub struct Sfnt {
   blob : @blob.Blob
   records : Array[TableRecord]
-} derive(Show, ToJson)
+} derive(Debug, ToJson)
 
 ///|
 fn read_u16(data : BytesView, offset : Int) -> Result[UInt, SfntError] {

@@ -20,7 +20,7 @@ pub(all) struct TrackTableEntry {
   track : Int
   name_id : Int
   values : Array[Int]
-} derive(Eq, Show, ToJson)
+} derive(Eq, Debug, ToJson)
 
 fn TrackTableEntry::track_value(self : TrackTableEntry) -> Double {
   self.track.to_double() * f16dot16_scale
@@ -95,7 +95,7 @@ fn TrackTableEntry::value_for_size(
 pub(all) struct TrackData {
   track_table : Array[TrackTableEntry]
   size_table : Array[Int]
-} derive(Eq, Show, ToJson)
+} derive(Eq, Debug, ToJson)
 
 fn TrackData::tracking(
   self : TrackData,
@@ -138,7 +138,7 @@ pub struct TrakTable {
   format : Int
   horiz : TrackData?
   vert : TrackData?
-} derive(Eq, Show, ToJson)
+} derive(Eq, Debug, ToJson)
 
 ///|
 /// Parse a trak table.

@@ -1,6 +1,7 @@
 {
   "import": [
     "moonbit-community/harfbuzz/blob",
+    "moonbitlang/core/debug",
     {
       "path": "moonbit-community/harfbuzz/common",
       "alias": "common"

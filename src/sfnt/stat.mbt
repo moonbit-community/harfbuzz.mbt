@@ -18,14 +18,14 @@ pub struct StatAxisRecord {
   tag : @common.Tag
   name_id : Int
   ordering : Int
-} derive(Eq, Show, ToJson)
+} derive(Eq, Debug, ToJson)
 
 ///|
 /// Axis value record used by format 4.
 pub struct AxisValueRecord {
   axis_index : Int
   value : Int
-} derive(Eq, Show, ToJson)
+} derive(Eq, Debug, ToJson)
 
 ///|
 /// Axis value table formats.
@@ -34,7 +34,7 @@ pub enum AxisValue {
   Format2(Int, Int, Int, Int, Int, Int)
   Format3(Int, Int, Int, Int, Int)
   Format4(Int, Int, Array[AxisValueRecord])
-} derive(Show, ToJson)
+} derive(Debug, ToJson)
 
 ///|
 /// Parsed STAT table.
@@ -44,7 +44,7 @@ pub struct StatTable {
   design_axes : Array[StatAxisRecord]
   axis_values : Array[AxisValue]
   elided_fallback_name_id : Int
-} derive(Show, ToJson)
+} derive(Debug, ToJson)
 
 ///|
 fn read_fixed_16_16(data : BytesView, offset : Int) -> Result[Int, SfntError] {

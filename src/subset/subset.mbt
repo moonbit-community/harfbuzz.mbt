@@ -20,12 +20,12 @@ suberror SubsetError {
   Cff(@ot_cff.CffError)
   Unsupported(String)
   InvalidInput(String)
-} derive(Eq, Show, ToJson)
+} derive(Eq, Debug, ToJson)
 
 ///|
 pub struct SubsetInput {
   codepoints : Array[UInt]
-} derive(Show, ToJson)
+} derive(Debug, ToJson)
 
 ///|
 pub fn SubsetInput::from_codepoints(
@@ -61,7 +61,7 @@ pub struct SubsetPlan {
   old_to_new : Array[Int]
   codepoint_map : Array[(UInt, Int)]
   gsub_mask : Array[Bool]
-} derive(Show, ToJson)
+} derive(Debug, ToJson)
 
 ///|
 let tag_head : @common.Tag = @common.Tag::from_chars('h', 'e', 'a', 'd')

@@ -51,13 +51,13 @@ fn build_cvar_bytes() -> Bytes {
 ///|
 test "cvar apply deltas" {
   let cvar = match CvarTable::parse(build_cvar_bytes()[:], 1) {
-    Err(err) => fail("parse failed: \{err}")
+    Err(err) => fail("parse failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let cvt : Array[Int] = [100, 200, 300]
   let applied = match cvar.apply_to_cvt(cvt, [16384]) {
-    Err(err) => fail("apply failed: \{err}")
+    Err(err) => fail("apply failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  inspect(applied, content="[110, 200, 295]")
+  @debug.debug_inspect(applied, content="[110, 200, 295]")
 }

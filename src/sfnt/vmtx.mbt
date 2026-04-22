@@ -17,7 +17,7 @@
 pub struct VmtxTable {
   advances : Array[Int]
   tsbs : Array[Int]
-} derive(Show, ToJson)
+} derive(Debug, ToJson)
 
 ///|
 /// Parse vmtx table bytes.
