@@ -1,0 +1,591 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "moonbit-community/harfbuzz/common"
+
+import {
+  "moonbitlang/core/debug",
+  "moonbitlang/core/set",
+}
+
+// Values
+pub let codepoint_invalid : UInt
+
+pub let direction_btt : Direction
+
+pub let direction_invalid : Direction
+
+pub let direction_ltr : Direction
+
+pub let direction_rtl : Direction
+
+pub let direction_ttb : Direction
+
+pub let language_invalid : Language
+
+pub let map_value_invalid : UInt
+
+pub fn pack_object_order(ArrayView[SerializeObject]) -> Result[Array[Int], SerializeError]
+
+pub fn parse_double(StringView, start? : Int, end? : Int, whole? : Bool) -> (Double, Int)?
+
+pub fn parse_int(StringView, start? : Int, end? : Int, whole? : Bool) -> (Int, Int)?
+
+pub fn parse_uint(StringView, start? : Int, end? : Int, whole? : Bool, base? : Int) -> (UInt, Int)?
+
+pub fn repack_object_order(ArrayView[SerializeObject], max_iterations? : Int) -> Result[Array[Int], SerializeError]
+
+pub let script_adlam : Script
+
+pub let script_ahom : Script
+
+pub let script_anatolian_hieroglyphs : Script
+
+pub let script_arabic : Script
+
+pub let script_armenian : Script
+
+pub let script_avestan : Script
+
+pub let script_balinese : Script
+
+pub let script_bamum : Script
+
+pub let script_bassa_vah : Script
+
+pub let script_batak : Script
+
+pub let script_bengali : Script
+
+pub let script_beria_erfe : Script
+
+pub let script_bhaiksuki : Script
+
+pub let script_bopomofo : Script
+
+pub let script_brahmi : Script
+
+pub let script_braille : Script
+
+pub let script_buginese : Script
+
+pub let script_buhid : Script
+
+pub let script_canadian_syllabics : Script
+
+pub let script_carian : Script
+
+pub let script_caucasian_albanian : Script
+
+pub let script_chakma : Script
+
+pub let script_cham : Script
+
+pub let script_cherokee : Script
+
+pub let script_chorasmian : Script
+
+pub let script_common : Script
+
+pub let script_coptic : Script
+
+pub let script_cuneiform : Script
+
+pub let script_cypriot : Script
+
+pub let script_cypro_minoan : Script
+
+pub let script_cyrillic : Script
+
+pub let script_deseret : Script
+
+pub let script_devanagari : Script
+
+pub let script_dives_akuru : Script
+
+pub let script_dogra : Script
+
+pub let script_duployan : Script
+
+pub let script_egyptian_hieroglyphs : Script
+
+pub let script_elbasan : Script
+
+pub let script_elymaic : Script
+
+pub let script_ethiopic : Script
+
+pub let script_garay : Script
+
+pub let script_georgian : Script
+
+pub let script_glagolitic : Script
+
+pub let script_gothic : Script
+
+pub let script_grantha : Script
+
+pub let script_greek : Script
+
+pub let script_gujarati : Script
+
+pub let script_gunjala_gondi : Script
+
+pub let script_gurmukhi : Script
+
+pub let script_gurung_khema : Script
+
+pub let script_han : Script
+
+pub let script_hangul : Script
+
+pub let script_hanifi_rohingya : Script
+
+pub let script_hanunoo : Script
+
+pub let script_hatran : Script
+
+pub let script_hebrew : Script
+
+pub let script_hiragana : Script
+
+pub let script_imperial_aramaic : Script
+
+pub let script_inherited : Script
+
+pub let script_inscriptional_pahlavi : Script
+
+pub let script_inscriptional_parthian : Script
+
+pub let script_invalid : Script
+
+pub let script_javanese : Script
+
+pub let script_kaithi : Script
+
+pub let script_kannada : Script
+
+pub let script_katakana : Script
+
+pub let script_kawi : Script
+
+pub let script_kayah_li : Script
+
+pub let script_kharoshthi : Script
+
+pub let script_khitan_small_script : Script
+
+pub let script_khmer : Script
+
+pub let script_khojki : Script
+
+pub let script_khudawadi : Script
+
+pub let script_kirat_rai : Script
+
+pub let script_lao : Script
+
+pub let script_latin : Script
+
+pub let script_lepcha : Script
+
+pub let script_limbu : Script
+
+pub let script_linear_a : Script
+
+pub let script_linear_b : Script
+
+pub let script_lisu : Script
+
+pub let script_lycian : Script
+
+pub let script_lydian : Script
+
+pub let script_mahajani : Script
+
+pub let script_makasar : Script
+
+pub let script_malayalam : Script
+
+pub let script_mandaic : Script
+
+pub let script_manichaean : Script
+
+pub let script_marchen : Script
+
+pub let script_masaram_gondi : Script
+
+pub let script_math : Script
+
+pub let script_medefaidrin : Script
+
+pub let script_meetei_mayek : Script
+
+pub let script_mende_kikakui : Script
+
+pub let script_meroitic_cursive : Script
+
+pub let script_meroitic_hieroglyphs : Script
+
+pub let script_miao : Script
+
+pub let script_modi : Script
+
+pub let script_mongolian : Script
+
+pub let script_mro : Script
+
+pub let script_multani : Script
+
+pub let script_myanmar : Script
+
+pub let script_nabataean : Script
+
+pub let script_nag_mundari : Script
+
+pub let script_nandinagari : Script
+
+pub let script_new_tai_lue : Script
+
+pub let script_newa : Script
+
+pub let script_nko : Script
+
+pub let script_nushu : Script
+
+pub let script_nyiakeng_puachue_hmong : Script
+
+pub let script_ogham : Script
+
+pub let script_ol_chiki : Script
+
+pub let script_ol_onal : Script
+
+pub let script_old_hungarian : Script
+
+pub let script_old_italic : Script
+
+pub let script_old_north_arabian : Script
+
+pub let script_old_permic : Script
+
+pub let script_old_persian : Script
+
+pub let script_old_sogdian : Script
+
+pub let script_old_south_arabian : Script
+
+pub let script_old_turkic : Script
+
+pub let script_old_uyghur : Script
+
+pub let script_oriya : Script
+
+pub let script_osage : Script
+
+pub let script_osmanya : Script
+
+pub let script_pahawh_hmong : Script
+
+pub let script_palmyrene : Script
+
+pub let script_pau_cin_hau : Script
+
+pub let script_phags_pa : Script
+
+pub let script_phoenician : Script
+
+pub let script_psalter_pahlavi : Script
+
+pub let script_rejang : Script
+
+pub let script_runic : Script
+
+pub let script_samaritan : Script
+
+pub let script_saurashtra : Script
+
+pub let script_sharada : Script
+
+pub let script_shavian : Script
+
+pub let script_siddham : Script
+
+pub let script_sidetic : Script
+
+pub let script_signwriting : Script
+
+pub let script_sinhala : Script
+
+pub let script_sogdian : Script
+
+pub let script_sora_sompeng : Script
+
+pub let script_soyombo : Script
+
+pub let script_sundanese : Script
+
+pub let script_sunuwar : Script
+
+pub let script_syloti_nagri : Script
+
+pub let script_syriac : Script
+
+pub let script_tagalog : Script
+
+pub let script_tagbanwa : Script
+
+pub let script_tai_le : Script
+
+pub let script_tai_tham : Script
+
+pub let script_tai_viet : Script
+
+pub let script_tai_yo : Script
+
+pub let script_takri : Script
+
+pub let script_tamil : Script
+
+pub let script_tangsa : Script
+
+pub let script_tangut : Script
+
+pub let script_telugu : Script
+
+pub let script_thaana : Script
+
+pub let script_thai : Script
+
+pub let script_tibetan : Script
+
+pub let script_tifinagh : Script
+
+pub let script_tirhuta : Script
+
+pub let script_todhri : Script
+
+pub let script_tolong_siki : Script
+
+pub let script_toto : Script
+
+pub let script_tulu_tigalari : Script
+
+pub let script_ugaritic : Script
+
+pub let script_unknown : Script
+
+pub let script_vai : Script
+
+pub let script_vithkuqi : Script
+
+pub let script_wancho : Script
+
+pub let script_warang_citi : Script
+
+pub let script_yezidi : Script
+
+pub let script_yi : Script
+
+pub let script_zanabazar_square : Script
+
+pub fn serialize_objects(ArrayView[SerializeObject]) -> Result[Bytes, SerializeError]
+
+pub fn serialize_objects_in_order(ArrayView[SerializeObject], ArrayView[Int]) -> Result[Bytes, SerializeError]
+
+pub fn serialize_objects_packed(ArrayView[SerializeObject]) -> Result[Bytes, SerializeError]
+
+pub fn serialize_objects_packed_with_order(ArrayView[SerializeObject]) -> Result[(Bytes, Array[Int]), SerializeError]
+
+pub fn serialize_objects_repacked(ArrayView[SerializeObject], max_iterations? : Int) -> Result[Bytes, SerializeError]
+
+pub fn serialize_objects_repacked_with_order(ArrayView[SerializeObject], max_iterations? : Int) -> Result[(Bytes, Array[Int]), SerializeError]
+
+pub fn serialize_objects_with_offsets(ArrayView[SerializeObject]) -> Result[(Bytes, Array[Int]), SerializeError]
+
+pub let tag_max : Tag
+
+pub let tag_max_signed : Tag
+
+pub let tag_none : Tag
+
+// Errors
+
+// Types and methods
+pub struct CodepointBiMap {
+  forward : CodepointMap
+  backward : CodepointMap
+}
+pub fn CodepointBiMap::backward(Self, UInt) -> UInt
+pub fn CodepointBiMap::clear(Self) -> Unit
+pub fn CodepointBiMap::del(Self, UInt) -> Unit
+pub fn CodepointBiMap::get(Self, UInt) -> UInt
+pub fn CodepointBiMap::has(Self, UInt) -> Bool
+pub fn CodepointBiMap::is_empty(Self) -> Bool
+pub fn CodepointBiMap::keys(Self) -> Array[UInt]
+pub fn CodepointBiMap::new() -> Self
+pub fn CodepointBiMap::population(Self) -> Int
+pub fn CodepointBiMap::set(Self, UInt, UInt) -> Unit
+pub fn CodepointBiMap::values(Self) -> Array[UInt]
+
+pub struct CodepointIncBiMap {
+  forward : CodepointMap
+  back : Array[UInt]
+}
+pub fn CodepointIncBiMap::add(Self, UInt) -> UInt
+pub fn CodepointIncBiMap::add_set(Self, CodepointSet) -> Unit
+pub fn CodepointIncBiMap::backward(Self, UInt) -> UInt
+pub fn CodepointIncBiMap::clear(Self) -> Unit
+pub fn CodepointIncBiMap::get(Self, UInt) -> UInt
+pub fn CodepointIncBiMap::get_next_value(Self) -> UInt
+pub fn CodepointIncBiMap::has(Self, UInt) -> Bool
+pub fn CodepointIncBiMap::identity(Self, Int) -> Bool
+pub fn CodepointIncBiMap::new() -> Self
+pub fn CodepointIncBiMap::population(Self) -> Int
+pub fn CodepointIncBiMap::skip(Self, count? : Int) -> UInt
+pub fn CodepointIncBiMap::sort(Self) -> Unit
+
+pub struct CodepointMap {
+  map : Map[UInt, UInt]
+}
+pub fn CodepointMap::clear(Self) -> Unit
+pub fn CodepointMap::copy(Self) -> Self
+pub fn CodepointMap::del(Self, UInt) -> Unit
+pub fn CodepointMap::get(Self, UInt) -> UInt
+pub fn CodepointMap::has(Self, UInt) -> Bool
+pub fn CodepointMap::hash(Self) -> Int
+pub fn CodepointMap::is_empty(Self) -> Bool
+pub fn CodepointMap::is_equal(Self, Self) -> Bool
+pub fn CodepointMap::iter(Self) -> Iter[(UInt, UInt)]
+pub fn CodepointMap::keys(Self) -> Array[UInt]
+pub fn CodepointMap::keys_set(Self) -> CodepointSet
+pub fn CodepointMap::new() -> Self
+pub fn CodepointMap::next(Self, idx? : Int) -> (Int, UInt, UInt)?
+pub fn CodepointMap::population(Self) -> Int
+pub fn CodepointMap::set(Self, UInt, UInt) -> Unit
+pub fn CodepointMap::update(Self, Self) -> Unit
+pub fn CodepointMap::values(Self) -> Array[UInt]
+pub fn CodepointMap::values_set(Self) -> CodepointSet
+
+pub struct CodepointSet {
+  set : @set.Set[UInt]
+}
+pub fn CodepointSet::add(Self, UInt) -> Unit
+pub fn CodepointSet::add_array(Self, ArrayView[UInt]) -> Unit
+pub fn CodepointSet::add_range(Self, UInt, UInt) -> Bool
+pub fn CodepointSet::add_sorted_array(Self, ArrayView[UInt]) -> Bool
+pub fn CodepointSet::clear(Self) -> Unit
+pub fn CodepointSet::del(Self, UInt) -> Unit
+pub fn CodepointSet::del_range(Self, UInt, UInt) -> Unit
+pub fn CodepointSet::get_max(Self) -> UInt
+pub fn CodepointSet::get_min(Self) -> UInt
+pub fn CodepointSet::has(Self, UInt) -> Bool
+pub fn CodepointSet::hash(Self) -> Int
+pub fn CodepointSet::intersect(Self, Self) -> Self
+pub fn CodepointSet::intersect_in_place(Self, Self) -> Unit
+pub fn CodepointSet::intersects(Self, UInt, UInt) -> Bool
+pub fn CodepointSet::is_empty(Self) -> Bool
+pub fn CodepointSet::is_equal(Self, Self) -> Bool
+pub fn CodepointSet::is_subset(Self, Self) -> Bool
+pub fn CodepointSet::may_intersect(Self, Self) -> Bool
+pub fn CodepointSet::new() -> Self
+pub fn CodepointSet::next(Self, after? : UInt) -> UInt?
+pub fn CodepointSet::next_many(Self, after? : UInt, size? : Int) -> Array[UInt]
+pub fn CodepointSet::next_range(Self, start? : UInt) -> (UInt, UInt)?
+pub fn CodepointSet::population(Self) -> Int
+pub fn CodepointSet::previous(Self, before? : UInt) -> UInt?
+pub fn CodepointSet::previous_range(Self, end? : UInt) -> (UInt, UInt)?
+pub fn CodepointSet::set_from(Self, Self) -> Unit
+pub fn CodepointSet::subtract(Self, Self) -> Self
+pub fn CodepointSet::subtract_in_place(Self, Self) -> Unit
+pub fn CodepointSet::symmetric_difference_in_place(Self, Self) -> Unit
+pub fn CodepointSet::to_sorted_array(Self) -> Array[UInt]
+pub fn CodepointSet::union(Self, Self) -> Self
+pub fn CodepointSet::union_in_place(Self, Self) -> Unit
+
+pub struct Direction {
+  raw : UInt
+} derive(Eq, ToJson, @debug.Debug)
+pub fn Direction::from_string(String, len? : Int) -> Self
+pub fn Direction::is_backward(Self) -> Bool
+pub fn Direction::is_forward(Self) -> Bool
+pub fn Direction::is_horizontal(Self) -> Bool
+pub fn Direction::is_valid(Self) -> Bool
+pub fn Direction::is_vertical(Self) -> Bool
+pub fn Direction::reverse(Self) -> Self
+pub fn Direction::to_string(Self) -> String
+pub fn Direction::to_uint(Self) -> UInt
+
+pub struct Language {
+  tag : String
+} derive(Eq, ToJson, @debug.Debug)
+pub fn Language::as_string(Self) -> String
+pub fn Language::from_string(String, len? : Int) -> Self
+pub fn Language::is_valid(Self) -> Bool
+pub fn Language::matches(Self, Self) -> Bool
+pub fn Language::to_string(Self) -> String?
+
+pub struct OverflowRecord {
+  parent : Int
+  child : Int
+  offset : Int
+  min : Int
+  max : Int
+  width : Int
+  is_signed : Bool
+} derive(Eq, @debug.Debug)
+
+pub struct Script {
+  tag : Tag
+} derive(Eq, ToJson, @debug.Debug)
+pub fn Script::from_iso15924_tag(Tag) -> Self
+pub fn Script::from_string(String, len? : Int) -> Self
+pub fn Script::horizontal_direction(Self) -> Direction
+pub fn Script::to_iso15924_tag(Self) -> Tag
+pub fn Script::to_tag(Self) -> Tag
+
+pub enum SerializeError {
+  InvalidWidth
+  OutOfBounds
+  OffsetOverflow
+  InvalidLink
+  NegativeOffset
+  VirtualOrder
+} derive(Eq, @debug.Debug)
+
+pub(all) struct SerializeLink {
+  width : Int
+  position : Int
+  objidx : Int
+  is_signed : Bool
+  whence : SerializeWhence
+  bias : Int
+}
+pub fn SerializeLink::new(Int, Int, Int, is_signed? : Bool, whence? : SerializeWhence, bias? : Int) -> Self
+
+pub struct SerializeObject {
+  data : Bytes
+  real_links : Array[SerializeLink]
+  virtual_links : Array[Int]
+}
+pub fn SerializeObject::new(Bytes) -> Self
+
+pub(all) enum SerializeWhence {
+  Head
+  Tail
+  Absolute
+} derive(Eq, @debug.Debug)
+
+pub struct Tag {
+  value : UInt
+} derive(Eq, Hash, ToJson, @debug.Debug)
+pub fn Tag::bytes(Self) -> (Byte, Byte, Byte, Byte)
+pub fn Tag::from_bytes(Byte, Byte, Byte, Byte) -> Self
+pub fn Tag::from_chars(Char, Char, Char, Char) -> Self
+pub fn Tag::from_string(String, len? : Int) -> Self
+pub fn Tag::to_string(Self) -> String
+pub fn Tag::to_uint(Self) -> UInt
+pub impl Show for Tag
+
+// Type aliases
+
+// Traits
+

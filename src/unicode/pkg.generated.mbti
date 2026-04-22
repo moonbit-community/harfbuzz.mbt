@@ -1,0 +1,152 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "moonbit-community/harfbuzz/unicode"
+
+import {
+  "moonbit-community/harfbuzz/common",
+  "moonbitlang/core/debug",
+}
+
+// Values
+pub let arabic_joining_group_alaph : UInt
+
+pub let arabic_joining_group_dalath_rish : UInt
+
+pub fn arabic_joining_type(UInt) -> UInt
+
+pub let arabic_joining_type_d : UInt
+
+pub let arabic_joining_type_l : UInt
+
+pub let arabic_joining_type_r : UInt
+
+pub fn arabic_joining_type_raw(UInt) -> UInt
+
+pub let arabic_joining_type_t : UInt
+
+pub let arabic_joining_type_u : UInt
+
+pub let arabic_joining_type_x : UInt
+
+pub let arabic_shaping_first : UInt
+
+pub fn arabic_shaping_form(UInt, Int) -> UInt?
+
+pub let arabic_shaping_last : UInt
+
+pub fn combining_class(UInt) -> UInt
+
+pub fn compose(UInt, UInt) -> UInt?
+
+pub fn decompose(UInt) -> (UInt, UInt)?
+
+pub let gc_close_punctuation : UInt
+
+pub let gc_connect_punctuation : UInt
+
+pub let gc_control : UInt
+
+pub let gc_currency_symbol : UInt
+
+pub let gc_dash_punctuation : UInt
+
+pub let gc_decimal_number : UInt
+
+pub let gc_enclosing_mark : UInt
+
+pub let gc_final_punctuation : UInt
+
+pub let gc_format : UInt
+
+pub let gc_initial_punctuation : UInt
+
+pub let gc_letter_number : UInt
+
+pub let gc_line_separator : UInt
+
+pub let gc_lowercase_letter : UInt
+
+pub let gc_math_symbol : UInt
+
+pub let gc_modifier_letter : UInt
+
+pub let gc_modifier_symbol : UInt
+
+pub let gc_non_spacing_mark : UInt
+
+pub let gc_open_punctuation : UInt
+
+pub let gc_other_letter : UInt
+
+pub let gc_other_number : UInt
+
+pub let gc_other_punctuation : UInt
+
+pub let gc_other_symbol : UInt
+
+pub let gc_paragraph_separator : UInt
+
+pub let gc_private_use : UInt
+
+pub let gc_space_separator : UInt
+
+pub let gc_spacing_mark : UInt
+
+pub let gc_surrogate : UInt
+
+pub let gc_titlecase_letter : UInt
+
+pub let gc_unassigned : UInt
+
+pub let gc_uppercase_letter : UInt
+
+pub fn general_category(UInt) -> UInt
+
+pub fn is_default_ignorable(UInt) -> Bool
+
+pub fn is_emoji(UInt) -> Bool
+
+pub fn is_emoji_component(UInt) -> Bool
+
+pub fn is_emoji_modifier(UInt) -> Bool
+
+pub fn is_emoji_modifier_base(UInt) -> Bool
+
+pub fn is_emoji_presentation(UInt) -> Bool
+
+pub fn is_extended_pictographic(UInt) -> Bool
+
+pub fn is_mark(UInt) -> Bool
+
+pub fn is_variation_selector(UInt) -> Bool
+
+pub fn mirroring(UInt) -> UInt
+
+pub fn modified_combining_class(UInt) -> UInt
+
+pub fn script(UInt) -> @common.Script
+
+pub fn space_fallback_type(UInt) -> SpaceFallbackType
+
+// Errors
+
+// Types and methods
+pub enum SpaceFallbackType {
+  NotSpace
+  SpaceEm
+  SpaceEm2
+  SpaceEm3
+  SpaceEm4
+  SpaceEm5
+  SpaceEm6
+  SpaceEm16
+  Space4Em18
+  Space
+  SpaceFigure
+  SpacePunctuation
+  SpaceNarrow
+} derive(Eq, ToJson, @debug.Debug)
+
+// Type aliases
+
+// Traits
+

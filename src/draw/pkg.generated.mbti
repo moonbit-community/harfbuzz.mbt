@@ -1,0 +1,114 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "moonbit-community/harfbuzz/draw"
+
+import {
+  "moonbitlang/core/debug",
+}
+
+// Values
+pub fn draw_extents_get_funcs() -> DrawFuncs[DrawExtents]
+
+pub fn outline_recording_pen_get_funcs() -> DrawFuncs[Outline]
+
+// Errors
+
+// Types and methods
+pub struct DrawExtents {
+  mut xmin : Double
+  mut ymin : Double
+  mut xmax : Double
+  mut ymax : Double
+} derive(ToJson, @debug.Debug)
+pub fn DrawExtents::add_point(Self, Double, Double) -> Unit
+pub fn DrawExtents::is_empty(Self) -> Bool
+pub fn DrawExtents::is_void(Self) -> Bool
+pub fn DrawExtents::new() -> Self
+
+pub struct DrawFuncs[T] {
+  mut move_to_cb : (T, DrawState, Double, Double) -> Unit
+  mut line_to_cb : (T, DrawState, Double, Double) -> Unit
+  mut quadratic_to_cb : ((T, DrawState, Double, Double, Double, Double) -> Unit)?
+  mut cubic_to_cb : (T, DrawState, Double, Double, Double, Double, Double, Double) -> Unit
+  mut close_path_cb : (T, DrawState) -> Unit
+  mut immutable : Bool
+}
+pub fn[T] DrawFuncs::close_path(Self[T], T, DrawState) -> Unit
+pub fn[T] DrawFuncs::cubic_to(Self[T], T, DrawState, Double, Double, Double, Double, Double, Double) -> Unit
+pub fn[T] DrawFuncs::emit_close_path(Self[T], T, DrawState) -> Unit
+pub fn[T] DrawFuncs::emit_cubic_to(Self[T], T, DrawState, Double, Double, Double, Double, Double, Double) -> Unit
+pub fn[T] DrawFuncs::emit_line_to(Self[T], T, DrawState, Double, Double) -> Unit
+pub fn[T] DrawFuncs::emit_move_to(Self[T], T, DrawState, Double, Double) -> Unit
+pub fn[T] DrawFuncs::emit_quadratic_to(Self[T], T, DrawState, Double, Double, Double, Double) -> Unit
+pub fn[T] DrawFuncs::empty() -> Self[T]
+pub fn[T] DrawFuncs::is_immutable(Self[T]) -> Bool
+pub fn[T] DrawFuncs::line_to(Self[T], T, DrawState, Double, Double) -> Unit
+pub fn[T] DrawFuncs::make_immutable(Self[T]) -> Unit
+pub fn[T] DrawFuncs::move_to(Self[T], T, DrawState, Double, Double) -> Unit
+pub fn[T] DrawFuncs::new() -> Self[T]
+pub fn[T] DrawFuncs::quadratic_to(Self[T], T, DrawState, Double, Double, Double, Double) -> Unit
+pub fn[T] DrawFuncs::set_close_path(Self[T], ((T, DrawState) -> Unit)?) -> Unit
+pub fn[T] DrawFuncs::set_cubic_to(Self[T], ((T, DrawState, Double, Double, Double, Double, Double, Double) -> Unit)?) -> Unit
+pub fn[T] DrawFuncs::set_line_to(Self[T], ((T, DrawState, Double, Double) -> Unit)?) -> Unit
+pub fn[T] DrawFuncs::set_move_to(Self[T], ((T, DrawState, Double, Double) -> Unit)?) -> Unit
+pub fn[T] DrawFuncs::set_quadratic_to(Self[T], ((T, DrawState, Double, Double, Double, Double) -> Unit)?) -> Unit
+
+pub struct DrawSession[T] {
+  funcs : DrawFuncs[T]
+  draw_data : T
+  st : DrawState
+}
+pub fn[T] DrawSession::close_path(Self[T]) -> Unit
+pub fn[T] DrawSession::cubic_to(Self[T], Double, Double, Double, Double, Double, Double) -> Unit
+pub fn[T] DrawSession::line_to(Self[T], Double, Double) -> Unit
+pub fn[T] DrawSession::move_to(Self[T], Double, Double) -> Unit
+pub fn[T] DrawSession::new(DrawFuncs[T], T) -> Self[T]
+pub fn[T] DrawSession::quadratic_to(Self[T], Double, Double, Double, Double) -> Unit
+
+pub struct DrawState {
+  mut path_open : Bool
+  mut path_start_x : Double
+  mut path_start_y : Double
+  mut current_x : Double
+  mut current_y : Double
+} derive(ToJson, @debug.Debug)
+pub fn DrawState::new() -> Self
+
+pub struct Outline {
+  points : Array[OutlinePoint]
+  contours : Array[Int]
+} derive(ToJson, @debug.Debug)
+pub fn Outline::control_area(Self) -> Double
+pub fn Outline::embolden(Self, Double, Double, Double, Double) -> Unit
+pub fn Outline::new() -> Self
+pub fn[T] Outline::replay(Self, DrawFuncs[T], T) -> Unit
+pub fn Outline::reset(Self) -> Unit
+pub fn Outline::slant(Self, Double) -> Unit
+pub fn Outline::translate(Self, Double, Double) -> Unit
+
+pub struct OutlinePoint {
+  mut x : Double
+  mut y : Double
+  kind : OutlinePointKind
+} derive(Eq, ToJson, @debug.Debug)
+pub fn OutlinePoint::new(Double, Double, OutlinePointKind) -> Self
+
+pub enum OutlinePointKind {
+  MoveTo
+  LineTo
+  QuadraticTo
+  CubicTo
+} derive(Eq, ToJson, @debug.Debug)
+
+// Type aliases
+pub type DrawClosePathFunc[T] = (T, DrawState) -> Unit
+
+pub type DrawCubicToFunc[T] = (T, DrawState, Double, Double, Double, Double, Double, Double) -> Unit
+
+pub type DrawLineToFunc[T] = (T, DrawState, Double, Double) -> Unit
+
+pub type DrawMoveToFunc[T] = (T, DrawState, Double, Double) -> Unit
+
+pub type DrawQuadraticToFunc[T] = (T, DrawState, Double, Double, Double, Double) -> Unit
+
+// Traits
+

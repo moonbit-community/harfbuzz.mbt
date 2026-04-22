@@ -1,0 +1,114 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "moonbit-community/harfbuzz/ot/color"
+
+import {
+  "moonbit-community/harfbuzz/ot/var",
+  "moonbit-community/harfbuzz/paint",
+  "moonbitlang/core/debug",
+}
+
+// Values
+
+// Errors
+pub suberror ColorError {
+  UnexpectedEof
+  InvalidFormat
+  Var(@var.VarError)
+} derive(Eq, ToJson, @debug.Debug)
+
+// Types and methods
+pub struct BaseGlyphPaintRecord {
+  glyph_id : Int
+  paint_offset : Int
+} derive(Eq, ToJson, @debug.Debug)
+
+pub struct ClipBox {
+  format : Int
+  x_min : Int
+  y_min : Int
+  x_max : Int
+  y_max : Int
+  var_idx_base : UInt?
+} derive(Eq, ToJson, @debug.Debug)
+
+pub struct ClipExtents {
+  x_bearing : Int
+  y_bearing : Int
+  width : Int
+  height : Int
+} derive(Eq, ToJson, @debug.Debug)
+
+pub struct ClipList {
+  format : Int
+  records : Array[ClipRecord]
+} derive(Eq, ToJson, @debug.Debug)
+
+pub struct ClipRecord {
+  start_glyph_id : Int
+  end_glyph_id : Int
+  clip_box : ClipBox
+} derive(Eq, ToJson, @debug.Debug)
+
+pub struct ColrBaseGlyph {
+  glyph_id : Int
+  first_layer_index : Int
+  num_layers : Int
+} derive(Eq, ToJson, @debug.Debug)
+
+pub struct ColrLayer {
+  glyph_id : Int
+  color_index : Int
+} derive(Eq, ToJson, @debug.Debug)
+
+pub struct ColrTable {
+  version : Int
+  base_glyphs : Array[ColrBaseGlyph]
+  layers : Array[ColrLayer]
+  base_glyph_paints : Array[BaseGlyphPaintRecord]
+  layer_paint_offsets : Array[Int]
+  clip_list : ClipList?
+  var_idx_map : @var.DeltaSetIndexMap?
+  var_store : @var.ItemVariationStore?
+  data : BytesView
+} derive(ToJson, @debug.Debug)
+pub fn ColrTable::clip_box_for_glyph(Self, Int) -> ClipBox?
+pub fn ColrTable::clip_extents_for_glyph(Self, Int, coords? : Array[Int]) -> ClipExtents?
+pub fn ColrTable::glyph_layers(Self, Int) -> Array[ColrLayer]?
+pub fn ColrTable::has_v0(Self) -> Bool
+pub fn ColrTable::has_v1(Self) -> Bool
+pub fn ColrTable::layer_paint(Self, Int) -> Result[@paint.Paint?, ColorError]
+pub fn ColrTable::paint_at(Self, Int) -> Result[@paint.Paint, ColorError]
+pub fn ColrTable::paint_for_glyph(Self, Int) -> Result[@paint.Paint?, ColorError]
+pub fn ColrTable::parse(BytesView) -> Result[Self, ColorError]
+pub fn ColrTable::var_instancer(Self, Array[Int]) -> ColrVarInstancer
+pub fn ColrTable::walk_paint(Self, @paint.Paint, (@paint.Paint, Int) -> Bool, max_depth? : Int) -> Result[Int, ColorError]
+
+pub struct ColrVarInstancer {
+  coords : Array[Int]
+  var_store : @var.ItemVariationStore?
+  var_idx_map : @var.DeltaSetIndexMap?
+}
+pub fn ColrVarInstancer::delta(Self, UInt?, Int) -> Double
+pub fn ColrVarInstancer::f16dot16(Self, Int, UInt?, Int) -> Double
+pub fn ColrVarInstancer::f2dot14(Self, Int, UInt?, Int) -> Double
+pub fn ColrVarInstancer::fword(Self, Int, UInt?, Int) -> Double
+
+pub struct CpalTable {
+  version : Int
+  num_colors : Int
+  num_palettes : Int
+  num_color_records : Int
+  color_records : Array[@paint.Color]
+  color_record_indices : Array[Int]
+  palette_flags : Array[UInt]?
+  palette_labels : Array[Int]?
+  color_labels : Array[Int]?
+} derive(ToJson, @debug.Debug)
+pub fn CpalTable::palette_colors(Self, Int) -> Array[@paint.Color]
+pub fn CpalTable::parse(BytesView) -> Result[Self, ColorError]
+
+// Type aliases
+pub type PaintVisitor = (@paint.Paint, Int) -> Bool
+
+// Traits
+

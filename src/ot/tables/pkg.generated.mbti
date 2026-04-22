@@ -1,0 +1,122 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "moonbit-community/harfbuzz/ot/tables"
+
+import {
+  "moonbit-community/harfbuzz/blob",
+  "moonbit-community/harfbuzz/common",
+  "moonbitlang/core/debug",
+}
+
+// Values
+
+// Errors
+pub suberror OtLayoutError {
+  UnexpectedEof
+  InvalidFormat
+} derive(Eq, ToJson, @debug.Debug)
+
+// Types and methods
+pub struct FeatureList {
+  records : Array[FeatureRecord]
+} derive(Eq, ToJson, @debug.Debug)
+pub fn FeatureList::records(Self) -> ArrayView[FeatureRecord]
+
+pub struct FeatureRecord {
+  tag : @common.Tag
+  offset : Int
+} derive(Eq, ToJson, @debug.Debug)
+
+pub struct GdefHeader {
+  version : UInt
+  glyph_class_def_offset : Int?
+  attach_list_offset : Int?
+  lig_caret_list_offset : Int?
+  mark_attach_class_def_offset : Int?
+  mark_glyph_sets_def_offset : Int?
+} derive(ToJson, @debug.Debug)
+
+pub struct GdefTable {
+  data : BytesView
+  header : GdefHeader
+} derive(ToJson, @debug.Debug)
+pub fn GdefTable::glyph_class(Self, UInt) -> Result[Int, OtLayoutError]
+pub fn GdefTable::header(Self) -> GdefHeader
+pub fn GdefTable::mark_attach_class(Self, UInt) -> Result[Int, OtLayoutError]
+pub fn GdefTable::mark_glyph_set_contains(Self, Int, UInt) -> Result[Bool, OtLayoutError]
+pub fn GdefTable::parse(@blob.Blob) -> Result[Self, OtLayoutError]
+
+pub struct GposTable {
+  layout : LayoutTable
+} derive(ToJson, @debug.Debug)
+pub fn GposTable::layout(Self) -> LayoutTable
+pub fn GposTable::pair_adjust_deltas(Self, ArrayView[UInt]) -> Result[Array[ValueRecord], OtLayoutError]
+pub fn GposTable::pair_adjust_deltas_with_lookups(Self, ArrayView[UInt], ArrayView[Int], gdef? : GdefTable) -> Result[Array[ValueRecord], OtLayoutError]
+pub fn GposTable::parse(@blob.Blob) -> Result[Self, OtLayoutError]
+pub fn GposTable::position_deltas(Self, ArrayView[UInt]) -> Result[Array[ValueRecord], OtLayoutError]
+pub fn GposTable::position_deltas_with_lookups(Self, ArrayView[UInt], ArrayView[Int], gdef? : GdefTable, clusters? : ArrayView[Int], advances_x? : ArrayView[Int], advances_y? : ArrayView[Int]) -> Result[Array[ValueRecord], OtLayoutError]
+
+pub struct GsubTable {
+  layout : LayoutTable
+} derive(ToJson, @debug.Debug)
+pub fn GsubTable::apply_single(Self, Array[UInt]) -> Result[Bool, OtLayoutError]
+pub fn GsubTable::apply_single_with_lookups(Self, Array[UInt], ArrayView[Int], masks? : Array[UInt], lookup_mask? : UInt) -> Result[Bool, OtLayoutError]
+pub fn GsubTable::apply_with_lookups(Self, Array[UInt], Array[Int], ArrayView[Int], gdef? : GdefTable, masks? : Array[UInt], lookup_mask? : UInt) -> Result[(Array[UInt], Array[Int], Bool), OtLayoutError]
+pub fn GsubTable::apply_with_lookups_and_masks(Self, Array[UInt], Array[Int], ArrayView[Int], gdef? : GdefTable, masks? : Array[UInt], lookup_mask? : UInt, alt_values? : Array[Int]) -> Result[(Array[UInt], Array[Int], Array[UInt], Bool), OtLayoutError]
+pub fn GsubTable::layout(Self) -> LayoutTable
+pub fn GsubTable::parse(@blob.Blob) -> Result[Self, OtLayoutError]
+
+pub struct LayoutHeader {
+  version : UInt
+  script_list_offset : Int
+  feature_list_offset : Int
+  lookup_list_offset : Int
+  feature_variations_offset : Int?
+} derive(Eq, ToJson, @debug.Debug)
+
+pub struct LayoutTable {
+  data : BytesView
+  header : LayoutHeader
+  script_list : ScriptList
+  feature_list : FeatureList
+  lookup_list : LookupList
+} derive(ToJson, @debug.Debug)
+pub fn LayoutTable::feature_list(Self) -> FeatureList
+pub fn LayoutTable::header(Self) -> LayoutHeader
+pub fn LayoutTable::lookup_list(Self) -> LookupList
+pub fn LayoutTable::parse(@blob.Blob) -> Result[Self, OtLayoutError]
+pub fn LayoutTable::script_list(Self) -> ScriptList
+pub fn LayoutTable::select_lookup_offsets(Self, @common.Tag, language_tag? : @common.Tag) -> Result[Array[Int], OtLayoutError]
+pub fn LayoutTable::select_lookup_offsets_for_feature(Self, @common.Tag, @common.Tag, language_tag? : @common.Tag, include_required? : Bool) -> Result[Array[Int], OtLayoutError]
+pub fn LayoutTable::select_lookup_offsets_with_features(Self, @common.Tag, language_tag? : @common.Tag, feature_tags? : Array[@common.Tag]) -> Result[Array[Int], OtLayoutError]
+
+pub struct LookupList {
+  offsets : Array[Int]
+} derive(Eq, ToJson, @debug.Debug)
+pub fn LookupList::offsets(Self) -> ArrayView[Int]
+
+pub struct PairAdjust {
+  first : ValueRecord
+  second : ValueRecord
+} derive(Eq, ToJson, @debug.Debug)
+
+pub struct ScriptList {
+  records : Array[ScriptRecord]
+} derive(Eq, ToJson, @debug.Debug)
+pub fn ScriptList::records(Self) -> ArrayView[ScriptRecord]
+
+pub struct ScriptRecord {
+  tag : @common.Tag
+  offset : Int
+} derive(Eq, ToJson, @debug.Debug)
+
+pub struct ValueRecord {
+  x_placement : Int
+  y_placement : Int
+  x_advance : Int
+  y_advance : Int
+} derive(Eq, ToJson, @debug.Debug)
+
+// Type aliases
+
+// Traits
+

@@ -1,0 +1,147 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "moonbit-community/harfbuzz/font"
+
+import {
+  "moonbit-community/harfbuzz/aat",
+  "moonbit-community/harfbuzz/common",
+  "moonbit-community/harfbuzz/draw",
+  "moonbit-community/harfbuzz/face",
+  "moonbit-community/harfbuzz/ot/cff",
+  "moonbit-community/harfbuzz/ot/color",
+  "moonbit-community/harfbuzz/ot/tables",
+  "moonbit-community/harfbuzz/ot/var",
+  "moonbit-community/harfbuzz/sfnt",
+  "moonbitlang/core/debug",
+}
+
+// Values
+
+// Errors
+type FontError derive(Eq, ToJson, @debug.Debug)
+
+// Types and methods
+pub struct Font {
+  face : @face.Face
+  mut scale_x : Int
+  mut scale_y : Int
+  mut ppem_x : Int
+  mut ppem_y : Int
+  mut head : @sfnt.HeadTable?
+  mut maxp : @sfnt.MaxpTable?
+  mut hhea : @sfnt.HheaTable?
+  mut hmtx : @sfnt.HmtxTable?
+  mut vhea : @sfnt.VheaTable?
+  mut vmtx : @sfnt.VmtxTable?
+  mut cmap : @sfnt.CmapTable?
+  mut loca : @sfnt.LocaTable?
+  mut glyf : @sfnt.GlyfTable?
+  mut os2 : @sfnt.Os2Table?
+  mut name : @sfnt.NameTable?
+  mut post : @sfnt.PostTable?
+  mut gasp : @sfnt.GaspTable?
+  mut meta : @sfnt.MetaTable?
+  mut vorg : @sfnt.VorgTable?
+  mut hdmx : @sfnt.HdmxTable?
+  mut stat : @sfnt.StatTable?
+  mut base : @sfnt.BaseTable?
+  mut jstf : @sfnt.JstfTable?
+  mut math : @sfnt.MathTable?
+  mut kern : @sfnt.KernTable?
+  mut trak : @aat.TrakTable?
+  mut morx : @aat.MorxTable?
+  mut mort : @aat.MortTable?
+  mut kerx : @aat.KerxTable?
+  mut ankr : @aat.AnkrTable?
+  mut bsln : @aat.BslnTable?
+  mut feat : @aat.FeatTable?
+  mut just : @aat.JustTable?
+  mut ltag : @aat.LtagTable?
+  mut opbd : @aat.OpbdTable?
+  mut gsub : @tables.GsubTable?
+  mut gpos : @tables.GposTable?
+  mut gdef : @tables.GdefTable?
+  mut cpal : @color.CpalTable?
+  mut colr : @color.ColrTable?
+  mut hvar : @var.HvarTable?
+  mut vvar : @var.HvarTable?
+  mut mvar : @var.MvarTable?
+  mut fvar : @var.FvarTable?
+  mut avar : @var.AvarTable?
+  mut cvt : @sfnt.CvtTable?
+  mut gvar : @var.GvarTable?
+  mut cvar : @var.CvarTable?
+  mut varc : @var.VarcTable?
+  mut cff1 : @cff.Cff1Table?
+  mut cff2 : @cff.Cff2Table?
+  mut var_coords_design : Array[Double]?
+  mut var_coords_norm : Array[Int]?
+} derive(ToJson, @debug.Debug)
+pub fn Font::ankr(Self) -> Result[@aat.AnkrTable?, FontError]
+pub fn Font::avar(Self) -> Result[@var.AvarTable?, FontError]
+pub fn Font::base(Self) -> Result[@sfnt.BaseTable?, FontError]
+pub fn Font::bsln(Self) -> Result[@aat.BslnTable?, FontError]
+pub fn Font::cff1(Self) -> Result[@cff.Cff1Table?, FontError]
+pub fn Font::cff2(Self) -> Result[@cff.Cff2Table?, FontError]
+pub fn Font::colr(Self) -> Result[@color.ColrTable?, FontError]
+pub fn Font::cpal(Self) -> Result[@color.CpalTable?, FontError]
+pub fn Font::cvar(Self) -> Result[@var.CvarTable?, FontError]
+pub fn Font::cvt(Self) -> Result[@sfnt.CvtTable?, FontError]
+pub fn Font::cvt_values(Self) -> Result[Array[Int]?, FontError]
+pub fn[T] Font::draw_glyph(Self, UInt, @draw.DrawFuncs[T], T) -> Result[Unit, FontError]
+pub fn[T] Font::draw_glyph_or_fail(Self, UInt, @draw.DrawFuncs[T], T) -> Result[Bool, FontError]
+pub fn Font::feat(Self) -> Result[@aat.FeatTable?, FontError]
+pub fn Font::from_bytes(Bytes) -> Self
+pub fn Font::fvar(Self) -> Result[@var.FvarTable?, FontError]
+pub fn Font::gasp(Self) -> Result[@sfnt.GaspTable?, FontError]
+pub fn Font::gdef(Self) -> Result[@tables.GdefTable?, FontError]
+pub fn Font::get_face(Self) -> @face.Face
+pub fn Font::get_ppem(Self) -> (Int, Int)
+pub fn Font::get_scale(Self) -> (Int, Int)
+pub fn Font::glyph_bounds(Self, UInt) -> Result[@sfnt.GlyphBounds?, FontError]
+pub fn Font::glyph_contour_point_for_origin(Self, UInt, Int) -> Result[(Int, Int)?, FontError]
+pub fn Font::glyph_for_codepoint(Self, UInt) -> Result[UInt?, FontError]
+pub fn Font::glyph_from_name(Self, String) -> Result[UInt?, FontError]
+pub fn Font::glyph_h_advance(Self, UInt) -> Result[Int, FontError]
+pub fn Font::glyph_name(Self, UInt) -> Result[String?, FontError]
+pub fn Font::glyph_v_advance(Self, UInt) -> Result[Int, FontError]
+pub fn Font::gpos(Self) -> Result[@tables.GposTable?, FontError]
+pub fn Font::gsub(Self) -> Result[@tables.GsubTable?, FontError]
+pub fn Font::gvar(Self) -> Result[@var.GvarTable?, FontError]
+pub fn Font::hdmx(Self) -> Result[@sfnt.HdmxTable?, FontError]
+pub fn Font::hvar(Self) -> Result[@var.HvarTable?, FontError]
+pub fn Font::jstf(Self) -> Result[@sfnt.JstfTable?, FontError]
+pub fn Font::just(Self) -> Result[@aat.JustTable?, FontError]
+pub fn Font::kern(Self) -> Result[@sfnt.KernTable?, FontError]
+pub fn Font::kerx(Self) -> Result[@aat.KerxTable?, FontError]
+pub fn Font::ltag(Self) -> Result[@aat.LtagTable?, FontError]
+pub fn Font::math(Self) -> Result[@sfnt.MathTable?, FontError]
+pub fn Font::meta(Self) -> Result[@sfnt.MetaTable?, FontError]
+pub fn Font::mort(Self) -> Result[@aat.MortTable?, FontError]
+pub fn Font::morx(Self) -> Result[@aat.MorxTable?, FontError]
+pub fn Font::mvar(Self) -> Result[@var.MvarTable?, FontError]
+pub fn Font::mvar_delta(Self, @common.Tag) -> Result[Double, FontError]
+pub fn Font::name(Self) -> Result[@sfnt.NameTable?, FontError]
+pub fn Font::new(@face.Face) -> Self
+pub fn Font::opbd(Self) -> Result[@aat.OpbdTable?, FontError]
+pub fn Font::os2(Self) -> Result[@sfnt.Os2Table?, FontError]
+pub fn Font::post(Self) -> Result[@sfnt.PostTable?, FontError]
+pub fn Font::set_ppem(Self, Int, Int) -> Unit
+pub fn Font::set_scale(Self, Int, Int) -> Unit
+pub fn Font::set_variations(Self, Array[@var.AxisCoord]) -> Result[Unit, FontError]
+pub fn Font::stat(Self) -> Result[@sfnt.StatTable?, FontError]
+pub fn Font::trak(Self) -> Result[@aat.TrakTable?, FontError]
+pub fn Font::varc(Self) -> Result[@var.VarcTable?, FontError]
+pub fn Font::varc_components(Self, UInt) -> Result[Array[@var.VarcComponent]?, FontError]
+pub fn Font::variation_coords(Self) -> Array[Int]
+pub fn Font::variation_glyph_for(Self, UInt, UInt) -> Result[(Bool, UInt?), FontError]
+pub fn Font::vhea(Self) -> Result[@sfnt.VheaTable?, FontError]
+pub fn Font::vmtx(Self) -> Result[@sfnt.VmtxTable?, FontError]
+pub fn Font::vorg(Self) -> Result[@sfnt.VorgTable?, FontError]
+pub fn Font::vvar(Self) -> Result[@var.HvarTable?, FontError]
+
+type PointDelta derive(ToJson, @debug.Debug)
+
+// Type aliases
+
+// Traits
+

@@ -1,0 +1,257 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "moonbit-community/harfbuzz/ot/var"
+
+import {
+  "moonbit-community/harfbuzz/common",
+  "moonbitlang/core/debug",
+}
+
+// Values
+pub fn fixed16_to_f2dot14(Int) -> Int
+
+// Errors
+pub suberror VarError {
+  UnexpectedEof
+  InvalidFormat
+} derive(Eq, ToJson, @debug.Debug)
+
+// Types and methods
+pub struct AvarMapping {
+  from_raw : Int
+  to_raw : Int
+} derive(Eq, ToJson, @debug.Debug)
+
+pub struct AvarSegmentMap {
+  mappings : Array[AvarMapping]
+} derive(Eq, ToJson, @debug.Debug)
+pub fn AvarSegmentMap::map_value(Self, Double) -> Double
+
+pub struct AvarTable {
+  axes : Array[AvarSegmentMap]
+} derive(Eq, ToJson, @debug.Debug)
+pub fn AvarTable::axis_count(Self) -> Int
+pub fn AvarTable::map_coords_16_16(Self, Array[Int]) -> Array[Int]
+pub fn AvarTable::parse(BytesView) -> Result[Self, VarError]
+
+pub struct AxisCoord {
+  tag : @common.Tag
+  value : Double
+} derive(Eq, ToJson, @debug.Debug)
+pub fn AxisCoord::new(@common.Tag, Double) -> Self
+
+pub struct AxisRecord {
+  tag : @common.Tag
+  min_value : Double
+  default_value : Double
+  max_value : Double
+  flags : Int
+  name_id : Int
+} derive(Eq, ToJson, @debug.Debug)
+pub fn AxisRecord::normalize_value(Self, Double) -> Double
+
+type CffIndex derive(ToJson, @debug.Debug)
+
+pub struct CvarTable {
+  version : Int
+  tuple_data : TupleVariationData
+} derive(ToJson, @debug.Debug)
+pub fn CvarTable::apply_to_cvt(Self, Array[Int], Array[Int]) -> Result[Array[Int], VarError]
+pub fn CvarTable::cvt_deltas(Self, Array[Int], Int) -> Result[Array[Double], VarError]
+pub fn CvarTable::parse(BytesView, Int) -> Result[Self, VarError]
+
+pub struct DeltaSetIndexMap {
+  map_count : Int
+  width : Int
+  inner_bit_count : Int
+  map_data : Bytes
+} derive(Eq, ToJson, @debug.Debug)
+pub fn DeltaSetIndexMap::map(Self, UInt) -> UInt
+pub fn DeltaSetIndexMap::parse(BytesView, Int) -> Result[Self, VarError]
+
+pub struct FvarTable {
+  axes : Array[AxisRecord]
+  instances : Array[InstanceRecord]
+} derive(Eq, ToJson, @debug.Debug)
+pub fn FvarTable::axes(Self) -> ArrayView[AxisRecord]
+pub fn FvarTable::axis_index(Self, @common.Tag) -> Int?
+pub fn FvarTable::instances(Self) -> ArrayView[InstanceRecord]
+pub fn FvarTable::normalize_axis_value(Self, Int, Double) -> Double
+pub fn FvarTable::normalize_design_coords(Self, Array[Double]) -> Array[Int]
+pub fn FvarTable::parse(BytesView) -> Result[Self, VarError]
+
+pub struct GvarTable {
+  axis_count : Int
+  shared_tuple_count : Int
+  shared_tuples_offset : Int
+  glyph_count : Int
+  flags : Int
+  data_offset : Int
+  offsets : Array[Int]
+  data : Bytes
+} derive(ToJson, @debug.Debug)
+pub fn GvarTable::glyph_deltas(Self, Int, Array[Int], Int) -> Result[(Array[Double], Array[Double]?), VarError]
+pub fn GvarTable::glyph_tuple_variations(Self, Int) -> Result[TupleVariationData?, VarError]
+pub fn GvarTable::glyph_variation_data(Self, Int) -> Bytes?
+pub fn GvarTable::parse(BytesView) -> Result[Self, VarError]
+pub fn GvarTable::shared_tuples(Self) -> Result[Array[Int], VarError]
+
+pub struct HvarTable {
+  var_store : ItemVariationStore
+  adv_map : DeltaSetIndexMap?
+  lsb_map : DeltaSetIndexMap?
+  rsb_map : DeltaSetIndexMap?
+} derive(ToJson, @debug.Debug)
+pub fn HvarTable::advance_delta(Self, UInt, Array[Int]) -> Double
+pub fn HvarTable::lsb_delta(Self, UInt, Array[Int]) -> Double
+pub fn HvarTable::parse(BytesView) -> Result[Self, VarError]
+pub fn HvarTable::rsb_delta(Self, UInt, Array[Int]) -> Double
+
+pub struct InstanceRecord {
+  subfamily_name_id : Int
+  flags : Int
+  coordinates : Array[Double]
+  postscript_name_id : Int?
+} derive(Eq, ToJson, @debug.Debug)
+
+pub struct ItemVariationStore {
+  region_list : VarRegionList
+  data_sets : Array[VarData]
+} derive(Eq, ToJson, @debug.Debug)
+pub fn ItemVariationStore::get_delta(Self, UInt, Array[Int]) -> Double
+pub fn ItemVariationStore::parse(BytesView) -> Result[Self, VarError]
+pub fn ItemVariationStore::region_count(Self, Int) -> Int?
+pub fn ItemVariationStore::region_scalars(Self, Int, Array[Int]) -> Array[Double]?
+
+pub struct MultiItemVariationStore {
+  region_list : SparseVarRegionList
+  data_sets : Array[MultiVarData]
+} derive(ToJson, @debug.Debug)
+pub fn MultiItemVariationStore::get_delta(Self, UInt, Array[Int], Array[Double]) -> Unit
+pub fn MultiItemVariationStore::parse(BytesView) -> Result[Self, VarError]
+
+pub struct MultiVarData {
+  region_indices : Array[Int]
+  delta_sets : CffIndex
+} derive(ToJson, @debug.Debug)
+
+pub struct MvarRecord {
+  tag : @common.Tag
+  var_idx : UInt
+} derive(Eq, ToJson, @debug.Debug)
+
+pub struct MvarTable {
+  records : Array[MvarRecord]
+  var_store : ItemVariationStore
+} derive(ToJson, @debug.Debug)
+pub fn MvarTable::get_var(Self, @common.Tag, Array[Int]) -> Double
+pub fn MvarTable::parse(BytesView) -> Result[Self, VarError]
+
+pub struct SparseVarRegionAxis {
+  axis_index : Int
+  axis : VarRegionAxis
+} derive(Eq, ToJson, @debug.Debug)
+
+pub struct SparseVarRegionList {
+  regions : Array[SparseVariationRegion]
+} derive(Eq, ToJson, @debug.Debug)
+
+pub struct SparseVariationRegion {
+  axes : Array[SparseVarRegionAxis]
+} derive(Eq, ToJson, @debug.Debug)
+
+type TupleHeader derive(ToJson, @debug.Debug)
+
+pub struct TupleVariation {
+  peak : Array[Int]
+  start : Array[Int]?
+  end : Array[Int]?
+  indices : Array[Int]?
+  deltas_x : Array[Int]
+  deltas_y : Array[Int]?
+} derive(ToJson, @debug.Debug)
+pub fn TupleVariation::scalar(Self, Array[Int]) -> Double
+
+pub struct TupleVariationData {
+  axis_count : Int
+  tuple_headers : Array[TupleHeader]
+  shared_points : Array[Int]?
+  shared_points_size : Int
+  data_offset : Int
+  data : Bytes
+} derive(ToJson, @debug.Debug)
+pub fn TupleVariationData::apply(Self, Array[Int], Int, Bool) -> Result[(Array[Double], Array[Double]?), VarError]
+pub fn TupleVariationData::decode(Self, Int, Bool) -> Result[Array[TupleVariation], VarError]
+pub fn TupleVariationData::parse(BytesView, Int, Array[Int]) -> Result[Self, VarError]
+
+pub(all) struct VarData {
+  item_count : Int
+  word_count : Int
+  long_words : Bool
+  region_indices : Array[Int]
+  deltas : Bytes
+} derive(Eq, ToJson, @debug.Debug)
+
+pub(all) struct VarRegionAxis {
+  start_coord : Int
+  peak_coord : Int
+  end_coord : Int
+} derive(Eq, ToJson, @debug.Debug)
+
+pub(all) struct VarRegionList {
+  axis_count : Int
+  region_count : Int
+  axes : Array[VarRegionAxis]
+} derive(Eq, ToJson, @debug.Debug)
+
+pub struct VarcComponent {
+  glyph : Int
+  visible : Bool
+  axis_indices : Array[Int]
+  axis_values : Array[Double]
+  coords : Array[Int]
+  transform : VarcTransform
+} derive(ToJson, @debug.Debug)
+
+pub enum VarcCondition {
+  AxisRange(Int, Int, Int)
+  Value(Int, Int)
+  And(Array[VarcCondition])
+  Or(Array[VarcCondition])
+  Not(VarcCondition)
+} derive(ToJson, @debug.Debug)
+pub fn VarcCondition::evaluate(Self, Array[Int], ((Int) -> Double)?) -> Bool
+
+pub struct VarcTable {
+  version : Int
+  coverage_offset : Int
+  var_store_offset : Int
+  condition_list_offset : Int
+  axis_indices_offset : Int
+  glyph_records_offset : Int
+  data : Bytes
+} derive(ToJson, @debug.Debug)
+pub fn VarcTable::axis_indices(Self, Int) -> Result[Array[Int], VarError]
+pub fn VarcTable::conditions(Self) -> Result[Array[VarcCondition], VarError]
+pub fn VarcTable::glyph_components(Self, Int, Array[Int], Array[Int]) -> Result[Array[VarcComponent], VarError]
+pub fn VarcTable::glyph_record(Self, Int) -> Result[Bytes?, VarError]
+pub fn VarcTable::parse(BytesView) -> Result[Self, VarError]
+pub fn VarcTable::var_store(Self) -> Result[MultiItemVariationStore?, VarError]
+
+pub struct VarcTransform {
+  translate_x : Double
+  translate_y : Double
+  rotation : Double
+  scale_x : Double
+  scale_y : Double
+  skew_x : Double
+  skew_y : Double
+  tcenter_x : Double
+  tcenter_y : Double
+} derive(ToJson, @debug.Debug)
+pub fn VarcTransform::apply_to_bounds(Self, Double, Double, Double, Double) -> (Double, Double, Double, Double)
+pub fn VarcTransform::apply_to_point(Self, Double, Double) -> (Double, Double)
+
+// Type aliases
+
+// Traits
+

@@ -1,0 +1,42 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "moonbit-community/harfbuzz/blob"
+
+import {
+  "moonbitlang/core/debug",
+}
+
+// Values
+
+// Errors
+type BlobError derive(Eq, ToJson, @debug.Debug)
+
+// Types and methods
+pub struct Blob {
+  bytes : Bytes
+  offset : Int
+  length : Int
+  mode : MemoryMode
+} derive(Eq, ToJson, @debug.Debug)
+pub fn Blob::as_view(Self) -> BytesView
+pub fn Blob::from_array(ArrayView[Byte], mode? : MemoryMode) -> Self
+pub fn Blob::from_bytes(Bytes, mode? : MemoryMode) -> Self
+pub fn Blob::from_bytes_copy(Bytes) -> Self
+pub fn Blob::get(Self, Int) -> Byte?
+pub fn Blob::is_empty(Self) -> Bool
+pub fn Blob::len(Self) -> Int
+pub fn Blob::memory_mode(Self) -> MemoryMode
+pub fn Blob::sub(Self, Int, Int) -> Result[Self, BlobError]
+pub fn Blob::to_bytes(Self) -> Bytes
+
+pub enum MemoryMode {
+  Duplicate
+  Readonly
+  Writable
+  ReadonlyMayMakeWritable
+} derive(Eq, ToJson, @debug.Debug)
+pub fn MemoryMode::all() -> Array[Self]
+
+// Type aliases
+
+// Traits
+

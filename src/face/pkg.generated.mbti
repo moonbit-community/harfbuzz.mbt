@@ -1,0 +1,44 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "moonbit-community/harfbuzz/face"
+
+import {
+  "moonbit-community/harfbuzz/blob",
+  "moonbit-community/harfbuzz/common",
+  "moonbitlang/core/debug",
+}
+
+// Values
+pub fn face_count(@blob.Blob) -> Int
+
+// Errors
+type FaceTableError derive(Eq, ToJson, @debug.Debug)
+
+// Types and methods
+pub struct Face {
+  blob : @blob.Blob
+  mut index : Int
+  mut upem : Int
+  mut glyph_count : Int
+  mut tables : Map[@common.Tag, @blob.Blob]
+} derive(ToJson, @debug.Debug)
+pub fn Face::collect_nominal_glyph_mapping(Self) -> Result[@common.CodepointMap, FaceTableError]
+pub fn Face::collect_unicodes(Self) -> Result[@common.CodepointSet, FaceTableError]
+pub fn Face::ensure_sfnt_tables(Self) -> Result[Unit, FaceTableError]
+pub fn Face::from_bytes(Bytes, index? : Int) -> Self
+pub fn Face::get_glyph_count(Self) -> Int
+pub fn Face::get_index(Self) -> Int
+pub fn Face::get_upem(Self) -> Int
+pub fn Face::new(@blob.Blob, index? : Int) -> Self
+pub fn Face::reference_blob(Self) -> @blob.Blob
+pub fn Face::reference_table(Self, @common.Tag) -> Result[@blob.Blob, FaceTableError]
+pub fn Face::reference_table_optional(Self, @common.Tag) -> Result[@blob.Blob?, FaceTableError]
+pub fn Face::set_glyph_count(Self, Int) -> Unit
+pub fn Face::set_index(Self, Int) -> Unit
+pub fn Face::set_table(Self, @common.Tag, @blob.Blob) -> Unit
+pub fn Face::set_upem(Self, Int) -> Unit
+pub fn Face::table_tags(Self, start_offset? : Int, count? : Int) -> Result[(Int, Array[@common.Tag]), FaceTableError]
+
+// Type aliases
+
+// Traits
+
