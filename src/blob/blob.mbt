@@ -22,6 +22,12 @@ pub enum MemoryMode {
 } derive(Eq, Debug, ToJson)
 
 ///|
+/// Return all supported memory ownership modes.
+pub fn MemoryMode::all() -> Array[MemoryMode] {
+  [Duplicate, Readonly, Writable, ReadonlyMayMakeWritable]
+}
+
+///|
 suberror BlobError {
   OutOfBounds
 } derive(Eq, Debug, ToJson)
