@@ -153,8 +153,8 @@ fn split_extension(value : String) -> (String, String) {
   match dot {
     None => (value, "")
     Some(idx) => {
-      let base = try! value[:idx]
-      let ext = try! value[idx:]
+      let base = value[:idx]
+      let ext = value[idx:]
       (base.to_string(), ext.to_string())
     }
   }
@@ -191,7 +191,7 @@ fn subset_codepoints(spec : String) -> Array[UInt]? {
         continue
       }
       let trimmed = if part.has_prefix("U+") {
-        let view = try! part[2:]
+        let view = part[2:]
         view.to_string()
       } else {
         part
