@@ -100,7 +100,7 @@ pub fn Blob::is_empty(self : Blob) -> Bool {
 ///|
 /// Get a view of the blob bytes.
 pub fn Blob::as_view(self : Blob) -> BytesView {
-  self.bytes.sub(start=self.offset, end=self.offset + self.length)
+  self.bytes[self.offset:self.offset + self.length]
 }
 
 ///|
