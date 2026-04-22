@@ -524,8 +524,8 @@ test "head table parse" {
     Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  @debug.debug_inspect(head.units_per_em, content="1000")
-  @debug.debug_inspect(head.index_to_loc_format, content="1")
+  inspect(head.units_per_em, content="1000")
+  inspect(head.index_to_loc_format, content="1")
 }
 
 ///|
@@ -537,7 +537,7 @@ test "maxp table parse" {
     Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  @debug.debug_inspect(maxp.num_glyphs, content="10")
+  inspect(maxp.num_glyphs, content="10")
 }
 
 ///|
@@ -549,7 +549,7 @@ test "hhea table parse" {
     Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  @debug.debug_inspect(hhea.number_of_hmetrics, content="5")
+  inspect(hhea.number_of_hmetrics, content="5")
 }
 
 ///|
@@ -561,8 +561,8 @@ test "hmtx table parse" {
     Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  @debug.debug_inspect(hmtx.advances, content="[200, 300, 300]")
-  @debug.debug_inspect(hmtx.lsbs, content="[10, 20, 30]")
+  inspect(hmtx.advances, content="[200, 300, 300]")
+  inspect(hmtx.lsbs, content="[10, 20, 30]")
 }
 
 ///|
@@ -571,7 +571,7 @@ test "vhea table parse" {
     Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  @debug.debug_inspect(vhea.number_of_vmetrics, content="2")
+  inspect(vhea.number_of_vmetrics, content="2")
 }
 
 ///|
@@ -580,8 +580,8 @@ test "vmtx table parse" {
     Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  @debug.debug_inspect(vmtx.advances, content="[700, 800, 800]")
-  @debug.debug_inspect(vmtx.tsbs, content="[5, 6, 7]")
+  inspect(vmtx.advances, content="[700, 800, 800]")
+  inspect(vmtx.tsbs, content="[5, 6, 7]")
 }
 
 ///|
@@ -597,7 +597,7 @@ test "cmap format 12" {
     Ok(None) => fail("missing glyph")
     Ok(Some(value)) => value
   }
-  @debug.debug_inspect(gid, content="5")
+  inspect(gid, content="5")
 }
 
 ///|
@@ -613,7 +613,7 @@ test "cmap format 4" {
     Ok(None) => fail("missing glyph")
     Ok(Some(value)) => value
   }
-  @debug.debug_inspect(gid, content="5")
+  inspect(gid, content="5")
 }
 
 ///|
@@ -622,8 +622,8 @@ test "kern table parse" {
     Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  @debug.debug_inspect(kern.kern_value(1U, 2U), content="Some(-50)")
-  @debug.debug_inspect(kern.kern_value(2U, 1U), content="None")
+  inspect(kern.kern_value(1U, 2U), content="Some(-50)")
+  inspect(kern.kern_value(2U, 1U), content="None")
 }
 
 ///|
@@ -632,8 +632,8 @@ test "kern table format2 parse" {
     Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  @debug.debug_inspect(kern.kern_value(1U, 1U), content="Some(-30)")
-  @debug.debug_inspect(kern.kern_value(2U, 2U), content="Some(0)")
+  inspect(kern.kern_value(1U, 1U), content="Some(-30)")
+  inspect(kern.kern_value(2U, 2U), content="Some(0)")
 }
 
 ///|
@@ -642,8 +642,8 @@ test "kern table format3 parse" {
     Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  @debug.debug_inspect(kern.kern_value(1U, 1U), content="Some(-40)")
-  @debug.debug_inspect(kern.kern_value(0U, 1U), content="Some(0)")
+  inspect(kern.kern_value(1U, 1U), content="Some(-40)")
+  inspect(kern.kern_value(0U, 1U), content="Some(0)")
 }
 
 ///|
@@ -652,13 +652,13 @@ test "os2 table parse v0" {
     Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  @debug.debug_inspect(os2.version, content="0")
-  @debug.debug_inspect(os2.weight_class, content="400")
-  @debug.debug_inspect(os2.width_class, content="5")
-  @debug.debug_inspect(os2.typo_ascender, content="800")
-  @debug.debug_inspect(os2.typo_descender, content="-200")
-  @debug.debug_inspect(os2.win_ascent, content="900")
-  @debug.debug_inspect(os2.win_descent, content="200")
+  inspect(os2.version, content="0")
+  inspect(os2.weight_class, content="400")
+  inspect(os2.width_class, content="5")
+  inspect(os2.typo_ascender, content="800")
+  inspect(os2.typo_descender, content="-200")
+  inspect(os2.win_ascent, content="900")
+  inspect(os2.win_descent, content="200")
 }
 
 ///|
@@ -667,13 +667,13 @@ test "os2 table parse v2" {
     Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  @debug.debug_inspect(os2.version, content="2")
-  @debug.debug_inspect(os2.code_page_range_1, content="Some(1)")
-  @debug.debug_inspect(os2.code_page_range_2, content="Some(2)")
-  @debug.debug_inspect(os2.x_height, content="Some(500)")
-  @debug.debug_inspect(os2.cap_height, content="Some(700)")
-  @debug.debug_inspect(os2.break_char, content="Some(32)")
-  @debug.debug_inspect(os2.max_context, content="Some(4)")
+  inspect(os2.version, content="2")
+  inspect(os2.code_page_range_1, content="Some(1)")
+  inspect(os2.code_page_range_2, content="Some(2)")
+  inspect(os2.x_height, content="Some(500)")
+  inspect(os2.cap_height, content="Some(700)")
+  inspect(os2.break_char, content="Some(32)")
+  inspect(os2.max_context, content="Some(4)")
 }
 
 ///|
@@ -682,12 +682,12 @@ test "name table parse" {
     Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  @debug.debug_inspect(name.records.length(), content="1")
+  inspect(name.records.length(), content="1")
   let record = match name.find_name(3, 1, 0x0409, 1) {
     None => fail("missing name record")
     Some(value) => value
   }
-  @debug.debug_inspect(record.value, content="b\"\\x00T\\x00e\"")
+  inspect(record.value, content="b\"\\x00T\\x00e\"")
 }
 
 ///|
@@ -696,9 +696,9 @@ test "post table parse v2" {
     Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  @debug.debug_inspect(post.version, content="131072")
-  @debug.debug_inspect(post.underline_position, content="-50")
-  @debug.debug_inspect(post.underline_thickness, content="20")
+  inspect(post.version, content="131072")
+  inspect(post.underline_position, content="-50")
+  inspect(post.underline_thickness, content="20")
   let indices = match post.glyph_name_indices {
     None => fail("missing name indices")
     Some(value) => value
@@ -707,8 +707,8 @@ test "post table parse v2" {
     None => fail("missing custom names")
     Some(value) => value
   }
-  @debug.debug_inspect(indices, content="[258]")
-  @debug.debug_inspect(names, content="[b\"foo\"]")
+  inspect(indices, content="[258]")
+  inspect(names, content="[b\"foo\"]")
 }
 
 ///|
@@ -717,10 +717,10 @@ test "gasp table parse" {
     Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  @debug.debug_inspect(gasp.version, content="1")
-  @debug.debug_inspect(gasp.behavior_for_ppem(7), content="Some(1)")
-  @debug.debug_inspect(gasp.behavior_for_ppem(16), content="Some(3)")
-  @debug.debug_inspect(gasp.behavior_for_ppem(20), content="None")
+  inspect(gasp.version, content="1")
+  inspect(gasp.behavior_for_ppem(7), content="Some(1)")
+  inspect(gasp.behavior_for_ppem(16), content="Some(3)")
+  inspect(gasp.behavior_for_ppem(20), content="None")
 }
 
 ///|
@@ -729,12 +729,12 @@ test "meta table parse" {
     Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  @debug.debug_inspect(meta.records.length(), content="1")
+  inspect(meta.records.length(), content="1")
   let data = match meta.find(@common.Tag::from_chars('d', 'e', 's', 'c')) {
     None => fail("missing meta record")
     Some(value) => value
   }
-  @debug.debug_inspect(data, content="b\"foo\"")
+  inspect(data, content="b\"foo\"")
 }
 
 ///|
@@ -743,10 +743,10 @@ test "vorg table parse" {
     Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  @debug.debug_inspect(vorg.major_version, content="1")
-  @debug.debug_inspect(vorg.default_origin_y, content="800")
-  @debug.debug_inspect(vorg.origin_y_for(3), content="750")
-  @debug.debug_inspect(vorg.origin_y_for(10), content="800")
+  inspect(vorg.major_version, content="1")
+  inspect(vorg.default_origin_y, content="800")
+  inspect(vorg.origin_y_for(3), content="750")
+  inspect(vorg.origin_y_for(10), content="800")
 }
 
 ///|
@@ -755,11 +755,11 @@ test "hdmx table parse" {
     Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  @debug.debug_inspect(hdmx.records.length(), content="1")
+  inspect(hdmx.records.length(), content="1")
   let record = hdmx.records[0]
-  @debug.debug_inspect(record.pixel_size, content="12")
-  @debug.debug_inspect(record.max_width, content="8")
-  @debug.debug_inspect(record.widths, content="[3, 4, 5, 6]")
+  inspect(record.pixel_size, content="12")
+  inspect(record.max_width, content="8")
+  inspect(record.widths, content="[3, 4, 5, 6]")
 }
 
 ///|
@@ -768,16 +768,16 @@ test "stat table parse" {
     Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  @debug.debug_inspect(stat.design_axes.length(), content="1")
-  @debug.debug_inspect(stat.design_axes[0].tag.to_string(), content="wght")
-  @debug.debug_inspect(stat.elided_fallback_name_id, content="2")
-  @debug.debug_inspect(stat.axis_values.length(), content="1")
+  inspect(stat.design_axes.length(), content="1")
+  inspect(stat.design_axes[0].tag.to_string(), content="wght")
+  inspect(stat.elided_fallback_name_id, content="2")
+  inspect(stat.axis_values.length(), content="1")
   match stat.axis_values[0] {
     Format1(axis_index, flags, value_name_id, value) => {
-      @debug.debug_inspect(axis_index, content="0")
-      @debug.debug_inspect(flags, content="0")
-      @debug.debug_inspect(value_name_id, content="3")
-      @debug.debug_inspect(value, content="65536")
+      inspect(axis_index, content="0")
+      inspect(flags, content="0")
+      inspect(value_name_id, content="3")
+      inspect(value, content="65536")
     }
     _ => fail("unexpected axis value format")
   }
@@ -789,7 +789,7 @@ test "base table parse" {
     Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  @debug.debug_inspect(base.major_version, content="1")
+  inspect(base.major_version, content="1")
   let axis = match base.h_axis {
     None => fail("missing hAxis")
     Some(value) => value
@@ -798,14 +798,14 @@ test "base table parse" {
     None => fail("missing base tag list")
     Some(value) => value
   }
-  @debug.debug_inspect(tags.tags.length(), content="1")
-  @debug.debug_inspect(tags.tags[0].to_string(), content="romn")
+  inspect(tags.tags.length(), content="1")
+  inspect(tags.tags[0].to_string(), content="romn")
   let scripts = match axis.base_scripts {
     None => fail("missing base script list")
     Some(value) => value
   }
-  @debug.debug_inspect(scripts.records.length(), content="1")
-  @debug.debug_inspect(scripts.records[0].tag.to_string(), content="latn")
+  inspect(scripts.records.length(), content="1")
+  inspect(scripts.records[0].tag.to_string(), content="latn")
   let script = match scripts.records[0].base_script {
     None => fail("missing base script")
     Some(value) => value
@@ -814,10 +814,10 @@ test "base table parse" {
     None => fail("missing base values")
     Some(value) => value
   }
-  @debug.debug_inspect(values.base_coords.length(), content="1")
+  inspect(values.base_coords.length(), content="1")
   match values.base_coords[0] {
     None => fail("missing base coord")
-    Some(Format1(value)) => @debug.debug_inspect(value, content="100")
+    Some(Format1(value)) => inspect(value, content="100")
     _ => fail("unexpected base coord")
   }
 }
@@ -828,19 +828,19 @@ test "jstf table parse" {
     Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  @debug.debug_inspect(jstf.major_version, content="1")
-  @debug.debug_inspect(jstf.scripts.length(), content="1")
-  @debug.debug_inspect(jstf.scripts[0].tag.to_string(), content="latn")
+  inspect(jstf.major_version, content="1")
+  inspect(jstf.scripts.length(), content="1")
+  inspect(jstf.scripts[0].tag.to_string(), content="latn")
   let script = match jstf.scripts[0].script {
     None => fail("missing script")
     Some(value) => value
   }
-  @debug.debug_inspect(script.extender_glyphs, content="[3]")
+  inspect(script.extender_glyphs, content="[3]")
   let lang_sys = match script.default_lang_sys {
     None => fail("missing default lang sys")
     Some(value) => value
   }
-  @debug.debug_inspect(lang_sys.priorities.length(), content="1")
+  inspect(lang_sys.priorities.length(), content="1")
 }
 
 ///|
@@ -849,17 +849,14 @@ test "math table parse" {
     Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  @debug.debug_inspect(math.major_version, content="1")
+  inspect(math.major_version, content="1")
   let constants = match math.constants {
     None => fail("missing constants")
     Some(value) => value
   }
-  @debug.debug_inspect(constants.percent_scale_down, content="[80, 60]")
-  @debug.debug_inspect(constants.min_height, content="[500, 700]")
-  @debug.debug_inspect(
-    constants.radical_degree_bottom_raise_percent,
-    content="45",
-  )
+  inspect(constants.percent_scale_down, content="[80, 60]")
+  inspect(constants.min_height, content="[500, 700]")
+  inspect(constants.radical_degree_bottom_raise_percent, content="45")
   let info = match math.glyph_info {
     None => fail("missing glyph info")
     Some(value) => value
@@ -868,15 +865,15 @@ test "math table parse" {
     None => fail("missing italics correction")
     Some(value) => value
   }
-  @debug.debug_inspect(italics.records.length(), content="1")
+  inspect(italics.records.length(), content="1")
   let top = match info.top_accent_attachment {
     None => fail("missing top accent attachment")
     Some(value) => value
   }
-  @debug.debug_inspect(top.records.length(), content="1")
+  inspect(top.records.length(), content="1")
   let variants = match math.variants {
     None => fail("missing variants")
     Some(value) => value
   }
-  @debug.debug_inspect(variants.min_connector_overlap, content="3")
+  inspect(variants.min_connector_overlap, content="3")
 }

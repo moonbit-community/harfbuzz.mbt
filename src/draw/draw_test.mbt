@@ -27,7 +27,7 @@ test "draw session implicit move and close" {
   session.move_to(10.0, 20.0)
   session.line_to(30.0, 40.0)
   session.close_path()
-  @debug.debug_inspect(ops.join("|"), content="M10,20|L30,40|L10,20|Z")
+  inspect(ops.join("|"), content="M10,20|L30,40|L10,20|Z")
 }
 
 ///|
@@ -43,7 +43,7 @@ test "quadratic fallback to cubic" {
   let session = DrawSession::new(funcs, ops)
   session.move_to(0.0, 0.0)
   session.quadratic_to(10.0, 0.0, 20.0, 0.0)
-  @debug.debug_inspect(ops.join("|"), content="M0,0|C")
+  inspect(ops.join("|"), content="M0,0|C")
 }
 
 ///|
@@ -54,7 +54,7 @@ test "draw extents funcs" {
   session.move_to(10.0, 20.0)
   session.line_to(30.0, 40.0)
   session.quadratic_to(40.0, 50.0, 60.0, 70.0)
-  @debug.debug_inspect(
+  inspect(
     (
       extents.xmin.to_int(),
       extents.ymin.to_int(),
@@ -74,7 +74,7 @@ test "outline recording and replay" {
   session.line_to(10.0, 0.0)
   session.line_to(10.0, 10.0)
   session.close_path()
-  @debug.debug_inspect(outline.contours, content="[4]")
+  inspect(outline.contours, content="[4]")
   let ops : Array[String] = []
   let pen : DrawFuncs[Array[String]] = DrawFuncs::new()
   pen.set_move_to(
@@ -85,5 +85,5 @@ test "outline recording and replay" {
   )
   pen.set_close_path(Some((data, _st) => data.push("Z")))
   outline.replay(pen, ops)
-  @debug.debug_inspect(ops.join("|"), content="M0,0|L10,0|L10,10|L0,0|Z")
+  inspect(ops.join("|"), content="M0,0|L10,0|L10,10|L0,0|Z")
 }

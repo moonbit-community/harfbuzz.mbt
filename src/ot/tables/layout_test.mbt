@@ -23,26 +23,26 @@ test "layout table header and lists" {
     Ok(value) => value
   }
   let header = layout.header()
-  @debug.debug_inspect(header.script_list_offset, content="10")
-  @debug.debug_inspect(header.feature_list_offset, content="30")
-  @debug.debug_inspect(header.lookup_list_offset, content="44")
+  inspect(header.script_list_offset, content="10")
+  inspect(header.feature_list_offset, content="30")
+  inspect(header.lookup_list_offset, content="44")
   let scripts = layout.script_list().records()
-  @debug.debug_inspect(scripts.length(), content="1")
-  @debug.debug_inspect(scripts[0].tag.to_string(), content="latn")
-  @debug.debug_inspect(scripts[0].offset, content="18")
+  inspect(scripts.length(), content="1")
+  inspect(scripts[0].tag.to_string(), content="latn")
+  inspect(scripts[0].offset, content="18")
   let features = layout.feature_list().records()
-  @debug.debug_inspect(features.length(), content="1")
-  @debug.debug_inspect(features[0].tag.to_string(), content="liga")
-  @debug.debug_inspect(features[0].offset, content="38")
+  inspect(features.length(), content="1")
+  inspect(features[0].tag.to_string(), content="liga")
+  inspect(features[0].offset, content="38")
   let lookups = layout.lookup_list().offsets()
-  @debug.debug_inspect(lookups.length(), content="1")
-  @debug.debug_inspect(lookups[0], content="48")
+  inspect(lookups.length(), content="1")
+  inspect(lookups[0], content="48")
   let selected = match
     layout.select_lookup_offsets(@common.Tag::from_chars('l', 'a', 't', 'n')) {
     Err(err) => fail("select error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  @debug.debug_inspect(selected, content="[48]")
+  inspect(selected, content="[48]")
   let filtered = match
     layout.select_lookup_offsets_with_features(
       @common.Tag::from_chars('l', 'a', 't', 'n'),
@@ -51,7 +51,7 @@ test "layout table header and lists" {
     Err(err) => fail("select error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  @debug.debug_inspect(filtered.is_empty(), content="true")
+  inspect(filtered.is_empty(), content="true")
   let single = match
     layout.select_lookup_offsets_for_feature(
       @common.Tag::from_chars('l', 'a', 't', 'n'),
@@ -60,7 +60,7 @@ test "layout table header and lists" {
     Err(err) => fail("select error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  @debug.debug_inspect(single, content="[48]")
+  inspect(single, content="[48]")
   let missing = match
     layout.select_lookup_offsets_for_feature(
       @common.Tag::from_chars('l', 'a', 't', 'n'),
@@ -69,7 +69,7 @@ test "layout table header and lists" {
     Err(err) => fail("select error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  @debug.debug_inspect(missing.is_empty(), content="true")
+  inspect(missing.is_empty(), content="true")
 }
 
 ///|
@@ -98,12 +98,6 @@ test "gsub/gpos wrappers" {
     Err(err) => fail("gpos parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  @debug.debug_inspect(
-    gsub.layout().script_list().records().length(),
-    content="1",
-  )
-  @debug.debug_inspect(
-    gpos.layout().feature_list().records().length(),
-    content="1",
-  )
+  inspect(gsub.layout().script_list().records().length(), content="1")
+  inspect(gpos.layout().feature_list().records().length(), content="1")
 }

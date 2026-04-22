@@ -29,7 +29,7 @@ test "use reorder repha before post-base" {
   for info in buffer.infos() {
     result.push(info.codepoint)
   }
-  @debug.debug_inspect(result, content="[11, 10, 12]")
+  inspect(result, content="[11, 10, 12]")
 }
 
 ///|
@@ -50,7 +50,7 @@ test "use reorder vpre after halant" {
   for info in buffer.infos() {
     result.push(info.codepoint)
   }
-  @debug.debug_inspect(result, content="[20, 21, 23, 22]")
+  inspect(result, content="[20, 21, 23, 22]")
 }
 
 ///|
@@ -61,7 +61,7 @@ test "use feature masks apply arabic isol" {
     arabic_action_isol,
   ])
   let isol_bit = 1U << use_feature_isol
-  @debug.debug_inspect((masks[0] & isol_bit) != 0U, content="true")
+  inspect((masks[0] & isol_bit) != 0U, content="true")
 }
 
 ///|
@@ -76,8 +76,8 @@ test "use feature masks apply arabic init medi fina" {
   let init_bit = 1U << use_feature_init
   let medi_bit = 1U << use_feature_medi
   let fina_bit = 1U << use_feature_fina
-  @debug.debug_inspect((masks[0] & isol_bit) != 0U, content="true")
-  @debug.debug_inspect((masks[1] & init_bit) != 0U, content="true")
-  @debug.debug_inspect((masks[2] & medi_bit) != 0U, content="true")
-  @debug.debug_inspect((masks[3] & fina_bit) != 0U, content="true")
+  inspect((masks[0] & isol_bit) != 0U, content="true")
+  inspect((masks[1] & init_bit) != 0U, content="true")
+  inspect((masks[2] & medi_bit) != 0U, content="true")
+  inspect((masks[3] & fina_bit) != 0U, content="true")
 }

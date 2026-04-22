@@ -18,7 +18,7 @@ test "arabic joining actions pair" {
   buffer.add_codepoint(0x0628U)
   buffer.add_codepoint(0x0628U)
   let actions = arabic_joining_actions(buffer)
-  @debug.debug_inspect(actions, content="[6, 1]")
+  inspect(actions, content="[6, 1]")
 }
 
 ///|
@@ -28,7 +28,7 @@ test "arabic joining actions with transparent mark" {
   buffer.add_codepoint(0x064BU)
   buffer.add_codepoint(0x0628U)
   let actions = arabic_joining_actions(buffer)
-  @debug.debug_inspect(actions, content="[6, 7, 1]")
+  inspect(actions, content="[6, 7, 1]")
 }
 
 ///|
@@ -38,7 +38,7 @@ test "arabic joining actions mongolian variation selector" {
   buffer.add_codepoint(0x180BU)
   let actions = arabic_joining_actions(buffer)
   apply_mongolian_variation_selectors(actions, buffer.infos)
-  @debug.debug_inspect(actions, content="[0, 0]")
+  inspect(actions, content="[0, 0]")
 }
 
 ///|
@@ -286,7 +286,7 @@ test "arabic fallback skipped for non-arabic script" {
     Ok(_) => ()
   }
   let infos = buffer.infos()
-  @debug.debug_inspect(infos[0].codepoint, content="1")
+  inspect(infos[0].codepoint, content="1")
 }
 
 ///|

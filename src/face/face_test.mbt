@@ -55,7 +55,7 @@ test "face reference blob and optional table" {
   let face = Face::from_bytes(bytes)
   let blob = face.reference_blob()
   @debug.debug_inspect(blob.len(), content="12")
-  @debug.debug_inspect(
+  inspect(
     blob.to_bytes(),
     content="b\"\\x00\\x01\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\"",
   )
@@ -72,7 +72,7 @@ test "face reference blob and optional table" {
   }
   match found {
     None => fail("expected table")
-    Some(value) => @debug.debug_inspect(value.to_bytes(), content="b\"\\x01\"")
+    Some(value) => inspect(value.to_bytes(), content="b\"\\x01\"")
   }
 }
 

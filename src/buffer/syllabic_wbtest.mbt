@@ -110,10 +110,10 @@ test "syllabic dotted circle requires font mapping" {
     Err(err) => fail("shape error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  @debug.debug_inspect(inserted, content="false")
+  inspect(inserted, content="false")
   let infos = buffer.infos()
-  @debug.debug_inspect(infos.length(), content="1")
-  @debug.debug_inspect(infos[0].codepoint, content="769")
+  inspect(infos.length(), content="1")
+  inspect(infos[0].codepoint, content="769")
 }
 
 ///|
@@ -127,11 +127,11 @@ test "syllabic dotted circle uses font mapping" {
     Err(err) => fail("shape error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  @debug.debug_inspect(inserted, content="true")
+  inspect(inserted, content="true")
   let infos = buffer.infos()
-  @debug.debug_inspect(infos.length(), content="2")
-  @debug.debug_inspect(infos[0].codepoint, content="9676")
-  @debug.debug_inspect(infos[1].codepoint, content="769")
+  inspect(infos.length(), content="2")
+  inspect(infos[0].codepoint, content="9676")
+  inspect(infos[1].codepoint, content="769")
 }
 
 ///|
@@ -145,11 +145,11 @@ test "syllabic dotted circle for broken syllable list" {
     Err(err) => fail("shape error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  @debug.debug_inspect(inserted, content="true")
+  inspect(inserted, content="true")
   let infos = buffer.infos()
-  @debug.debug_inspect(infos.length(), content="2")
-  @debug.debug_inspect(infos[0].codepoint, content="9676")
-  @debug.debug_inspect(infos[1].codepoint, content="769")
+  inspect(infos.length(), content="2")
+  inspect(infos[0].codepoint, content="9676")
+  inspect(infos[1].codepoint, content="769")
 }
 
 ///|
@@ -164,12 +164,12 @@ test "syllabic dotted circle once per broken syllable" {
     Err(err) => fail("shape error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  @debug.debug_inspect(inserted, content="true")
+  inspect(inserted, content="true")
   let infos = buffer.infos()
-  @debug.debug_inspect(infos.length(), content="3")
-  @debug.debug_inspect(infos[0].codepoint, content="9676")
-  @debug.debug_inspect(infos[1].codepoint, content="769")
-  @debug.debug_inspect(infos[2].codepoint, content="769")
+  inspect(infos.length(), content="3")
+  inspect(infos[0].codepoint, content="9676")
+  inspect(infos[1].codepoint, content="769")
+  inspect(infos[2].codepoint, content="769")
 }
 
 ///|
@@ -187,10 +187,10 @@ test "syllabic dotted circle inserts after repha in broken syllable" {
     Err(err) => fail("shape error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  @debug.debug_inspect(inserted, content="true")
+  inspect(inserted, content="true")
   let infos = buffer.infos()
-  @debug.debug_inspect(infos.length(), content="3")
-  @debug.debug_inspect(infos[0].codepoint, content="65")
-  @debug.debug_inspect(infos[1].codepoint, content="9676")
-  @debug.debug_inspect(infos[2].codepoint, content="66")
+  inspect(infos.length(), content="3")
+  inspect(infos[0].codepoint, content="65")
+  inspect(infos[1].codepoint, content="9676")
+  inspect(infos[2].codepoint, content="66")
 }

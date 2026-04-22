@@ -17,7 +17,7 @@ test "blob basics" {
   let bytes : Bytes = [0x00, 0x01, 0x02, 0x03]
   let blob = Blob::from_bytes(bytes)
   @debug.debug_inspect(blob.len(), content="4")
-  @debug.debug_inspect(blob.get(2), content="Some(b'\\x02')")
+  inspect(blob.get(2), content="Some(b'\\x02')")
   @debug.debug_inspect(blob.get(5), content="None")
 }
 
@@ -59,7 +59,7 @@ test "blob sub view" {
     Ok(value) => value
   }
   @debug.debug_inspect(sub.len(), content="3")
-  @debug.debug_inspect(sub.to_bytes(), content="b\"\\x11\\x12\\x13\"")
+  inspect(sub.to_bytes(), content="b\"\\x11\\x12\\x13\"")
 }
 
 ///|

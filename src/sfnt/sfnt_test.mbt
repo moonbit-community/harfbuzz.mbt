@@ -74,7 +74,7 @@ test "sfnt parse single table" {
     Err(err) => fail("missing table: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  @debug.debug_inspect(table.to_bytes(), content="b\"\\x01\\x02\\x03\"")
+  inspect(table.to_bytes(), content="b\"\\x01\\x02\\x03\"")
 }
 
 ///|

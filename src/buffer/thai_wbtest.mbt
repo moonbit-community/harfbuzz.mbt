@@ -24,7 +24,7 @@ test "thai preprocess sara am reorder" {
   for info in buffer.infos() {
     cps.push(info.codepoint)
   }
-  @debug.debug_inspect(cps, content="[3604, 3661, 3659, 3634]")
+  inspect(cps, content="[3604, 3661, 3659, 3634]")
 }
 
 ///|
