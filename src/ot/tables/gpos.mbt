@@ -19,14 +19,14 @@ pub struct ValueRecord {
   y_placement : Int
   x_advance : Int
   y_advance : Int
-} derive(Eq, Show, ToJson)
+} derive(Eq, Debug, ToJson)
 
 ///|
 /// Pair adjustment result.
 pub struct PairAdjust {
   first : ValueRecord
   second : ValueRecord
-} derive(Eq, Show, ToJson)
+} derive(Eq, Debug, ToJson)
 
 ///|
 fn value_record_zero() -> ValueRecord {

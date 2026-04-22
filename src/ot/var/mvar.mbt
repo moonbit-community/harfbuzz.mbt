@@ -16,13 +16,13 @@
 pub struct MvarRecord {
   tag : @common.Tag
   var_idx : UInt
-} derive(Eq, Show, ToJson)
+} derive(Eq, Debug, ToJson)
 
 ///|
 pub struct MvarTable {
   records : Array[MvarRecord]
   var_store : ItemVariationStore
-} derive(Show, ToJson)
+} derive(Debug, ToJson)
 
 ///|
 pub fn MvarTable::parse(data : BytesView) -> Result[MvarTable, VarError] {

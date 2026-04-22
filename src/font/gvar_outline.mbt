@@ -17,7 +17,7 @@ struct PointDelta {
   mut x : Double
   mut y : Double
   mut referenced : Bool
-} derive(Show, ToJson)
+} derive(Debug, ToJson)
 
 fn clone_points(points : Array[@sfnt.GlyphPoint]) -> Array[@sfnt.GlyphPoint] {
   let out : Array[@sfnt.GlyphPoint] = []

@@ -19,7 +19,7 @@ pub struct JustificationHeader {
   wdc_table_offset : Int
   pc_table_offset : Int
   lookup : LookupTable?
-} derive(Show, ToJson)
+} derive(Debug, ToJson)
 
 ///|
 /// Parsed just table (shallow).
@@ -28,7 +28,7 @@ pub struct JustTable {
   format : Int
   horiz : JustificationHeader?
   vert : JustificationHeader?
-} derive(Show, ToJson)
+} derive(Debug, ToJson)
 
 ///|
 pub fn JustTable::has_data(self : JustTable) -> Bool {

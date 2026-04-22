@@ -16,7 +16,7 @@
 pub suberror OtLayoutError {
   UnexpectedEof
   InvalidFormat
-} derive(Eq, Show, ToJson)
+} derive(Eq, Debug, ToJson)
 
 ///|
 /// Layout table header (GSUB/GPOS shared).
@@ -26,20 +26,20 @@ pub struct LayoutHeader {
   feature_list_offset : Int
   lookup_list_offset : Int
   feature_variations_offset : Int?
-} derive(Eq, Show, ToJson)
+} derive(Eq, Debug, ToJson)
 
 ///|
 /// Script record entry (offset from table start).
 pub struct ScriptRecord {
   tag : @common.Tag
   offset : Int
-} derive(Eq, Show, ToJson)
+} derive(Eq, Debug, ToJson)
 
 ///|
 /// Script list table.
 pub struct ScriptList {
   records : Array[ScriptRecord]
-} derive(Eq, Show, ToJson)
+} derive(Eq, Debug, ToJson)
 
 ///|
 pub fn ScriptList::records(self : ScriptList) -> ArrayView[ScriptRecord] {
@@ -51,13 +51,13 @@ pub fn ScriptList::records(self : ScriptList) -> ArrayView[ScriptRecord] {
 pub struct FeatureRecord {
   tag : @common.Tag
   offset : Int
-} derive(Eq, Show, ToJson)
+} derive(Eq, Debug, ToJson)
 
 ///|
 /// Feature list table.
 pub struct FeatureList {
   records : Array[FeatureRecord]
-} derive(Eq, Show, ToJson)
+} derive(Eq, Debug, ToJson)
 
 ///|
 pub fn FeatureList::records(self : FeatureList) -> ArrayView[FeatureRecord] {
@@ -68,7 +68,7 @@ pub fn FeatureList::records(self : FeatureList) -> ArrayView[FeatureRecord] {
 /// Lookup list table (offsets from table start).
 pub struct LookupList {
   offsets : Array[Int]
-} derive(Eq, Show, ToJson)
+} derive(Eq, Debug, ToJson)
 
 ///|
 pub fn LookupList::offsets(self : LookupList) -> ArrayView[Int] {
@@ -83,7 +83,7 @@ pub struct LayoutTable {
   script_list : ScriptList
   feature_list : FeatureList
   lookup_list : LookupList
-} derive(Show, ToJson)
+} derive(Debug, ToJson)
 
 ///|
 pub fn LayoutTable::header(self : LayoutTable) -> LayoutHeader {
@@ -329,7 +329,7 @@ fn resolve_lang_sys_features(
 /// GSUB table wrapper.
 pub struct GsubTable {
   layout : LayoutTable
-} derive(Show, ToJson)
+} derive(Debug, ToJson)
 
 ///|
 pub fn GsubTable::parse(blob : @blob.Blob) -> Result[GsubTable, OtLayoutError] {
@@ -348,7 +348,7 @@ pub fn GsubTable::layout(self : GsubTable) -> LayoutTable {
 /// GPOS table wrapper.
 pub struct GposTable {
   layout : LayoutTable
-} derive(Show, ToJson)
+} derive(Debug, ToJson)
 
 ///|
 pub fn GposTable::parse(blob : @blob.Blob) -> Result[GposTable, OtLayoutError] {

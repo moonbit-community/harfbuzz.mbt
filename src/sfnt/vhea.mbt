@@ -16,7 +16,7 @@
 /// Parsed vhea table (subset).
 pub struct VheaTable {
   number_of_vmetrics : Int
-} derive(Eq, Show, ToJson)
+} derive(Eq, Debug, ToJson)
 
 ///|
 /// Parse vhea table bytes.

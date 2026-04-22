@@ -16,13 +16,13 @@
 pub suberror VarError {
   UnexpectedEof
   InvalidFormat
-} derive(Eq, Show, ToJson)
+} derive(Eq, Debug, ToJson)
 
 ///|
 pub struct AxisCoord {
   tag : @common.Tag
   value : Double
-} derive(Eq, Show, ToJson)
+} derive(Eq, Debug, ToJson)
 
 ///|
 pub fn AxisCoord::new(tag : @common.Tag, value : Double) -> AxisCoord {

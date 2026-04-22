@@ -16,7 +16,7 @@
 /// Parsed hhea table (subset).
 pub struct HheaTable {
   number_of_hmetrics : Int
-} derive(Eq, Show, ToJson)
+} derive(Eq, Debug, ToJson)
 
 ///|
 /// Parse hhea table bytes.

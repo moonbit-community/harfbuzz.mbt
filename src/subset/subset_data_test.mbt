@@ -882,7 +882,7 @@ test "subset data fixtures" {
         Err(err) => {
           if case.suite == "cbdt.tests" {
             fail(
-              "subset error \{case.suite} \{case.font} \{case.profile} \{case.subset} \{err}",
+              "subset error \{case.suite} \{case.font} \{case.profile} \{case.subset} \{@debug.to_string(err)}",
             )
           }
           mismatched = mismatched + 1
@@ -943,5 +943,5 @@ test "subset data fixtures" {
     }
   }
   let expected = "(\{subset_data_case_count}, 0, 0)"
-  inspect((ran, skipped, mismatched), content=expected)
+  @debug.debug_inspect((ran, skipped, mismatched), content=expected)
 }

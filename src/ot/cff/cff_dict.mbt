@@ -16,12 +16,12 @@
 pub enum CffNumber {
   Int(Int)
   Real(Double)
-} derive(Eq, Show, ToJson)
+} derive(Eq, Debug, ToJson)
 
 ///|
 pub struct CffDict {
   entries : Map[Int, Array[CffNumber]]
-} derive(Eq, Show, ToJson)
+} derive(Eq, Debug, ToJson)
 
 ///|
 pub fn parse_cff_dict(data : BytesView) -> Result[CffDict, CffError] {

@@ -17,7 +17,7 @@
 pub struct MathValueRecord {
   value : Int
   device_offset : Int
-} derive(Eq, Show, ToJson)
+} derive(Eq, Debug, ToJson)
 
 ///|
 /// Math constants table.
@@ -26,41 +26,41 @@ pub struct MathConstants {
   min_height : Array[Int]
   math_values : Array[MathValueRecord]
   radical_degree_bottom_raise_percent : Int
-} derive(Show, ToJson)
+} derive(Debug, ToJson)
 
 ///|
 /// Italics correction info.
 pub struct MathItalicsCorrectionInfo {
   coverage_offset : Int
   records : Array[MathValueRecord]
-} derive(Show, ToJson)
+} derive(Debug, ToJson)
 
 ///|
 /// Top accent attachment info.
 pub struct MathTopAccentAttachment {
   coverage_offset : Int
   records : Array[MathValueRecord]
-} derive(Show, ToJson)
+} derive(Debug, ToJson)
 
 ///|
 /// Math kern table.
 pub struct MathKern {
   height_count : Int
   records : Array[MathValueRecord]
-} derive(Show, ToJson)
+} derive(Debug, ToJson)
 
 ///|
 /// Math kern info record (four corners).
 pub struct MathKernInfoRecord {
   math_kerns : Array[MathKern?]
-} derive(Show, ToJson)
+} derive(Debug, ToJson)
 
 ///|
 /// Math kern info table.
 pub struct MathKernInfo {
   coverage_offset : Int
   records : Array[MathKernInfoRecord]
-} derive(Show, ToJson)
+} derive(Debug, ToJson)
 
 ///|
 /// Math glyph info table.
@@ -69,14 +69,14 @@ pub struct MathGlyphInfo {
   top_accent_attachment : MathTopAccentAttachment?
   extended_shape_coverage_offset : Int
   math_kern_info : MathKernInfo?
-} derive(Show, ToJson)
+} derive(Debug, ToJson)
 
 ///|
 /// Math glyph variant record.
 pub struct MathGlyphVariantRecord {
   variant_glyph : Int
   advance : Int
-} derive(Show, ToJson)
+} derive(Debug, ToJson)
 
 ///|
 /// Math glyph part record.
@@ -86,21 +86,21 @@ pub struct MathGlyphPartRecord {
   end_connector_length : Int
   full_advance : Int
   flags : Int
-} derive(Show, ToJson)
+} derive(Debug, ToJson)
 
 ///|
 /// Math glyph assembly table.
 pub struct MathGlyphAssembly {
   italics_correction : MathValueRecord
   parts : Array[MathGlyphPartRecord]
-} derive(Show, ToJson)
+} derive(Debug, ToJson)
 
 ///|
 /// Math glyph construction table.
 pub struct MathGlyphConstruction {
   glyph_assembly : MathGlyphAssembly?
   variants : Array[MathGlyphVariantRecord]
-} derive(Show, ToJson)
+} derive(Debug, ToJson)
 
 ///|
 /// Math variants table.
@@ -111,7 +111,7 @@ pub struct MathVariants {
   vert_glyph_count : Int
   horiz_glyph_count : Int
   constructions : Array[MathGlyphConstruction?]
-} derive(Show, ToJson)
+} derive(Debug, ToJson)
 
 ///|
 /// Parsed MATH table.
@@ -121,7 +121,7 @@ pub struct MathTable {
   constants : MathConstants?
   glyph_info : MathGlyphInfo?
   variants : MathVariants?
-} derive(Show, ToJson)
+} derive(Debug, ToJson)
 
 ///|
 fn read_math_value_record(

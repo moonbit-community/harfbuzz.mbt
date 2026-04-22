@@ -19,7 +19,7 @@ pub struct CmapTable {
   subtable_offset : Int
   format : Int
   variation_offset : Int?
-} derive(Show, ToJson)
+} derive(Debug, ToJson)
 
 ///|
 /// Parse a cmap table from its blob.

@@ -16,5 +16,8 @@
       "path": "moonbit-community/harfbuzz/sfnt",
       "alias": "sfnt"
     }
+  ],
+  "import": [
+    "moonbitlang/core/debug"
   ]
 }

@@ -18,7 +18,7 @@ pub struct CffIndex {
   off_size : Int
   offsets : Array[Int]
   data : Bytes
-} derive(Eq, Show, ToJson)
+} derive(Eq, Debug, ToJson)
 
 ///|
 pub fn parse_cff1_index(data : BytesView, offset : Int) -> Result[CffIndex, CffError] {

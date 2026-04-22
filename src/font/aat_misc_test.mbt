@@ -108,48 +108,48 @@ fn build_font_bytes_aat_misc() -> Bytes {
 test "aat misc tables parse" {
   let font = Font::from_bytes(build_font_bytes_aat_misc())
   let bsln = match font.bsln() {
-    Err(err) => fail("bsln parse failed: \{err}")
+    Err(err) => fail("bsln parse failed: \{@debug.to_string(err)}")
     Ok(None) => fail("bsln table missing")
     Ok(Some(bsln)) => bsln
   }
   assert_eq(bsln.format, 0)
   match bsln.data {
-    @aat.BslnData::Format0(deltas) => inspect(deltas[0], content="0")
+    @aat.BslnData::Format0(deltas) => @debug.debug_inspect(deltas[0], content="0")
     _ => fail("unexpected bsln format")
   }
 
   let feat = match font.feat() {
-    Err(err) => fail("feat parse failed: \{err}")
+    Err(err) => fail("feat parse failed: \{@debug.to_string(err)}")
     Ok(None) => fail("feat table missing")
     Ok(Some(feat)) => feat
   }
-  inspect(feat.features.length(), content="1")
-  inspect(feat.features[0].settings.length(), content="2")
+  @debug.debug_inspect(feat.features.length(), content="1")
+  @debug.debug_inspect(feat.features[0].settings.length(), content="2")
 
   let ltag = match font.ltag() {
-    Err(err) => fail("ltag parse failed: \{err}")
+    Err(err) => fail("ltag parse failed: \{@debug.to_string(err)}")
     Ok(None) => fail("ltag table missing")
     Ok(Some(ltag)) => ltag
   }
-  inspect(ltag.tags().length(), content="2")
+  @debug.debug_inspect(ltag.tags().length(), content="2")
 
   let opbd = match font.opbd() {
-    Err(err) => fail("opbd parse failed: \{err}")
+    Err(err) => fail("opbd parse failed: \{@debug.to_string(err)}")
     Ok(None) => fail("opbd table missing")
     Ok(Some(opbd)) => opbd
   }
   let bounds = match opbd.bounds(0U) {
-    Err(err) => fail("opbd bounds failed: \{err}")
+    Err(err) => fail("opbd bounds failed: \{@debug.to_string(err)}")
     Ok(None) => fail("opbd bounds missing")
     Ok(Some(bounds)) => bounds
   }
-  inspect(bounds.left, content="-10")
-  inspect(bounds.top, content="20")
-  inspect(bounds.right, content="30")
-  inspect(bounds.bottom, content="-40")
+  @debug.debug_inspect(bounds.left, content="-10")
+  @debug.debug_inspect(bounds.top, content="20")
+  @debug.debug_inspect(bounds.right, content="30")
+  @debug.debug_inspect(bounds.bottom, content="-40")
 
   let just = match font.just() {
-    Err(err) => fail("just parse failed: \{err}")
+    Err(err) => fail("just parse failed: \{@debug.to_string(err)}")
     Ok(None) => fail("just table missing")
     Ok(Some(just)) => just
   }

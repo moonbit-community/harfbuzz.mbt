@@ -506,7 +506,7 @@ pub enum SpaceFallbackType {
   SpaceFigure
   SpacePunctuation
   SpaceNarrow
-} derive(Eq, Show, ToJson)
+} derive(Eq, Debug, ToJson)
 
 ///|
 /// Return space fallback type for a codepoint (subset of Zs, excluding OGHAM SPACE MARK).

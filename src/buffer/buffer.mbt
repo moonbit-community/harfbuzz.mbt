@@ -18,7 +18,7 @@ pub struct GlyphInfo {
   codepoint : UInt
   cluster : Int
   unicode : UInt
-} derive(Eq, Show, ToJson)
+} derive(Eq, Debug, ToJson)
 
 ///|
 /// Glyph positioning data.
@@ -27,19 +27,19 @@ pub struct GlyphPosition {
   y_advance : Int
   x_offset : Int
   y_offset : Int
-} derive(Eq, Show, ToJson)
+} derive(Eq, Debug, ToJson)
 
 ///|
 struct FeatureValues {
   tag : @common.Tag
   values : Array[Int]
-} derive(Show, ToJson)
+} derive(Debug, ToJson)
 
 ///|
 pub suberror ShapeError {
   Font(@font.FontError)
   Layout(@ot_tables.OtLayoutError)
-} derive(Eq, Show, ToJson)
+} derive(Eq, Debug, ToJson)
 
 ///|
 /// Text buffer for shaping.
@@ -57,7 +57,7 @@ pub struct Buffer {
   mut preserve_default_ignorables : Bool
   mut remove_default_ignorables : Bool
   mut not_found_variation_selector : UInt?
-} derive(Show, ToJson)
+} derive(Debug, ToJson)
 
 ///|
 /// Create an empty buffer.

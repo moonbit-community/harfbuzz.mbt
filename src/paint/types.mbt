@@ -27,7 +27,7 @@ pub struct Color {
   g : Int
   b : Int
   a : Int
-} derive(Eq, Show, ToJson)
+} derive(Eq, Debug, ToJson)
 
 ///|
 /// Helper to build a color from BGRA bytes.
@@ -42,14 +42,14 @@ pub(all) struct ColorStop {
   palette_index : Int
   alpha : Int
   var_idx_base : VarIdx?
-} derive(Eq, Show, ToJson)
+} derive(Eq, Debug, ToJson)
 
 ///|
 /// Color line for gradients. Extend is raw enum value (0..2).
 pub(all) struct ColorLine {
   extend : Int
   stops : Array[ColorStop]
-} derive(Eq, Show, ToJson)
+} derive(Eq, Debug, ToJson)
 
 ///|
 /// Affine transform (F16DOT16 values), with optional VarIdx base for variation.
@@ -61,4 +61,4 @@ pub(all) struct Affine2x3 {
   dx : Int
   dy : Int
   var_idx_base : VarIdx?
-} derive(Eq, Show, ToJson)
+} derive(Eq, Debug, ToJson)

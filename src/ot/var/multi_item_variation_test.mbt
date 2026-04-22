@@ -89,13 +89,13 @@ fn build_multi_item_store() -> Bytes {
 ///|
 test "multi item var store delta" {
   let store = match MultiItemVariationStore::parse(build_multi_item_store()[:]) {
-    Err(err) => fail("parse failed: \{err}")
+    Err(err) => fail("parse failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let out0 : Array[Double] = [0.0]
   store.get_delta(0x00000000U, [0x4000], out0)
-  inspect(out0.map(v => v.round().to_int()), content="[10]")
+  @debug.debug_inspect(out0.map(v => v.round().to_int()), content="[10]")
   let out1 : Array[Double] = [0.0]
   store.get_delta(0x00000000U, [0], out1)
-  inspect(out1.map(v => v.round().to_int()), content="[0]")
+  @debug.debug_inspect(out1.map(v => v.round().to_int()), content="[0]")
 }

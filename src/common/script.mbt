@@ -16,7 +16,7 @@
 /// Script tag (ISO 15924), stored as a Tag.
 pub struct Script {
   tag : Tag
-} derive(Eq, Show, ToJson)
+} derive(Eq, Debug, ToJson)
 
 ///|
 fn canonicalize_script_tag(tag : Tag) -> Tag {

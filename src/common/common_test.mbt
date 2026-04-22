@@ -15,105 +15,105 @@
 ///|
 test "tag construction" {
   let tag = Tag::from_chars('A', 'B', 'C', 'D')
-  inspect(tag.to_string(), content="ABCD")
-  inspect(tag_none.to_uint(), content="0")
+  @debug.debug_inspect(tag.to_string(), content="ABCD")
+  @debug.debug_inspect(tag_none.to_uint(), content="0")
   let padded = Tag::from_string("a")
-  inspect(padded.to_string(), content="a   ")
+  @debug.debug_inspect(padded.to_string(), content="a   ")
   let long = Tag::from_string("abcde")
-  inspect(long.to_string(), content="abcd")
+  @debug.debug_inspect(long.to_string(), content="abcd")
   let short_len = Tag::from_string("aBcDe", len=2)
-  inspect(short_len.to_string(), content="aB  ")
+  @debug.debug_inspect(short_len.to_string(), content="aB  ")
   let mid_len = Tag::from_string("aBcDe", len=3)
-  inspect(mid_len.to_string(), content="aBc ")
+  @debug.debug_inspect(mid_len.to_string(), content="aBc ")
   let zero_len = Tag::from_string("abcd", len=0)
-  inspect(zero_len.to_uint(), content="0")
+  @debug.debug_inspect(zero_len.to_uint(), content="0")
 }
 
 ///|
 test "direction parsing and helpers" {
   let dir = Direction::from_string("left-to-right")
-  inspect(dir.to_string(), content="ltr")
+  @debug.debug_inspect(dir.to_string(), content="ltr")
   assert_true(dir.is_horizontal())
   assert_true(dir.is_forward())
   let rev = dir.reverse()
-  inspect(rev.to_string(), content="rtl")
+  @debug.debug_inspect(rev.to_string(), content="rtl")
   assert_true(rev.is_backward())
-  inspect(Direction::from_string("rtl").to_string(), content="rtl")
-  inspect(Direction::from_string("x").to_string(), content="invalid")
-  inspect(Direction::from_string("ttb").to_string(), content="ttb")
-  inspect(Direction::from_string("t", len=0).to_string(), content="invalid")
+  @debug.debug_inspect(Direction::from_string("rtl").to_string(), content="rtl")
+  @debug.debug_inspect(Direction::from_string("x").to_string(), content="invalid")
+  @debug.debug_inspect(Direction::from_string("ttb").to_string(), content="ttb")
+  @debug.debug_inspect(Direction::from_string("t", len=0).to_string(), content="invalid")
   let invalid = Direction::from_string("")
-  inspect(invalid.reverse().to_string(), content="invalid")
+  @debug.debug_inspect(invalid.reverse().to_string(), content="invalid")
 }
 
 ///|
 test "language canonicalization" {
   let lang = Language::from_string("en-US")
-  inspect(lang.to_string(), content="Some(\"en-us\")")
+  @debug.debug_inspect(lang.to_string(), content="Some(\"en-us\")")
   let base = Language::from_string("en")
   assert_true(base.matches(lang))
   assert_true(!lang.matches(base))
   let zh = Language::from_string("zh_Hant")
-  inspect(zh.to_string(), content="Some(\"zh-hant\")")
+  @debug.debug_inspect(zh.to_string(), content="Some(\"zh-hant\")")
   let fa = Language::from_string("FA_ir")
-  inspect(fa.to_string(), content="Some(\"fa-ir\")")
+  @debug.debug_inspect(fa.to_string(), content="Some(\"fa-ir\")")
   let invalid = Language::from_string("")
-  inspect(invalid.to_string(), content="None")
+  @debug.debug_inspect(invalid.to_string(), content="None")
   let capped = Language::from_string("Enx", len=2)
-  inspect(capped.to_string(), content="Some(\"en\")")
+  @debug.debug_inspect(capped.to_string(), content="Some(\"en\")")
 }
 
 ///|
 test "script aliases and direction" {
   let latin = Script::from_string("Latn")
-  inspect(latin.to_tag().to_string(), content="Latn")
+  @debug.debug_inspect(latin.to_tag().to_string(), content="Latn")
   let hans = Script::from_string("HANS")
-  inspect(hans.to_tag().to_string(), content="Hani")
+  @debug.debug_inspect(hans.to_tag().to_string(), content="Hani")
   let inherited = Script::from_iso15924_tag(Tag::from_chars('Q', 'a', 'a', 'i'))
-  inspect(inherited.to_tag().to_string(), content="Zinh")
+  @debug.debug_inspect(inherited.to_tag().to_string(), content="Zinh")
   let arabic = Script::from_string("Arab")
-  inspect(arabic.horizontal_direction().to_string(), content="rtl")
+  @debug.debug_inspect(arabic.horizontal_direction().to_string(), content="rtl")
 }
 
 ///|
 test "script tag aliases" {
-  inspect(Script::from_string("Aran").to_tag().to_string(), content="Arab")
-  inspect(Script::from_string("Cyrs").to_tag().to_string(), content="Cyrl")
-  inspect(Script::from_string("Geok").to_tag().to_string(), content="Geor")
-  inspect(Script::from_string("Latf").to_tag().to_string(), content="Latn")
-  inspect(Script::from_string("Latg").to_tag().to_string(), content="Latn")
-  inspect(Script::from_string("Syrn").to_tag().to_string(), content="Syrc")
-  inspect(Script::from_string("Qaac").to_tag().to_string(), content="Copt")
-  inspect(Script::from_string("Jamo").to_tag().to_string(), content="Hang")
+  @debug.debug_inspect(Script::from_string("Aran").to_tag().to_string(), content="Arab")
+  @debug.debug_inspect(Script::from_string("Cyrs").to_tag().to_string(), content="Cyrl")
+  @debug.debug_inspect(Script::from_string("Geok").to_tag().to_string(), content="Geor")
+  @debug.debug_inspect(Script::from_string("Latf").to_tag().to_string(), content="Latn")
+  @debug.debug_inspect(Script::from_string("Latg").to_tag().to_string(), content="Latn")
+  @debug.debug_inspect(Script::from_string("Syrn").to_tag().to_string(), content="Syrc")
+  @debug.debug_inspect(Script::from_string("Qaac").to_tag().to_string(), content="Copt")
+  @debug.debug_inspect(Script::from_string("Jamo").to_tag().to_string(), content="Hang")
 }
 
 ///|
 test "script tag normalization" {
-  inspect(Script::from_string("zyyy").to_tag().to_string(), content="Zyyy")
-  inspect(Script::from_string("zinh").to_tag().to_string(), content="Zinh")
-  inspect(Script::from_string("zzzz").to_tag().to_string(), content="Zzzz")
-  inspect(Script::from_string("kana").to_tag().to_string(), content="Kana")
-  inspect(Script::from_string("math").to_tag().to_string(), content="Math")
+  @debug.debug_inspect(Script::from_string("zyyy").to_tag().to_string(), content="Zyyy")
+  @debug.debug_inspect(Script::from_string("zinh").to_tag().to_string(), content="Zinh")
+  @debug.debug_inspect(Script::from_string("zzzz").to_tag().to_string(), content="Zzzz")
+  @debug.debug_inspect(Script::from_string("kana").to_tag().to_string(), content="Kana")
+  @debug.debug_inspect(Script::from_string("math").to_tag().to_string(), content="Math")
 }
 
 ///|
 test "script unknown tags" {
   let custom = Script::from_string("wWyZ")
-  inspect(custom.to_tag().to_string(), content="Wwyz")
+  @debug.debug_inspect(custom.to_tag().to_string(), content="Wwyz")
   let unknown = Script::from_string("x123")
-  inspect(unknown.to_tag().to_string(), content="Zzzz")
+  @debug.debug_inspect(unknown.to_tag().to_string(), content="Zzzz")
   assert_true(Script::from_string("") == script_invalid)
 }
 
 ///|
 test "script horizontal direction mapping" {
-  inspect(
+  @debug.debug_inspect(
     script_old_italic.horizontal_direction().to_string(),
     content="invalid",
   )
-  inspect(script_tifinagh.horizontal_direction().to_string(), content="invalid")
-  inspect(script_adlam.horizontal_direction().to_string(), content="rtl")
-  inspect(script_latin.horizontal_direction().to_string(), content="ltr")
+  @debug.debug_inspect(script_tifinagh.horizontal_direction().to_string(), content="invalid")
+  @debug.debug_inspect(script_adlam.horizontal_direction().to_string(), content="rtl")
+  @debug.debug_inspect(script_latin.horizontal_direction().to_string(), content="ltr")
 }
 
 ///|
@@ -121,8 +121,8 @@ fn expect_parse_int(result : (Int, Int)?, value : Int, idx : Int) -> Unit raise 
   match result {
     None => fail("expected int parse")
     Some((parsed, next_idx)) => {
-      inspect(parsed, content="\{value}")
-      inspect(next_idx, content="\{idx}")
+      @debug.debug_inspect(parsed, content="\{value}")
+      @debug.debug_inspect(next_idx, content="\{idx}")
     }
   }
 }
@@ -132,8 +132,8 @@ fn expect_parse_uint(result : (UInt, Int)?, value : UInt, idx : Int) -> Unit rai
   match result {
     None => fail("expected uint parse")
     Some((parsed, next_idx)) => {
-      inspect(parsed, content="\{value}")
-      inspect(next_idx, content="\{idx}")
+      @debug.debug_inspect(parsed, content="\{value}")
+      @debug.debug_inspect(next_idx, content="\{idx}")
     }
   }
 }
@@ -144,8 +144,8 @@ fn expect_parse_double(result : (Double, Int)?, thousand : Int, idx : Int) -> Un
     None => fail("expected double parse")
     Some((parsed, next_idx)) => {
       let rounded = (parsed * 1000.0).round().to_int()
-      inspect(rounded, content="\{thousand}")
-      inspect(next_idx, content="\{idx}")
+      @debug.debug_inspect(rounded, content="\{thousand}")
+      @debug.debug_inspect(next_idx, content="\{idx}")
     }
   }
 }
@@ -156,7 +156,7 @@ test "number parse int and uint" {
   expect_parse_uint(parse_uint("123", end=3), 123U, 3)
   expect_parse_uint(parse_uint("12F", end=3, whole=true, base=16), 0x12FU, 3)
   let whole_fail = parse_uint("12Fq", end=4, whole=true, base=16)
-  inspect(whole_fail is None, content="true")
+  @debug.debug_inspect(whole_fail is None, content="true")
   expect_parse_uint(parse_uint("12Fq", end=4, base=16), 0x12FU, 3)
   expect_parse_int(parse_int("-123", end=4), -123, 4)
   expect_parse_uint(parse_uint("123V", end=4), 123U, 3)
@@ -176,39 +176,39 @@ test "number parse double" {
 ///|
 test "codepoint set basics" {
   let set = CodepointSet::new()
-  inspect(set.is_empty(), content="true")
+  @debug.debug_inspect(set.is_empty(), content="true")
   assert_true(set.add_range(2U, 4U))
   set.add(10U)
   set.add_array([6U, 7U])
   assert_true(set.add_sorted_array([12U, 13U, 14U]))
   set.del(3U)
   set.del_range(10U, 11U)
-  inspect(set.to_sorted_array(), content="[2, 4, 6, 7, 12, 13, 14]")
-  inspect(set.population(), content="7")
-  inspect(set.get_min(), content="2")
-  inspect(set.get_max(), content="14")
+  @debug.debug_inspect(set.to_sorted_array(), content="[2, 4, 6, 7, 12, 13, 14]")
+  @debug.debug_inspect(set.population(), content="7")
+  @debug.debug_inspect(set.get_min(), content="2")
+  @debug.debug_inspect(set.get_max(), content="14")
 }
 
 ///|
 test "codepoint set empty state" {
   let set = CodepointSet::new()
-  inspect(set.population(), content="0")
-  inspect(set.get_min(), content="\{codepoint_invalid}")
-  inspect(set.get_max(), content="\{codepoint_invalid}")
-  inspect(set.next(), content="None")
-  inspect(set.previous(), content="None")
-  inspect(set.next_range(), content="None")
-  inspect(set.previous_range(), content="None")
+  @debug.debug_inspect(set.population(), content="0")
+  @debug.debug_inspect(set.get_min(), content="\{codepoint_invalid}")
+  @debug.debug_inspect(set.get_max(), content="\{codepoint_invalid}")
+  @debug.debug_inspect(set.next(), content="None")
+  @debug.debug_inspect(set.previous(), content="None")
+  @debug.debug_inspect(set.next_range(), content="None")
+  @debug.debug_inspect(set.previous_range(), content="None")
 }
 
 ///|
 test "codepoint set clear resets" {
   let set = CodepointSet::new()
   assert_true(set.add_range(10U, 12U))
-  inspect(set.is_empty(), content="false")
+  @debug.debug_inspect(set.is_empty(), content="false")
   set.clear()
-  inspect(set.is_empty(), content="true")
-  inspect(set.population(), content="0")
+  @debug.debug_inspect(set.is_empty(), content="true")
+  @debug.debug_inspect(set.population(), content="0")
 }
 
 ///|
@@ -217,22 +217,22 @@ test "codepoint set next and ranges" {
   assert_true(set.add_range(1U, 3U))
   set.add(5U)
   assert_true(set.add_range(7U, 8U))
-  inspect(set.next(), content="Some(1)")
-  inspect(set.next(after=2U), content="Some(3)")
-  inspect(set.previous(before=7U), content="Some(5)")
-  inspect(set.next_range(), content="Some((1, 3))")
-  inspect(set.next_range(start=4U), content="Some((5, 5))")
-  inspect(set.previous_range(end=8U), content="Some((7, 8))")
-  inspect(set.intersects(2U, 4U), content="true")
-  inspect(set.intersects(6U, 6U), content="false")
-  inspect(set.next_many(after=1U, size=3), content="[2, 3, 5]")
+  @debug.debug_inspect(set.next(), content="Some(1)")
+  @debug.debug_inspect(set.next(after=2U), content="Some(3)")
+  @debug.debug_inspect(set.previous(before=7U), content="Some(5)")
+  @debug.debug_inspect(set.next_range(), content="Some((1, 3))")
+  @debug.debug_inspect(set.next_range(start=4U), content="Some((5, 5))")
+  @debug.debug_inspect(set.previous_range(end=8U), content="Some((7, 8))")
+  @debug.debug_inspect(set.intersects(2U, 4U), content="true")
+  @debug.debug_inspect(set.intersects(6U, 6U), content="false")
+  @debug.debug_inspect(set.next_many(after=1U, size=3), content="[2, 3, 5]")
 }
 
 ///|
 test "codepoint set add_sorted_array rejects unsorted" {
   let set = CodepointSet::new()
-  inspect(set.add_sorted_array([3U, 2U]), content="false")
-  inspect(set.is_empty(), content="true")
+  @debug.debug_inspect(set.add_sorted_array([3U, 2U]), content="false")
+  @debug.debug_inspect(set.is_empty(), content="true")
 }
 
 ///|
@@ -242,53 +242,53 @@ test "codepoint set in-place ops" {
   let other = CodepointSet::new()
   other.add_array([3U, 4U, 5U])
   set.union_in_place(other)
-  inspect(set.to_sorted_array(), content="[1, 2, 3, 4, 5]")
+  @debug.debug_inspect(set.to_sorted_array(), content="[1, 2, 3, 4, 5]")
   let sub = CodepointSet::new()
   sub.add_array([2U, 5U])
   set.subtract_in_place(sub)
-  inspect(set.to_sorted_array(), content="[1, 3, 4]")
+  @debug.debug_inspect(set.to_sorted_array(), content="[1, 3, 4]")
   let keep = CodepointSet::new()
   keep.add_array([1U, 4U])
   set.intersect_in_place(keep)
-  inspect(set.to_sorted_array(), content="[1, 4]")
+  @debug.debug_inspect(set.to_sorted_array(), content="[1, 4]")
   let diff = CodepointSet::new()
   diff.add_array([4U, 6U])
   set.symmetric_difference_in_place(diff)
-  inspect(set.to_sorted_array(), content="[1, 6]")
-  inspect(set.hash() != 0, content="true")
+  @debug.debug_inspect(set.to_sorted_array(), content="[1, 6]")
+  @debug.debug_inspect(set.hash() != 0, content="true")
 }
 
 ///|
 test "codepoint map and bimap" {
   let map = CodepointMap::new()
   map.set(1U, 5U)
-  inspect(map.get(1U), content="5")
-  inspect(map.get(2U), content="\{map_value_invalid}")
-  inspect(map.population(), content="1")
+  @debug.debug_inspect(map.get(1U), content="5")
+  @debug.debug_inspect(map.get(2U), content="\{map_value_invalid}")
+  @debug.debug_inspect(map.population(), content="1")
   assert_true(map.has(1U))
   assert_true(!map.has(3U))
   map.set(1U, 7U)
-  inspect(map.population(), content="1")
-  inspect(map.get(1U), content="7")
+  @debug.debug_inspect(map.population(), content="1")
+  @debug.debug_inspect(map.get(1U), content="7")
   map.set(2U, 9U)
-  inspect(map.population(), content="2")
+  @debug.debug_inspect(map.population(), content="2")
   map.del(1U)
-  inspect(map.get(1U), content="\{map_value_invalid}")
-  inspect(map.population(), content="1")
+  @debug.debug_inspect(map.get(1U), content="\{map_value_invalid}")
+  @debug.debug_inspect(map.population(), content="1")
   map.clear()
-  inspect(map.is_empty(), content="true")
+  @debug.debug_inspect(map.is_empty(), content="true")
 
   let bimap = CodepointBiMap::new()
   bimap.set(3U, 9U)
-  inspect(bimap.get(3U), content="9")
-  inspect(bimap.backward(9U), content="3")
-  inspect(bimap.population(), content="1")
+  @debug.debug_inspect(bimap.get(3U), content="9")
+  @debug.debug_inspect(bimap.backward(9U), content="3")
+  @debug.debug_inspect(bimap.population(), content="1")
   assert_true(bimap.has(3U))
   assert_true(!bimap.has(4U))
   bimap.del(3U)
-  inspect(bimap.get(3U), content="\{map_value_invalid}")
+  @debug.debug_inspect(bimap.get(3U), content="\{map_value_invalid}")
   bimap.clear()
-  inspect(bimap.is_empty(), content="true")
+  @debug.debug_inspect(bimap.is_empty(), content="true")
 }
 
 ///|
@@ -296,10 +296,10 @@ test "codepoint map equality" {
   let map_a = CodepointMap::new()
   map_a.set(1U, 2U)
   let map_b = map_a.copy()
-  inspect(map_a.is_equal(map_b), content="true")
+  @debug.debug_inspect(map_a.is_equal(map_b), content="true")
   map_b.set(3U, 4U)
-  inspect(map_a.is_equal(map_b), content="false")
-  inspect(map_a.hash() != 0, content="true")
+  @debug.debug_inspect(map_a.is_equal(map_b), content="false")
+  @debug.debug_inspect(map_a.hash() != 0, content="true")
 }
 
 ///|
@@ -308,39 +308,39 @@ test "codepoint map next/keys values" {
   map.set(5U, 1U)
   map.set(2U, 3U)
   map.set(9U, 0U)
-  inspect(map.next(), content="Some((0, 2, 3))")
-  inspect(map.next(idx=0), content="Some((1, 5, 1))")
-  inspect(map.next(idx=1), content="Some((2, 9, 0))")
-  inspect(map.next(idx=2), content="None")
+  @debug.debug_inspect(map.next(), content="Some((0, 2, 3))")
+  @debug.debug_inspect(map.next(idx=0), content="Some((1, 5, 1))")
+  @debug.debug_inspect(map.next(idx=1), content="Some((2, 9, 0))")
+  @debug.debug_inspect(map.next(idx=2), content="None")
 
   let keys = map.keys_set().to_sorted_array()
   let values = map.values_set().to_sorted_array()
-  inspect(keys, content="[2, 5, 9]")
-  inspect(values, content="[0, 1, 3]")
+  @debug.debug_inspect(keys, content="[2, 5, 9]")
+  @debug.debug_inspect(values, content="[0, 1, 3]")
 }
 
 ///|
 test "codepoint incremental bimap" {
   let bimap = CodepointIncBiMap::new()
-  inspect(bimap.add(10U), content="0")
-  inspect(bimap.add(20U), content="1")
-  inspect(bimap.skip(count=2), content="2")
-  inspect(bimap.add(30U), content="4")
-  inspect(bimap.backward(0U), content="10")
-  inspect(bimap.backward(1U), content="20")
-  inspect(bimap.backward(2U), content="\{map_value_invalid}")
-  inspect(bimap.get_next_value(), content="5")
-  inspect(bimap.identity(3), content="true")
-  inspect(bimap.get(0U), content="0")
-  inspect(bimap.get(2U), content="2")
+  @debug.debug_inspect(bimap.add(10U), content="0")
+  @debug.debug_inspect(bimap.add(20U), content="1")
+  @debug.debug_inspect(bimap.skip(count=2), content="2")
+  @debug.debug_inspect(bimap.add(30U), content="4")
+  @debug.debug_inspect(bimap.backward(0U), content="10")
+  @debug.debug_inspect(bimap.backward(1U), content="20")
+  @debug.debug_inspect(bimap.backward(2U), content="\{map_value_invalid}")
+  @debug.debug_inspect(bimap.get_next_value(), content="5")
+  @debug.debug_inspect(bimap.identity(3), content="true")
+  @debug.debug_inspect(bimap.get(0U), content="0")
+  @debug.debug_inspect(bimap.get(2U), content="2")
   bimap.clear()
   ignore(bimap.add(5U))
   ignore(bimap.add(2U))
   ignore(bimap.add(9U))
   bimap.sort()
-  inspect(bimap.get(2U), content="0")
-  inspect(bimap.get(5U), content="1")
-  inspect(bimap.get(9U), content="2")
+  @debug.debug_inspect(bimap.get(2U), content="0")
+  @debug.debug_inspect(bimap.get(5U), content="1")
+  @debug.debug_inspect(bimap.get(9U), content="2")
 }
 
 ///|
@@ -350,10 +350,10 @@ test "serialize objects patch offsets" {
   let obj1 = SerializeObject::new(Bytes::from_array([0xAA, 0xBB]))
   let result = serialize_objects([obj0, obj1])
   match result {
-    Err(err) => fail("serialize failed: \{err}")
+    Err(err) => fail("serialize failed: \{@debug.to_string(err)}")
     Ok(bytes) => {
       let ints = bytes.to_array().map(b => b.to_int())
-      inspect(ints, content="[0, 4, 0, 0, 170, 187]")
+      @debug.debug_inspect(ints, content="[0, 4, 0, 0, 170, 187]")
     }
   }
 }
@@ -364,11 +364,11 @@ test "serialize objects offsets" {
   let obj1 = SerializeObject::new(Bytes::from_array([0xAA, 0xBB, 0xCC]))
   let result = serialize_objects_with_offsets([obj0, obj1])
   match result {
-    Err(err) => fail("serialize failed: \{err}")
+    Err(err) => fail("serialize failed: \{@debug.to_string(err)}")
     Ok((bytes, starts)) => {
-      inspect(starts, content="[0, 4]")
+      @debug.debug_inspect(starts, content="[0, 4]")
       let ints = bytes.to_array().map(b => b.to_int())
-      inspect(ints, content="[0, 0, 0, 0, 170, 187, 204]")
+      @debug.debug_inspect(ints, content="[0, 0, 0, 0, 170, 187, 204]")
     }
   }
 }
@@ -381,7 +381,7 @@ test "serialize objects detects overflow" {
   let result = serialize_objects([obj0, obj1])
   match result {
     Err(SerializeError::OffsetOverflow) => ()
-    Err(err) => fail("unexpected error: \{err}")
+    Err(err) => fail("unexpected error: \{@debug.to_string(err)}")
     Ok(_) => fail("expected overflow error")
   }
 }
@@ -400,10 +400,10 @@ test "serialize objects whence and signed offsets" {
   let obj1 = SerializeObject::new(Bytes::from_array([0x11, 0x22]))
   let result = serialize_objects([obj0, obj1])
   match result {
-    Err(err) => fail("serialize failed: \{err}")
+    Err(err) => fail("serialize failed: \{@debug.to_string(err)}")
     Ok(bytes) => {
       let ints = bytes.to_array().map(b => b.to_int())
-      inspect(ints, content="[0, 0, 0, 0, 17, 34]")
+      @debug.debug_inspect(ints, content="[0, 0, 0, 0, 17, 34]")
     }
   }
 
@@ -419,10 +419,10 @@ test "serialize objects whence and signed offsets" {
   let obj3 = SerializeObject::new(Bytes::from_array([0xAA, 0xBB]))
   let result2 = serialize_objects([obj2, obj3])
   match result2 {
-    Err(err) => fail("serialize failed: \{err}")
+    Err(err) => fail("serialize failed: \{@debug.to_string(err)}")
     Ok(bytes) => {
       let ints = bytes.to_array().map(b => b.to_int())
-      inspect(ints, content="[0, 2, 170, 187]")
+      @debug.debug_inspect(ints, content="[0, 2, 170, 187]")
     }
   }
 
@@ -438,10 +438,10 @@ test "serialize objects whence and signed offsets" {
   )
   let result3 = serialize_objects([obj4, obj5])
   match result3 {
-    Err(err) => fail("serialize failed: \{err}")
+    Err(err) => fail("serialize failed: \{@debug.to_string(err)}")
     Ok(bytes) => {
       let ints = bytes.to_array().map(b => b.to_int())
-      inspect(ints, content="[0, 0, 255, 254]")
+      @debug.debug_inspect(ints, content="[0, 0, 255, 254]")
     }
   }
 }
@@ -453,10 +453,10 @@ test "serialize objects bias and virtual order" {
   let obj1 = SerializeObject::new(Bytes::from_array([0x33, 0x44]))
   let result = serialize_objects([obj0, obj1])
   match result {
-    Err(err) => fail("serialize failed: \{err}")
+    Err(err) => fail("serialize failed: \{@debug.to_string(err)}")
     Ok(bytes) => {
       let ints = bytes.to_array().map(b => b.to_int())
-      inspect(ints, content="[0, 4, 51, 68]")
+      @debug.debug_inspect(ints, content="[0, 4, 51, 68]")
     }
   }
 
@@ -466,7 +466,7 @@ test "serialize objects bias and virtual order" {
   let result2 = serialize_objects([obj2, obj3])
   match result2 {
     Err(SerializeError::VirtualOrder) => ()
-    Err(err) => fail("unexpected error: \{err}")
+    Err(err) => fail("unexpected error: \{@debug.to_string(err)}")
     Ok(_) => fail("expected virtual order error")
   }
 }
@@ -479,10 +479,10 @@ test "serialize objects packed order" {
   obj1.real_links.push(SerializeLink::new(2, 0, 0))
   let result = serialize_objects_packed([obj0, obj1])
   match result {
-    Err(err) => fail("serialize failed: \{err}")
+    Err(err) => fail("serialize failed: \{@debug.to_string(err)}")
     Ok(bytes) => {
       let ints = bytes.to_array().map(b => b.to_int())
-      inspect(ints, content="[0, 2, 0, 0]")
+      @debug.debug_inspect(ints, content="[0, 2, 0, 0]")
     }
   }
 }
@@ -493,7 +493,7 @@ test "serialize objects pack order helper" {
   let obj1 = SerializeObject::new(Bytes::from_array([0]))
   obj1.virtual_links.push(0)
   let order = pack_object_order([obj0, obj1])
-  inspect(order, content="Ok([1, 0])")
+  @debug.debug_inspect(order, content="Ok([1, 0])")
 }
 
 ///|
@@ -503,10 +503,10 @@ test "serialize objects in order" {
   obj1.real_links.push(SerializeLink::new(2, 0, 0))
   let result = serialize_objects_in_order([obj0, obj1], [1, 0])
   match result {
-    Err(err) => fail("serialize failed: \{err}")
+    Err(err) => fail("serialize failed: \{@debug.to_string(err)}")
     Ok(bytes) => {
       let ints = bytes.to_array().map(b => b.to_int())
-      inspect(ints, content="[0, 2, 0, 0]")
+      @debug.debug_inspect(ints, content="[0, 2, 0, 0]")
     }
   }
 }
@@ -520,7 +520,7 @@ test "serialize objects packed cycle" {
   let result = serialize_objects_packed([obj0, obj1])
   match result {
     Err(SerializeError::VirtualOrder) => ()
-    Err(err) => fail("unexpected error: \{err}")
+    Err(err) => fail("unexpected error: \{@debug.to_string(err)}")
     Ok(_) => fail("expected virtual order error")
   }
 }
@@ -533,7 +533,7 @@ test "serialize objects invalid links" {
   let result = serialize_objects([obj0, obj1])
   match result {
     Err(SerializeError::NegativeOffset) => ()
-    Err(err) => fail("unexpected error: \{err}")
+    Err(err) => fail("unexpected error: \{@debug.to_string(err)}")
     Ok(_) => fail("expected negative offset error")
   }
 
@@ -542,7 +542,7 @@ test "serialize objects invalid links" {
   let result2 = serialize_objects([obj2])
   match result2 {
     Err(SerializeError::OutOfBounds) => ()
-    Err(err) => fail("unexpected error: \{err}")
+    Err(err) => fail("unexpected error: \{@debug.to_string(err)}")
     Ok(_) => fail("expected out of bounds error")
   }
 
@@ -551,7 +551,7 @@ test "serialize objects invalid links" {
   let result3 = serialize_objects([obj3])
   match result3 {
     Err(SerializeError::InvalidWidth) => ()
-    Err(err) => fail("unexpected error: \{err}")
+    Err(err) => fail("unexpected error: \{@debug.to_string(err)}")
     Ok(_) => fail("expected invalid width error")
   }
 }

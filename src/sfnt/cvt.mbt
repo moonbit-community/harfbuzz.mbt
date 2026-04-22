@@ -16,7 +16,7 @@
 /// Control value table (cvt ) raw entries.
 pub struct CvtTable {
   values : Array[Int]
-} derive(Show, ToJson)
+} derive(Debug, ToJson)
 
 ///|
 pub fn CvtTable::values(self : CvtTable) -> ArrayView[Int] {

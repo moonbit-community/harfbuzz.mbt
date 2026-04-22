@@ -23,7 +23,7 @@ pub struct VarcTransform {
   skew_y : Double
   tcenter_x : Double
   tcenter_y : Double
-} derive(Show, ToJson)
+} derive(Debug, ToJson)
 
 ///|
 pub fn VarcTransform::apply_to_point(
@@ -95,7 +95,7 @@ pub struct VarcComponent {
   axis_values : Array[Double]
   coords : Array[Int]
   transform : VarcTransform
-} derive(Show, ToJson)
+} derive(Debug, ToJson)
 
 priv struct VarcTransformRaw {
   mut translate_x : Double?

@@ -17,7 +17,7 @@
 pub struct VorgMetric {
   glyph : Int
   origin_y : Int
-} derive(Eq, Show, ToJson)
+} derive(Eq, Debug, ToJson)
 
 ///|
 /// Parsed VORG table.
@@ -26,7 +26,7 @@ pub struct VorgTable {
   minor_version : Int
   default_origin_y : Int
   metrics : Array[VorgMetric]
-} derive(Show, ToJson)
+} derive(Debug, ToJson)
 
 ///|
 /// Parse VORG table bytes.

@@ -48,25 +48,25 @@ fn build_avar_bytes() -> Bytes {
 ///|
 test "fvar parse and normalize" {
   let fvar = match FvarTable::parse(build_fvar_bytes()) {
-    Err(err) => fail("parse failed: \{err}")
+    Err(err) => fail("parse failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  inspect(fvar.axes.length(), content="1")
-  inspect(fvar.axes[0].tag.to_string(), content="wght")
+  @debug.debug_inspect(fvar.axes.length(), content="1")
+  @debug.debug_inspect(fvar.axes[0].tag.to_string(), content="wght")
   let min_thousand = (fvar.axes[0].min_value * 1000.0).round().to_int()
   let max_thousand = (fvar.axes[0].max_value * 1000.0).round().to_int()
-  inspect(min_thousand, content="-1000")
-  inspect(max_thousand, content="1000")
+  @debug.debug_inspect(min_thousand, content="-1000")
+  @debug.debug_inspect(max_thousand, content="1000")
   let normalized = fvar.normalize_design_coords([0.5])
-  inspect(normalized, content="[32768]")
+  @debug.debug_inspect(normalized, content="[32768]")
 }
 
 ///|
 test "avar map coords" {
   let avar = match AvarTable::parse(build_avar_bytes()) {
-    Err(err) => fail("parse failed: \{err}")
+    Err(err) => fail("parse failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let mapped = avar.map_coords_16_16([32768])
-  inspect(mapped, content="[49152]")
+  @debug.debug_inspect(mapped, content="[49152]")
 }

@@ -24,7 +24,7 @@ pub enum BslnData {
   Format1(Array[Int], LookupTable)
   Format2(Int, Array[Int])
   Format3(Int, Array[Int], LookupTable)
-} derive(Show, ToJson)
+} derive(Debug, ToJson)
 
 ///|
 /// Parsed bsln table.
@@ -33,7 +33,7 @@ pub struct BslnTable {
   format : Int
   default_baseline : Int
   data : BslnData
-} derive(Show, ToJson)
+} derive(Debug, ToJson)
 
 ///|
 pub fn BslnTable::has_data(self : BslnTable) -> Bool {

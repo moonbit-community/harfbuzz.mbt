@@ -20,13 +20,13 @@ pub struct GdefHeader {
   lig_caret_list_offset : Int?
   mark_attach_class_def_offset : Int?
   mark_glyph_sets_def_offset : Int?
-} derive(Show, ToJson)
+} derive(Debug, ToJson)
 
 ///|
 pub struct GdefTable {
   data : BytesView
   header : GdefHeader
-} derive(Show, ToJson)
+} derive(Debug, ToJson)
 
 ///|
 pub fn GdefTable::parse(blob : @blob.Blob) -> Result[GdefTable, OtLayoutError] {

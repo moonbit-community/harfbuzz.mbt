@@ -50,43 +50,43 @@ test "font glyph names from post format2" {
   let face = @face.Face::from_bytes(sfnt)
   let font = Font::new(face)
   let name0 = match font.glyph_name(0) {
-    Err(err) => fail("glyph name error: \{err}")
+    Err(err) => fail("glyph name error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let name1 = match font.glyph_name(1) {
-    Err(err) => fail("glyph name error: \{err}")
+    Err(err) => fail("glyph name error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let name2 = match font.glyph_name(2) {
-    Err(err) => fail("glyph name error: \{err}")
+    Err(err) => fail("glyph name error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let name_missing = match font.glyph_name(99) {
-    Err(err) => fail("glyph name error: \{err}")
+    Err(err) => fail("glyph name error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  inspect(name0, content="Some(\".notdef\")")
-  inspect(name1, content="Some(\"space\")")
-  inspect(name2, content="Some(\"icon0\")")
-  inspect(name_missing, content="None")
+  @debug.debug_inspect(name0, content="Some(\".notdef\")")
+  @debug.debug_inspect(name1, content="Some(\"space\")")
+  @debug.debug_inspect(name2, content="Some(\"icon0\")")
+  @debug.debug_inspect(name_missing, content="None")
   let gid0 = match font.glyph_from_name(".notdef") {
-    Err(err) => fail("glyph from name error: \{err}")
+    Err(err) => fail("glyph from name error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let gid_custom = match font.glyph_from_name("icon0") {
-    Err(err) => fail("glyph from name error: \{err}")
+    Err(err) => fail("glyph from name error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let gid_missing = match font.glyph_from_name("missing") {
-    Err(err) => fail("glyph from name error: \{err}")
+    Err(err) => fail("glyph from name error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let gid_empty = match font.glyph_from_name("") {
-    Err(err) => fail("glyph from name error: \{err}")
+    Err(err) => fail("glyph from name error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  inspect(gid0, content="Some(0)")
-  inspect(gid_custom, content="Some(2)")
-  inspect(gid_missing, content="None")
-  inspect(gid_empty, content="None")
+  @debug.debug_inspect(gid0, content="Some(0)")
+  @debug.debug_inspect(gid_custom, content="Some(2)")
+  @debug.debug_inspect(gid_missing, content="None")
+  @debug.debug_inspect(gid_empty, content="None")
 }

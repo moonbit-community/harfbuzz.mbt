@@ -20,14 +20,14 @@ pub enum SerializeError {
   InvalidLink
   NegativeOffset
   VirtualOrder
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 pub(all) enum SerializeWhence {
   Head
   Tail
   Absolute
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 pub(all) struct SerializeLink {

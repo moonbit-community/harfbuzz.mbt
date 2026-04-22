@@ -20,4 +20,4 @@ pub struct AotsTestCase {
   feature_values : Array[Int]
   no_positions : Bool
   no_advances : Bool
-} derive(Show, ToJson)
+} derive(Debug, ToJson)

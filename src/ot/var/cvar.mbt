@@ -16,7 +16,7 @@
 pub struct CvarTable {
   version : Int
   tuple_data : TupleVariationData
-} derive(Show, ToJson)
+} derive(Debug, ToJson)
 
 ///|
 pub fn CvarTable::parse(

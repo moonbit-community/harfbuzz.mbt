@@ -1,5 +1,6 @@
 {
   "import": [
+    "moonbitlang/core/debug",
     {
       "path": "moonbit-community/harfbuzz/common",
       "alias": "common"
@@ -9,12 +10,12 @@
       "alias": "font"
     },
     {
-      "path": "moonbit-community/harfbuzz/ot/tables",
-      "alias": "ot_tables"
-    },
-    {
       "path": "moonbit-community/harfbuzz/ot/map",
       "alias": "ot_map"
+    },
+    {
+      "path": "moonbit-community/harfbuzz/ot/tables",
+      "alias": "ot_tables"
     },
     {
       "path": "moonbit-community/harfbuzz/unicode",

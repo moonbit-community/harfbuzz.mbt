@@ -31,8 +31,8 @@ test "cvt parse" {
   push_i16_cvt(bytes, -200)
   push_i16_cvt(bytes, 0)
   let table = match CvtTable::parse(Bytes::from_array(bytes)[:]) {
-    Err(err) => fail("parse failed: \{err}")
+    Err(err) => fail("parse failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  inspect(table.values().to_array(), content="[100, -200, 0]")
+  @debug.debug_inspect(table.values().to_array(), content="[100, -200, 0]")
 }

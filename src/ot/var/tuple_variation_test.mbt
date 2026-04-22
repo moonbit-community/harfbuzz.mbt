@@ -49,29 +49,29 @@ fn build_tuple_variation_bytes() -> Bytes {
 test "tuple variation decode" {
   let data = build_tuple_variation_bytes()
   let parsed = match TupleVariationData::parse(data[:], 1, []) {
-    Err(err) => fail("parse failed: \{err}")
+    Err(err) => fail("parse failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let tuples = match parsed.decode(4, true) {
-    Err(err) => fail("decode failed: \{err}")
+    Err(err) => fail("decode failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   guard tuples.length() == 1 else {
     fail("expected 1 tuple")
   }
   let tuple = tuples[0]
-  inspect(tuple.indices, content="Some([1, 3])")
-  inspect(tuple.deltas_x, content="[50, -20]")
-  inspect(tuple.deltas_y, content="Some([10, 0])")
+  @debug.debug_inspect(tuple.indices, content="Some([1, 3])")
+  @debug.debug_inspect(tuple.deltas_x, content="[50, -20]")
+  @debug.debug_inspect(tuple.deltas_y, content="Some([10, 0])")
   let applied = match parsed.apply([16384], 4, true) {
-    Err(err) => fail("apply failed: \{err}")
+    Err(err) => fail("apply failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let deltas_x = applied.0.map(delta => delta.round().to_int())
-  inspect(deltas_x, content="[0, 50, 0, -20]")
+  @debug.debug_inspect(deltas_x, content="[0, 50, 0, -20]")
   let deltas_y = match applied.1 {
     None => []
     Some(values) => values.map(delta => delta.round().to_int())
   }
-  inspect(deltas_y, content="[0, 10, 0, 0]")
+  @debug.debug_inspect(deltas_y, content="[0, 10, 0, 0]")
 }

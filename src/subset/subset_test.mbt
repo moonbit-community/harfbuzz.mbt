@@ -1877,51 +1877,51 @@ fn build_font_bytes_subset_gpos_extension_fixture() -> Bytes {
 test "subset drops unused glyphs" {
   let font = @font.Font::from_bytes(build_font_bytes_subset_fixture())
   let bytes = match subset(font, SubsetInput::from_codepoints([0x41U])) {
-    Err(err) => fail("subset failed: \{err}")
+    Err(err) => fail("subset failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let subset_font = @font.Font::from_bytes(bytes)
   let gid = match subset_font.glyph_for_codepoint(0x41U) {
-    Err(err) => fail("glyph lookup failed: \{err}")
+    Err(err) => fail("glyph lookup failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   assert_true(gid is Some(1U))
   let missing = match subset_font.glyph_for_codepoint(0x42U) {
-    Err(err) => fail("glyph lookup failed: \{err}")
+    Err(err) => fail("glyph lookup failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   assert_true(missing is None)
   let maxp = match subset_font.get_face().reference_table_optional(
     @common.Tag::from_chars('m', 'a', 'x', 'p'),
   ) {
-    Err(err) => fail("maxp table missing: \{err}")
+    Err(err) => fail("maxp table missing: \{@debug.to_string(err)}")
     Ok(None) => fail("maxp table missing")
     Ok(Some(blob)) =>
       match @sfnt.MaxpTable::parse(blob.as_view()) {
-        Err(err) => fail("maxp parse failed: \{err}")
+        Err(err) => fail("maxp parse failed: \{@debug.to_string(err)}")
         Ok(value) => value
       }
   }
-  inspect(maxp.num_glyphs, content="2")
+  @debug.debug_inspect(maxp.num_glyphs, content="2")
 }
 
 ///|
 test "subset preserves os2" {
   let font = @font.Font::from_bytes(build_font_bytes_subset_fixture())
   let bytes = match subset(font, SubsetInput::from_codepoints([0x41U])) {
-    Err(err) => fail("subset failed: \{err}")
+    Err(err) => fail("subset failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let subset_font = @font.Font::from_bytes(bytes)
   let os2_blob = match subset_font.get_face().reference_table_optional(
     @common.Tag::from_chars('O', 'S', '/', '2'),
   ) {
-    Err(err) => fail("OS/2 table missing: \{err}")
+    Err(err) => fail("OS/2 table missing: \{@debug.to_string(err)}")
     Ok(None) => fail("OS/2 table missing")
     Ok(Some(blob)) => blob
   }
   match @sfnt.Os2Table::parse(os2_blob.as_view()) {
-    Err(err) => fail("OS/2 parse failed: \{err}")
+    Err(err) => fail("OS/2 parse failed: \{@debug.to_string(err)}")
     Ok(_) => ()
   }
   let os2_data = os2_blob.as_view()
@@ -1933,120 +1933,120 @@ test "subset preserves os2" {
     None => fail("OS/2 lastCharIndex missing")
     Some(value) => value
   }
-  inspect((first, last), content="(65, 65)")
+  @debug.debug_inspect((first, last), content="(65, 65)")
 }
 
 ///|
 test "subset preserves cpal" {
   let font = @font.Font::from_bytes(build_font_bytes_subset_fixture())
   let bytes = match subset(font, SubsetInput::from_codepoints([0x41U])) {
-    Err(err) => fail("subset failed: \{err}")
+    Err(err) => fail("subset failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let subset_font = @font.Font::from_bytes(bytes)
   let cpal_blob = match subset_font.get_face().reference_table_optional(
     @common.Tag::from_chars('C', 'P', 'A', 'L'),
   ) {
-    Err(err) => fail("CPAL table missing: \{err}")
+    Err(err) => fail("CPAL table missing: \{@debug.to_string(err)}")
     Ok(None) => fail("CPAL table missing")
     Ok(Some(blob)) => blob
   }
-  inspect(cpal_blob.as_view().length(), content="18")
+  @debug.debug_inspect(cpal_blob.as_view().length(), content="18")
 }
 
 ///|
 test "subset rebuilds post table when remapped" {
   let font = @font.Font::from_bytes(build_font_bytes_subset_fixture())
   let bytes = match subset(font, SubsetInput::from_codepoints([0x42U])) {
-    Err(err) => fail("subset failed: \{err}")
+    Err(err) => fail("subset failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let subset_font = @font.Font::from_bytes(bytes)
   let post_blob = match subset_font.get_face().reference_table_optional(
     @common.Tag::from_chars('p', 'o', 's', 't'),
   ) {
-    Err(err) => fail("post lookup failed: \{err}")
+    Err(err) => fail("post lookup failed: \{@debug.to_string(err)}")
     Ok(None) => fail("post table missing from remapped subset")
     Ok(Some(blob)) => blob
   }
   let post = match @sfnt.PostTable::parse(post_blob.as_view()) {
-    Err(err) => fail("post parse failed: \{err}")
+    Err(err) => fail("post parse failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  inspect(post.version, content="196608")
+  @debug.debug_inspect(post.version, content="196608")
 }
 
 ///|
 test "subset preserves post table for identity subset" {
   let font = @font.Font::from_bytes(build_font_bytes_subset_fixture())
   let bytes = match subset(font, SubsetInput::from_codepoints([0x41U, 0x42U])) {
-    Err(err) => fail("subset failed: \{err}")
+    Err(err) => fail("subset failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let subset_font = @font.Font::from_bytes(bytes)
   let post_blob = match subset_font.get_face().reference_table_optional(
     @common.Tag::from_chars('p', 'o', 's', 't'),
   ) {
-    Err(err) => fail("post lookup failed: \{err}")
+    Err(err) => fail("post lookup failed: \{@debug.to_string(err)}")
     Ok(None) => fail("post table missing from identity subset")
     Ok(Some(blob)) => blob
   }
   let post = match @sfnt.PostTable::parse(post_blob.as_view()) {
-    Err(err) => fail("post parse failed: \{err}")
+    Err(err) => fail("post parse failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  inspect(post.version, content="131072")
+  @debug.debug_inspect(post.version, content="131072")
 }
 
 ///|
 test "subset rebuilds vorg" {
   let font = @font.Font::from_bytes(build_font_bytes_subset_fixture())
   let bytes = match subset(font, SubsetInput::from_codepoints([0x42U])) {
-    Err(err) => fail("subset failed: \{err}")
+    Err(err) => fail("subset failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let subset_font = @font.Font::from_bytes(bytes)
   let vorg_blob = match subset_font.get_face().reference_table_optional(
     @common.Tag::from_chars('V', 'O', 'R', 'G'),
   ) {
-    Err(err) => fail("vorg lookup failed: \{err}")
+    Err(err) => fail("vorg lookup failed: \{@debug.to_string(err)}")
     Ok(None) => fail("VORG table missing from subset")
     Ok(Some(blob)) => blob
   }
   let vorg = match @sfnt.VorgTable::parse(vorg_blob.as_view()) {
-    Err(err) => fail("vorg parse failed: \{err}")
+    Err(err) => fail("vorg parse failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  inspect(vorg.origin_y_override(0), content="None")
-  inspect(vorg.origin_y_override(1), content="Some(700)")
-  inspect(vorg.origin_y_override(2), content="Some(750)")
+  @debug.debug_inspect(vorg.origin_y_override(0), content="None")
+  @debug.debug_inspect(vorg.origin_y_override(1), content="Some(700)")
+  @debug.debug_inspect(vorg.origin_y_override(2), content="Some(750)")
 }
 
 ///|
 test "subset rebuilds kern" {
   let font = @font.Font::from_bytes(build_font_bytes_subset_fixture())
   let bytes = match subset(font, SubsetInput::from_codepoints([0x42U])) {
-    Err(err) => fail("subset failed: \{err}")
+    Err(err) => fail("subset failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let subset_font = @font.Font::from_bytes(bytes)
   let kern_blob = match subset_font.get_face().reference_table_optional(
     @common.Tag::from_chars('k', 'e', 'r', 'n'),
   ) {
-    Err(err) => fail("kern lookup failed: \{err}")
+    Err(err) => fail("kern lookup failed: \{@debug.to_string(err)}")
     Ok(None) => fail("kern table missing from subset")
     Ok(Some(blob)) => blob
   }
   let kern = match @sfnt.KernTable::parse(kern_blob.as_view()) {
-    Err(err) => fail("kern parse failed: \{err}")
+    Err(err) => fail("kern parse failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  inspect(kern.subtables.length(), content="3")
+  @debug.debug_inspect(kern.subtables.length(), content="3")
   let subtable = kern.subtables[0]
-  inspect(subtable.format, content="0")
-  inspect(subtable.pairs.length(), content="1")
+  @debug.debug_inspect(subtable.format, content="0")
+  @debug.debug_inspect(subtable.pairs.length(), content="1")
   let pair = subtable.pairs[0]
-  inspect(
+  @debug.debug_inspect(
     (
       pair.left.reinterpret_as_int(),
       pair.right.reinterpret_as_int(),
@@ -2055,7 +2055,7 @@ test "subset rebuilds kern" {
     content="(1, 2, -50)",
   )
   let subtable2 = kern.subtables[1]
-  inspect(subtable2.format, content="0")
+  @debug.debug_inspect(subtable2.format, content="0")
   let pairs2 : Array[(Int, Int, Int)] = []
   for pair in subtable2.pairs {
     pairs2.push((
@@ -2064,12 +2064,12 @@ test "subset rebuilds kern" {
       pair.value,
     ))
   }
-  inspect(
+  @debug.debug_inspect(
     pairs2,
     content="[(0, 2, -20), (1, 0, -30), (1, 1, -30), (1, 2, -40), (2, 2, -20)]",
   )
   let subtable3 = kern.subtables[2]
-  inspect(subtable3.format, content="0")
+  @debug.debug_inspect(subtable3.format, content="0")
   let pairs3 : Array[(Int, Int, Int)] = []
   for pair in subtable3.pairs {
     pairs3.push((
@@ -2078,7 +2078,7 @@ test "subset rebuilds kern" {
       pair.value,
     ))
   }
-  inspect(
+  @debug.debug_inspect(
     pairs3,
     content="[(0, 2, -10), (1, 0, -10), (1, 1, -10), (1, 2, -50), (2, 2, -10)]",
   )
@@ -2088,14 +2088,14 @@ test "subset rebuilds kern" {
 test "subset rebuilds gsub single" {
   let font = @font.Font::from_bytes(build_font_bytes_subset_fixture())
   let bytes = match subset(font, SubsetInput::from_codepoints([0x42U])) {
-    Err(err) => fail("subset failed: \{err}")
+    Err(err) => fail("subset failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let subset_font = @font.Font::from_bytes(bytes)
   let gsub_blob = match subset_font.get_face().reference_table_optional(
     @common.Tag::from_chars('G', 'S', 'U', 'B'),
   ) {
-    Err(err) => fail("GSUB lookup failed: \{err}")
+    Err(err) => fail("GSUB lookup failed: \{@debug.to_string(err)}")
     Ok(None) => fail("GSUB table missing from subset")
     Ok(Some(blob)) => blob
   }
@@ -2159,23 +2159,23 @@ test "subset rebuilds gsub single" {
     None => fail("GSUB coverage glyph missing")
     Some(value) => value
   }
-  inspect((lookup_count, lookup_type, sub_count, sub_format), content="(8, 1, 1, 2)")
-  inspect((glyph_count, cov_format, cov_count, cov_glyph, substitute), content="(1, 1, 1, 1, 2)")
-  inspect(lookup1_offset, content="40")
+  @debug.debug_inspect((lookup_count, lookup_type, sub_count, sub_format), content="(8, 1, 1, 2)")
+  @debug.debug_inspect((glyph_count, cov_format, cov_count, cov_glyph, substitute), content="(1, 1, 1, 1, 2)")
+  @debug.debug_inspect(lookup1_offset, content="40")
 }
 
 ///|
 test "subset rebuilds gsub multiple" {
   let font = @font.Font::from_bytes(build_font_bytes_subset_fixture())
   let bytes = match subset(font, SubsetInput::from_codepoints([0x42U])) {
-    Err(err) => fail("subset failed: \{err}")
+    Err(err) => fail("subset failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let subset_font = @font.Font::from_bytes(bytes)
   let gsub_blob = match subset_font.get_face().reference_table_optional(
     @common.Tag::from_chars('G', 'S', 'U', 'B'),
   ) {
-    Err(err) => fail("GSUB lookup failed: \{err}")
+    Err(err) => fail("GSUB lookup failed: \{@debug.to_string(err)}")
     Ok(None) => fail("GSUB table missing from subset")
     Ok(Some(blob)) => blob
   }
@@ -2244,23 +2244,23 @@ test "subset rebuilds gsub multiple" {
     None => fail("GSUB coverage glyph missing")
     Some(value) => value
   }
-  inspect((lookup_type, sub_count, sub_format, seq_count), content="(2, 1, 1, 1)")
-  inspect((seq_glyph_count, seq_glyph1, seq_glyph2), content="(2, 2, 1)")
-  inspect((cov_format, cov_count, cov_glyph), content="(1, 1, 1)")
+  @debug.debug_inspect((lookup_type, sub_count, sub_format, seq_count), content="(2, 1, 1, 1)")
+  @debug.debug_inspect((seq_glyph_count, seq_glyph1, seq_glyph2), content="(2, 2, 1)")
+  @debug.debug_inspect((cov_format, cov_count, cov_glyph), content="(1, 1, 1)")
 }
 
 ///|
 test "subset rebuilds gsub alternate" {
   let font = @font.Font::from_bytes(build_font_bytes_subset_fixture())
   let bytes = match subset(font, SubsetInput::from_codepoints([0x42U])) {
-    Err(err) => fail("subset failed: \{err}")
+    Err(err) => fail("subset failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let subset_font = @font.Font::from_bytes(bytes)
   let gsub_blob = match subset_font.get_face().reference_table_optional(
     @common.Tag::from_chars('G', 'S', 'U', 'B'),
   ) {
-    Err(err) => fail("GSUB lookup failed: \{err}")
+    Err(err) => fail("GSUB lookup failed: \{@debug.to_string(err)}")
     Ok(None) => fail("GSUB table missing from subset")
     Ok(Some(blob)) => blob
   }
@@ -2329,24 +2329,24 @@ test "subset rebuilds gsub alternate" {
     None => fail("GSUB coverage glyph missing")
     Some(value) => value
   }
-  inspect(lookup_count, content="8")
-  inspect((lookup_type, sub_count, sub_format), content="(3, 1, 1)")
-  inspect((alt_count, alt_glyph_count, alt_glyph), content="(1, 1, 2)")
-  inspect((cov_format, cov_count, cov_glyph), content="(1, 1, 1)")
+  @debug.debug_inspect(lookup_count, content="8")
+  @debug.debug_inspect((lookup_type, sub_count, sub_format), content="(3, 1, 1)")
+  @debug.debug_inspect((alt_count, alt_glyph_count, alt_glyph), content="(1, 1, 2)")
+  @debug.debug_inspect((cov_format, cov_count, cov_glyph), content="(1, 1, 1)")
 }
 
 ///|
 test "subset rebuilds gsub ligature" {
   let font = @font.Font::from_bytes(build_font_bytes_subset_fixture())
   let bytes = match subset(font, SubsetInput::from_codepoints([0x42U])) {
-    Err(err) => fail("subset failed: \{err}")
+    Err(err) => fail("subset failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let subset_font = @font.Font::from_bytes(bytes)
   let gsub_blob = match subset_font.get_face().reference_table_optional(
     @common.Tag::from_chars('G', 'S', 'U', 'B'),
   ) {
-    Err(err) => fail("GSUB lookup failed: \{err}")
+    Err(err) => fail("GSUB lookup failed: \{@debug.to_string(err)}")
     Ok(None) => fail("GSUB table missing from subset")
     Ok(Some(blob)) => blob
   }
@@ -2424,23 +2424,23 @@ test "subset rebuilds gsub ligature" {
     None => fail("GSUB coverage glyph missing")
     Some(value) => value
   }
-  inspect((lookup_type, sub_count, sub_format), content="(4, 1, 1)")
-  inspect((set_count, lig_count, lig_glyph, comp_count, comp_glyph), content="(1, 1, 1, 2, 1)")
-  inspect((cov_format, cov_count, cov_glyph), content="(1, 1, 1)")
+  @debug.debug_inspect((lookup_type, sub_count, sub_format), content="(4, 1, 1)")
+  @debug.debug_inspect((set_count, lig_count, lig_glyph, comp_count, comp_glyph), content="(1, 1, 1, 2, 1)")
+  @debug.debug_inspect((cov_format, cov_count, cov_glyph), content="(1, 1, 1)")
 }
 
 ///|
 test "subset rebuilds gsub contextual" {
   let font = @font.Font::from_bytes(build_font_bytes_subset_fixture())
   let bytes = match subset(font, SubsetInput::from_codepoints([0x42U])) {
-    Err(err) => fail("subset failed: \{err}")
+    Err(err) => fail("subset failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let subset_font = @font.Font::from_bytes(bytes)
   let gsub_blob = match subset_font.get_face().reference_table_optional(
     @common.Tag::from_chars('G', 'S', 'U', 'B'),
   ) {
-    Err(err) => fail("GSUB lookup failed: \{err}")
+    Err(err) => fail("GSUB lookup failed: \{@debug.to_string(err)}")
     Ok(None) => fail("GSUB table missing from subset")
     Ok(Some(blob)) => blob
   }
@@ -2526,24 +2526,24 @@ test "subset rebuilds gsub contextual" {
     None => fail("GSUB coverage glyph missing")
     Some(value) => value
   }
-  inspect((lookup_type, sub_count, sub_format), content="(5, 1, 1)")
-  inspect((set_count, rule_count, glyph_count, subst_count), content="(1, 1, 2, 1)")
-  inspect((input_glyph, seq_index, lookup_index), content="(2, 1, 0)")
-  inspect((cov_format, cov_count, cov_glyph), content="(1, 1, 1)")
+  @debug.debug_inspect((lookup_type, sub_count, sub_format), content="(5, 1, 1)")
+  @debug.debug_inspect((set_count, rule_count, glyph_count, subst_count), content="(1, 1, 2, 1)")
+  @debug.debug_inspect((input_glyph, seq_index, lookup_index), content="(2, 1, 0)")
+  @debug.debug_inspect((cov_format, cov_count, cov_glyph), content="(1, 1, 1)")
 }
 
 ///|
 test "subset rebuilds gsub chaining" {
   let font = @font.Font::from_bytes(build_font_bytes_subset_fixture())
   let bytes = match subset(font, SubsetInput::from_codepoints([0x42U])) {
-    Err(err) => fail("subset failed: \{err}")
+    Err(err) => fail("subset failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let subset_font = @font.Font::from_bytes(bytes)
   let gsub_blob = match subset_font.get_face().reference_table_optional(
     @common.Tag::from_chars('G', 'S', 'U', 'B'),
   ) {
-    Err(err) => fail("GSUB lookup failed: \{err}")
+    Err(err) => fail("GSUB lookup failed: \{@debug.to_string(err)}")
     Ok(None) => fail("GSUB table missing from subset")
     Ok(Some(blob)) => blob
   }
@@ -2645,28 +2645,28 @@ test "subset rebuilds gsub chaining" {
     None => fail("GSUB coverage glyph missing")
     Some(value) => value
   }
-  inspect((lookup_type, sub_count, sub_format), content="(6, 1, 1)")
-  inspect(
+  @debug.debug_inspect((lookup_type, sub_count, sub_format), content="(6, 1, 1)")
+  @debug.debug_inspect(
     (set_count, rule_count, backtrack_count, input_count, lookahead_count, subst_count),
     content="(1, 1, 1, 2, 1, 1)",
   )
-  inspect((backtrack_glyph, input_glyph, lookahead_glyph), content="(1, 1, 1)")
-  inspect((seq_index, lookup_index), content="(1, 0)")
-  inspect((cov_format, cov_count, cov_glyph), content="(1, 1, 1)")
+  @debug.debug_inspect((backtrack_glyph, input_glyph, lookahead_glyph), content="(1, 1, 1)")
+  @debug.debug_inspect((seq_index, lookup_index), content="(1, 0)")
+  @debug.debug_inspect((cov_format, cov_count, cov_glyph), content="(1, 1, 1)")
 }
 
 ///|
 test "subset rebuilds gsub extension" {
   let font = @font.Font::from_bytes(build_font_bytes_subset_fixture())
   let bytes = match subset(font, SubsetInput::from_codepoints([0x42U])) {
-    Err(err) => fail("subset failed: \{err}")
+    Err(err) => fail("subset failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let subset_font = @font.Font::from_bytes(bytes)
   let gsub_blob = match subset_font.get_face().reference_table_optional(
     @common.Tag::from_chars('G', 'S', 'U', 'B'),
   ) {
-    Err(err) => fail("GSUB lookup failed: \{err}")
+    Err(err) => fail("GSUB lookup failed: \{@debug.to_string(err)}")
     Ok(None) => fail("GSUB table missing from subset")
     Ok(Some(blob)) => blob
   }
@@ -2735,24 +2735,24 @@ test "subset rebuilds gsub extension" {
     None => fail("GSUB coverage glyph missing")
     Some(value) => value
   }
-  inspect((lookup_type, sub_count, sub_format), content="(7, 1, 1)")
-  inspect(extension_type, content="1")
-  inspect((ext_format, glyph_count, substitute), content="(2, 1, 2)")
-  inspect((cov_format, cov_count, cov_glyph), content="(1, 1, 1)")
+  @debug.debug_inspect((lookup_type, sub_count, sub_format), content="(7, 1, 1)")
+  @debug.debug_inspect(extension_type, content="1")
+  @debug.debug_inspect((ext_format, glyph_count, substitute), content="(2, 1, 2)")
+  @debug.debug_inspect((cov_format, cov_count, cov_glyph), content="(1, 1, 1)")
 }
 
 ///|
 test "subset rebuilds gsub reverse chaining" {
   let font = @font.Font::from_bytes(build_font_bytes_subset_fixture())
   let bytes = match subset(font, SubsetInput::from_codepoints([0x42U])) {
-    Err(err) => fail("subset failed: \{err}")
+    Err(err) => fail("subset failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let subset_font = @font.Font::from_bytes(bytes)
   let gsub_blob = match subset_font.get_face().reference_table_optional(
     @common.Tag::from_chars('G', 'S', 'U', 'B'),
   ) {
-    Err(err) => fail("GSUB lookup failed: \{err}")
+    Err(err) => fail("GSUB lookup failed: \{@debug.to_string(err)}")
     Ok(None) => fail("GSUB table missing from subset")
     Ok(Some(blob)) => blob
   }
@@ -2842,25 +2842,25 @@ test "subset rebuilds gsub reverse chaining" {
     None => fail("GSUB reverse lookahead glyph missing")
     Some(value) => value
   }
-  inspect((lookup_type, sub_count, sub_format), content="(8, 1, 1)")
-  inspect((backtrack_count, lookahead_count, glyph_count, substitute), content="(1, 1, 1, 1)")
-  inspect((cov_format, cov_count, cov_glyph), content="(1, 1, 1)")
-  inspect((backtrack_format, backtrack_glyph), content="(1, 1)")
-  inspect((lookahead_format, lookahead_glyph), content="(1, 1)")
+  @debug.debug_inspect((lookup_type, sub_count, sub_format), content="(8, 1, 1)")
+  @debug.debug_inspect((backtrack_count, lookahead_count, glyph_count, substitute), content="(1, 1, 1, 1)")
+  @debug.debug_inspect((cov_format, cov_count, cov_glyph), content="(1, 1, 1)")
+  @debug.debug_inspect((backtrack_format, backtrack_glyph), content="(1, 1)")
+  @debug.debug_inspect((lookahead_format, lookahead_glyph), content="(1, 1)")
 }
 
 ///|
 test "subset rebuilds gpos single" {
   let font = @font.Font::from_bytes(build_font_bytes_subset_fixture())
   let bytes = match subset(font, SubsetInput::from_codepoints([0x42U])) {
-    Err(err) => fail("subset failed: \{err}")
+    Err(err) => fail("subset failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let subset_font = @font.Font::from_bytes(bytes)
   let gpos_blob = match subset_font.get_face().reference_table_optional(
     @common.Tag::from_chars('G', 'P', 'O', 'S'),
   ) {
-    Err(err) => fail("GPOS lookup failed: \{err}")
+    Err(err) => fail("GPOS lookup failed: \{@debug.to_string(err)}")
     Ok(None) => fail("GPOS table missing from subset")
     Ok(Some(blob)) => blob
   }
@@ -2920,22 +2920,22 @@ test "subset rebuilds gpos single" {
     None => fail("GPOS coverage glyph missing")
     Some(value) => value
   }
-  inspect((lookup_count, lookup_type, sub_count, pos_format), content="(1, 1, 1, 1)")
-  inspect((value_format, value, cov_format, cov_count, cov_glyph), content="(4, 50, 1, 1, 1)")
+  @debug.debug_inspect((lookup_count, lookup_type, sub_count, pos_format), content="(1, 1, 1, 1)")
+  @debug.debug_inspect((value_format, value, cov_format, cov_count, cov_glyph), content="(4, 50, 1, 1, 1)")
 }
 
 ///|
 test "subset rebuilds gpos pair" {
   let font = @font.Font::from_bytes(build_font_bytes_subset_gpos_pair_fixture())
   let bytes = match subset(font, SubsetInput::from_codepoints([0x42U])) {
-    Err(err) => fail("subset failed: \{err}")
+    Err(err) => fail("subset failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let subset_font = @font.Font::from_bytes(bytes)
   let gpos_blob = match subset_font.get_face().reference_table_optional(
     @common.Tag::from_chars('G', 'P', 'O', 'S'),
   ) {
-    Err(err) => fail("GPOS lookup failed: \{err}")
+    Err(err) => fail("GPOS lookup failed: \{@debug.to_string(err)}")
     Ok(None) => fail("GPOS table missing from subset")
     Ok(Some(blob)) => blob
   }
@@ -3008,25 +3008,25 @@ test "subset rebuilds gpos pair" {
     None => fail("GPOS coverage glyph missing")
     Some(value) => value
   }
-  inspect(lookup_count, content="1")
-  inspect((lookup_type, sub_count, pos_format), content="(2, 1, 1)")
-  inspect((value_format1, value_format2, pair_set_count), content="(1, 4, 1)")
-  inspect((pair_value_count, second_gid), content="(1, 1)")
-  inspect((cov_format, cov_glyph), content="(1, 1)")
+  @debug.debug_inspect(lookup_count, content="1")
+  @debug.debug_inspect((lookup_type, sub_count, pos_format), content="(2, 1, 1)")
+  @debug.debug_inspect((value_format1, value_format2, pair_set_count), content="(1, 4, 1)")
+  @debug.debug_inspect((pair_value_count, second_gid), content="(1, 1)")
+  @debug.debug_inspect((cov_format, cov_glyph), content="(1, 1)")
 }
 
 ///|
 test "subset rebuilds gpos extension" {
   let font = @font.Font::from_bytes(build_font_bytes_subset_gpos_extension_fixture())
   let bytes = match subset(font, SubsetInput::from_codepoints([0x42U])) {
-    Err(err) => fail("subset failed: \{err}")
+    Err(err) => fail("subset failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let subset_font = @font.Font::from_bytes(bytes)
   let gpos_blob = match subset_font.get_face().reference_table_optional(
     @common.Tag::from_chars('G', 'P', 'O', 'S'),
   ) {
-    Err(err) => fail("GPOS lookup failed: \{err}")
+    Err(err) => fail("GPOS lookup failed: \{@debug.to_string(err)}")
     Ok(None) => fail("GPOS table missing from subset")
     Ok(Some(blob)) => blob
   }
@@ -3099,24 +3099,24 @@ test "subset rebuilds gpos extension" {
     None => fail("GPOS extension coverage glyph missing")
     Some(value) => value
   }
-  inspect(lookup_count, content="1")
-  inspect((lookup_type, sub_count, ext_format, extension_type), content="(9, 1, 1, 1)")
-  inspect((pos_format, value_format, value), content="(1, 4, 50)")
-  inspect((cov_format, cov_count, cov_glyph), content="(1, 1, 1)")
+  @debug.debug_inspect(lookup_count, content="1")
+  @debug.debug_inspect((lookup_type, sub_count, ext_format, extension_type), content="(9, 1, 1, 1)")
+  @debug.debug_inspect((pos_format, value_format, value), content="(1, 4, 50)")
+  @debug.debug_inspect((cov_format, cov_count, cov_glyph), content="(1, 1, 1)")
 }
 
 ///|
 test "subset rebuilds gpos cursive" {
   let font = @font.Font::from_bytes(build_font_bytes_subset_with_gpos(build_gpos_cursive()))
   let bytes = match subset(font, SubsetInput::from_codepoints([0x42U])) {
-    Err(err) => fail("subset failed: \{err}")
+    Err(err) => fail("subset failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let subset_font = @font.Font::from_bytes(bytes)
   let gpos_blob = match subset_font.get_face().reference_table_optional(
     @common.Tag::from_chars('G', 'P', 'O', 'S'),
   ) {
-    Err(err) => fail("GPOS lookup failed: \{err}")
+    Err(err) => fail("GPOS lookup failed: \{@debug.to_string(err)}")
     Ok(None) => fail("GPOS table missing from subset")
     Ok(Some(blob)) => blob
   }
@@ -3190,23 +3190,23 @@ test "subset rebuilds gpos cursive" {
     None => fail("GPOS coverage glyph missing")
     Some(value) => value
   }
-  inspect((lookup_type, pos_format, entry_exit_count), content="(3, 1, 1)")
-  inspect((entry_x, entry_y, exit_x, exit_y), content="(10, 20, 30, 40)")
-  inspect((cov_format, cov_count, cov_glyph), content="(1, 1, 1)")
+  @debug.debug_inspect((lookup_type, pos_format, entry_exit_count), content="(3, 1, 1)")
+  @debug.debug_inspect((entry_x, entry_y, exit_x, exit_y), content="(10, 20, 30, 40)")
+  @debug.debug_inspect((cov_format, cov_count, cov_glyph), content="(1, 1, 1)")
 }
 
 ///|
 test "subset rebuilds gpos mark-to-base" {
   let font = @font.Font::from_bytes(build_font_bytes_subset_with_gpos(build_gpos_mark_base()))
   let bytes = match subset(font, SubsetInput::from_codepoints([0x42U])) {
-    Err(err) => fail("subset failed: \{err}")
+    Err(err) => fail("subset failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let subset_font = @font.Font::from_bytes(bytes)
   let gpos_blob = match subset_font.get_face().reference_table_optional(
     @common.Tag::from_chars('G', 'P', 'O', 'S'),
   ) {
-    Err(err) => fail("GPOS lookup failed: \{err}")
+    Err(err) => fail("GPOS lookup failed: \{@debug.to_string(err)}")
     Ok(None) => fail("GPOS table missing from subset")
     Ok(Some(blob)) => blob
   }
@@ -3287,23 +3287,23 @@ test "subset rebuilds gpos mark-to-base" {
     None => fail("GPOS base coverage glyph missing")
     Some(value) => value
   }
-  inspect((lookup_type, pos_format, class_count, mark_class), content="(4, 1, 1, 0)")
-  inspect((mark_x, base_x), content="(10, 30)")
-  inspect((mark_cov_glyph, base_cov_glyph), content="(1, 2)")
+  @debug.debug_inspect((lookup_type, pos_format, class_count, mark_class), content="(4, 1, 1, 0)")
+  @debug.debug_inspect((mark_x, base_x), content="(10, 30)")
+  @debug.debug_inspect((mark_cov_glyph, base_cov_glyph), content="(1, 2)")
 }
 
 ///|
 test "subset rebuilds gpos mark-to-ligature" {
   let font = @font.Font::from_bytes(build_font_bytes_subset_with_gpos(build_gpos_mark_ligature()))
   let bytes = match subset(font, SubsetInput::from_codepoints([0x42U])) {
-    Err(err) => fail("subset failed: \{err}")
+    Err(err) => fail("subset failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let subset_font = @font.Font::from_bytes(bytes)
   let gpos_blob = match subset_font.get_face().reference_table_optional(
     @common.Tag::from_chars('G', 'P', 'O', 'S'),
   ) {
-    Err(err) => fail("GPOS lookup failed: \{err}")
+    Err(err) => fail("GPOS lookup failed: \{@debug.to_string(err)}")
     Ok(None) => fail("GPOS table missing from subset")
     Ok(Some(blob)) => blob
   }
@@ -3385,23 +3385,23 @@ test "subset rebuilds gpos mark-to-ligature" {
     None => fail("GPOS ligature coverage glyph missing")
     Some(value) => value
   }
-  inspect((lookup_type, pos_format, class_count), content="(5, 1, 1)")
-  inspect((mark_x, lig_x), content="(10, 30)")
-  inspect((mark_cov_glyph, lig_cov_glyph), content="(1, 2)")
+  @debug.debug_inspect((lookup_type, pos_format, class_count), content="(5, 1, 1)")
+  @debug.debug_inspect((mark_x, lig_x), content="(10, 30)")
+  @debug.debug_inspect((mark_cov_glyph, lig_cov_glyph), content="(1, 2)")
 }
 
 ///|
 test "subset rebuilds gpos mark-to-mark" {
   let font = @font.Font::from_bytes(build_font_bytes_subset_with_gpos(build_gpos_mark_mark()))
   let bytes = match subset(font, SubsetInput::from_codepoints([0x42U])) {
-    Err(err) => fail("subset failed: \{err}")
+    Err(err) => fail("subset failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let subset_font = @font.Font::from_bytes(bytes)
   let gpos_blob = match subset_font.get_face().reference_table_optional(
     @common.Tag::from_chars('G', 'P', 'O', 'S'),
   ) {
-    Err(err) => fail("GPOS lookup failed: \{err}")
+    Err(err) => fail("GPOS lookup failed: \{@debug.to_string(err)}")
     Ok(None) => fail("GPOS table missing from subset")
     Ok(Some(blob)) => blob
   }
@@ -3450,22 +3450,22 @@ test "subset rebuilds gpos mark-to-mark" {
     None => fail("GPOS mark2 coverage glyph missing")
     Some(value) => value
   }
-  inspect((lookup_type, pos_format, class_count), content="(6, 1, 1)")
-  inspect((mark1_cov_glyph, mark2_cov_glyph), content="(1, 2)")
+  @debug.debug_inspect((lookup_type, pos_format, class_count), content="(6, 1, 1)")
+  @debug.debug_inspect((mark1_cov_glyph, mark2_cov_glyph), content="(1, 2)")
 }
 
 ///|
 test "subset rebuilds gpos contextual" {
   let font = @font.Font::from_bytes(build_font_bytes_subset_with_gpos(build_gpos_contextual()))
   let bytes = match subset(font, SubsetInput::from_codepoints([0x42U])) {
-    Err(err) => fail("subset failed: \{err}")
+    Err(err) => fail("subset failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let subset_font = @font.Font::from_bytes(bytes)
   let gpos_blob = match subset_font.get_face().reference_table_optional(
     @common.Tag::from_chars('G', 'P', 'O', 'S'),
   ) {
-    Err(err) => fail("GPOS lookup failed: \{err}")
+    Err(err) => fail("GPOS lookup failed: \{@debug.to_string(err)}")
     Ok(None) => fail("GPOS table missing from subset")
     Ok(Some(blob)) => blob
   }
@@ -3505,22 +3505,22 @@ test "subset rebuilds gpos contextual" {
     None => fail("GPOS coverage glyph missing")
     Some(value) => value
   }
-  inspect((lookup_type, pos_format, rule_set_count), content="(7, 1, 1)")
-  inspect(cov_glyph, content="1")
+  @debug.debug_inspect((lookup_type, pos_format, rule_set_count), content="(7, 1, 1)")
+  @debug.debug_inspect(cov_glyph, content="1")
 }
 
 ///|
 test "subset rebuilds gpos chaining" {
   let font = @font.Font::from_bytes(build_font_bytes_subset_with_gpos(build_gpos_chaining()))
   let bytes = match subset(font, SubsetInput::from_codepoints([0x42U])) {
-    Err(err) => fail("subset failed: \{err}")
+    Err(err) => fail("subset failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let subset_font = @font.Font::from_bytes(bytes)
   let gpos_blob = match subset_font.get_face().reference_table_optional(
     @common.Tag::from_chars('G', 'P', 'O', 'S'),
   ) {
-    Err(err) => fail("GPOS lookup failed: \{err}")
+    Err(err) => fail("GPOS lookup failed: \{@debug.to_string(err)}")
     Ok(None) => fail("GPOS table missing from subset")
     Ok(Some(blob)) => blob
   }
@@ -3560,22 +3560,22 @@ test "subset rebuilds gpos chaining" {
     None => fail("GPOS coverage glyph missing")
     Some(value) => value
   }
-  inspect((lookup_type, pos_format, rule_set_count), content="(8, 1, 1)")
-  inspect(cov_glyph, content="1")
+  @debug.debug_inspect((lookup_type, pos_format, rule_set_count), content="(8, 1, 1)")
+  @debug.debug_inspect(cov_glyph, content="1")
 }
 
 ///|
 test "subset rebuilds colr v0" {
   let font = @font.Font::from_bytes(build_font_bytes_subset_fixture())
   let bytes = match subset(font, SubsetInput::from_codepoints([0x42U])) {
-    Err(err) => fail("subset failed: \{err}")
+    Err(err) => fail("subset failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let subset_font = @font.Font::from_bytes(bytes)
   let colr_blob = match subset_font.get_face().reference_table_optional(
     @common.Tag::from_chars('C', 'O', 'L', 'R'),
   ) {
-    Err(err) => fail("colr lookup failed: \{err}")
+    Err(err) => fail("colr lookup failed: \{@debug.to_string(err)}")
     Ok(None) => fail("COLR table missing from subset")
     Ok(Some(blob)) => blob
   }
@@ -3600,8 +3600,8 @@ test "subset rebuilds colr v0" {
     None => fail("COLR numLayers missing")
     Some(value) => value
   }
-  inspect((version, num_base, num_layers), content="(0, 1, 2)")
-  inspect((base_offset, layer_offset), content="(14, 20)")
+  @debug.debug_inspect((version, num_base, num_layers), content="(0, 1, 2)")
+  @debug.debug_inspect((base_offset, layer_offset), content="(14, 20)")
   let base_gid = match read_u16(data, base_offset) {
     None => fail("COLR base glyph missing")
     Some(value) => value
@@ -3614,7 +3614,7 @@ test "subset rebuilds colr v0" {
     None => fail("COLR base layer count missing")
     Some(value) => value
   }
-  inspect((base_gid, first_layer, layer_count), content="(1, 0, 2)")
+  @debug.debug_inspect((base_gid, first_layer, layer_count), content="(1, 0, 2)")
   let layer0_gid = match read_u16(data, layer_offset) {
     None => fail("COLR layer0 gid missing")
     Some(value) => value
@@ -3631,22 +3631,22 @@ test "subset rebuilds colr v0" {
     None => fail("COLR layer1 color missing")
     Some(value) => value
   }
-  inspect((layer0_gid, layer0_color), content="(1, 0)")
-  inspect((layer1_gid, layer1_color), content="(2, 1)")
+  @debug.debug_inspect((layer0_gid, layer0_color), content="(1, 0)")
+  @debug.debug_inspect((layer1_gid, layer1_color), content="(2, 1)")
 }
 
 ///|
 test "subset rebuilds colr v1" {
   let font = @font.Font::from_bytes(build_font_bytes_subset_colr_v1_fixture())
   let bytes = match subset(font, SubsetInput::from_codepoints([0x42U])) {
-    Err(err) => fail("subset failed: \{err}")
+    Err(err) => fail("subset failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let subset_font = @font.Font::from_bytes(bytes)
   let colr_blob = match subset_font.get_face().reference_table_optional(
     @common.Tag::from_chars('C', 'O', 'L', 'R'),
   ) {
-    Err(err) => fail("colr lookup failed: \{err}")
+    Err(err) => fail("colr lookup failed: \{@debug.to_string(err)}")
     Ok(None) => fail("COLR table missing from subset")
     Ok(Some(blob)) => blob
   }
@@ -3677,30 +3677,30 @@ test "subset rebuilds colr v1" {
     None => fail("COLR paint glyph missing")
     Some(value) => value
   }
-  inspect((version, count, base_gid), content="(1, 1, 1)")
-  inspect((paint_format, paint_gid), content="(10, 2)")
+  @debug.debug_inspect((version, count, base_gid), content="(1, 1, 1)")
+  @debug.debug_inspect((paint_format, paint_gid), content="(10, 2)")
 }
 
 ///|
 test "subset rebuilds sbix" {
   let font = @font.Font::from_bytes(build_font_bytes_subset_sbix_fixture())
   let bytes = match subset(font, SubsetInput::from_codepoints([0x42U])) {
-    Err(err) => fail("subset failed: \{err}")
+    Err(err) => fail("subset failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let subset_font = @font.Font::from_bytes(bytes)
   let face = subset_font.get_face()
   let maxp = match face.reference_table_optional(@common.Tag::from_chars('m', 'a', 'x', 'p')) {
-    Err(err) => fail("maxp missing: \{err}")
+    Err(err) => fail("maxp missing: \{@debug.to_string(err)}")
     Ok(None) => fail("maxp missing")
     Ok(Some(blob)) =>
       match @sfnt.MaxpTable::parse(blob.as_view()) {
-        Err(err) => fail("maxp parse failed: \{err}")
+        Err(err) => fail("maxp parse failed: \{@debug.to_string(err)}")
         Ok(value) => value
       }
   }
   let sbix_blob = match face.reference_table_optional(@common.Tag::from_chars('s', 'b', 'i', 'x')) {
-    Err(err) => fail("sbix lookup failed: \{err}")
+    Err(err) => fail("sbix lookup failed: \{@debug.to_string(err)}")
     Ok(None) => fail("sbix table missing from subset")
     Ok(Some(blob)) => blob
   }
@@ -3742,9 +3742,9 @@ test "subset rebuilds sbix" {
     None => fail("sbix offset3 missing")
     Some(value) => value
   }
-  inspect((version, strike_count, maxp.num_glyphs), content="(1, 1, 3)")
-  inspect((ppem, resolution, offset0, offset1), content="(12, 96, 20, 20)")
-  inspect((offset2, offset3), content="(29, 39)")
+  @debug.debug_inspect((version, strike_count, maxp.num_glyphs), content="(1, 1, 3)")
+  @debug.debug_inspect((ppem, resolution, offset0, offset1), content="(12, 96, 20, 20)")
+  @debug.debug_inspect((offset2, offset3), content="(29, 39)")
   let glyph2_base = strike_offset + offset1
   let x0 = match read_i16(data, glyph2_base) {
     None => fail("sbix glyph2 x missing")
@@ -3759,7 +3759,7 @@ test "subset rebuilds sbix" {
   let t2 = data[glyph2_base + 6].to_int()
   let t3 = data[glyph2_base + 7].to_int()
   let d0 = data[glyph2_base + 8].to_int()
-  inspect((x0, y0, t0, t1, t2, t3, d0), content="(1, 2, 112, 110, 103, 32, 170)")
+  @debug.debug_inspect((x0, y0, t0, t1, t2, t3, d0), content="(1, 2, 112, 110, 103, 32, 170)")
   let glyph3_base = strike_offset + offset2
   let x1 = match read_i16(data, glyph3_base) {
     None => fail("sbix glyph3 x missing")
@@ -3775,25 +3775,25 @@ test "subset rebuilds sbix" {
   let e3 = data[glyph3_base + 7].to_int()
   let d1 = data[glyph3_base + 8].to_int()
   let d2 = data[glyph3_base + 9].to_int()
-  inspect((x1, y1, e0, e1, e2, e3, d1, d2), content="(3, 4, 112, 110, 103, 32, 187, 204)")
+  @debug.debug_inspect((x1, y1, e0, e1, e2, e3, d1, d2), content="(3, 4, 112, 110, 103, 32, 187, 204)")
 }
 
 ///|
 test "subset rebuilds cblc/cbdt" {
   let font = @font.Font::from_bytes(build_font_bytes_subset_cblc_fixture())
   let bytes = match subset(font, SubsetInput::from_codepoints([0x42U])) {
-    Err(err) => fail("subset failed: \{err}")
+    Err(err) => fail("subset failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let subset_font = @font.Font::from_bytes(bytes)
   let face = subset_font.get_face()
   let cblc_blob = match face.reference_table_optional(@common.Tag::from_chars('C', 'B', 'L', 'C')) {
-    Err(err) => fail("cblc lookup failed: \{err}")
+    Err(err) => fail("cblc lookup failed: \{@debug.to_string(err)}")
     Ok(None) => fail("cblc table missing from subset")
     Ok(Some(blob)) => blob
   }
   let cbdt_blob = match face.reference_table_optional(@common.Tag::from_chars('C', 'B', 'D', 'T')) {
-    Err(err) => fail("cbdt lookup failed: \{err}")
+    Err(err) => fail("cbdt lookup failed: \{@debug.to_string(err)}")
     Ok(None) => fail("cbdt table missing from subset")
     Ok(Some(blob)) => blob
   }
@@ -3820,7 +3820,7 @@ test "subset rebuilds cblc/cbdt" {
     None => fail("cblc end gid missing")
     Some(value) => value
   }
-  inspect((num_sizes, subtable_count, start_gid, end_gid), content="(1, 1, 0, 2)")
+  @debug.debug_inspect((num_sizes, subtable_count, start_gid, end_gid), content="(1, 1, 0, 2)")
   let record_first = match read_u16(cblc, list_offset) {
     None => fail("cblc record first missing")
     Some(value) => value
@@ -3862,9 +3862,9 @@ test "subset rebuilds cblc/cbdt" {
     None => fail("cblc offset3 missing")
     Some(value) => value
   }
-  inspect((record_first, record_last), content="(0, 2)")
-  inspect((index_format, image_format, image_data_offset), content="(1, 17, 4)")
-  inspect((offset0, offset1, offset2, offset3), content="(0, 0, 3, 7)")
+  @debug.debug_inspect((record_first, record_last), content="(0, 2)")
+  @debug.debug_inspect((index_format, image_format, image_data_offset), content="(1, 17, 4)")
+  @debug.debug_inspect((offset0, offset1, offset2, offset3), content="(0, 0, 3, 7)")
   let cbdt_major = match read_u16(cbdt, 0) {
     None => fail("cbdt major missing")
     Some(value) => value
@@ -3873,26 +3873,26 @@ test "subset rebuilds cblc/cbdt" {
     None => fail("cbdt minor missing")
     Some(value) => value
   }
-  inspect((cbdt_major, cbdt_minor), content="(2, 0)")
+  @debug.debug_inspect((cbdt_major, cbdt_minor), content="(2, 0)")
   let data_bytes : Array[Int] = []
   for i in 0..<7 {
     data_bytes.push(cbdt[image_data_offset + i].to_int())
   }
-  inspect(data_bytes, content="[17, 34, 51, 68, 85, 102, 119]")
+  @debug.debug_inspect(data_bytes, content="[17, 34, 51, 68, 85, 102, 119]")
 }
 
 ///|
 test "subset rebuilds svg" {
   let font = @font.Font::from_bytes(build_font_bytes_subset_svg_fixture())
   let bytes = match subset(font, SubsetInput::from_codepoints([0x42U])) {
-    Err(err) => fail("subset failed: \{err}")
+    Err(err) => fail("subset failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let subset_font = @font.Font::from_bytes(bytes)
   let svg_blob = match subset_font.get_face().reference_table_optional(
     @common.Tag::from_chars('S', 'V', 'G', ' '),
   ) {
-    Err(err) => fail("svg lookup failed: \{err}")
+    Err(err) => fail("svg lookup failed: \{@debug.to_string(err)}")
     Ok(None) => fail("SVG table missing from subset")
     Ok(Some(blob)) => blob
   }
@@ -3926,29 +3926,29 @@ test "subset rebuilds svg" {
     None => fail("SVG doc length missing")
     Some(value) => value
   }
-  inspect((version, index_offset, entry_count), content="(0, 10, 1)")
-  inspect((start, end), content="(1, 2)")
-  inspect((doc_offset, doc_length), content="(14, 6)")
+  @debug.debug_inspect((version, index_offset, entry_count), content="(0, 10, 1)")
+  @debug.debug_inspect((start, end), content="(1, 2)")
+  @debug.debug_inspect((doc_offset, doc_length), content="(14, 6)")
   let doc_base = index_offset + doc_offset
   let doc_bytes : Array[Int] = []
   for i in 0..<doc_length {
     doc_bytes.push(data[doc_base + i].to_int())
   }
-  inspect(doc_bytes, content="[60, 115, 118, 103, 47, 62]")
+  @debug.debug_inspect(doc_bytes, content="[60, 115, 118, 103, 47, 62]")
 }
 
 ///|
 test "subset rebuilds gdef" {
   let font = @font.Font::from_bytes(build_font_bytes_subset_fixture())
   let bytes = match subset(font, SubsetInput::from_codepoints([0x42U])) {
-    Err(err) => fail("subset failed: \{err}")
+    Err(err) => fail("subset failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let subset_font = @font.Font::from_bytes(bytes)
   let gdef_blob = match subset_font.get_face().reference_table_optional(
     @common.Tag::from_chars('G', 'D', 'E', 'F'),
   ) {
-    Err(err) => fail("gdef lookup failed: \{err}")
+    Err(err) => fail("gdef lookup failed: \{@debug.to_string(err)}")
     Ok(None) => fail("GDEF table missing from subset")
     Ok(Some(blob)) => blob
   }
@@ -3977,7 +3977,7 @@ test "subset rebuilds gdef" {
     None => fail("GDEF mark sets offset missing")
     Some(value) => value
   }
-  inspect(
+  @debug.debug_inspect(
     (
       version,
       glyph_class_offset,
@@ -4008,7 +4008,7 @@ test "subset rebuilds gdef" {
     None => fail("GDEF class value missing")
     Some(value) => value
   }
-  inspect((class_format, class_count, class1, class2, class3), content="(1, 1, 2, 6, 1)")
+  @debug.debug_inspect((class_format, class_count, class1, class2, class3), content="(1, 1, 2, 6, 1)")
   let mark_format = match read_u16(data, mark_attach_offset) {
     None => fail("GDEF mark format missing")
     Some(value) => value
@@ -4029,7 +4029,7 @@ test "subset rebuilds gdef" {
     None => fail("GDEF mark class missing")
     Some(value) => value
   }
-  inspect((mark_format, mark_class_count, mark1, mark2, mark3), content="(1, 1, 1, 1, 1)")
+  @debug.debug_inspect((mark_format, mark_class_count, mark1, mark2, mark3), content="(1, 1, 1, 1, 1)")
   let sets_format = match read_u16(data, mark_sets_offset) {
     None => fail("GDEF sets format missing")
     Some(value) => value
@@ -4059,7 +4059,7 @@ test "subset rebuilds gdef" {
     None => fail("GDEF coverage missing")
     Some(value) => value
   }
-  inspect((sets_format, sets_count, cov_format, cov_count, cov1, cov2), content="(1, 1, 1, 2, 1, 2)")
+  @debug.debug_inspect((sets_format, sets_count, cov_format, cov_count, cov1, cov2), content="(1, 1, 1, 2, 1, 2)")
 
   let attach_cov_offset = match read_u16(data, attach_list_offset) {
     None => fail("GDEF attach coverage offset missing")
@@ -4099,7 +4099,7 @@ test "subset rebuilds gdef" {
     None => fail("GDEF attach point missing")
     Some(value) => value
   }
-  inspect(
+  @debug.debug_inspect(
     (
       attach_cov_format,
       attach_count,
@@ -4133,7 +4133,7 @@ test "subset rebuilds gdef" {
     None => fail("GDEF lig caret coverage glyph missing")
     Some(value) => value
   }
-  inspect((lig_cov_format, lig_cov_count, lig_cov1, lig_cov2), content="(1, 2, 1, 2)")
+  @debug.debug_inspect((lig_cov_format, lig_cov_count, lig_cov1, lig_cov2), content="(1, 2, 1, 2)")
   let lig_offset1 = match read_u16(data, lig_caret_offset + 4) {
     None => fail("GDEF lig caret offset missing")
     Some(value) => value
@@ -4161,7 +4161,7 @@ test "subset rebuilds gdef" {
     None => fail("GDEF lig caret coord missing")
     Some(value) => value
   }
-  inspect((lig1_count, lig1_format, lig1_coord), content="(1, 1, 100)")
+  @debug.debug_inspect((lig1_count, lig1_format, lig1_coord), content="(1, 1, 100)")
   let lig2_count = match read_u16(data, lig2_base) {
     None => fail("GDEF lig caret count missing")
     Some(value) => value
@@ -4201,7 +4201,7 @@ test "subset rebuilds gdef" {
     None => fail("GDEF lig caret device format missing")
     Some(value) => value
   }
-  inspect(
+  @debug.debug_inspect(
     (
       lig2_count,
       lig2_format1,
@@ -4220,14 +4220,14 @@ test "subset rebuilds gdef" {
 test "subset rebuilds variation tables" {
   let font = @font.Font::from_bytes(build_font_bytes_subset_variation_fixture())
   let bytes = match subset(font, SubsetInput::from_codepoints([0x42U])) {
-    Err(err) => fail("subset failed: \{err}")
+    Err(err) => fail("subset failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let subset_font = @font.Font::from_bytes(bytes)
   let face = subset_font.get_face()
 
   let gvar_blob = match face.reference_table_optional(@common.Tag::from_chars('g', 'v', 'a', 'r')) {
-    Err(err) => fail("gvar lookup failed: \{err}")
+    Err(err) => fail("gvar lookup failed: \{@debug.to_string(err)}")
     Ok(None) => fail("gvar table missing from subset")
     Ok(Some(blob)) => blob
   }
@@ -4248,11 +4248,11 @@ test "subset rebuilds variation tables" {
   for i in data_offset..<(data_offset + last_offset) {
     gvar_bytes.push(gvar[i].to_int())
   }
-  inspect(glyph_count, content="3")
-  inspect(gvar_bytes, content="[160, 193, 194, 195]")
+  @debug.debug_inspect(glyph_count, content="3")
+  @debug.debug_inspect(gvar_bytes, content="[160, 193, 194, 195]")
 
   let hvar_blob = match face.reference_table_optional(@common.Tag::from_chars('H', 'V', 'A', 'R')) {
-    Err(err) => fail("hvar lookup failed: \{err}")
+    Err(err) => fail("hvar lookup failed: \{@debug.to_string(err)}")
     Ok(None) => fail("HVAR table missing from subset")
     Ok(Some(blob)) => blob
   }
@@ -4269,10 +4269,10 @@ test "subset rebuilds variation tables" {
   for i in 0..<adv_count {
     adv_values.push(hvar[adv_offset + 4 + i].to_int())
   }
-  inspect(adv_values, content="[10, 30, 40]")
+  @debug.debug_inspect(adv_values, content="[10, 30, 40]")
 
   let vvar_blob = match face.reference_table_optional(@common.Tag::from_chars('V', 'V', 'A', 'R')) {
-    Err(err) => fail("vvar lookup failed: \{err}")
+    Err(err) => fail("vvar lookup failed: \{@debug.to_string(err)}")
     Ok(None) => fail("VVAR table missing from subset")
     Ok(Some(blob)) => blob
   }
@@ -4289,10 +4289,10 @@ test "subset rebuilds variation tables" {
   for i in 0..<vadv_count {
     vadv_values.push(vvar[vadv_offset + 4 + i].to_int())
   }
-  inspect(vadv_values, content="[50, 70, 80]")
+  @debug.debug_inspect(vadv_values, content="[50, 70, 80]")
 
   let varc_blob = match face.reference_table_optional(@common.Tag::from_chars('V', 'A', 'R', 'C')) {
-    Err(err) => fail("varc lookup failed: \{err}")
+    Err(err) => fail("varc lookup failed: \{@debug.to_string(err)}")
     Ok(None) => fail("VARC table missing from subset")
     Ok(Some(blob)) => blob
   }
@@ -4324,22 +4324,22 @@ test "subset rebuilds variation tables" {
   for i in (data_start + start)..<(data_start + end) {
     record_bytes.push(varc[i].to_int())
   }
-  inspect(cover_gid, content="1")
-  inspect(record_bytes, content="[0, 0, 2]")
+  @debug.debug_inspect(cover_gid, content="1")
+  @debug.debug_inspect(record_bytes, content="[0, 0, 2]")
 }
 
 ///|
 test "subset keeps empty gsub when remapped" {
   let font = @font.Font::from_bytes(build_font_bytes_subset_fixture())
   let bytes = match subset(font, SubsetInput::from_codepoints([0x41U])) {
-    Err(err) => fail("subset failed: \{err}")
+    Err(err) => fail("subset failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let subset_font = @font.Font::from_bytes(bytes)
   let gsub_blob = match subset_font.get_face().reference_table_optional(
     @common.Tag::from_chars('G', 'S', 'U', 'B'),
   ) {
-    Err(err) => fail("GSUB lookup failed: \{err}")
+    Err(err) => fail("GSUB lookup failed: \{@debug.to_string(err)}")
     Ok(None) => fail("GSUB table missing from remapped subset")
     Ok(Some(blob)) => blob
   }
@@ -4360,22 +4360,22 @@ test "subset keeps empty gsub when remapped" {
     None => fail("GSUB feature count missing")
     Some(value) => value
   }
-  inspect(version, content="65536")
-  inspect((feature_offset, lookup_offset, feature_count), content="(28, 28, 0)")
+  @debug.debug_inspect(version, content="65536")
+  @debug.debug_inspect((feature_offset, lookup_offset, feature_count), content="(28, 28, 0)")
 }
 
 ///|
 test "subset preserves layout tables for identity subset" {
   let font = @font.Font::from_bytes(build_font_bytes_subset_fixture())
   let bytes = match subset(font, SubsetInput::from_codepoints([0x41U, 0x42U])) {
-    Err(err) => fail("subset failed: \{err}")
+    Err(err) => fail("subset failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let subset_font = @font.Font::from_bytes(bytes)
   let gsub_blob = match subset_font.get_face().reference_table_optional(
     @common.Tag::from_chars('G', 'S', 'U', 'B'),
   ) {
-    Err(err) => fail("GSUB lookup failed: \{err}")
+    Err(err) => fail("GSUB lookup failed: \{@debug.to_string(err)}")
     Ok(None) => fail("GSUB table missing from identity subset")
     Ok(Some(blob)) => blob
   }
@@ -4384,40 +4384,40 @@ test "subset preserves layout tables for identity subset" {
     None => fail("GSUB header missing")
     Some(value) => value
   }
-  inspect(version, content="65536")
-  inspect(gsub_view.length(), content="336")
+  @debug.debug_inspect(version, content="65536")
+  @debug.debug_inspect(gsub_view.length(), content="336")
 }
 
 ///|
 test "subset rebuilds vmtx" {
   let font = @font.Font::from_bytes(build_font_bytes_subset_fixture())
   let bytes = match subset(font, SubsetInput::from_codepoints([0x41U])) {
-    Err(err) => fail("subset failed: \{err}")
+    Err(err) => fail("subset failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let subset_font = @font.Font::from_bytes(bytes)
   let face = subset_font.get_face()
   let maxp_blob = match face.reference_table_optional(@common.Tag::from_chars('m', 'a', 'x', 'p')) {
-    Err(err) => fail("maxp table missing: \{err}")
+    Err(err) => fail("maxp table missing: \{@debug.to_string(err)}")
     Ok(None) => fail("maxp table missing")
     Ok(Some(blob)) => blob
   }
   let maxp = match @sfnt.MaxpTable::parse(maxp_blob.as_view()) {
-    Err(err) => fail("maxp parse error: \{err}")
+    Err(err) => fail("maxp parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let vhea_blob = match face.reference_table_optional(@common.Tag::from_chars('v', 'h', 'e', 'a')) {
-    Err(err) => fail("vhea table missing: \{err}")
+    Err(err) => fail("vhea table missing: \{@debug.to_string(err)}")
     Ok(None) => fail("vhea table missing")
     Ok(Some(blob)) => blob
   }
   let vhea = match @sfnt.VheaTable::parse(vhea_blob.as_view()) {
-    Err(err) => fail("vhea parse error: \{err}")
+    Err(err) => fail("vhea parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  inspect(vhea.number_of_vmetrics, content=maxp.num_glyphs.to_string())
+  @debug.debug_inspect(vhea.number_of_vmetrics, content=maxp.num_glyphs.to_string())
   let vmtx_blob = match face.reference_table_optional(@common.Tag::from_chars('v', 'm', 't', 'x')) {
-    Err(err) => fail("vmtx table missing: \{err}")
+    Err(err) => fail("vmtx table missing: \{@debug.to_string(err)}")
     Ok(None) => fail("vmtx table missing")
     Ok(Some(blob)) => blob
   }
@@ -4426,67 +4426,67 @@ test "subset rebuilds vmtx" {
     maxp.num_glyphs,
     vhea.number_of_vmetrics,
   ) {
-    Err(err) => fail("vmtx parse error: \{err}")
+    Err(err) => fail("vmtx parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  inspect(vmtx.advances.length(), content="2")
-  inspect(vmtx.tsbs.length(), content="2")
-  inspect(vmtx.advances[0], content="900")
-  inspect(vmtx.advances[1], content="910")
-  inspect(vmtx.tsbs[0], content="5")
-  inspect(vmtx.tsbs[1], content="6")
+  @debug.debug_inspect(vmtx.advances.length(), content="2")
+  @debug.debug_inspect(vmtx.tsbs.length(), content="2")
+  @debug.debug_inspect(vmtx.advances[0], content="900")
+  @debug.debug_inspect(vmtx.advances[1], content="910")
+  @debug.debug_inspect(vmtx.tsbs[0], content="5")
+  @debug.debug_inspect(vmtx.tsbs[1], content="6")
 }
 
 ///|
 test "subset remaps composite components" {
   let font = @font.Font::from_bytes(build_font_bytes_subset_fixture())
   let bytes = match subset(font, SubsetInput::from_codepoints([0x42U])) {
-    Err(err) => fail("subset failed: \{err}")
+    Err(err) => fail("subset failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let subset_font = @font.Font::from_bytes(bytes)
   let gid = match subset_font.glyph_for_codepoint(0x42U) {
-    Err(err) => fail("glyph lookup failed: \{err}")
+    Err(err) => fail("glyph lookup failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   assert_true(gid is Some(1U))
   let face = subset_font.get_face()
   let head = match face.reference_table_optional(@common.Tag::from_chars('h', 'e', 'a', 'd')) {
-    Err(err) => fail("head table missing: \{err}")
+    Err(err) => fail("head table missing: \{@debug.to_string(err)}")
     Ok(None) => fail("head table missing")
     Ok(Some(blob)) =>
       match @sfnt.HeadTable::parse(blob.as_view()) {
-        Err(err) => fail("head parse failed: \{err}")
+        Err(err) => fail("head parse failed: \{@debug.to_string(err)}")
         Ok(value) => value
       }
   }
   let loca = match face.reference_table_optional(@common.Tag::from_chars('l', 'o', 'c', 'a')) {
-    Err(err) => fail("loca table missing: \{err}")
+    Err(err) => fail("loca table missing: \{@debug.to_string(err)}")
     Ok(None) => fail("loca table missing")
     Ok(Some(blob)) =>
       match @sfnt.LocaTable::parse(blob.as_view(), 3, head.index_to_loc_format) {
-        Err(err) => fail("loca parse failed: \{err}")
+        Err(err) => fail("loca parse failed: \{@debug.to_string(err)}")
         Ok(value) => value
       }
   }
   let glyf = match face.reference_table_optional(@common.Tag::from_chars('g', 'l', 'y', 'f')) {
-    Err(err) => fail("glyf table missing: \{err}")
+    Err(err) => fail("glyf table missing: \{@debug.to_string(err)}")
     Ok(None) => fail("glyf table missing")
     Ok(Some(blob)) =>
       match @sfnt.GlyfTable::parse(blob) {
-        Err(err) => fail("glyf parse failed: \{err}")
+        Err(err) => fail("glyf parse failed: \{@debug.to_string(err)}")
         Ok(value) => value
       }
   }
   let start = loca.offsets[1]
   let end = loca.offsets[2]
   let comps = match glyf.glyph_composite_components(start, end - start) {
-    Err(err) => fail("composite parse failed: \{err}")
+    Err(err) => fail("composite parse failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   match comps {
     None => fail("expected composite glyph")
-    Some(components) => inspect(components[0].glyph, content="2")
+    Some(components) => @debug.debug_inspect(components[0].glyph, content="2")
   }
 }
 
@@ -4833,18 +4833,18 @@ test "subset cff1 cmap" {
   let font = @font.Font::from_bytes(build_font_bytes_cff1_seac_c0())
   let keep = 0xC0U
   let bytes = match subset(font, SubsetInput::from_codepoints([keep])) {
-    Err(err) => fail("subset failed: \{err}")
+    Err(err) => fail("subset failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let subset_font = @font.Font::from_bytes(bytes)
   let gid = match subset_font.glyph_for_codepoint(keep) {
-    Err(err) => fail("glyph lookup error: \{err}")
+    Err(err) => fail("glyph lookup error: \{@debug.to_string(err)}")
     Ok(None) => fail("missing glyph for U+00C0")
     Ok(Some(value)) => value
   }
   let face = subset_font.get_face()
   let cmap_blob = match face.reference_table_optional(@common.Tag::from_chars('c', 'm', 'a', 'p')) {
-    Err(err) => fail("cmap table missing: \{err}")
+    Err(err) => fail("cmap table missing: \{@debug.to_string(err)}")
     Ok(None) => fail("cmap table missing")
     Ok(Some(blob)) => blob
   }
@@ -4859,11 +4859,11 @@ test "subset cff1 cmap" {
   }
   assert_eq(format, 4)
   let bounds = match subset_font.glyph_bounds(gid) {
-    Err(err) => fail("bounds error: \{err}")
+    Err(err) => fail("bounds error: \{@debug.to_string(err)}")
     Ok(None) => fail("missing bounds")
     Ok(Some(value)) => value
   }
-  inspect((bounds.x_min, bounds.y_min, bounds.x_max, bounds.y_max), content="(3, 0, 541, 861)")
+  @debug.debug_inspect((bounds.x_min, bounds.y_min, bounds.x_max, bounds.y_max), content="(3, 0, 541, 861)")
 }
 
 ///|
@@ -4871,7 +4871,7 @@ test "subset cff1 outlines" {
   let font = @font.Font::from_bytes(build_font_bytes_cff1_seac_c0())
   let keep = 0xC0U
   let original_gid = match font.glyph_for_codepoint(keep) {
-    Err(err) => fail("glyph lookup error: \{err}")
+    Err(err) => fail("glyph lookup error: \{@debug.to_string(err)}")
     Ok(None) => fail("missing glyph for U+00C0")
     Ok(Some(value)) => value.reinterpret_as_int()
   }
@@ -4879,51 +4879,51 @@ test "subset cff1 outlines" {
   let original_cff_blob = match original_face.reference_table_optional(
     @common.Tag::from_chars('C', 'F', 'F', ' ')
   ) {
-    Err(err) => fail("cff missing: \{err}")
+    Err(err) => fail("cff missing: \{@debug.to_string(err)}")
     Ok(None) => fail("cff missing")
     Ok(Some(blob)) => blob
   }
   let original_cff = match @ot_cff.Cff1Table::parse(original_cff_blob.as_view()) {
-    Err(err) => fail("cff parse error: \{err}")
+    Err(err) => fail("cff parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let original_components = match original_cff.seac_components(original_gid) {
-    Err(err) => fail("seac components error: \{err}")
+    Err(err) => fail("seac components error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let bytes = match subset(font, SubsetInput::from_codepoints([keep])) {
-    Err(err) => fail("subset failed: \{err}")
+    Err(err) => fail("subset failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let subset_font = @font.Font::from_bytes(bytes)
   let face = subset_font.get_face()
   let maxp_blob = match face.reference_table_optional(@common.Tag::from_chars('m', 'a', 'x', 'p')) {
-    Err(err) => fail("maxp missing: \{err}")
+    Err(err) => fail("maxp missing: \{@debug.to_string(err)}")
     Ok(None) => fail("maxp missing")
     Ok(Some(blob)) => blob
   }
   let maxp = match @sfnt.MaxpTable::parse(maxp_blob.as_view()) {
-    Err(err) => fail("maxp parse error: \{err}")
+    Err(err) => fail("maxp parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  inspect(maxp.num_glyphs, content="4")
+  @debug.debug_inspect(maxp.num_glyphs, content="4")
 
   let cff_blob = match face.reference_table_optional(@common.Tag::from_chars('C', 'F', 'F', ' ')) {
-    Err(err) => fail("cff missing: \{err}")
+    Err(err) => fail("cff missing: \{@debug.to_string(err)}")
     Ok(None) => fail("cff missing")
     Ok(Some(blob)) => blob
   }
   let cff = match @ot_cff.Cff1Table::parse(cff_blob.as_view()) {
-    Err(err) => fail("cff parse error: \{err}")
+    Err(err) => fail("cff parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let gid = match subset_font.glyph_for_codepoint(keep) {
-    Err(err) => fail("glyph lookup error: \{err}")
+    Err(err) => fail("glyph lookup error: \{@debug.to_string(err)}")
     Ok(None) => fail("missing glyph for U+00C0")
     Ok(Some(value)) => value
   }
   let components = match cff.seac_components(gid.reinterpret_as_int()) {
-    Err(err) => fail("seac components error: \{err}")
+    Err(err) => fail("seac components error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let expected_components =
@@ -4972,37 +4972,37 @@ test "subset cff2 outlines" {
   let font = @font.Font::from_bytes(build_font_bytes_test_cff2_vf())
   let keep = 0x41U
   let bytes = match subset(font, SubsetInput::from_codepoints([keep])) {
-    Err(err) => fail("subset failed: \{err}")
+    Err(err) => fail("subset failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let subset_font = @font.Font::from_bytes(bytes)
   match subset_font.glyph_for_codepoint(keep) {
-    Err(err) => fail("glyph lookup error: \{err}")
+    Err(err) => fail("glyph lookup error: \{@debug.to_string(err)}")
     Ok(None) => fail("missing glyph for U+0041")
     Ok(Some(_)) => ()
   }
   let face = subset_font.get_face()
   let maxp_blob = match face.reference_table_optional(@common.Tag::from_chars('m', 'a', 'x', 'p')) {
-    Err(err) => fail("maxp table missing: \{err}")
+    Err(err) => fail("maxp table missing: \{@debug.to_string(err)}")
     Ok(None) => fail("maxp table missing")
     Ok(Some(blob)) => blob
   }
   let maxp = match @sfnt.MaxpTable::parse(maxp_blob.as_view()) {
-    Err(err) => fail("maxp parse error: \{err}")
+    Err(err) => fail("maxp parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let cff2_blob = match face.reference_table_optional(@common.Tag::from_chars('C', 'F', 'F', '2')) {
-    Err(err) => fail("cff2 table missing: \{err}")
+    Err(err) => fail("cff2 table missing: \{@debug.to_string(err)}")
     Ok(None) => fail("cff2 table missing")
     Ok(Some(blob)) => blob
   }
   let cff2 = match @ot_cff.Cff2Table::parse(cff2_blob.as_view()) {
-    Err(err) => fail("cff2 parse error: \{err}")
+    Err(err) => fail("cff2 parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  inspect(cff2.glyph_count(), content=maxp.num_glyphs.to_string())
+  @debug.debug_inspect(cff2.glyph_count(), content=maxp.num_glyphs.to_string())
   let cmap_blob = match face.reference_table_optional(@common.Tag::from_chars('c', 'm', 'a', 'p')) {
-    Err(err) => fail("cmap table missing: \{err}")
+    Err(err) => fail("cmap table missing: \{@debug.to_string(err)}")
     Ok(None) => fail("cmap table missing")
     Ok(Some(blob)) => blob
   }

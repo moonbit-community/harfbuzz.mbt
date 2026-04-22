@@ -27,7 +27,7 @@ pub struct OverflowRecord {
   max : Int
   width : Int
   is_signed : Bool
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 let inf_distance : Int64 = Int64::from_int(1) << 60
 let space_stride : Int64 = Int64::from_int(1) << 32

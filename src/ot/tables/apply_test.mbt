@@ -1979,16 +1979,16 @@ test "gsub single substitution apply" {
     @common.Tag::from_chars('l', 'i', 'g', 'a'),
   )
   let gsub = match GsubTable::parse(@blob.Blob::from_bytes(gsub_bytes)) {
-    Err(err) => fail("parse error: \{err}")
+    Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let glyphs : Array[UInt] = [1U, 2U]
   let changed = match gsub.apply_single(glyphs) {
-    Err(err) => fail("apply error: \{err}")
+    Err(err) => fail("apply error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  inspect(changed, content="true")
-  inspect(glyphs, content="[3, 2]")
+  @debug.debug_inspect(changed, content="true")
+  @debug.debug_inspect(glyphs, content="[3, 2]")
 }
 
 ///|
@@ -1998,7 +1998,7 @@ test "gsub single substitution apply mask" {
     @common.Tag::from_chars('l', 'i', 'g', 'a'),
   )
   let gsub = match GsubTable::parse(@blob.Blob::from_bytes(gsub_bytes)) {
-    Err(err) => fail("parse error: \{err}")
+    Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let lookup_offsets = gsub.layout().lookup_list().offsets()
@@ -2010,11 +2010,11 @@ test "gsub single substitution apply mask" {
     masks=masks,
     lookup_mask=1U,
   ) {
-    Err(err) => fail("apply error: \{err}")
+    Err(err) => fail("apply error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  inspect(changed, content="true")
-  inspect(glyphs, content="[1, 3]")
+  @debug.debug_inspect(changed, content="true")
+  @debug.debug_inspect(glyphs, content="[1, 3]")
 }
 
 ///|
@@ -2024,13 +2024,13 @@ test "gsub single lookup mark filtering set" {
     @common.Tag::from_chars('l', 'i', 'g', 'a'),
   )
   let gsub = match GsubTable::parse(@blob.Blob::from_bytes(gsub_bytes)) {
-    Err(err) => fail("parse error: \{err}")
+    Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let gdef = match GdefTable::parse(
     @blob.Blob::from_bytes(build_gdef_mark_filter_table()),
   ) {
-    Err(err) => fail("gdef parse error: \{err}")
+    Err(err) => fail("gdef parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let lookup_offsets = [gsub.layout().lookup_list().offsets()[0]]
@@ -2042,12 +2042,12 @@ test "gsub single lookup mark filtering set" {
     lookup_offsets[:],
     gdef=gdef,
   ) {
-    Err(err) => fail("apply error: \{err}")
+    Err(err) => fail("apply error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let (new_glyphs1, _, changed1) = result1
-  inspect(changed1, content="false")
-  inspect(new_glyphs1, content="[5]")
+  @debug.debug_inspect(changed1, content="false")
+  @debug.debug_inspect(new_glyphs1, content="[5]")
   let glyphs2 : Array[UInt] = [6U]
   let clusters2 : Array[Int] = [0]
   let result2 = match gsub.apply_with_lookups(
@@ -2056,12 +2056,12 @@ test "gsub single lookup mark filtering set" {
     lookup_offsets[:],
     gdef=gdef,
   ) {
-    Err(err) => fail("apply error: \{err}")
+    Err(err) => fail("apply error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let (new_glyphs2, _, changed2) = result2
-  inspect(changed2, content="true")
-  inspect(new_glyphs2, content="[10]")
+  @debug.debug_inspect(changed2, content="true")
+  @debug.debug_inspect(new_glyphs2, content="[10]")
 }
 
 ///|
@@ -2071,13 +2071,13 @@ test "gsub single lookup mark attachment type" {
     @common.Tag::from_chars('l', 'i', 'g', 'a'),
   )
   let gsub = match GsubTable::parse(@blob.Blob::from_bytes(gsub_bytes)) {
-    Err(err) => fail("parse error: \{err}")
+    Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let gdef = match GdefTable::parse(
     @blob.Blob::from_bytes(build_gdef_mark_filter_table()),
   ) {
-    Err(err) => fail("gdef parse error: \{err}")
+    Err(err) => fail("gdef parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let lookup_offsets = [gsub.layout().lookup_list().offsets()[0]]
@@ -2089,12 +2089,12 @@ test "gsub single lookup mark attachment type" {
     lookup_offsets[:],
     gdef=gdef,
   ) {
-    Err(err) => fail("apply error: \{err}")
+    Err(err) => fail("apply error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let (new_glyphs1, _, changed1) = result1
-  inspect(changed1, content="true")
-  inspect(new_glyphs1, content="[9]")
+  @debug.debug_inspect(changed1, content="true")
+  @debug.debug_inspect(new_glyphs1, content="[9]")
   let glyphs2 : Array[UInt] = [6U]
   let clusters2 : Array[Int] = [0]
   let result2 = match gsub.apply_with_lookups(
@@ -2103,12 +2103,12 @@ test "gsub single lookup mark attachment type" {
     lookup_offsets[:],
     gdef=gdef,
   ) {
-    Err(err) => fail("apply error: \{err}")
+    Err(err) => fail("apply error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let (new_glyphs2, _, changed2) = result2
-  inspect(changed2, content="false")
-  inspect(new_glyphs2, content="[6]")
+  @debug.debug_inspect(changed2, content="false")
+  @debug.debug_inspect(new_glyphs2, content="[6]")
 }
 
 ///|
@@ -2118,13 +2118,13 @@ test "gsub lookup ignore base glyphs" {
     @common.Tag::from_chars('l', 'i', 'g', 'a'),
   )
   let gsub = match GsubTable::parse(@blob.Blob::from_bytes(gsub_bytes)) {
-    Err(err) => fail("parse error: \{err}")
+    Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let gdef = match GdefTable::parse(
     @blob.Blob::from_bytes(build_gdef_class_def_table()),
   ) {
-    Err(err) => fail("gdef parse error: \{err}")
+    Err(err) => fail("gdef parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let lookup_offsets = [gsub.layout().lookup_list().offsets()[0]]
@@ -2136,12 +2136,12 @@ test "gsub lookup ignore base glyphs" {
     lookup_offsets[:],
     gdef=gdef,
   ) {
-    Err(err) => fail("apply error: \{err}")
+    Err(err) => fail("apply error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let (new_glyphs, _, changed) = result
-  inspect(changed, content="false")
-  inspect(new_glyphs, content="[3]")
+  @debug.debug_inspect(changed, content="false")
+  @debug.debug_inspect(new_glyphs, content="[3]")
 }
 
 ///|
@@ -2151,13 +2151,13 @@ test "gsub lookup ignore ligature glyphs" {
     @common.Tag::from_chars('l', 'i', 'g', 'a'),
   )
   let gsub = match GsubTable::parse(@blob.Blob::from_bytes(gsub_bytes)) {
-    Err(err) => fail("parse error: \{err}")
+    Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let gdef = match GdefTable::parse(
     @blob.Blob::from_bytes(build_gdef_class_def_table()),
   ) {
-    Err(err) => fail("gdef parse error: \{err}")
+    Err(err) => fail("gdef parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let lookup_offsets = [gsub.layout().lookup_list().offsets()[0]]
@@ -2169,12 +2169,12 @@ test "gsub lookup ignore ligature glyphs" {
     lookup_offsets[:],
     gdef=gdef,
   ) {
-    Err(err) => fail("apply error: \{err}")
+    Err(err) => fail("apply error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let (new_glyphs, _, changed) = result
-  inspect(changed, content="false")
-  inspect(new_glyphs, content="[4]")
+  @debug.debug_inspect(changed, content="false")
+  @debug.debug_inspect(new_glyphs, content="[4]")
 }
 
 ///|
@@ -2184,18 +2184,18 @@ test "gpos pair adjust deltas" {
     @common.Tag::from_chars('k', 'e', 'r', 'n'),
   )
   let gpos = match GposTable::parse(@blob.Blob::from_bytes(gpos_bytes)) {
-    Err(err) => fail("parse error: \{err}")
+    Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let glyphs : Array[UInt] = [3U, 2U]
   let deltas = match gpos.pair_adjust_deltas(glyphs[:]) {
-    Err(err) => fail("apply error: \{err}")
+    Err(err) => fail("apply error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  inspect(deltas.length(), content="2")
-  inspect(deltas[0].x_placement, content="5")
-  inspect(deltas[0].x_advance, content="-20")
-  inspect(deltas[1].x_advance, content="10")
+  @debug.debug_inspect(deltas.length(), content="2")
+  @debug.debug_inspect(deltas[0].x_placement, content="5")
+  @debug.debug_inspect(deltas[0].x_advance, content="-20")
+  @debug.debug_inspect(deltas[1].x_advance, content="10")
 }
 
 ///|
@@ -2205,13 +2205,13 @@ test "gpos pair lookup ignore marks" {
     @common.Tag::from_chars('k', 'e', 'r', 'n'),
   )
   let gpos = match GposTable::parse(@blob.Blob::from_bytes(gpos_bytes)) {
-    Err(err) => fail("parse error: \{err}")
+    Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let gdef = match GdefTable::parse(
     @blob.Blob::from_bytes(build_gdef_class_def_table()),
   ) {
-    Err(err) => fail("gdef parse error: \{err}")
+    Err(err) => fail("gdef parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let lookup_offsets = [gpos.layout().lookup_list().offsets()[0]]
@@ -2221,13 +2221,13 @@ test "gpos pair lookup ignore marks" {
     lookup_offsets[:],
     gdef=gdef,
   ) {
-    Err(err) => fail("apply error: \{err}")
+    Err(err) => fail("apply error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  inspect(deltas.length(), content="2")
-  inspect(deltas[0].x_placement, content="0")
-  inspect(deltas[0].x_advance, content="0")
-  inspect(deltas[1].x_advance, content="0")
+  @debug.debug_inspect(deltas.length(), content="2")
+  @debug.debug_inspect(deltas[0].x_placement, content="0")
+  @debug.debug_inspect(deltas[0].x_advance, content="0")
+  @debug.debug_inspect(deltas[1].x_advance, content="0")
 }
 
 ///|
@@ -2237,13 +2237,13 @@ test "gpos pair lookup ignore ligatures" {
     @common.Tag::from_chars('k', 'e', 'r', 'n'),
   )
   let gpos = match GposTable::parse(@blob.Blob::from_bytes(gpos_bytes)) {
-    Err(err) => fail("parse error: \{err}")
+    Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let gdef = match GdefTable::parse(
     @blob.Blob::from_bytes(build_gdef_class_def_table()),
   ) {
-    Err(err) => fail("gdef parse error: \{err}")
+    Err(err) => fail("gdef parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let lookup_offsets = [gpos.layout().lookup_list().offsets()[0]]
@@ -2253,13 +2253,13 @@ test "gpos pair lookup ignore ligatures" {
     lookup_offsets[:],
     gdef=gdef,
   ) {
-    Err(err) => fail("apply error: \{err}")
+    Err(err) => fail("apply error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  inspect(deltas.length(), content="2")
-  inspect(deltas[0].x_placement, content="0")
-  inspect(deltas[0].x_advance, content="0")
-  inspect(deltas[1].x_advance, content="0")
+  @debug.debug_inspect(deltas.length(), content="2")
+  @debug.debug_inspect(deltas[0].x_placement, content="0")
+  @debug.debug_inspect(deltas[0].x_advance, content="0")
+  @debug.debug_inspect(deltas[1].x_advance, content="0")
 }
 
 ///|
@@ -2269,13 +2269,13 @@ test "gpos pair lookup ignore base glyphs" {
     @common.Tag::from_chars('k', 'e', 'r', 'n'),
   )
   let gpos = match GposTable::parse(@blob.Blob::from_bytes(gpos_bytes)) {
-    Err(err) => fail("parse error: \{err}")
+    Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let gdef = match GdefTable::parse(
     @blob.Blob::from_bytes(build_gdef_class_def_table()),
   ) {
-    Err(err) => fail("gdef parse error: \{err}")
+    Err(err) => fail("gdef parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let lookup_offsets = [gpos.layout().lookup_list().offsets()[0]]
@@ -2285,13 +2285,13 @@ test "gpos pair lookup ignore base glyphs" {
     lookup_offsets[:],
     gdef=gdef,
   ) {
-    Err(err) => fail("apply error: \{err}")
+    Err(err) => fail("apply error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  inspect(deltas.length(), content="2")
-  inspect(deltas[0].x_placement, content="0")
-  inspect(deltas[0].x_advance, content="0")
-  inspect(deltas[1].x_advance, content="0")
+  @debug.debug_inspect(deltas.length(), content="2")
+  @debug.debug_inspect(deltas[0].x_placement, content="0")
+  @debug.debug_inspect(deltas[0].x_advance, content="0")
+  @debug.debug_inspect(deltas[1].x_advance, content="0")
 }
 
 ///|
@@ -2301,13 +2301,13 @@ test "gpos pair lookup mark filtering set" {
     @common.Tag::from_chars('k', 'e', 'r', 'n'),
   )
   let gpos = match GposTable::parse(@blob.Blob::from_bytes(gpos_bytes)) {
-    Err(err) => fail("parse error: \{err}")
+    Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let gdef = match GdefTable::parse(
     @blob.Blob::from_bytes(build_gdef_mark_filter_table()),
   ) {
-    Err(err) => fail("gdef parse error: \{err}")
+    Err(err) => fail("gdef parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let lookup_offsets = [gpos.layout().lookup_list().offsets()[0]]
@@ -2317,26 +2317,26 @@ test "gpos pair lookup mark filtering set" {
     lookup_offsets[:],
     gdef=gdef,
   ) {
-    Err(err) => fail("apply error: \{err}")
+    Err(err) => fail("apply error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  inspect(deltas1.length(), content="3")
-  inspect(deltas1[0].x_placement, content="5")
-  inspect(deltas1[0].x_advance, content="-20")
-  inspect(deltas1[2].x_advance, content="10")
+  @debug.debug_inspect(deltas1.length(), content="3")
+  @debug.debug_inspect(deltas1[0].x_placement, content="5")
+  @debug.debug_inspect(deltas1[0].x_advance, content="-20")
+  @debug.debug_inspect(deltas1[2].x_advance, content="10")
   let glyphs2 : Array[UInt] = [3U, 6U, 2U]
   let deltas2 = match gpos.position_deltas_with_lookups(
     glyphs2[:],
     lookup_offsets[:],
     gdef=gdef,
   ) {
-    Err(err) => fail("apply error: \{err}")
+    Err(err) => fail("apply error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  inspect(deltas2.length(), content="3")
-  inspect(deltas2[0].x_placement, content="0")
-  inspect(deltas2[0].x_advance, content="0")
-  inspect(deltas2[2].x_advance, content="0")
+  @debug.debug_inspect(deltas2.length(), content="3")
+  @debug.debug_inspect(deltas2[0].x_placement, content="0")
+  @debug.debug_inspect(deltas2[0].x_advance, content="0")
+  @debug.debug_inspect(deltas2[2].x_advance, content="0")
 }
 
 ///|
@@ -2346,17 +2346,17 @@ test "gpos pair adjust format2" {
     @common.Tag::from_chars('k', 'e', 'r', 'n'),
   )
   let gpos = match GposTable::parse(@blob.Blob::from_bytes(gpos_bytes)) {
-    Err(err) => fail("parse error: \{err}")
+    Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let glyphs : Array[UInt] = [3U, 4U]
   let deltas = match gpos.pair_adjust_deltas(glyphs[:]) {
-    Err(err) => fail("apply error: \{err}")
+    Err(err) => fail("apply error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  inspect(deltas.length(), content="2")
-  inspect(deltas[0].x_advance, content="30")
-  inspect(deltas[1].x_advance, content="-10")
+  @debug.debug_inspect(deltas.length(), content="2")
+  @debug.debug_inspect(deltas[0].x_advance, content="30")
+  @debug.debug_inspect(deltas[1].x_advance, content="-10")
 }
 
 ///|
@@ -2366,7 +2366,7 @@ test "gpos single adjust format1" {
     @common.Tag::from_chars('k', 'e', 'r', 'n'),
   )
   let gpos = match GposTable::parse(@blob.Blob::from_bytes(gpos_bytes)) {
-    Err(err) => fail("parse error: \{err}")
+    Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let lookup_offsets = [gpos.layout().lookup_list().offsets()[0]]
@@ -2375,13 +2375,13 @@ test "gpos single adjust format1" {
     glyphs[:],
     lookup_offsets[:],
   ) {
-    Err(err) => fail("apply error: \{err}")
+    Err(err) => fail("apply error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  inspect(deltas.length(), content="2")
-  inspect(deltas[0].x_placement, content="7")
-  inspect(deltas[0].x_advance, content="15")
-  inspect(deltas[1].x_advance, content="0")
+  @debug.debug_inspect(deltas.length(), content="2")
+  @debug.debug_inspect(deltas[0].x_placement, content="7")
+  @debug.debug_inspect(deltas[0].x_advance, content="15")
+  @debug.debug_inspect(deltas[1].x_advance, content="0")
 }
 
 ///|
@@ -2391,13 +2391,13 @@ test "gpos single lookup ignore marks" {
     @common.Tag::from_chars('k', 'e', 'r', 'n'),
   )
   let gpos = match GposTable::parse(@blob.Blob::from_bytes(gpos_bytes)) {
-    Err(err) => fail("parse error: \{err}")
+    Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let gdef = match GdefTable::parse(
     @blob.Blob::from_bytes(build_gdef_mark_filter_table()),
   ) {
-    Err(err) => fail("gdef parse error: \{err}")
+    Err(err) => fail("gdef parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let lookup_offsets = [gpos.layout().lookup_list().offsets()[0]]
@@ -2407,12 +2407,12 @@ test "gpos single lookup ignore marks" {
     lookup_offsets[:],
     gdef=gdef,
   ) {
-    Err(err) => fail("apply error: \{err}")
+    Err(err) => fail("apply error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  inspect(deltas.length(), content="1")
-  inspect(deltas[0].x_placement, content="0")
-  inspect(deltas[0].x_advance, content="0")
+  @debug.debug_inspect(deltas.length(), content="1")
+  @debug.debug_inspect(deltas[0].x_placement, content="0")
+  @debug.debug_inspect(deltas[0].x_advance, content="0")
 }
 
 ///|
@@ -2422,7 +2422,7 @@ test "gpos single adjust format2" {
     @common.Tag::from_chars('k', 'e', 'r', 'n'),
   )
   let gpos = match GposTable::parse(@blob.Blob::from_bytes(gpos_bytes)) {
-    Err(err) => fail("parse error: \{err}")
+    Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let lookup_offsets = [gpos.layout().lookup_list().offsets()[0]]
@@ -2431,12 +2431,12 @@ test "gpos single adjust format2" {
     glyphs[:],
     lookup_offsets[:],
   ) {
-    Err(err) => fail("apply error: \{err}")
+    Err(err) => fail("apply error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  inspect(deltas.length(), content="2")
-  inspect(deltas[0].x_advance, content="10")
-  inspect(deltas[1].x_advance, content="-5")
+  @debug.debug_inspect(deltas.length(), content="2")
+  @debug.debug_inspect(deltas[0].x_advance, content="10")
+  @debug.debug_inspect(deltas[1].x_advance, content="-5")
 }
 
 ///|
@@ -2446,18 +2446,18 @@ test "gpos cursive format1" {
     @common.Tag::from_chars('k', 'e', 'r', 'n'),
   )
   let gpos = match GposTable::parse(@blob.Blob::from_bytes(gpos_bytes)) {
-    Err(err) => fail("parse error: \{err}")
+    Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let glyphs : Array[UInt] = [9U, 10U]
   let deltas = match gpos.position_deltas(glyphs[:]) {
-    Err(err) => fail("apply error: \{err}")
+    Err(err) => fail("apply error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  inspect(deltas.length(), content="2")
-  inspect(deltas[0].x_placement, content="0")
-  inspect(deltas[1].x_placement, content="13")
-  inspect(deltas[1].y_placement, content="3")
+  @debug.debug_inspect(deltas.length(), content="2")
+  @debug.debug_inspect(deltas[0].x_placement, content="0")
+  @debug.debug_inspect(deltas[1].x_placement, content="13")
+  @debug.debug_inspect(deltas[1].y_placement, content="3")
 }
 
 ///|
@@ -2467,13 +2467,13 @@ test "gpos cursive lookup ignore marks" {
     @common.Tag::from_chars('k', 'e', 'r', 'n'),
   )
   let gpos = match GposTable::parse(@blob.Blob::from_bytes(gpos_bytes)) {
-    Err(err) => fail("parse error: \{err}")
+    Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let gdef = match GdefTable::parse(
     @blob.Blob::from_bytes(build_gdef_class_def_table()),
   ) {
-    Err(err) => fail("gdef parse error: \{err}")
+    Err(err) => fail("gdef parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let lookup_offsets = [gpos.layout().lookup_list().offsets()[0]]
@@ -2483,12 +2483,12 @@ test "gpos cursive lookup ignore marks" {
     lookup_offsets[:],
     gdef=gdef,
   ) {
-    Err(err) => fail("apply error: \{err}")
+    Err(err) => fail("apply error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  inspect(deltas.length(), content="2")
-  inspect(deltas[0].x_placement, content="0")
-  inspect(deltas[1].x_placement, content="0")
+  @debug.debug_inspect(deltas.length(), content="2")
+  @debug.debug_inspect(deltas[0].x_placement, content="0")
+  @debug.debug_inspect(deltas[1].x_placement, content="0")
 }
 
 ///|
@@ -2498,7 +2498,7 @@ test "gpos context format1" {
     @common.Tag::from_chars('k', 'e', 'r', 'n'),
   )
   let gpos = match GposTable::parse(@blob.Blob::from_bytes(gpos_bytes)) {
-    Err(err) => fail("parse error: \{err}")
+    Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let lookup_offsets = [gpos.layout().lookup_list().offsets()[0]]
@@ -2507,13 +2507,13 @@ test "gpos context format1" {
     glyphs[:],
     lookup_offsets[:],
   ) {
-    Err(err) => fail("apply error: \{err}")
+    Err(err) => fail("apply error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  inspect(deltas.length(), content="2")
-  inspect(deltas[0].x_placement, content="7")
-  inspect(deltas[0].x_advance, content="15")
-  inspect(deltas[1].x_advance, content="0")
+  @debug.debug_inspect(deltas.length(), content="2")
+  @debug.debug_inspect(deltas[0].x_placement, content="7")
+  @debug.debug_inspect(deltas[0].x_advance, content="15")
+  @debug.debug_inspect(deltas[1].x_advance, content="0")
 }
 
 ///|
@@ -2523,13 +2523,13 @@ test "gpos context ignore base glyphs" {
     @common.Tag::from_chars('k', 'e', 'r', 'n'),
   )
   let gpos = match GposTable::parse(@blob.Blob::from_bytes(gpos_bytes)) {
-    Err(err) => fail("parse error: \{err}")
+    Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let gdef = match GdefTable::parse(
     @blob.Blob::from_bytes(build_gdef_class_def_table()),
   ) {
-    Err(err) => fail("gdef parse error: \{err}")
+    Err(err) => fail("gdef parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let lookup_offsets = [gpos.layout().lookup_list().offsets()[0]]
@@ -2539,13 +2539,13 @@ test "gpos context ignore base glyphs" {
     lookup_offsets[:],
     gdef=gdef,
   ) {
-    Err(err) => fail("apply error: \{err}")
+    Err(err) => fail("apply error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  inspect(deltas.length(), content="2")
-  inspect(deltas[0].x_placement, content="0")
-  inspect(deltas[0].x_advance, content="0")
-  inspect(deltas[1].x_advance, content="0")
+  @debug.debug_inspect(deltas.length(), content="2")
+  @debug.debug_inspect(deltas[0].x_placement, content="0")
+  @debug.debug_inspect(deltas[0].x_advance, content="0")
+  @debug.debug_inspect(deltas[1].x_advance, content="0")
 }
 
 ///|
@@ -2555,7 +2555,7 @@ test "gpos context mark to base format1" {
     @common.Tag::from_chars('k', 'e', 'r', 'n'),
   )
   let gpos = match GposTable::parse(@blob.Blob::from_bytes(gpos_bytes)) {
-    Err(err) => fail("parse error: \{err}")
+    Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let lookup_offsets = [gpos.layout().lookup_list().offsets()[0]]
@@ -2564,13 +2564,13 @@ test "gpos context mark to base format1" {
     glyphs[:],
     lookup_offsets[:],
   ) {
-    Err(err) => fail("apply error: \{err}")
+    Err(err) => fail("apply error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  inspect(deltas.length(), content="2")
-  inspect(deltas[0].x_placement, content="0")
-  inspect(deltas[1].x_placement, content="5")
-  inspect(deltas[1].y_placement, content="15")
+  @debug.debug_inspect(deltas.length(), content="2")
+  @debug.debug_inspect(deltas[0].x_placement, content="0")
+  @debug.debug_inspect(deltas[1].x_placement, content="5")
+  @debug.debug_inspect(deltas[1].y_placement, content="15")
 }
 
 ///|
@@ -2580,7 +2580,7 @@ test "gpos chain format1" {
     @common.Tag::from_chars('k', 'e', 'r', 'n'),
   )
   let gpos = match GposTable::parse(@blob.Blob::from_bytes(gpos_bytes)) {
-    Err(err) => fail("parse error: \{err}")
+    Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let lookup_offsets = [gpos.layout().lookup_list().offsets()[0]]
@@ -2589,13 +2589,13 @@ test "gpos chain format1" {
     glyphs[:],
     lookup_offsets[:],
   ) {
-    Err(err) => fail("apply error: \{err}")
+    Err(err) => fail("apply error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  inspect(deltas.length(), content="5")
-  inspect(deltas[1].x_placement, content="7")
-  inspect(deltas[1].x_advance, content="15")
-  inspect(deltas[2].x_advance, content="0")
+  @debug.debug_inspect(deltas.length(), content="5")
+  @debug.debug_inspect(deltas[1].x_placement, content="7")
+  @debug.debug_inspect(deltas[1].x_advance, content="15")
+  @debug.debug_inspect(deltas[2].x_advance, content="0")
 }
 
 ///|
@@ -2605,7 +2605,7 @@ test "gpos context format2" {
     @common.Tag::from_chars('k', 'e', 'r', 'n'),
   )
   let gpos = match GposTable::parse(@blob.Blob::from_bytes(gpos_bytes)) {
-    Err(err) => fail("parse error: \{err}")
+    Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let lookup_offsets = [gpos.layout().lookup_list().offsets()[0]]
@@ -2614,13 +2614,13 @@ test "gpos context format2" {
     glyphs[:],
     lookup_offsets[:],
   ) {
-    Err(err) => fail("apply error: \{err}")
+    Err(err) => fail("apply error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  inspect(deltas.length(), content="2")
-  inspect(deltas[0].x_placement, content="7")
-  inspect(deltas[0].x_advance, content="15")
-  inspect(deltas[1].x_advance, content="0")
+  @debug.debug_inspect(deltas.length(), content="2")
+  @debug.debug_inspect(deltas[0].x_placement, content="7")
+  @debug.debug_inspect(deltas[0].x_advance, content="15")
+  @debug.debug_inspect(deltas[1].x_advance, content="0")
 }
 
 ///|
@@ -2630,7 +2630,7 @@ test "gpos context format3" {
     @common.Tag::from_chars('k', 'e', 'r', 'n'),
   )
   let gpos = match GposTable::parse(@blob.Blob::from_bytes(gpos_bytes)) {
-    Err(err) => fail("parse error: \{err}")
+    Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let lookup_offsets = [gpos.layout().lookup_list().offsets()[0]]
@@ -2639,13 +2639,13 @@ test "gpos context format3" {
     glyphs[:],
     lookup_offsets[:],
   ) {
-    Err(err) => fail("apply error: \{err}")
+    Err(err) => fail("apply error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  inspect(deltas.length(), content="2")
-  inspect(deltas[0].x_placement, content="7")
-  inspect(deltas[0].x_advance, content="15")
-  inspect(deltas[1].x_advance, content="0")
+  @debug.debug_inspect(deltas.length(), content="2")
+  @debug.debug_inspect(deltas[0].x_placement, content="7")
+  @debug.debug_inspect(deltas[0].x_advance, content="15")
+  @debug.debug_inspect(deltas[1].x_advance, content="0")
 }
 
 ///|
@@ -2655,7 +2655,7 @@ test "gpos chain format2" {
     @common.Tag::from_chars('k', 'e', 'r', 'n'),
   )
   let gpos = match GposTable::parse(@blob.Blob::from_bytes(gpos_bytes)) {
-    Err(err) => fail("parse error: \{err}")
+    Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let lookup_offsets = [gpos.layout().lookup_list().offsets()[0]]
@@ -2664,13 +2664,13 @@ test "gpos chain format2" {
     glyphs[:],
     lookup_offsets[:],
   ) {
-    Err(err) => fail("apply error: \{err}")
+    Err(err) => fail("apply error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  inspect(deltas.length(), content="4")
-  inspect(deltas[1].x_placement, content="7")
-  inspect(deltas[1].x_advance, content="15")
-  inspect(deltas[2].x_advance, content="0")
+  @debug.debug_inspect(deltas.length(), content="4")
+  @debug.debug_inspect(deltas[1].x_placement, content="7")
+  @debug.debug_inspect(deltas[1].x_advance, content="15")
+  @debug.debug_inspect(deltas[2].x_advance, content="0")
 }
 
 ///|
@@ -2680,7 +2680,7 @@ test "gpos chain format3" {
     @common.Tag::from_chars('k', 'e', 'r', 'n'),
   )
   let gpos = match GposTable::parse(@blob.Blob::from_bytes(gpos_bytes)) {
-    Err(err) => fail("parse error: \{err}")
+    Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let lookup_offsets = [gpos.layout().lookup_list().offsets()[0]]
@@ -2689,13 +2689,13 @@ test "gpos chain format3" {
     glyphs[:],
     lookup_offsets[:],
   ) {
-    Err(err) => fail("apply error: \{err}")
+    Err(err) => fail("apply error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  inspect(deltas.length(), content="4")
-  inspect(deltas[1].x_placement, content="7")
-  inspect(deltas[1].x_advance, content="15")
-  inspect(deltas[2].x_advance, content="0")
+  @debug.debug_inspect(deltas.length(), content="4")
+  @debug.debug_inspect(deltas[1].x_placement, content="7")
+  @debug.debug_inspect(deltas[1].x_advance, content="15")
+  @debug.debug_inspect(deltas[2].x_advance, content="0")
 }
 
 ///|
@@ -2705,13 +2705,13 @@ test "gpos chain format3 mark filtering set" {
     @common.Tag::from_chars('k', 'e', 'r', 'n'),
   )
   let gpos = match GposTable::parse(@blob.Blob::from_bytes(gpos_bytes)) {
-    Err(err) => fail("parse error: \{err}")
+    Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let gdef = match GdefTable::parse(
     @blob.Blob::from_bytes(build_gdef_mark_filter_table()),
   ) {
-    Err(err) => fail("gdef parse error: \{err}")
+    Err(err) => fail("gdef parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let lookup_offsets = [gpos.layout().lookup_list().offsets()[0]]
@@ -2721,24 +2721,24 @@ test "gpos chain format3 mark filtering set" {
     lookup_offsets[:],
     gdef=gdef,
   ) {
-    Err(err) => fail("apply error: \{err}")
+    Err(err) => fail("apply error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  inspect(deltas1.length(), content="5")
-  inspect(deltas1[1].x_placement, content="7")
-  inspect(deltas1[1].x_advance, content="15")
+  @debug.debug_inspect(deltas1.length(), content="5")
+  @debug.debug_inspect(deltas1[1].x_placement, content="7")
+  @debug.debug_inspect(deltas1[1].x_advance, content="15")
   let glyphs2 : Array[UInt] = [1U, 3U, 6U, 4U, 2U]
   let deltas2 = match gpos.position_deltas_with_lookups(
     glyphs2[:],
     lookup_offsets[:],
     gdef=gdef,
   ) {
-    Err(err) => fail("apply error: \{err}")
+    Err(err) => fail("apply error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  inspect(deltas2.length(), content="5")
-  inspect(deltas2[1].x_placement, content="0")
-  inspect(deltas2[1].x_advance, content="0")
+  @debug.debug_inspect(deltas2.length(), content="5")
+  @debug.debug_inspect(deltas2[1].x_placement, content="0")
+  @debug.debug_inspect(deltas2[1].x_advance, content="0")
 }
 
 ///|
@@ -2748,18 +2748,18 @@ test "gpos mark to base format1" {
     @common.Tag::from_chars('k', 'e', 'r', 'n'),
   )
   let gpos = match GposTable::parse(@blob.Blob::from_bytes(gpos_bytes)) {
-    Err(err) => fail("parse error: \{err}")
+    Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let glyphs : Array[UInt] = [3U, 5U]
   let deltas = match gpos.position_deltas(glyphs[:]) {
-    Err(err) => fail("apply error: \{err}")
+    Err(err) => fail("apply error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  inspect(deltas.length(), content="2")
-  inspect(deltas[0].x_placement, content="0")
-  inspect(deltas[1].x_placement, content="5")
-  inspect(deltas[1].y_placement, content="15")
+  @debug.debug_inspect(deltas.length(), content="2")
+  @debug.debug_inspect(deltas[0].x_placement, content="0")
+  @debug.debug_inspect(deltas[1].x_placement, content="5")
+  @debug.debug_inspect(deltas[1].y_placement, content="15")
 }
 
 ///|
@@ -2769,20 +2769,20 @@ test "gpos mark to base skips intervening marks" {
     @common.Tag::from_chars('k', 'e', 'r', 'n'),
   )
   let gpos = match GposTable::parse(@blob.Blob::from_bytes(gpos_bytes)) {
-    Err(err) => fail("parse error: \{err}")
+    Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let glyphs : Array[UInt] = [3U, 5U, 5U]
   let deltas = match gpos.position_deltas(glyphs[:]) {
-    Err(err) => fail("apply error: \{err}")
+    Err(err) => fail("apply error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  inspect(deltas.length(), content="3")
-  inspect(deltas[0].x_placement, content="0")
-  inspect(deltas[1].x_placement, content="5")
-  inspect(deltas[1].y_placement, content="15")
-  inspect(deltas[2].x_placement, content="5")
-  inspect(deltas[2].y_placement, content="15")
+  @debug.debug_inspect(deltas.length(), content="3")
+  @debug.debug_inspect(deltas[0].x_placement, content="0")
+  @debug.debug_inspect(deltas[1].x_placement, content="5")
+  @debug.debug_inspect(deltas[1].y_placement, content="15")
+  @debug.debug_inspect(deltas[2].x_placement, content="5")
+  @debug.debug_inspect(deltas[2].y_placement, content="15")
 }
 
 ///|
@@ -2792,13 +2792,13 @@ test "gpos mark to base mark filtering set" {
     @common.Tag::from_chars('k', 'e', 'r', 'n'),
   )
   let gpos = match GposTable::parse(@blob.Blob::from_bytes(gpos_bytes)) {
-    Err(err) => fail("parse error: \{err}")
+    Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let gdef = match GdefTable::parse(
     @blob.Blob::from_bytes(build_gdef_mark_filter_table()),
   ) {
-    Err(err) => fail("parse error: \{err}")
+    Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let lookup_offsets = [gpos.layout().lookup_list().offsets()[0]]
@@ -2808,24 +2808,24 @@ test "gpos mark to base mark filtering set" {
     lookup_offsets[:],
     gdef=gdef,
   ) {
-    Err(err) => fail("apply error: \{err}")
+    Err(err) => fail("apply error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  inspect(deltas1.length(), content="2")
-  inspect(deltas1[1].x_placement, content="0")
-  inspect(deltas1[1].y_placement, content="0")
+  @debug.debug_inspect(deltas1.length(), content="2")
+  @debug.debug_inspect(deltas1[1].x_placement, content="0")
+  @debug.debug_inspect(deltas1[1].y_placement, content="0")
   let glyphs2 : Array[UInt] = [3U, 6U]
   let deltas2 = match gpos.position_deltas_with_lookups(
     glyphs2[:],
     lookup_offsets[:],
     gdef=gdef,
   ) {
-    Err(err) => fail("apply error: \{err}")
+    Err(err) => fail("apply error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  inspect(deltas2.length(), content="2")
-  inspect(deltas2[1].x_placement, content="5")
-  inspect(deltas2[1].y_placement, content="15")
+  @debug.debug_inspect(deltas2.length(), content="2")
+  @debug.debug_inspect(deltas2[1].x_placement, content="5")
+  @debug.debug_inspect(deltas2[1].y_placement, content="15")
 }
 
 ///|
@@ -2835,13 +2835,13 @@ test "gpos mark to base mark attachment type" {
     @common.Tag::from_chars('k', 'e', 'r', 'n'),
   )
   let gpos = match GposTable::parse(@blob.Blob::from_bytes(gpos_bytes)) {
-    Err(err) => fail("parse error: \{err}")
+    Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let gdef = match GdefTable::parse(
     @blob.Blob::from_bytes(build_gdef_mark_filter_table()),
   ) {
-    Err(err) => fail("parse error: \{err}")
+    Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let lookup_offsets = [gpos.layout().lookup_list().offsets()[0]]
@@ -2851,24 +2851,24 @@ test "gpos mark to base mark attachment type" {
     lookup_offsets[:],
     gdef=gdef,
   ) {
-    Err(err) => fail("apply error: \{err}")
+    Err(err) => fail("apply error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  inspect(deltas1.length(), content="2")
-  inspect(deltas1[1].x_placement, content="5")
-  inspect(deltas1[1].y_placement, content="15")
+  @debug.debug_inspect(deltas1.length(), content="2")
+  @debug.debug_inspect(deltas1[1].x_placement, content="5")
+  @debug.debug_inspect(deltas1[1].y_placement, content="15")
   let glyphs2 : Array[UInt] = [3U, 6U]
   let deltas2 = match gpos.position_deltas_with_lookups(
     glyphs2[:],
     lookup_offsets[:],
     gdef=gdef,
   ) {
-    Err(err) => fail("apply error: \{err}")
+    Err(err) => fail("apply error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  inspect(deltas2.length(), content="2")
-  inspect(deltas2[1].x_placement, content="0")
-  inspect(deltas2[1].y_placement, content="0")
+  @debug.debug_inspect(deltas2.length(), content="2")
+  @debug.debug_inspect(deltas2[1].x_placement, content="0")
+  @debug.debug_inspect(deltas2[1].y_placement, content="0")
 }
 
 ///|
@@ -2878,18 +2878,18 @@ test "gpos mark to mark format1" {
     @common.Tag::from_chars('k', 'e', 'r', 'n'),
   )
   let gpos = match GposTable::parse(@blob.Blob::from_bytes(gpos_bytes)) {
-    Err(err) => fail("parse error: \{err}")
+    Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let glyphs : Array[UInt] = [7U, 5U]
   let deltas = match gpos.position_deltas(glyphs[:]) {
-    Err(err) => fail("apply error: \{err}")
+    Err(err) => fail("apply error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  inspect(deltas.length(), content="2")
-  inspect(deltas[0].x_placement, content="0")
-  inspect(deltas[1].x_placement, content="5")
-  inspect(deltas[1].y_placement, content="6")
+  @debug.debug_inspect(deltas.length(), content="2")
+  @debug.debug_inspect(deltas[0].x_placement, content="0")
+  @debug.debug_inspect(deltas[1].x_placement, content="5")
+  @debug.debug_inspect(deltas[1].y_placement, content="6")
 }
 
 ///|
@@ -2899,13 +2899,13 @@ test "gpos mark to mark mark filtering set" {
     @common.Tag::from_chars('k', 'e', 'r', 'n'),
   )
   let gpos = match GposTable::parse(@blob.Blob::from_bytes(gpos_bytes)) {
-    Err(err) => fail("parse error: \{err}")
+    Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let gdef = match GdefTable::parse(
     @blob.Blob::from_bytes(build_gdef_mark_filter_table()),
   ) {
-    Err(err) => fail("parse error: \{err}")
+    Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let lookup_offsets = [gpos.layout().lookup_list().offsets()[0]]
@@ -2915,24 +2915,24 @@ test "gpos mark to mark mark filtering set" {
     lookup_offsets[:],
     gdef=gdef,
   ) {
-    Err(err) => fail("apply error: \{err}")
+    Err(err) => fail("apply error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  inspect(deltas1.length(), content="2")
-  inspect(deltas1[1].x_placement, content="0")
-  inspect(deltas1[1].y_placement, content="0")
+  @debug.debug_inspect(deltas1.length(), content="2")
+  @debug.debug_inspect(deltas1[1].x_placement, content="0")
+  @debug.debug_inspect(deltas1[1].y_placement, content="0")
   let glyphs2 : Array[UInt] = [6U, 6U]
   let deltas2 = match gpos.position_deltas_with_lookups(
     glyphs2[:],
     lookup_offsets[:],
     gdef=gdef,
   ) {
-    Err(err) => fail("apply error: \{err}")
+    Err(err) => fail("apply error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  inspect(deltas2.length(), content="2")
-  inspect(deltas2[1].x_placement, content="5")
-  inspect(deltas2[1].y_placement, content="6")
+  @debug.debug_inspect(deltas2.length(), content="2")
+  @debug.debug_inspect(deltas2[1].x_placement, content="5")
+  @debug.debug_inspect(deltas2[1].y_placement, content="6")
 }
 
 ///|
@@ -2942,13 +2942,13 @@ test "gpos mark to mark mark attachment type" {
     @common.Tag::from_chars('k', 'e', 'r', 'n'),
   )
   let gpos = match GposTable::parse(@blob.Blob::from_bytes(gpos_bytes)) {
-    Err(err) => fail("parse error: \{err}")
+    Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let gdef = match GdefTable::parse(
     @blob.Blob::from_bytes(build_gdef_mark_filter_table()),
   ) {
-    Err(err) => fail("parse error: \{err}")
+    Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let lookup_offsets = [gpos.layout().lookup_list().offsets()[0]]
@@ -2958,24 +2958,24 @@ test "gpos mark to mark mark attachment type" {
     lookup_offsets[:],
     gdef=gdef,
   ) {
-    Err(err) => fail("apply error: \{err}")
+    Err(err) => fail("apply error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  inspect(deltas1.length(), content="2")
-  inspect(deltas1[1].x_placement, content="5")
-  inspect(deltas1[1].y_placement, content="6")
+  @debug.debug_inspect(deltas1.length(), content="2")
+  @debug.debug_inspect(deltas1[1].x_placement, content="5")
+  @debug.debug_inspect(deltas1[1].y_placement, content="6")
   let glyphs2 : Array[UInt] = [5U, 6U]
   let deltas2 = match gpos.position_deltas_with_lookups(
     glyphs2[:],
     lookup_offsets[:],
     gdef=gdef,
   ) {
-    Err(err) => fail("apply error: \{err}")
+    Err(err) => fail("apply error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  inspect(deltas2.length(), content="2")
-  inspect(deltas2[1].x_placement, content="0")
-  inspect(deltas2[1].y_placement, content="0")
+  @debug.debug_inspect(deltas2.length(), content="2")
+  @debug.debug_inspect(deltas2[1].x_placement, content="0")
+  @debug.debug_inspect(deltas2[1].y_placement, content="0")
 }
 
 ///|
@@ -2985,18 +2985,18 @@ test "gpos mark to ligature format1" {
     @common.Tag::from_chars('k', 'e', 'r', 'n'),
   )
   let gpos = match GposTable::parse(@blob.Blob::from_bytes(gpos_bytes)) {
-    Err(err) => fail("parse error: \{err}")
+    Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let glyphs : Array[UInt] = [8U, 5U]
   let deltas = match gpos.position_deltas(glyphs[:]) {
-    Err(err) => fail("apply error: \{err}")
+    Err(err) => fail("apply error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  inspect(deltas.length(), content="2")
-  inspect(deltas[0].x_placement, content="0")
-  inspect(deltas[1].x_placement, content="9")
-  inspect(deltas[1].y_placement, content="11")
+  @debug.debug_inspect(deltas.length(), content="2")
+  @debug.debug_inspect(deltas[0].x_placement, content="0")
+  @debug.debug_inspect(deltas[1].x_placement, content="9")
+  @debug.debug_inspect(deltas[1].y_placement, content="11")
 }
 
 ///|
@@ -3006,13 +3006,13 @@ test "gpos mark to ligature mark filtering set" {
     @common.Tag::from_chars('k', 'e', 'r', 'n'),
   )
   let gpos = match GposTable::parse(@blob.Blob::from_bytes(gpos_bytes)) {
-    Err(err) => fail("parse error: \{err}")
+    Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let gdef = match GdefTable::parse(
     @blob.Blob::from_bytes(build_gdef_mark_filter_table()),
   ) {
-    Err(err) => fail("parse error: \{err}")
+    Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let lookup_offsets = [gpos.layout().lookup_list().offsets()[0]]
@@ -3022,24 +3022,24 @@ test "gpos mark to ligature mark filtering set" {
     lookup_offsets[:],
     gdef=gdef,
   ) {
-    Err(err) => fail("apply error: \{err}")
+    Err(err) => fail("apply error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  inspect(deltas1.length(), content="2")
-  inspect(deltas1[1].x_placement, content="0")
-  inspect(deltas1[1].y_placement, content="0")
+  @debug.debug_inspect(deltas1.length(), content="2")
+  @debug.debug_inspect(deltas1[1].x_placement, content="0")
+  @debug.debug_inspect(deltas1[1].y_placement, content="0")
   let glyphs2 : Array[UInt] = [8U, 6U]
   let deltas2 = match gpos.position_deltas_with_lookups(
     glyphs2[:],
     lookup_offsets[:],
     gdef=gdef,
   ) {
-    Err(err) => fail("apply error: \{err}")
+    Err(err) => fail("apply error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  inspect(deltas2.length(), content="2")
-  inspect(deltas2[1].x_placement, content="9")
-  inspect(deltas2[1].y_placement, content="11")
+  @debug.debug_inspect(deltas2.length(), content="2")
+  @debug.debug_inspect(deltas2[1].x_placement, content="9")
+  @debug.debug_inspect(deltas2[1].y_placement, content="11")
 }
 
 ///|
@@ -3049,13 +3049,13 @@ test "gpos mark to ligature mark attachment type" {
     @common.Tag::from_chars('k', 'e', 'r', 'n'),
   )
   let gpos = match GposTable::parse(@blob.Blob::from_bytes(gpos_bytes)) {
-    Err(err) => fail("parse error: \{err}")
+    Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let gdef = match GdefTable::parse(
     @blob.Blob::from_bytes(build_gdef_mark_filter_table()),
   ) {
-    Err(err) => fail("parse error: \{err}")
+    Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let lookup_offsets = [gpos.layout().lookup_list().offsets()[0]]
@@ -3065,24 +3065,24 @@ test "gpos mark to ligature mark attachment type" {
     lookup_offsets[:],
     gdef=gdef,
   ) {
-    Err(err) => fail("apply error: \{err}")
+    Err(err) => fail("apply error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  inspect(deltas1.length(), content="2")
-  inspect(deltas1[1].x_placement, content="9")
-  inspect(deltas1[1].y_placement, content="11")
+  @debug.debug_inspect(deltas1.length(), content="2")
+  @debug.debug_inspect(deltas1[1].x_placement, content="9")
+  @debug.debug_inspect(deltas1[1].y_placement, content="11")
   let glyphs2 : Array[UInt] = [8U, 6U]
   let deltas2 = match gpos.position_deltas_with_lookups(
     glyphs2[:],
     lookup_offsets[:],
     gdef=gdef,
   ) {
-    Err(err) => fail("apply error: \{err}")
+    Err(err) => fail("apply error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  inspect(deltas2.length(), content="2")
-  inspect(deltas2[1].x_placement, content="0")
-  inspect(deltas2[1].y_placement, content="0")
+  @debug.debug_inspect(deltas2.length(), content="2")
+  @debug.debug_inspect(deltas2[1].x_placement, content="0")
+  @debug.debug_inspect(deltas2[1].y_placement, content="0")
 }
 
 ///|
@@ -3092,7 +3092,7 @@ test "gsub ligature substitution apply" {
     @common.Tag::from_chars('l', 'i', 'g', 'a'),
   )
   let gsub = match GsubTable::parse(@blob.Blob::from_bytes(gsub_bytes)) {
-    Err(err) => fail("parse error: \{err}")
+    Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let glyphs : Array[UInt] = [3U, 4U, 5U]
@@ -3102,13 +3102,13 @@ test "gsub ligature substitution apply" {
     clusters,
     gsub.layout().lookup_list().offsets(),
   ) {
-    Err(err) => fail("apply error: \{err}")
+    Err(err) => fail("apply error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let (new_glyphs, new_clusters, changed) = result
-  inspect(changed, content="true")
-  inspect(new_glyphs, content="[6, 5]")
-  inspect(new_clusters, content="[0, 2]")
+  @debug.debug_inspect(changed, content="true")
+  @debug.debug_inspect(new_glyphs, content="[6, 5]")
+  @debug.debug_inspect(new_clusters, content="[0, 2]")
 }
 
 ///|
@@ -3118,7 +3118,7 @@ test "gsub ligature substitution apply mask" {
     @common.Tag::from_chars('l', 'i', 'g', 'a'),
   )
   let gsub = match GsubTable::parse(@blob.Blob::from_bytes(gsub_bytes)) {
-    Err(err) => fail("parse error: \{err}")
+    Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let glyphs : Array[UInt] = [3U, 4U, 5U]
@@ -3131,13 +3131,13 @@ test "gsub ligature substitution apply mask" {
     masks=masks,
     lookup_mask=1U,
   ) {
-    Err(err) => fail("apply error: \{err}")
+    Err(err) => fail("apply error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let (new_glyphs, new_clusters, changed) = result
-  inspect(changed, content="false")
-  inspect(new_glyphs, content="[3, 4, 5]")
-  inspect(new_clusters, content="[0, 1, 2]")
+  @debug.debug_inspect(changed, content="false")
+  @debug.debug_inspect(new_glyphs, content="[3, 4, 5]")
+  @debug.debug_inspect(new_clusters, content="[0, 1, 2]")
 }
 
 ///|
@@ -3147,7 +3147,7 @@ test "gsub ligature substitution mask propagation" {
     @common.Tag::from_chars('l', 'i', 'g', 'a'),
   )
   let gsub = match GsubTable::parse(@blob.Blob::from_bytes(gsub_bytes)) {
-    Err(err) => fail("parse error: \{err}")
+    Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let glyphs : Array[UInt] = [3U, 4U]
@@ -3160,13 +3160,13 @@ test "gsub ligature substitution mask propagation" {
     masks=masks,
     lookup_mask=1U,
   ) {
-    Err(err) => fail("apply error: \{err}")
+    Err(err) => fail("apply error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let (new_glyphs, new_clusters, changed) = result
-  inspect(changed, content="true")
-  inspect(new_glyphs, content="[9]")
-  inspect(new_clusters, content="[0]")
+  @debug.debug_inspect(changed, content="true")
+  @debug.debug_inspect(new_glyphs, content="[9]")
+  @debug.debug_inspect(new_clusters, content="[0]")
 }
 
 ///|
@@ -3176,7 +3176,7 @@ test "gsub multiple substitution apply" {
     @common.Tag::from_chars('l', 'i', 'g', 'a'),
   )
   let gsub = match GsubTable::parse(@blob.Blob::from_bytes(gsub_bytes)) {
-    Err(err) => fail("parse error: \{err}")
+    Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let glyphs : Array[UInt] = [3U, 4U]
@@ -3186,13 +3186,13 @@ test "gsub multiple substitution apply" {
     clusters,
     gsub.layout().lookup_list().offsets(),
   ) {
-    Err(err) => fail("apply error: \{err}")
+    Err(err) => fail("apply error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let (new_glyphs, new_clusters, changed) = result
-  inspect(changed, content="true")
-  inspect(new_glyphs, content="[6, 7, 4]")
-  inspect(new_clusters, content="[0, 0, 1]")
+  @debug.debug_inspect(changed, content="true")
+  @debug.debug_inspect(new_glyphs, content="[6, 7, 4]")
+  @debug.debug_inspect(new_clusters, content="[0, 0, 1]")
 }
 
 ///|
@@ -3202,7 +3202,7 @@ test "gsub multiple substitution mask propagation" {
     @common.Tag::from_chars('l', 'i', 'g', 'a'),
   )
   let gsub = match GsubTable::parse(@blob.Blob::from_bytes(gsub_bytes)) {
-    Err(err) => fail("parse error: \{err}")
+    Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let glyphs : Array[UInt] = [3U]
@@ -3215,13 +3215,13 @@ test "gsub multiple substitution mask propagation" {
     masks=masks,
     lookup_mask=1U,
   ) {
-    Err(err) => fail("apply error: \{err}")
+    Err(err) => fail("apply error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let (new_glyphs, new_clusters, changed) = result
-  inspect(changed, content="true")
-  inspect(new_glyphs, content="[9, 7]")
-  inspect(new_clusters, content="[0, 0]")
+  @debug.debug_inspect(changed, content="true")
+  @debug.debug_inspect(new_glyphs, content="[9, 7]")
+  @debug.debug_inspect(new_clusters, content="[0, 0]")
 }
 
 ///|
@@ -3231,7 +3231,7 @@ test "gsub alternate substitution apply" {
     @common.Tag::from_chars('l', 'i', 'g', 'a'),
   )
   let gsub = match GsubTable::parse(@blob.Blob::from_bytes(gsub_bytes)) {
-    Err(err) => fail("parse error: \{err}")
+    Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let glyphs : Array[UInt] = [3U, 4U]
@@ -3241,13 +3241,13 @@ test "gsub alternate substitution apply" {
     clusters,
     gsub.layout().lookup_list().offsets(),
   ) {
-    Err(err) => fail("apply error: \{err}")
+    Err(err) => fail("apply error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let (new_glyphs, new_clusters, changed) = result
-  inspect(changed, content="true")
-  inspect(new_glyphs, content="[6, 4]")
-  inspect(new_clusters, content="[0, 1]")
+  @debug.debug_inspect(changed, content="true")
+  @debug.debug_inspect(new_glyphs, content="[6, 4]")
+  @debug.debug_inspect(new_clusters, content="[0, 1]")
 }
 
 ///|
@@ -3257,16 +3257,16 @@ test "gsub extension lookup apply" {
     @common.Tag::from_chars('l', 'i', 'g', 'a'),
   )
   let gsub = match GsubTable::parse(@blob.Blob::from_bytes(gsub_bytes)) {
-    Err(err) => fail("parse error: \{err}")
+    Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let glyphs : Array[UInt] = [1U, 2U]
   let changed = match gsub.apply_single(glyphs) {
-    Err(err) => fail("apply error: \{err}")
+    Err(err) => fail("apply error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  inspect(changed, content="true")
-  inspect(glyphs, content="[3, 2]")
+  @debug.debug_inspect(changed, content="true")
+  @debug.debug_inspect(glyphs, content="[3, 2]")
 }
 
 ///|
@@ -3276,18 +3276,18 @@ test "gpos extension lookup apply" {
     @common.Tag::from_chars('k', 'e', 'r', 'n'),
   )
   let gpos = match GposTable::parse(@blob.Blob::from_bytes(gpos_bytes)) {
-    Err(err) => fail("parse error: \{err}")
+    Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let glyphs : Array[UInt] = [3U, 2U]
   let deltas = match gpos.pair_adjust_deltas(glyphs[:]) {
-    Err(err) => fail("apply error: \{err}")
+    Err(err) => fail("apply error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  inspect(deltas.length(), content="2")
-  inspect(deltas[0].x_placement, content="5")
-  inspect(deltas[0].x_advance, content="-20")
-  inspect(deltas[1].x_advance, content="10")
+  @debug.debug_inspect(deltas.length(), content="2")
+  @debug.debug_inspect(deltas[0].x_placement, content="5")
+  @debug.debug_inspect(deltas[0].x_advance, content="-20")
+  @debug.debug_inspect(deltas[1].x_advance, content="10")
 }
 
 ///|
@@ -3297,7 +3297,7 @@ test "gsub reverse chain substitution apply" {
     @common.Tag::from_chars('l', 'i', 'g', 'a'),
   )
   let gsub = match GsubTable::parse(@blob.Blob::from_bytes(gsub_bytes)) {
-    Err(err) => fail("parse error: \{err}")
+    Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let glyphs : Array[UInt] = [1U, 3U, 2U]
@@ -3307,13 +3307,13 @@ test "gsub reverse chain substitution apply" {
     clusters,
     gsub.layout().lookup_list().offsets(),
   ) {
-    Err(err) => fail("apply error: \{err}")
+    Err(err) => fail("apply error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let (new_glyphs, new_clusters, changed) = result
-  inspect(changed, content="true")
-  inspect(new_glyphs, content="[1, 5, 2]")
-  inspect(new_clusters, content="[0, 1, 2]")
+  @debug.debug_inspect(changed, content="true")
+  @debug.debug_inspect(new_glyphs, content="[1, 5, 2]")
+  @debug.debug_inspect(new_clusters, content="[0, 1, 2]")
 }
 
 ///|
@@ -3323,13 +3323,13 @@ test "gsub reverse chain lookup mark filtering set" {
     @common.Tag::from_chars('l', 'i', 'g', 'a'),
   )
   let gsub = match GsubTable::parse(@blob.Blob::from_bytes(gsub_bytes)) {
-    Err(err) => fail("parse error: \{err}")
+    Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let gdef = match GdefTable::parse(
     @blob.Blob::from_bytes(build_gdef_mark_filter_table()),
   ) {
-    Err(err) => fail("gdef parse error: \{err}")
+    Err(err) => fail("gdef parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let lookup_offsets = [gsub.layout().lookup_list().offsets()[0]]
@@ -3341,13 +3341,13 @@ test "gsub reverse chain lookup mark filtering set" {
     lookup_offsets[:],
     gdef=gdef,
   ) {
-    Err(err) => fail("apply error: \{err}")
+    Err(err) => fail("apply error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let (new_glyphs1, new_clusters1, changed1) = result1
-  inspect(changed1, content="true")
-  inspect(new_glyphs1, content="[1, 5, 5, 2]")
-  inspect(new_clusters1, content="[0, 1, 2, 3]")
+  @debug.debug_inspect(changed1, content="true")
+  @debug.debug_inspect(new_glyphs1, content="[1, 5, 5, 2]")
+  @debug.debug_inspect(new_clusters1, content="[0, 1, 2, 3]")
   let glyphs2 : Array[UInt] = [1U, 6U, 3U, 2U]
   let clusters2 : Array[Int] = [0, 1, 2, 3]
   let result2 = match gsub.apply_with_lookups(
@@ -3356,13 +3356,13 @@ test "gsub reverse chain lookup mark filtering set" {
     lookup_offsets[:],
     gdef=gdef,
   ) {
-    Err(err) => fail("apply error: \{err}")
+    Err(err) => fail("apply error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let (new_glyphs2, new_clusters2, changed2) = result2
-  inspect(changed2, content="false")
-  inspect(new_glyphs2, content="[1, 6, 3, 2]")
-  inspect(new_clusters2, content="[0, 1, 2, 3]")
+  @debug.debug_inspect(changed2, content="false")
+  @debug.debug_inspect(new_glyphs2, content="[1, 6, 3, 2]")
+  @debug.debug_inspect(new_clusters2, content="[0, 1, 2, 3]")
 }
 
 ///|
@@ -3374,7 +3374,7 @@ test "gsub contextual substitution apply" {
     @common.Tag::from_chars('l', 'i', 'g', 'a'),
   )
   let gsub = match GsubTable::parse(@blob.Blob::from_bytes(gsub_bytes)) {
-    Err(err) => fail("parse error: \{err}")
+    Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let glyphs : Array[UInt] = [3U, 4U, 5U]
@@ -3384,13 +3384,13 @@ test "gsub contextual substitution apply" {
     clusters,
     gsub.layout().lookup_list().offsets(),
   ) {
-    Err(err) => fail("apply error: \{err}")
+    Err(err) => fail("apply error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let (new_glyphs, new_clusters, changed) = result
-  inspect(changed, content="true")
-  inspect(new_glyphs, content="[3, 6, 5]")
-  inspect(new_clusters, content="[0, 1, 2]")
+  @debug.debug_inspect(changed, content="true")
+  @debug.debug_inspect(new_glyphs, content="[3, 6, 5]")
+  @debug.debug_inspect(new_clusters, content="[0, 1, 2]")
 }
 
 ///|
@@ -3402,13 +3402,13 @@ test "gsub contextual ignore marks" {
     @common.Tag::from_chars('l', 'i', 'g', 'a'),
   )
   let gsub = match GsubTable::parse(@blob.Blob::from_bytes(gsub_bytes)) {
-    Err(err) => fail("parse error: \{err}")
+    Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let gdef = match GdefTable::parse(
     @blob.Blob::from_bytes(build_gdef_mark_filter_table()),
   ) {
-    Err(err) => fail("gdef parse error: \{err}")
+    Err(err) => fail("gdef parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let glyphs : Array[UInt] = [3U, 5U, 4U]
@@ -3419,13 +3419,13 @@ test "gsub contextual ignore marks" {
     gsub.layout().lookup_list().offsets(),
     gdef=gdef,
   ) {
-    Err(err) => fail("apply error: \{err}")
+    Err(err) => fail("apply error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let (new_glyphs, new_clusters, changed) = result
-  inspect(changed, content="true")
-  inspect(new_glyphs, content="[3, 5, 6]")
-  inspect(new_clusters, content="[0, 1, 2]")
+  @debug.debug_inspect(changed, content="true")
+  @debug.debug_inspect(new_glyphs, content="[3, 5, 6]")
+  @debug.debug_inspect(new_clusters, content="[0, 1, 2]")
 }
 
 ///|
@@ -3437,7 +3437,7 @@ test "gsub chaining substitution apply" {
     @common.Tag::from_chars('l', 'i', 'g', 'a'),
   )
   let gsub = match GsubTable::parse(@blob.Blob::from_bytes(gsub_bytes)) {
-    Err(err) => fail("parse error: \{err}")
+    Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let glyphs : Array[UInt] = [1U, 3U, 4U, 5U, 2U]
@@ -3447,13 +3447,13 @@ test "gsub chaining substitution apply" {
     clusters,
     gsub.layout().lookup_list().offsets(),
   ) {
-    Err(err) => fail("apply error: \{err}")
+    Err(err) => fail("apply error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let (new_glyphs, new_clusters, changed) = result
-  inspect(changed, content="true")
-  inspect(new_glyphs, content="[1, 3, 6, 5, 2]")
-  inspect(new_clusters, content="[0, 1, 2, 3, 4]")
+  @debug.debug_inspect(changed, content="true")
+  @debug.debug_inspect(new_glyphs, content="[1, 3, 6, 5, 2]")
+  @debug.debug_inspect(new_clusters, content="[0, 1, 2, 3, 4]")
 }
 
 ///|
@@ -3465,13 +3465,13 @@ test "gsub chaining ignore marks" {
     @common.Tag::from_chars('l', 'i', 'g', 'a'),
   )
   let gsub = match GsubTable::parse(@blob.Blob::from_bytes(gsub_bytes)) {
-    Err(err) => fail("parse error: \{err}")
+    Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let gdef = match GdefTable::parse(
     @blob.Blob::from_bytes(build_gdef_mark_filter_table()),
   ) {
-    Err(err) => fail("gdef parse error: \{err}")
+    Err(err) => fail("gdef parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let glyphs : Array[UInt] = [1U, 3U, 5U, 4U, 2U]
@@ -3482,13 +3482,13 @@ test "gsub chaining ignore marks" {
     gsub.layout().lookup_list().offsets(),
     gdef=gdef,
   ) {
-    Err(err) => fail("apply error: \{err}")
+    Err(err) => fail("apply error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let (new_glyphs, new_clusters, changed) = result
-  inspect(changed, content="true")
-  inspect(new_glyphs, content="[1, 3, 5, 6, 2]")
-  inspect(new_clusters, content="[0, 1, 2, 3, 4]")
+  @debug.debug_inspect(changed, content="true")
+  @debug.debug_inspect(new_glyphs, content="[1, 3, 5, 6, 2]")
+  @debug.debug_inspect(new_clusters, content="[0, 1, 2, 3, 4]")
 }
 
 ///|
@@ -3500,7 +3500,7 @@ test "gsub contextual substitution format2" {
     @common.Tag::from_chars('l', 'i', 'g', 'a'),
   )
   let gsub = match GsubTable::parse(@blob.Blob::from_bytes(gsub_bytes)) {
-    Err(err) => fail("parse error: \{err}")
+    Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let glyphs : Array[UInt] = [3U, 4U, 5U]
@@ -3510,13 +3510,13 @@ test "gsub contextual substitution format2" {
     clusters,
     gsub.layout().lookup_list().offsets(),
   ) {
-    Err(err) => fail("apply error: \{err}")
+    Err(err) => fail("apply error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let (new_glyphs, new_clusters, changed) = result
-  inspect(changed, content="true")
-  inspect(new_glyphs, content="[3, 6, 5]")
-  inspect(new_clusters, content="[0, 1, 2]")
+  @debug.debug_inspect(changed, content="true")
+  @debug.debug_inspect(new_glyphs, content="[3, 6, 5]")
+  @debug.debug_inspect(new_clusters, content="[0, 1, 2]")
 }
 
 ///|
@@ -3528,7 +3528,7 @@ test "gsub chaining substitution format2" {
     @common.Tag::from_chars('l', 'i', 'g', 'a'),
   )
   let gsub = match GsubTable::parse(@blob.Blob::from_bytes(gsub_bytes)) {
-    Err(err) => fail("parse error: \{err}")
+    Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let glyphs : Array[UInt] = [1U, 3U, 4U, 2U]
@@ -3538,13 +3538,13 @@ test "gsub chaining substitution format2" {
     clusters,
     gsub.layout().lookup_list().offsets(),
   ) {
-    Err(err) => fail("apply error: \{err}")
+    Err(err) => fail("apply error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let (new_glyphs, new_clusters, changed) = result
-  inspect(changed, content="true")
-  inspect(new_glyphs, content="[1, 3, 6, 2]")
-  inspect(new_clusters, content="[0, 1, 2, 3]")
+  @debug.debug_inspect(changed, content="true")
+  @debug.debug_inspect(new_glyphs, content="[1, 3, 6, 2]")
+  @debug.debug_inspect(new_clusters, content="[0, 1, 2, 3]")
 }
 
 ///|
@@ -3556,13 +3556,13 @@ test "gsub chaining format2 ignore marks" {
     @common.Tag::from_chars('l', 'i', 'g', 'a'),
   )
   let gsub = match GsubTable::parse(@blob.Blob::from_bytes(gsub_bytes)) {
-    Err(err) => fail("parse error: \{err}")
+    Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let gdef = match GdefTable::parse(
     @blob.Blob::from_bytes(build_gdef_mark_filter_table()),
   ) {
-    Err(err) => fail("gdef parse error: \{err}")
+    Err(err) => fail("gdef parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let glyphs : Array[UInt] = [1U, 3U, 5U, 4U, 2U]
@@ -3573,13 +3573,13 @@ test "gsub chaining format2 ignore marks" {
     gsub.layout().lookup_list().offsets(),
     gdef=gdef,
   ) {
-    Err(err) => fail("apply error: \{err}")
+    Err(err) => fail("apply error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let (new_glyphs, new_clusters, changed) = result
-  inspect(changed, content="true")
-  inspect(new_glyphs, content="[1, 3, 5, 6, 2]")
-  inspect(new_clusters, content="[0, 1, 2, 3, 4]")
+  @debug.debug_inspect(changed, content="true")
+  @debug.debug_inspect(new_glyphs, content="[1, 3, 5, 6, 2]")
+  @debug.debug_inspect(new_clusters, content="[0, 1, 2, 3, 4]")
 }
 
 ///|
@@ -3591,13 +3591,13 @@ test "gsub chaining format2 ignore base glyphs" {
     @common.Tag::from_chars('l', 'i', 'g', 'a'),
   )
   let gsub = match GsubTable::parse(@blob.Blob::from_bytes(gsub_bytes)) {
-    Err(err) => fail("parse error: \{err}")
+    Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let gdef = match GdefTable::parse(
     @blob.Blob::from_bytes(build_gdef_class_def_table()),
   ) {
-    Err(err) => fail("gdef parse error: \{err}")
+    Err(err) => fail("gdef parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let glyphs : Array[UInt] = [1U, 3U, 4U, 2U]
@@ -3608,13 +3608,13 @@ test "gsub chaining format2 ignore base glyphs" {
     gsub.layout().lookup_list().offsets(),
     gdef=gdef,
   ) {
-    Err(err) => fail("apply error: \{err}")
+    Err(err) => fail("apply error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let (new_glyphs, new_clusters, changed) = result
-  inspect(changed, content="true")
-  inspect(new_glyphs, content="[1, 3, 6, 2]")
-  inspect(new_clusters, content="[0, 1, 2, 3]")
+  @debug.debug_inspect(changed, content="true")
+  @debug.debug_inspect(new_glyphs, content="[1, 3, 6, 2]")
+  @debug.debug_inspect(new_clusters, content="[0, 1, 2, 3]")
 }
 
 ///|
@@ -3626,13 +3626,13 @@ test "gsub chaining format2 ignore ligature glyphs" {
     @common.Tag::from_chars('l', 'i', 'g', 'a'),
   )
   let gsub = match GsubTable::parse(@blob.Blob::from_bytes(gsub_bytes)) {
-    Err(err) => fail("parse error: \{err}")
+    Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let gdef = match GdefTable::parse(
     @blob.Blob::from_bytes(build_gdef_class_def_table()),
   ) {
-    Err(err) => fail("gdef parse error: \{err}")
+    Err(err) => fail("gdef parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let glyphs : Array[UInt] = [1U, 3U, 4U, 2U]
@@ -3643,13 +3643,13 @@ test "gsub chaining format2 ignore ligature glyphs" {
     gsub.layout().lookup_list().offsets(),
     gdef=gdef,
   ) {
-    Err(err) => fail("apply error: \{err}")
+    Err(err) => fail("apply error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let (new_glyphs, new_clusters, changed) = result
-  inspect(changed, content="true")
-  inspect(new_glyphs, content="[1, 3, 6, 2]")
-  inspect(new_clusters, content="[0, 1, 2, 3]")
+  @debug.debug_inspect(changed, content="true")
+  @debug.debug_inspect(new_glyphs, content="[1, 3, 6, 2]")
+  @debug.debug_inspect(new_clusters, content="[0, 1, 2, 3]")
 }
 
 ///|
@@ -3661,7 +3661,7 @@ test "gsub contextual substitution format3" {
     @common.Tag::from_chars('l', 'i', 'g', 'a'),
   )
   let gsub = match GsubTable::parse(@blob.Blob::from_bytes(gsub_bytes)) {
-    Err(err) => fail("parse error: \{err}")
+    Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let glyphs : Array[UInt] = [3U, 4U, 5U]
@@ -3671,13 +3671,13 @@ test "gsub contextual substitution format3" {
     clusters,
     gsub.layout().lookup_list().offsets(),
   ) {
-    Err(err) => fail("apply error: \{err}")
+    Err(err) => fail("apply error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let (new_glyphs, new_clusters, changed) = result
-  inspect(changed, content="true")
-  inspect(new_glyphs, content="[3, 6, 5]")
-  inspect(new_clusters, content="[0, 1, 2]")
+  @debug.debug_inspect(changed, content="true")
+  @debug.debug_inspect(new_glyphs, content="[3, 6, 5]")
+  @debug.debug_inspect(new_clusters, content="[0, 1, 2]")
 }
 
 ///|
@@ -3689,13 +3689,13 @@ test "gsub lookup flags mark filtering set" {
     @common.Tag::from_chars('l', 'i', 'g', 'a'),
   )
   let gsub = match GsubTable::parse(@blob.Blob::from_bytes(gsub_bytes)) {
-    Err(err) => fail("parse error: \{err}")
+    Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let gdef = match GdefTable::parse(
     @blob.Blob::from_bytes(build_gdef_mark_filter_table()),
   ) {
-    Err(err) => fail("gdef parse error: \{err}")
+    Err(err) => fail("gdef parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let lookup_offsets = [gsub.layout().lookup_list().offsets()[0]]
@@ -3707,13 +3707,13 @@ test "gsub lookup flags mark filtering set" {
     lookup_offsets[:],
     gdef=gdef,
   ) {
-    Err(err) => fail("apply error: \{err}")
+    Err(err) => fail("apply error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let (new_glyphs1, new_clusters1, changed1) = result1
-  inspect(changed1, content="true")
-  inspect(new_glyphs1, content="[1, 5, 9]")
-  inspect(new_clusters1, content="[0, 1, 2]")
+  @debug.debug_inspect(changed1, content="true")
+  @debug.debug_inspect(new_glyphs1, content="[1, 5, 9]")
+  @debug.debug_inspect(new_clusters1, content="[0, 1, 2]")
   let glyphs2 : Array[UInt] = [1U, 6U, 2U]
   let clusters2 : Array[Int] = [0, 1, 2]
   let result2 = match gsub.apply_with_lookups(
@@ -3722,13 +3722,13 @@ test "gsub lookup flags mark filtering set" {
     lookup_offsets[:],
     gdef=gdef,
   ) {
-    Err(err) => fail("apply error: \{err}")
+    Err(err) => fail("apply error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let (new_glyphs2, new_clusters2, changed2) = result2
-  inspect(changed2, content="false")
-  inspect(new_glyphs2, content="[1, 6, 2]")
-  inspect(new_clusters2, content="[0, 1, 2]")
+  @debug.debug_inspect(changed2, content="false")
+  @debug.debug_inspect(new_glyphs2, content="[1, 6, 2]")
+  @debug.debug_inspect(new_clusters2, content="[0, 1, 2]")
 }
 
 ///|
@@ -3740,7 +3740,7 @@ test "gsub chaining substitution format3" {
     @common.Tag::from_chars('l', 'i', 'g', 'a'),
   )
   let gsub = match GsubTable::parse(@blob.Blob::from_bytes(gsub_bytes)) {
-    Err(err) => fail("parse error: \{err}")
+    Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let glyphs : Array[UInt] = [1U, 3U, 4U, 2U]
@@ -3750,13 +3750,13 @@ test "gsub chaining substitution format3" {
     clusters,
     gsub.layout().lookup_list().offsets(),
   ) {
-    Err(err) => fail("apply error: \{err}")
+    Err(err) => fail("apply error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let (new_glyphs, new_clusters, changed) = result
-  inspect(changed, content="true")
-  inspect(new_glyphs, content="[1, 3, 6, 2]")
-  inspect(new_clusters, content="[0, 1, 2, 3]")
+  @debug.debug_inspect(changed, content="true")
+  @debug.debug_inspect(new_glyphs, content="[1, 3, 6, 2]")
+  @debug.debug_inspect(new_clusters, content="[0, 1, 2, 3]")
 }
 
 ///|
@@ -3768,13 +3768,13 @@ test "gsub chaining format3 ignore marks" {
     @common.Tag::from_chars('l', 'i', 'g', 'a'),
   )
   let gsub = match GsubTable::parse(@blob.Blob::from_bytes(gsub_bytes)) {
-    Err(err) => fail("parse error: \{err}")
+    Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let gdef = match GdefTable::parse(
     @blob.Blob::from_bytes(build_gdef_mark_filter_table()),
   ) {
-    Err(err) => fail("gdef parse error: \{err}")
+    Err(err) => fail("gdef parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let glyphs : Array[UInt] = [1U, 3U, 5U, 4U, 2U]
@@ -3785,13 +3785,13 @@ test "gsub chaining format3 ignore marks" {
     gsub.layout().lookup_list().offsets(),
     gdef=gdef,
   ) {
-    Err(err) => fail("apply error: \{err}")
+    Err(err) => fail("apply error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let (new_glyphs, new_clusters, changed) = result
-  inspect(changed, content="true")
-  inspect(new_glyphs, content="[1, 3, 5, 6, 2]")
-  inspect(new_clusters, content="[0, 1, 2, 3, 4]")
+  @debug.debug_inspect(changed, content="true")
+  @debug.debug_inspect(new_glyphs, content="[1, 3, 5, 6, 2]")
+  @debug.debug_inspect(new_clusters, content="[0, 1, 2, 3, 4]")
 }
 
 ///|
@@ -3803,13 +3803,13 @@ test "gsub chaining format3 ignore base glyphs" {
     @common.Tag::from_chars('l', 'i', 'g', 'a'),
   )
   let gsub = match GsubTable::parse(@blob.Blob::from_bytes(gsub_bytes)) {
-    Err(err) => fail("parse error: \{err}")
+    Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let gdef = match GdefTable::parse(
     @blob.Blob::from_bytes(build_gdef_class_def_table()),
   ) {
-    Err(err) => fail("gdef parse error: \{err}")
+    Err(err) => fail("gdef parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let glyphs : Array[UInt] = [1U, 3U, 4U, 2U]
@@ -3820,13 +3820,13 @@ test "gsub chaining format3 ignore base glyphs" {
     gsub.layout().lookup_list().offsets(),
     gdef=gdef,
   ) {
-    Err(err) => fail("apply error: \{err}")
+    Err(err) => fail("apply error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let (new_glyphs, new_clusters, changed) = result
-  inspect(changed, content="true")
-  inspect(new_glyphs, content="[1, 3, 6, 2]")
-  inspect(new_clusters, content="[0, 1, 2, 3]")
+  @debug.debug_inspect(changed, content="true")
+  @debug.debug_inspect(new_glyphs, content="[1, 3, 6, 2]")
+  @debug.debug_inspect(new_clusters, content="[0, 1, 2, 3]")
 }
 
 ///|
@@ -3838,13 +3838,13 @@ test "gsub chaining format3 ignore ligature glyphs" {
     @common.Tag::from_chars('l', 'i', 'g', 'a'),
   )
   let gsub = match GsubTable::parse(@blob.Blob::from_bytes(gsub_bytes)) {
-    Err(err) => fail("parse error: \{err}")
+    Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let gdef = match GdefTable::parse(
     @blob.Blob::from_bytes(build_gdef_class_def_table()),
   ) {
-    Err(err) => fail("gdef parse error: \{err}")
+    Err(err) => fail("gdef parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let glyphs : Array[UInt] = [1U, 3U, 4U, 2U]
@@ -3855,11 +3855,11 @@ test "gsub chaining format3 ignore ligature glyphs" {
     gsub.layout().lookup_list().offsets(),
     gdef=gdef,
   ) {
-    Err(err) => fail("apply error: \{err}")
+    Err(err) => fail("apply error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let (new_glyphs, new_clusters, changed) = result
-  inspect(changed, content="true")
-  inspect(new_glyphs, content="[1, 3, 6, 2]")
-  inspect(new_clusters, content="[0, 1, 2, 3]")
+  @debug.debug_inspect(changed, content="true")
+  @debug.debug_inspect(new_glyphs, content="[1, 3, 6, 2]")
+  @debug.debug_inspect(new_clusters, content="[0, 1, 2, 3]")
 }

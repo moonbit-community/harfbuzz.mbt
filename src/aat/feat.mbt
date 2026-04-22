@@ -21,7 +21,7 @@ let feat_flag_index_mask = 0x00ff
 pub struct FeatSettingName {
   setting : Int
   name_id : Int
-} derive(Eq, Show, ToJson)
+} derive(Eq, Debug, ToJson)
 
 ///|
 /// Feature name record.
@@ -30,14 +30,14 @@ pub struct FeatFeatureName {
   name_id : Int
   flags : Int
   settings : Array[FeatSettingName]
-} derive(Eq, Show, ToJson)
+} derive(Eq, Debug, ToJson)
 
 ///|
 /// Parsed feat table.
 pub struct FeatTable {
   version : Int
   features : Array[FeatFeatureName]
-} derive(Show, ToJson)
+} derive(Debug, ToJson)
 
 ///|
 pub fn FeatTable::has_data(self : FeatTable) -> Bool {

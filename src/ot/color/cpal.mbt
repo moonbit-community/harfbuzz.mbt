@@ -24,7 +24,7 @@ pub struct CpalTable {
   palette_flags : Array[UInt]?
   palette_labels : Array[Int]?
   color_labels : Array[Int]?
-} derive(Show, ToJson)
+} derive(Debug, ToJson)
 
 ///|
 /// Parse CPAL table data.

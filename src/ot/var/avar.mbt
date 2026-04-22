@@ -16,17 +16,17 @@
 pub struct AvarMapping {
   from_raw : Int
   to_raw : Int
-} derive(Eq, Show, ToJson)
+} derive(Eq, Debug, ToJson)
 
 ///|
 pub struct AvarSegmentMap {
   mappings : Array[AvarMapping]
-} derive(Eq, Show, ToJson)
+} derive(Eq, Debug, ToJson)
 
 ///|
 pub struct AvarTable {
   axes : Array[AvarSegmentMap]
-} derive(Eq, Show, ToJson)
+} derive(Eq, Debug, ToJson)
 
 ///|
 pub fn AvarTable::axis_count(self : AvarTable) -> Int {

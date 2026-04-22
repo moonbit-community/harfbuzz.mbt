@@ -22,7 +22,7 @@ suberror FontError {
   Color(@ot_color.ColorError)
   Aat(@aat.AatError)
   GlyphOutOfRange
-} derive(Eq, Show, ToJson)
+} derive(Eq, Debug, ToJson)
 
 ///|
 /// Font ties a face to scale metrics.
@@ -81,7 +81,7 @@ pub struct Font {
   mut cff2 : @ot_cff.Cff2Table?
   mut var_coords_design : Array[Double]?
   mut var_coords_norm : Array[Int]?
-} derive(Show, ToJson)
+} derive(Debug, ToJson)
 
 ///|
 let tag_head : @common.Tag = @common.Tag::from_chars('h', 'e', 'a', 'd')

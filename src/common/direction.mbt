@@ -16,7 +16,7 @@
 /// Text direction with HarfBuzz-compatible numeric layout.
 pub struct Direction {
   raw : UInt
-} derive(Eq, Show, ToJson)
+} derive(Eq, Debug, ToJson)
 
 ///|
 /// Unset direction.

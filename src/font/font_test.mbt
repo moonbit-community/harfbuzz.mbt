@@ -794,18 +794,18 @@ fn build_font_bytes_mvar() -> Bytes {
 test "font basics" {
   let font = Font::from_bytes([0x00, 0x01])
   let (sx, sy) = font.get_scale()
-  inspect((sx, sy), content="(0, 0)")
+  @debug.debug_inspect((sx, sy), content="(0, 0)")
   font.set_scale(1000, 2000)
-  inspect(font.get_scale(), content="(1000, 2000)")
+  @debug.debug_inspect(font.get_scale(), content="(1000, 2000)")
   font.set_ppem(12, 14)
-  inspect(font.get_ppem(), content="(12, 14)")
+  @debug.debug_inspect(font.get_ppem(), content="(12, 14)")
 }
 
 ///|
 test "font face access" {
   let font = Font::from_bytes([0x00])
   let face = font.get_face()
-  inspect(face.get_index(), content="0")
+  @debug.debug_inspect(face.get_index(), content="0")
 }
 
 ///|
@@ -815,51 +815,51 @@ test "font variation coords" {
     @ot_var.AxisCoord::new(@common.Tag::from_chars('w', 'g', 'h', 't'), 0.5),
   ]
   match font.set_variations(variations) {
-    Err(err) => fail("set variations failed: \{err}")
+    Err(err) => fail("set variations failed: \{@debug.to_string(err)}")
     Ok(_) => ()
   }
-  inspect(font.variation_coords(), content="[12288]")
+  @debug.debug_inspect(font.variation_coords(), content="[12288]")
 }
 
 ///|
 test "font cvar cvt values" {
   let font = Font::from_bytes(build_font_bytes_cvar())
   let base = match font.cvt_values() {
-    Err(err) => fail("cvt error: \{err}")
+    Err(err) => fail("cvt error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  inspect(base, content="Some([100, 200, 300])")
+  @debug.debug_inspect(base, content="Some([100, 200, 300])")
   let variations : Array[@ot_var.AxisCoord] = [
     @ot_var.AxisCoord::new(@common.Tag::from_chars('w', 'g', 'h', 't'), 1.0),
   ]
   match font.set_variations(variations) {
-    Err(err) => fail("set variations failed: \{err}")
+    Err(err) => fail("set variations failed: \{@debug.to_string(err)}")
     Ok(_) => ()
   }
   let applied = match font.cvt_values() {
-    Err(err) => fail("cvt error: \{err}")
+    Err(err) => fail("cvt error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  inspect(applied, content="Some([110, 200, 295])")
+  @debug.debug_inspect(applied, content="Some([110, 200, 295])")
 }
 
 ///|
 test "font cmap mapping and advances" {
   let bytes = build_font_bytes()
   let font = Font::from_bytes(bytes)
-  inspect(font.get_face().get_glyph_count(), content="0")
+  @debug.debug_inspect(font.get_face().get_glyph_count(), content="0")
   let gid = match font.glyph_for_codepoint(0x41U) {
-    Err(err) => fail("lookup error: \{err}")
+    Err(err) => fail("lookup error: \{@debug.to_string(err)}")
     Ok(None) => fail("missing glyph")
     Ok(Some(value)) => value
   }
-  inspect(gid, content="1")
+  @debug.debug_inspect(gid, content="1")
   let advance = match font.glyph_h_advance(gid) {
-    Err(err) => fail("advance error: \{err}")
+    Err(err) => fail("advance error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  inspect(advance, content="300")
-  inspect(font.get_face().get_glyph_count(), content="2")
+  @debug.debug_inspect(advance, content="300")
+  @debug.debug_inspect(font.get_face().get_glyph_count(), content="2")
 }
 
 ///|
@@ -867,10 +867,10 @@ test "font vmtx advances" {
   let bytes = build_font_bytes()
   let font = Font::from_bytes(bytes)
   let advance = match font.glyph_v_advance(1U) {
-    Err(err) => fail("advance error: \{err}")
+    Err(err) => fail("advance error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  inspect(advance, content="-800")
+  @debug.debug_inspect(advance, content="-800")
 }
 
 ///|
@@ -879,10 +879,10 @@ test "font scale applies to advances" {
   let font = Font::from_bytes(bytes)
   font.set_scale(2000, 2000)
   let advance = match font.glyph_h_advance(1U) {
-    Err(err) => fail("advance error: \{err}")
+    Err(err) => fail("advance error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  inspect(advance, content="600")
+  @debug.debug_inspect(advance, content="600")
 }
 
 ///|
@@ -893,23 +893,23 @@ test "font scale negative flips advances" {
   font_pos.set_scale(2000, 2000)
   font_neg.set_scale(-2000, -2000)
   let advance_pos = match font_pos.glyph_h_advance(1U) {
-    Err(err) => fail("advance error: \{err}")
+    Err(err) => fail("advance error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let advance_neg = match font_neg.glyph_h_advance(1U) {
-    Err(err) => fail("advance error: \{err}")
+    Err(err) => fail("advance error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  inspect((advance_pos, advance_neg), content="(600, -600)")
+  @debug.debug_inspect((advance_pos, advance_neg), content="(600, -600)")
 }
 
 ///|
 test "font ppem properties" {
   let bytes = build_font_bytes()
   let font = Font::from_bytes(bytes)
-  inspect(font.get_ppem(), content="(0, 0)")
+  @debug.debug_inspect(font.get_ppem(), content="(0, 0)")
   font.set_ppem(12, 34)
-  inspect(font.get_ppem(), content="(12, 34)")
+  @debug.debug_inspect(font.get_ppem(), content="(12, 34)")
 }
 
 ///|
@@ -917,38 +917,38 @@ test "font scale defaults to upem" {
   let bytes = build_font_bytes()
   let font = Font::from_bytes(bytes)
   let _ = font.glyph_h_advance(1U)
-  inspect(font.get_scale(), content="(1000, 1000)")
+  @debug.debug_inspect(font.get_scale(), content="(1000, 1000)")
 }
 
 ///|
 test "font hmtx uses last long metric advance" {
   let font = Font::from_bytes(build_font_bytes_hmtx_long_metrics())
   let advance0 = match font.glyph_h_advance(0U) {
-    Err(err) => fail("advance error: \{err}")
+    Err(err) => fail("advance error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  inspect(advance0, content="1")
+  @debug.debug_inspect(advance0, content="1")
   let advance1 = match font.glyph_h_advance(1U) {
-    Err(err) => fail("advance error: \{err}")
+    Err(err) => fail("advance error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  inspect(advance1, content="3")
+  @debug.debug_inspect(advance1, content="3")
   let advance2 = match font.glyph_h_advance(2U) {
-    Err(err) => fail("advance error: \{err}")
+    Err(err) => fail("advance error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  inspect(advance2, content="3")
+  @debug.debug_inspect(advance2, content="3")
   let advance3 = match font.glyph_h_advance(3U) {
-    Err(err) => fail("advance error: \{err}")
+    Err(err) => fail("advance error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  inspect(advance3, content="3")
+  @debug.debug_inspect(advance3, content="3")
   let advance4 = match font.glyph_h_advance(4U) {
-    Err(err) => fail("advance error: \{err}")
+    Err(err) => fail("advance error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  inspect(advance4, content="3")
-  inspect(font.glyph_h_advance(5U), content="Err(GlyphOutOfRange)")
+  @debug.debug_inspect(advance4, content="3")
+  @debug.debug_inspect(font.glyph_h_advance(5U), content="Err(GlyphOutOfRange)")
 }
 
 ///|
@@ -958,34 +958,34 @@ test "font hvar advance delta" {
     @ot_var.AxisCoord::new(@common.Tag::from_chars('w', 'g', 'h', 't'), 1.0),
   ]
   match font.set_variations(variations) {
-    Err(err) => fail("set variations failed: \{err}")
+    Err(err) => fail("set variations failed: \{@debug.to_string(err)}")
     Ok(_) => ()
   }
   let advance = match font.glyph_h_advance(1U) {
-    Err(err) => fail("advance error: \{err}")
+    Err(err) => fail("advance error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  inspect(advance, content="320")
+  @debug.debug_inspect(advance, content="320")
 }
 
 ///|
 test "font contour points" {
   let font = Font::from_bytes(build_font_bytes_gvar_iup())
   let point0 = match font.glyph_contour_point_for_origin(1U, 0) {
-    Err(err) => fail("contour point error: \{err}")
+    Err(err) => fail("contour point error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  inspect(point0, content="Some((0, 0))")
+  @debug.debug_inspect(point0, content="Some((0, 0))")
   let point2 = match font.glyph_contour_point_for_origin(1U, 2) {
-    Err(err) => fail("contour point error: \{err}")
+    Err(err) => fail("contour point error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  inspect(point2, content="Some((50, 50))")
+  @debug.debug_inspect(point2, content="Some((50, 50))")
   let missing = match font.glyph_contour_point_for_origin(1U, 10) {
-    Err(err) => fail("contour point error: \{err}")
+    Err(err) => fail("contour point error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  inspect(missing, content="None")
+  @debug.debug_inspect(missing, content="None")
 }
 
 ///|
@@ -995,23 +995,23 @@ test "font gvar outline deltas and phantom points" {
     @ot_var.AxisCoord::new(@common.Tag::from_chars('w', 'g', 'h', 't'), 1.0),
   ]
   match font.set_variations(variations) {
-    Err(err) => fail("set variations failed: \{err}")
+    Err(err) => fail("set variations failed: \{@debug.to_string(err)}")
     Ok(_) => ()
   }
   let bounds = match font.glyph_bounds(1U) {
-    Err(err) => fail("bounds error: \{err}")
+    Err(err) => fail("bounds error: \{@debug.to_string(err)}")
     Ok(None) => fail("missing bounds")
     Ok(Some(value)) => value
   }
-  inspect(bounds.x_min, content="-20")
-  inspect(bounds.y_min, content="10")
-  inspect(bounds.x_max, content="100")
-  inspect(bounds.y_max, content="50")
+  @debug.debug_inspect(bounds.x_min, content="-20")
+  @debug.debug_inspect(bounds.y_min, content="10")
+  @debug.debug_inspect(bounds.x_max, content="100")
+  @debug.debug_inspect(bounds.y_max, content="50")
   let advance = match font.glyph_h_advance(1U) {
-    Err(err) => fail("advance error: \{err}")
+    Err(err) => fail("advance error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  inspect(advance, content="320")
+  @debug.debug_inspect(advance, content="320")
 }
 
 ///|
@@ -1021,40 +1021,40 @@ test "font gvar composite deltas" {
     @ot_var.AxisCoord::new(@common.Tag::from_chars('w', 'g', 'h', 't'), 1.0),
   ]
   match font.set_variations(variations) {
-    Err(err) => fail("set variations failed: \{err}")
+    Err(err) => fail("set variations failed: \{@debug.to_string(err)}")
     Ok(_) => ()
   }
   let gvar = match font.gvar() {
-    Err(err) => fail("gvar error: \{err}")
+    Err(err) => fail("gvar error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   match gvar {
     None => fail("missing gvar")
     Some(gvar) => {
       let data = gvar.glyph_variation_data(2)
-      inspect(data.map(bytes => bytes.length()), content="Some(18)")
+      @debug.debug_inspect(data.map(bytes => bytes.length()), content="Some(18)")
       let deltas = match gvar.glyph_deltas(2, [16384], 5) {
-        Err(err) => fail("gvar deltas error: \{err}")
+        Err(err) => fail("gvar deltas error: \{@debug.to_string(err)}")
         Ok(value) => value
       }
       let deltas_x = deltas.0.map(delta => delta.round().to_int())
-      inspect(deltas_x, content="[20, 0, 30, 0, 0]")
+      @debug.debug_inspect(deltas_x, content="[20, 0, 30, 0, 0]")
     }
   }
   let bounds = match font.glyph_bounds(2U) {
-    Err(err) => fail("bounds error: \{err}")
+    Err(err) => fail("bounds error: \{@debug.to_string(err)}")
     Ok(None) => fail("missing bounds")
     Ok(Some(value)) => value
   }
-  inspect(bounds.x_min, content="120")
-  inspect(bounds.y_min, content="0")
-  inspect(bounds.x_max, content="170")
-  inspect(bounds.y_max, content="50")
+  @debug.debug_inspect(bounds.x_min, content="120")
+  @debug.debug_inspect(bounds.y_min, content="0")
+  @debug.debug_inspect(bounds.x_max, content="170")
+  @debug.debug_inspect(bounds.y_max, content="50")
   let advance = match font.glyph_h_advance(2U) {
-    Err(err) => fail("advance error: \{err}")
+    Err(err) => fail("advance error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  inspect(advance, content="430")
+  @debug.debug_inspect(advance, content="430")
 }
 
 ///|
@@ -1064,14 +1064,14 @@ test "font vvar advance delta" {
     @ot_var.AxisCoord::new(@common.Tag::from_chars('w', 'g', 'h', 't'), 1.0),
   ]
   match font.set_variations(variations) {
-    Err(err) => fail("set variations failed: \{err}")
+    Err(err) => fail("set variations failed: \{@debug.to_string(err)}")
     Ok(_) => ()
   }
   let advance = match font.glyph_v_advance(1U) {
-    Err(err) => fail("advance error: \{err}")
+    Err(err) => fail("advance error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  inspect(advance, content="-830")
+  @debug.debug_inspect(advance, content="-830")
 }
 
 ///|
@@ -1081,14 +1081,14 @@ test "font mvar delta" {
     @ot_var.AxisCoord::new(@common.Tag::from_chars('w', 'g', 'h', 't'), 1.0),
   ]
   match font.set_variations(variations) {
-    Err(err) => fail("set variations failed: \{err}")
+    Err(err) => fail("set variations failed: \{@debug.to_string(err)}")
     Ok(_) => ()
   }
   let delta = match font.mvar_delta(@common.Tag::from_chars('T', 'E', 'S', 'T')) {
-    Err(err) => fail("mvar error: \{err}")
+    Err(err) => fail("mvar error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  inspect(delta.round().to_int(), content="10")
+  @debug.debug_inspect(delta.round().to_int(), content="10")
 }
 
 ///|
@@ -1096,20 +1096,20 @@ test "font glyph bounds" {
   let bytes = build_font_bytes()
   let font = Font::from_bytes(bytes)
   let bounds0 = match font.glyph_bounds(0U) {
-    Err(err) => fail("bounds error: \{err}")
+    Err(err) => fail("bounds error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  inspect(bounds0, content="None")
+  @debug.debug_inspect(bounds0, content="None")
   let bounds1 = match font.glyph_bounds(1U) {
-    Err(err) => fail("bounds error: \{err}")
+    Err(err) => fail("bounds error: \{@debug.to_string(err)}")
     Ok(None) => fail("missing bounds")
     Ok(Some(value)) => value
   }
-  inspect(bounds1.contours, content="1")
-  inspect(bounds1.x_min, content="5")
-  inspect(bounds1.y_min, content="-2")
-  inspect(bounds1.x_max, content="50")
-  inspect(bounds1.y_max, content="100")
+  @debug.debug_inspect(bounds1.contours, content="1")
+  @debug.debug_inspect(bounds1.x_min, content="5")
+  @debug.debug_inspect(bounds1.y_min, content="-2")
+  @debug.debug_inspect(bounds1.x_max, content="50")
+  @debug.debug_inspect(bounds1.y_max, content="100")
 }
 
 ///|
@@ -1117,11 +1117,11 @@ test "font glyph bounds varc composite" {
   let bytes = build_font_bytes_varc_bounds()
   let font = Font::from_bytes(bytes)
   let bounds = match font.glyph_bounds(2U) {
-    Err(err) => fail("bounds error: \{err}")
+    Err(err) => fail("bounds error: \{@debug.to_string(err)}")
     Ok(None) => fail("missing bounds")
     Ok(Some(value)) => value
   }
-  inspect((bounds.x_min, bounds.y_min, bounds.x_max, bounds.y_max), content="(25, -2, 70, 100)")
+  @debug.debug_inspect((bounds.x_min, bounds.y_min, bounds.x_max, bounds.y_max), content="(25, -2, 70, 100)")
 }
 
 test "font draw glyph simple square" {
@@ -1139,9 +1139,9 @@ test "font draw glyph simple square" {
     data.push("Z")
   }))
   let ok = match font.draw_glyph_or_fail(0U, funcs, ops) {
-    Err(err) => fail("draw error: \{err}")
+    Err(err) => fail("draw error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   assert_true(ok)
-  inspect(ops.join("|"), content="M0,0|L50,0|L50,50|L0,50|L0,0|Z")
+  @debug.debug_inspect(ops.join("|"), content="M0,0|L50,0|L50,50|L0,50|L0,0|Z")
 }

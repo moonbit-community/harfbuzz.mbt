@@ -19,7 +19,7 @@ pub struct OpticalBounds {
   top : Int
   right : Int
   bottom : Int
-} derive(Eq, Show, ToJson)
+} derive(Eq, Debug, ToJson)
 
 ///|
 /// Parsed opbd table.
@@ -28,7 +28,7 @@ pub struct OpbdTable {
   format : Int
   lookup : LookupTable
   data : BytesView
-} derive(Show, ToJson)
+} derive(Debug, ToJson)
 
 ///|
 pub fn OpbdTable::has_data(self : OpbdTable) -> Bool {

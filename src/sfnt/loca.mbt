@@ -16,7 +16,7 @@
 /// Parsed loca table (glyph offsets).
 pub struct LocaTable {
   offsets : Array[Int]
-} derive(Eq, Show, ToJson)
+} derive(Eq, Debug, ToJson)
 
 ///|
 /// Parse loca table bytes.

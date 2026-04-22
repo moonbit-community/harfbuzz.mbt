@@ -28,10 +28,10 @@ test "buffer basics" {
   assert_true(buffer.is_empty())
   buffer.add_codepoint(65U)
   buffer.add_codepoint(66U, cluster=10)
-  inspect(buffer.len(), content="2")
+  @debug.debug_inspect(buffer.len(), content="2")
   let infos = buffer.infos()
-  inspect(infos[0].codepoint, content="65")
-  inspect(infos[1].cluster, content="10")
+  @debug.debug_inspect(infos[0].codepoint, content="65")
+  @debug.debug_inspect(infos[1].cluster, content="10")
 }
 
 ///|
@@ -39,9 +39,9 @@ test "buffer add string" {
   let buffer = Buffer::new()
   buffer.add_string("ab")
   let infos = buffer.infos()
-  inspect(buffer.len(), content="2")
-  inspect(infos[0].cluster, content="0")
-  inspect(infos[1].cluster, content="1")
+  @debug.debug_inspect(buffer.len(), content="2")
+  @debug.debug_inspect(infos[0].cluster, content="0")
+  @debug.debug_inspect(infos[1].cluster, content="1")
 }
 
 ///|
@@ -50,9 +50,9 @@ test "buffer properties" {
   buffer.set_direction(@common.direction_ltr)
   buffer.set_script(@common.script_latin)
   buffer.set_language(@common.Language::from_string("en"))
-  inspect(buffer.get_direction().to_string(), content="ltr")
-  inspect(buffer.get_script().to_tag().to_string(), content="Latn")
-  inspect(buffer.get_language().to_string(), content="Some(\"en\")")
+  @debug.debug_inspect(buffer.get_direction().to_string(), content="ltr")
+  @debug.debug_inspect(buffer.get_script().to_tag().to_string(), content="Latn")
+  @debug.debug_inspect(buffer.get_language().to_string(), content="Some(\"en\")")
 }
 
 ///|
@@ -60,8 +60,8 @@ test "buffer default feature list horizontal" {
   let buffer = Buffer::new()
   buffer.set_direction(@common.direction_ltr)
   let tags = buffer.gsub_features()
-  inspect(has_tag(tags, @common.Tag::from_chars('c', 'c', 'm', 'p')), content="true")
-  inspect(has_tag(tags, @common.Tag::from_chars('k', 'e', 'r', 'n')), content="true")
+  @debug.debug_inspect(has_tag(tags, @common.Tag::from_chars('c', 'c', 'm', 'p')), content="true")
+  @debug.debug_inspect(has_tag(tags, @common.Tag::from_chars('k', 'e', 'r', 'n')), content="true")
 }
 
 ///|
@@ -69,8 +69,8 @@ test "buffer default feature list vertical" {
   let buffer = Buffer::new()
   buffer.set_direction(@common.direction_ttb)
   let tags = buffer.gsub_features()
-  inspect(has_tag(tags, @common.Tag::from_chars('v', 'e', 'r', 't')), content="true")
-  inspect(has_tag(tags, @common.Tag::from_chars('k', 'e', 'r', 'n')), content="false")
+  @debug.debug_inspect(has_tag(tags, @common.Tag::from_chars('v', 'e', 'r', 't')), content="true")
+  @debug.debug_inspect(has_tag(tags, @common.Tag::from_chars('k', 'e', 'r', 'n')), content="false")
 }
 
 ///|
@@ -78,10 +78,10 @@ test "buffer default feature list rtl" {
   let buffer = Buffer::new()
   buffer.set_direction(@common.direction_rtl)
   let tags = buffer.gsub_features()
-  inspect(has_tag(tags, @common.Tag::from_chars('r', 't', 'l', 'a')), content="true")
-  inspect(has_tag(tags, @common.Tag::from_chars('r', 't', 'l', 'm')), content="true")
-  inspect(has_tag(tags, @common.Tag::from_chars('l', 't', 'r', 'a')), content="false")
-  inspect(has_tag(tags, @common.Tag::from_chars('r', 'c', 'l', 't')), content="true")
+  @debug.debug_inspect(has_tag(tags, @common.Tag::from_chars('r', 't', 'l', 'a')), content="true")
+  @debug.debug_inspect(has_tag(tags, @common.Tag::from_chars('r', 't', 'l', 'm')), content="true")
+  @debug.debug_inspect(has_tag(tags, @common.Tag::from_chars('l', 't', 'r', 'a')), content="false")
+  @debug.debug_inspect(has_tag(tags, @common.Tag::from_chars('r', 'c', 'l', 't')), content="true")
 }
 
 ///|
@@ -93,21 +93,21 @@ test "buffer feature list honors manual override" {
   buffer.set_gpos_features([custom_gpos])
   buffer.set_direction(@common.direction_ttb)
   let gsub_tags = buffer.gsub_features()
-  inspect(gsub_tags.length(), content="1")
-  inspect(gsub_tags[0].to_string(), content="abcd")
+  @debug.debug_inspect(gsub_tags.length(), content="1")
+  @debug.debug_inspect(gsub_tags[0].to_string(), content="abcd")
   let gpos_tags = buffer.gpos_features()
-  inspect(gpos_tags.length(), content="1")
-  inspect(gpos_tags[0].to_string(), content="wxyz")
+  @debug.debug_inspect(gpos_tags.length(), content="1")
+  @debug.debug_inspect(gpos_tags[0].to_string(), content="wxyz")
 }
 
 ///|
 test "buffer variation selector fallback" {
   let buffer = Buffer::new()
-  inspect(buffer.get_not_found_variation_selector(), content="None")
+  @debug.debug_inspect(buffer.get_not_found_variation_selector(), content="None")
   buffer.set_not_found_variation_selector(Some(5U))
-  inspect(buffer.get_not_found_variation_selector(), content="Some(5)")
+  @debug.debug_inspect(buffer.get_not_found_variation_selector(), content="Some(5)")
   buffer.set_not_found_variation_selector(None)
-  inspect(buffer.get_not_found_variation_selector(), content="None")
+  @debug.debug_inspect(buffer.get_not_found_variation_selector(), content="None")
 }
 
 ///|
@@ -118,10 +118,10 @@ test "buffer clear preserves properties" {
   buffer.set_language(@common.Language::from_string("fa"))
   buffer.add_codepoint(0x41U)
   buffer.clear()
-  inspect(buffer.len(), content="0")
-  inspect(buffer.get_direction().to_string(), content="rtl")
-  inspect(buffer.get_script().to_tag().to_string(), content="Arab")
-  inspect(buffer.get_language().to_string(), content="Some(\"fa\")")
+  @debug.debug_inspect(buffer.len(), content="0")
+  @debug.debug_inspect(buffer.get_direction().to_string(), content="rtl")
+  @debug.debug_inspect(buffer.get_script().to_tag().to_string(), content="Arab")
+  @debug.debug_inspect(buffer.get_language().to_string(), content="Some(\"fa\")")
 }
 
 ///|
@@ -135,7 +135,7 @@ test "buffer merge clusters" {
   for info in buffer.infos() {
     clusters.push(info.cluster)
   }
-  inspect(clusters, content="[3, 3, 3]")
+  @debug.debug_inspect(clusters, content="[3, 3, 3]")
 }
 
 ///|
@@ -150,8 +150,8 @@ test "buffer replace glyphs" {
   for pos in buffer.positions() {
     positions0.push(pos)
   }
-  inspect(buffer.replace_glyphs(infos0), content="true")
-  inspect(buffer.len(), content="1")
+  @debug.debug_inspect(buffer.replace_glyphs(infos0), content="true")
+  @debug.debug_inspect(buffer.len(), content="1")
   let infos1 : Array[GlyphInfo] = []
   for info in buffer.infos() {
     infos1.push(info)
@@ -161,8 +161,8 @@ test "buffer replace glyphs" {
   for pos in positions0 {
     positions1.push(pos)
   }
-  inspect(buffer.replace_glyphs(infos1, positions=positions1), content="false")
-  inspect(buffer.len(), content="1")
+  @debug.debug_inspect(buffer.replace_glyphs(infos1, positions=positions1), content="false")
+  @debug.debug_inspect(buffer.len(), content="1")
 }
 
 ///|
@@ -171,7 +171,7 @@ test "buffer verify monotone clusters" {
   buffer.set_direction(@common.direction_ltr)
   buffer.add_codepoint(0x41U, cluster=0)
   buffer.add_codepoint(0x42U, cluster=2)
-  inspect(buffer.verify(), content="true")
+  @debug.debug_inspect(buffer.verify(), content="true")
 }
 
 ///|
@@ -180,7 +180,7 @@ test "buffer verify non-monotone clusters" {
   buffer.set_direction(@common.direction_ltr)
   buffer.add_codepoint(0x41U, cluster=3)
   buffer.add_codepoint(0x42U, cluster=1)
-  inspect(buffer.verify(), content="false")
+  @debug.debug_inspect(buffer.verify(), content="false")
 }
 
 ///|
@@ -188,8 +188,8 @@ test "buffer guess segment properties" {
   let buffer = Buffer::new()
   buffer.set_script(@common.script_arabic)
   buffer.guess_segment_properties()
-  inspect(buffer.get_direction().to_string(), content="rtl")
-  inspect(buffer.get_language().to_string(), content="Some(\"und\")")
+  @debug.debug_inspect(buffer.get_direction().to_string(), content="rtl")
+  @debug.debug_inspect(buffer.get_language().to_string(), content="Some(\"und\")")
 }
 
 ///|
@@ -197,8 +197,8 @@ test "buffer guess segment properties script detection" {
   let buffer = Buffer::new()
   buffer.add_codepoint(0x05D0U)
   buffer.guess_segment_properties()
-  inspect(buffer.get_script().to_tag().to_string(), content="Hebr")
-  inspect(buffer.get_direction().to_string(), content="rtl")
+  @debug.debug_inspect(buffer.get_script().to_tag().to_string(), content="Hebr")
+  @debug.debug_inspect(buffer.get_direction().to_string(), content="rtl")
 }
 
 ///|
@@ -212,7 +212,7 @@ test "buffer normalize combining marks" {
   for info in buffer.infos() {
     cps.push(info.codepoint)
   }
-  inspect(cps, content="[225, 807]")
+  @debug.debug_inspect(cps, content="[225, 807]")
 }
 
 ///|
@@ -225,7 +225,7 @@ test "buffer normalize compose" {
   for info in buffer.infos() {
     cps.push(info.codepoint)
   }
-  inspect(cps, content="[193]")
+  @debug.debug_inspect(cps, content="[193]")
 }
 
 ///|
@@ -241,8 +241,8 @@ test "buffer normalize skips variation selectors" {
     cps.push(info.codepoint)
     clusters.push(info.cluster)
   }
-  inspect(cps, content="[65, 769, 65039]")
-  inspect(clusters, content="[0, 1, 1]")
+  @debug.debug_inspect(cps, content="[65, 769, 65039]")
+  @debug.debug_inspect(clusters, content="[0, 1, 1]")
 }
 
 ///|
@@ -256,7 +256,7 @@ test "buffer normalize indic compose exception" {
   for info in buffer.infos() {
     cps.push(info.codepoint)
   }
-  inspect(cps, content="[2527]")
+  @debug.debug_inspect(cps, content="[2527]")
 }
 
 ///|
@@ -270,7 +270,7 @@ test "buffer normalize indic skip mark-base compose" {
   for info in buffer.infos() {
     cps.push(info.codepoint)
   }
-  inspect(cps, content="[776, 769]")
+  @debug.debug_inspect(cps, content="[776, 769]")
 }
 
 ///|
@@ -286,7 +286,7 @@ test "buffer normalize hebrew reorder" {
   for info in buffer.infos() {
     cps.push(info.codepoint)
   }
-  inspect(cps, content="[64302, 1469, 1456]")
+  @debug.debug_inspect(cps, content="[64302, 1469, 1456]")
 }
 
 ///|
@@ -300,7 +300,7 @@ test "buffer normalize hebrew compose" {
   for info in buffer.infos() {
     cps.push(info.codepoint)
   }
-  inspect(cps, content="[64304]")
+  @debug.debug_inspect(cps, content="[64304]")
 }
 
 ///|
@@ -315,7 +315,7 @@ test "buffer normalize arabic reorder" {
   for info in buffer.infos() {
     cps.push(info.codepoint)
   }
-  inspect(cps, content="[1576, 1621, 1618]")
+  @debug.debug_inspect(cps, content="[1576, 1621, 1618]")
 }
 
 ///|
@@ -330,7 +330,7 @@ test "buffer normalize hangul compose" {
   for info in buffer.infos() {
     cps.push(info.codepoint)
   }
-  inspect(cps, content="[44033]")
+  @debug.debug_inspect(cps, content="[44033]")
 }
 
 ///|
@@ -344,7 +344,7 @@ test "buffer normalize hangul tone mark" {
   for info in buffer.infos() {
     cps.push(info.codepoint)
   }
-  inspect(cps, content="[12334, 44032]")
+  @debug.debug_inspect(cps, content="[12334, 44032]")
 }
 
 ///|
@@ -1315,13 +1315,13 @@ test "buffer shape basic" {
   buffer.add_string("A")
   let result = buffer.shape_basic(font)
   match result {
-    Err(err) => fail("shape error: \{err}")
+    Err(err) => fail("shape error: \{@debug.to_string(err)}")
     Ok(_) => ()
   }
   let infos = buffer.infos()
   let positions = buffer.positions()
-  inspect(infos[0].codepoint, content="1")
-  inspect(positions[0].x_advance, content="300")
+  @debug.debug_inspect(infos[0].codepoint, content="1")
+  @debug.debug_inspect(positions[0].x_advance, content="300")
 }
 
 ///|
@@ -1332,12 +1332,12 @@ test "buffer shape basic fallback for space and hyphen" {
   buffer.add_codepoint(0x2011U)
   let result = buffer.shape_basic(font)
   match result {
-    Err(err) => fail("shape error: \{err}")
+    Err(err) => fail("shape error: \{@debug.to_string(err)}")
     Ok(_) => ()
   }
   let infos = buffer.infos()
-  inspect(infos[0].codepoint, content="1")
-  inspect(infos[1].codepoint, content="2")
+  @debug.debug_inspect(infos[0].codepoint, content="1")
+  @debug.debug_inspect(infos[1].codepoint, content="2")
 }
 
 ///|
@@ -1348,12 +1348,12 @@ test "buffer shape basic fallback space advances" {
   buffer.add_codepoint(0x202FU)
   let result = buffer.shape_basic(font)
   match result {
-    Err(err) => fail("shape error: \{err}")
+    Err(err) => fail("shape error: \{@debug.to_string(err)}")
     Ok(_) => ()
   }
   let positions = buffer.positions()
-  inspect(positions[0].x_advance, content="1000")
-  inspect(positions[1].x_advance, content="150")
+  @debug.debug_inspect(positions[0].x_advance, content="1000")
+  @debug.debug_inspect(positions[1].x_advance, content="150")
 }
 
 ///|
@@ -1364,12 +1364,12 @@ test "buffer shape basic vertical advances" {
   buffer.add_string("A")
   let result = buffer.shape_basic(font)
   match result {
-    Err(err) => fail("shape error: \{err}")
+    Err(err) => fail("shape error: \{@debug.to_string(err)}")
     Ok(_) => ()
   }
   let positions = buffer.positions()
-  inspect(positions[0].x_advance, content="0")
-  inspect(positions[0].y_advance, content="-800")
+  @debug.debug_inspect(positions[0].x_advance, content="0")
+  @debug.debug_inspect(positions[0].y_advance, content="-800")
 }
 
 ///|
@@ -1379,13 +1379,13 @@ test "buffer shape ot default ignorable zeroed" {
   buffer.add_codepoint(0x200DU)
   let result = buffer.shape_ot(font)
   match result {
-    Err(err) => fail("shape error: \{err}")
+    Err(err) => fail("shape error: \{@debug.to_string(err)}")
     Ok(_) => ()
   }
   let infos = buffer.infos()
   let positions = buffer.positions()
-  inspect(infos[0].codepoint, content="1")
-  inspect(positions[0].x_advance, content="0")
+  @debug.debug_inspect(infos[0].codepoint, content="1")
+  @debug.debug_inspect(positions[0].x_advance, content="0")
 }
 
 ///|
@@ -1395,7 +1395,7 @@ test "buffer shape ot default ignorable zeroed snapshot" {
   buffer.add_codepoint(0x200DU)
   let result = buffer.shape_ot(font)
   match result {
-    Err(err) => fail("shape error: \{err}")
+    Err(err) => fail("shape error: \{@debug.to_string(err)}")
     Ok(_) => ()
   }
   let infos = buffer.infos()
@@ -1421,11 +1421,11 @@ test "buffer shape ot preserve default ignorable" {
   buffer.add_codepoint(0x200DU)
   let result = buffer.shape_ot(font)
   match result {
-    Err(err) => fail("shape error: \{err}")
+    Err(err) => fail("shape error: \{@debug.to_string(err)}")
     Ok(_) => ()
   }
   let positions = buffer.positions()
-  inspect(positions[0].x_advance, content="300")
+  @debug.debug_inspect(positions[0].x_advance, content="300")
 }
 
 ///|
@@ -1436,7 +1436,7 @@ test "buffer shape ot preserve default ignorable snapshot" {
   buffer.add_codepoint(0x200DU)
   let result = buffer.shape_ot(font)
   match result {
-    Err(err) => fail("shape error: \{err}")
+    Err(err) => fail("shape error: \{@debug.to_string(err)}")
     Ok(_) => ()
   }
   let infos = buffer.infos()
@@ -1463,14 +1463,14 @@ test "buffer shape ot variation selector fallback" {
   buffer.add_codepoint(0xFE0FU)
   let result = buffer.shape_ot(font)
   match result {
-    Err(err) => fail("shape error: \{err}")
+    Err(err) => fail("shape error: \{@debug.to_string(err)}")
     Ok(_) => ()
   }
-  inspect(buffer.len(), content="1")
+  @debug.debug_inspect(buffer.len(), content="1")
   let infos = buffer.infos()
   let positions = buffer.positions()
-  inspect(infos[0].codepoint, content="3")
-  inspect(positions[0].x_advance, content="0")
+  @debug.debug_inspect(infos[0].codepoint, content="3")
+  @debug.debug_inspect(positions[0].x_advance, content="0")
 }
 
 ///|
@@ -1482,7 +1482,7 @@ test "buffer shape ot variation selector fallback snapshot" {
   buffer.add_codepoint(0xFE0FU)
   let result = buffer.shape_ot(font)
   match result {
-    Err(err) => fail("shape error: \{err}")
+    Err(err) => fail("shape error: \{@debug.to_string(err)}")
     Ok(_) => ()
   }
   let infos = buffer.infos()
@@ -1508,7 +1508,7 @@ test "buffer shape ot variation selector mapping snapshot" {
   buffer.add_codepoint(0xFE0FU)
   let result = buffer.shape_ot(font)
   match result {
-    Err(err) => fail("shape error: \{err}")
+    Err(err) => fail("shape error: \{@debug.to_string(err)}")
     Ok(_) => ()
   }
   let infos = buffer.infos()
@@ -1534,7 +1534,7 @@ test "buffer shape ot variation selector default snapshot" {
   buffer.add_codepoint(0xFE0FU)
   let result = buffer.shape_ot(font)
   match result {
-    Err(err) => fail("shape error: \{err}")
+    Err(err) => fail("shape error: \{@debug.to_string(err)}")
     Ok(_) => ()
   }
   let infos = buffer.infos()
@@ -1559,11 +1559,11 @@ test "buffer serialize glyphs json" {
   buffer.add_string("AB")
   let result = buffer.shape_ot(font)
   match result {
-    Err(err) => fail("shape error: \{err}")
+    Err(err) => fail("shape error: \{@debug.to_string(err)}")
     Ok(_) => ()
   }
   let output = buffer.serialize(format=BufferSerializeFormat::Json)
-  inspect(
+  @debug.debug_inspect(
     output,
     content="[{\"g\":3,\"cl\":0,\"dx\":5,\"dy\":0,\"ax\":480,\"ay\":0},{\"g\":2,\"cl\":1,\"dx\":0,\"dy\":0,\"ax\":410,\"ay\":0}]",
   )
@@ -1576,7 +1576,7 @@ test "buffer serialize unicode text" {
   buffer.add_string("AB")
   let result = buffer.shape_ot(font)
   match result {
-    Err(err) => fail("shape error: \{err}")
+    Err(err) => fail("shape error: \{@debug.to_string(err)}")
     Ok(_) => ()
   }
   let output = buffer.serialize(
@@ -1584,7 +1584,7 @@ test "buffer serialize unicode text" {
     mode=BufferSerializeMode::Unicode,
     no_positions=true,
   )
-  inspect(output, content="<U+0041=0|U+0042=1>")
+  @debug.debug_inspect(output, content="<U+0041=0|U+0042=1>")
 }
 
 ///|
@@ -1594,16 +1594,16 @@ test "buffer shape ot" {
   buffer.add_string("AB")
   let result = buffer.shape_ot(font)
   match result {
-    Err(err) => fail("shape error: \{err}")
+    Err(err) => fail("shape error: \{@debug.to_string(err)}")
     Ok(_) => ()
   }
   let infos = buffer.infos()
   let positions = buffer.positions()
-  inspect(infos[0].codepoint, content="3")
-  inspect(infos[1].codepoint, content="2")
-  inspect(positions[0].x_advance, content="480")
-  inspect(positions[0].x_offset, content="5")
-  inspect(positions[1].x_advance, content="410")
+  @debug.debug_inspect(infos[0].codepoint, content="3")
+  @debug.debug_inspect(infos[1].codepoint, content="2")
+  @debug.debug_inspect(positions[0].x_advance, content="480")
+  @debug.debug_inspect(positions[0].x_offset, content="5")
+  @debug.debug_inspect(positions[1].x_advance, content="410")
 }
 
 ///|
@@ -1613,7 +1613,7 @@ test "buffer shape ot snapshot" {
   buffer.add_string("AB")
   let result = buffer.shape_ot(font)
   match result {
-    Err(err) => fail("shape error: \{err}")
+    Err(err) => fail("shape error: \{@debug.to_string(err)}")
     Ok(_) => ()
   }
   let infos = buffer.infos()
@@ -1640,16 +1640,16 @@ test "buffer shape ot feature filter" {
   buffer.add_string("AB")
   let result = buffer.shape_ot(font)
   match result {
-    Err(err) => fail("shape error: \{err}")
+    Err(err) => fail("shape error: \{@debug.to_string(err)}")
     Ok(_) => ()
   }
   let infos = buffer.infos()
   let positions = buffer.positions()
-  inspect(infos[0].codepoint, content="1")
-  inspect(infos[1].codepoint, content="2")
-  inspect(positions[0].x_advance, content="300")
-  inspect(positions[1].x_advance, content="400")
-  inspect(positions[0].x_offset, content="0")
+  @debug.debug_inspect(infos[0].codepoint, content="1")
+  @debug.debug_inspect(infos[1].codepoint, content="2")
+  @debug.debug_inspect(positions[0].x_advance, content="300")
+  @debug.debug_inspect(positions[1].x_advance, content="400")
+  @debug.debug_inspect(positions[0].x_offset, content="0")
 }
 
 ///|
@@ -1661,7 +1661,7 @@ test "buffer shape ot feature filter snapshot" {
   buffer.add_string("AB")
   let result = buffer.shape_ot(font)
   match result {
-    Err(err) => fail("shape error: \{err}")
+    Err(err) => fail("shape error: \{@debug.to_string(err)}")
     Ok(_) => ()
   }
   let infos = buffer.infos()
@@ -1686,14 +1686,14 @@ test "buffer shape ot single pos" {
   buffer.add_string("A")
   let result = buffer.shape_ot(font)
   match result {
-    Err(err) => fail("shape error: \{err}")
+    Err(err) => fail("shape error: \{@debug.to_string(err)}")
     Ok(_) => ()
   }
   let infos = buffer.infos()
   let positions = buffer.positions()
-  inspect(infos[0].codepoint, content="3")
-  inspect(positions[0].x_advance, content="520")
-  inspect(positions[0].x_offset, content="6")
+  @debug.debug_inspect(infos[0].codepoint, content="3")
+  @debug.debug_inspect(positions[0].x_advance, content="520")
+  @debug.debug_inspect(positions[0].x_offset, content="6")
 }
 
 ///|
@@ -1703,7 +1703,7 @@ test "buffer shape ot single pos snapshot" {
   buffer.add_string("A")
   let result = buffer.shape_ot(font)
   match result {
-    Err(err) => fail("shape error: \{err}")
+    Err(err) => fail("shape error: \{@debug.to_string(err)}")
     Ok(_) => ()
   }
   let infos = buffer.infos()
@@ -1728,13 +1728,13 @@ test "buffer shape ot kern fallback" {
   buffer.add_string("AB")
   let result = buffer.shape_ot(font)
   match result {
-    Err(err) => fail("shape error: \{err}")
+    Err(err) => fail("shape error: \{@debug.to_string(err)}")
     Ok(_) => ()
   }
   let positions = buffer.positions()
-  inspect(positions[0].x_advance, content="250")
-  inspect(positions[1].x_advance, content="400")
-  inspect(positions[0].x_offset, content="0")
+  @debug.debug_inspect(positions[0].x_advance, content="250")
+  @debug.debug_inspect(positions[1].x_advance, content="400")
+  @debug.debug_inspect(positions[0].x_offset, content="0")
 }
 
 ///|
@@ -1744,7 +1744,7 @@ test "buffer shape ot kern fallback snapshot" {
   buffer.add_string("AB")
   let result = buffer.shape_ot(font)
   match result {
-    Err(err) => fail("shape error: \{err}")
+    Err(err) => fail("shape error: \{@debug.to_string(err)}")
     Ok(_) => ()
   }
   let infos = buffer.infos()
@@ -1769,13 +1769,13 @@ test "buffer shape ot kern fallback with non-kern gpos" {
   buffer.add_string("AB")
   let result = buffer.shape_ot(font)
   match result {
-    Err(err) => fail("shape error: \{err}")
+    Err(err) => fail("shape error: \{@debug.to_string(err)}")
     Ok(_) => ()
   }
   let positions = buffer.positions()
-  inspect(positions[0].x_advance, content="250")
-  inspect(positions[1].x_advance, content="400")
-  inspect(positions[0].x_offset, content="0")
+  @debug.debug_inspect(positions[0].x_advance, content="250")
+  @debug.debug_inspect(positions[1].x_advance, content="400")
+  @debug.debug_inspect(positions[0].x_offset, content="0")
 }
 
 ///|
@@ -1786,12 +1786,12 @@ test "buffer shape ot zeroes mark advances without gpos" {
   buffer.add_codepoint(0x0301U)
   let result = buffer.shape_ot(font)
   match result {
-    Err(err) => fail("shape error: \{err}")
+    Err(err) => fail("shape error: \{@debug.to_string(err)}")
     Ok(_) => ()
   }
   let positions = buffer.positions()
-  inspect(positions[0].x_advance, content="300")
-  inspect(positions[1].x_advance, content="0")
+  @debug.debug_inspect(positions[0].x_advance, content="300")
+  @debug.debug_inspect(positions[1].x_advance, content="0")
 }
 
 test "buffer shape ot zeroes mark advances using gdef mark class" {
@@ -1801,12 +1801,12 @@ test "buffer shape ot zeroes mark advances using gdef mark class" {
   buffer.add_codepoint(0x42U)
   let result = buffer.shape_ot(font)
   match result {
-    Err(err) => fail("shape error: \{err}")
+    Err(err) => fail("shape error: \{@debug.to_string(err)}")
     Ok(_) => ()
   }
   let positions = buffer.positions()
-  inspect(positions[0].x_advance, content="300")
-  inspect(positions[1].x_advance, content="0")
+  @debug.debug_inspect(positions[0].x_advance, content="300")
+  @debug.debug_inspect(positions[1].x_advance, content="0")
 }
 
 ///|
@@ -1817,7 +1817,7 @@ test "buffer shape ot gdef mark class snapshot" {
   buffer.add_codepoint(0x42U)
   let result = buffer.shape_ot(font)
   match result {
-    Err(err) => fail("shape error: \{err}")
+    Err(err) => fail("shape error: \{@debug.to_string(err)}")
     Ok(_) => ()
   }
   let infos = buffer.infos()
@@ -1842,13 +1842,13 @@ test "buffer shape ot fallback mark positioning without gpos" {
   buffer.add_codepoint(0x0301U)
   let result = buffer.shape_ot(font)
   match result {
-    Err(err) => fail("shape error: \{err}")
+    Err(err) => fail("shape error: \{@debug.to_string(err)}")
     Ok(_) => ()
   }
   let positions = buffer.positions()
-  inspect(positions[1].x_advance, content="0")
-  inspect(positions[1].x_offset, content="140")
-  inspect(positions[1].y_offset, content="122")
+  @debug.debug_inspect(positions[1].x_advance, content="0")
+  @debug.debug_inspect(positions[1].x_offset, content="140")
+  @debug.debug_inspect(positions[1].y_offset, content="122")
 }
 
 ///|
@@ -1859,7 +1859,7 @@ test "buffer shape ot fallback mark positioning snapshot" {
   buffer.add_codepoint(0x0301U)
   let result = buffer.shape_ot(font)
   match result {
-    Err(err) => fail("shape error: \{err}")
+    Err(err) => fail("shape error: \{@debug.to_string(err)}")
     Ok(_) => ()
   }
   let infos = buffer.infos()
@@ -1885,11 +1885,11 @@ test "buffer shape ot skips kern for vertical" {
   buffer.add_string("AB")
   let result = buffer.shape_ot(font)
   match result {
-    Err(err) => fail("shape error: \{err}")
+    Err(err) => fail("shape error: \{@debug.to_string(err)}")
     Ok(_) => ()
   }
   let positions = buffer.positions()
-  inspect(positions[0].x_advance, content="0")
+  @debug.debug_inspect(positions[0].x_advance, content="0")
 }
 
 ///|
@@ -1900,7 +1900,7 @@ test "buffer shape ot skips kern for vertical snapshot" {
   buffer.add_string("AB")
   let result = buffer.shape_ot(font)
   match result {
-    Err(err) => fail("shape error: \{err}")
+    Err(err) => fail("shape error: \{@debug.to_string(err)}")
     Ok(_) => ()
   }
   let infos = buffer.infos()
@@ -1926,11 +1926,11 @@ test "buffer shape myanmar fallback" {
   buffer.add_string("A")
   let result = buffer.shape_myanmar(font)
   match result {
-    Err(err) => fail("shape error: \{err}")
+    Err(err) => fail("shape error: \{@debug.to_string(err)}")
     Ok(_) => ()
   }
   let infos = buffer.infos()
-  inspect(infos[0].codepoint, content="1")
+  @debug.debug_inspect(infos[0].codepoint, content="1")
 }
 
 ///|
@@ -1941,7 +1941,7 @@ test "buffer shape myanmar fallback snapshot" {
   buffer.add_string("A")
   let result = buffer.shape_myanmar(font)
   match result {
-    Err(err) => fail("shape error: \{err}")
+    Err(err) => fail("shape error: \{@debug.to_string(err)}")
     Ok(_) => ()
   }
   let infos = buffer.infos()
@@ -1967,11 +1967,11 @@ test "buffer shape myanmar prefers mym2 over dflt" {
   buffer.add_codepoint(0x1000U)
   let result = buffer.shape_myanmar(font)
   match result {
-    Err(err) => fail("shape error: \{err}")
+    Err(err) => fail("shape error: \{@debug.to_string(err)}")
     Ok(_) => ()
   }
   let infos = buffer.infos()
-  inspect(infos[0].codepoint, content="3")
+  @debug.debug_inspect(infos[0].codepoint, content="3")
 }
 
 ///|
@@ -1982,7 +1982,7 @@ test "buffer shape myanmar prefers mym2 over dflt snapshot" {
   buffer.add_codepoint(0x1000U)
   let result = buffer.shape_myanmar(font)
   match result {
-    Err(err) => fail("shape error: \{err}")
+    Err(err) => fail("shape error: \{@debug.to_string(err)}")
     Ok(_) => ()
   }
   let infos = buffer.infos()
@@ -2008,11 +2008,11 @@ test "buffer shape indic fallback" {
   buffer.add_string("A")
   let result = buffer.shape_indic(font)
   match result {
-    Err(err) => fail("shape error: \{err}")
+    Err(err) => fail("shape error: \{@debug.to_string(err)}")
     Ok(_) => ()
   }
   let infos = buffer.infos()
-  inspect(infos[0].codepoint, content="1")
+  @debug.debug_inspect(infos[0].codepoint, content="1")
 }
 
 ///|
@@ -2023,7 +2023,7 @@ test "buffer shape indic fallback snapshot" {
   buffer.add_string("A")
   let result = buffer.shape_indic(font)
   match result {
-    Err(err) => fail("shape error: \{err}")
+    Err(err) => fail("shape error: \{@debug.to_string(err)}")
     Ok(_) => ()
   }
   let infos = buffer.infos()
@@ -2049,11 +2049,11 @@ test "buffer shape indic routes to use for dev3 gsub" {
   buffer.add_codepoint(0x0915U)
   let result = buffer.shape_indic(font)
   match result {
-    Err(err) => fail("shape error: \{err}")
+    Err(err) => fail("shape error: \{@debug.to_string(err)}")
     Ok(_) => ()
   }
   let infos = buffer.infos()
-  inspect(infos[0].codepoint, content="3")
+  @debug.debug_inspect(infos[0].codepoint, content="3")
 }
 
 ///|
@@ -2064,7 +2064,7 @@ test "buffer shape indic routes to use for dev3 gsub snapshot" {
   buffer.add_codepoint(0x0915U)
   let result = buffer.shape_indic(font)
   match result {
-    Err(err) => fail("shape error: \{err}")
+    Err(err) => fail("shape error: \{@debug.to_string(err)}")
     Ok(_) => ()
   }
   let infos = buffer.infos()
@@ -2092,7 +2092,7 @@ test "buffer shape indic prefers dev2 over dflt" {
   buffer.add_codepoint(0x0915U)
   let result = buffer.shape_indic(font)
   match result {
-    Err(err) => fail("shape error: \{err}")
+    Err(err) => fail("shape error: \{@debug.to_string(err)}")
     Ok(_) => ()
   }
   let mut has_ra = false
@@ -2101,7 +2101,7 @@ test "buffer shape indic prefers dev2 over dflt" {
       has_ra = true
     }
   }
-  inspect(has_ra, content="false")
+  @debug.debug_inspect(has_ra, content="false")
 }
 
 ///|
@@ -2114,7 +2114,7 @@ test "buffer shape indic prefers dev2 over dflt snapshot" {
   buffer.add_codepoint(0x0915U)
   let result = buffer.shape_indic(font)
   match result {
-    Err(err) => fail("shape error: \{err}")
+    Err(err) => fail("shape error: \{@debug.to_string(err)}")
     Ok(_) => ()
   }
   let infos = buffer.infos()
@@ -2140,11 +2140,11 @@ test "buffer shape arabic syriac uses gsub when syrc present" {
   buffer.add_codepoint(0x0628U)
   let result = buffer.shape_arabic(font)
   match result {
-    Err(err) => fail("shape error: \{err}")
+    Err(err) => fail("shape error: \{@debug.to_string(err)}")
     Ok(_) => ()
   }
   let infos = buffer.infos()
-  inspect(infos[0].codepoint, content="3")
+  @debug.debug_inspect(infos[0].codepoint, content="3")
 }
 
 ///|
@@ -2155,7 +2155,7 @@ test "buffer shape arabic syriac uses gsub snapshot" {
   buffer.add_codepoint(0x0628U)
   let result = buffer.shape_arabic(font)
   match result {
-    Err(err) => fail("shape error: \{err}")
+    Err(err) => fail("shape error: \{@debug.to_string(err)}")
     Ok(_) => ()
   }
   let infos = buffer.infos()
@@ -2181,11 +2181,11 @@ test "buffer shape arabic syriac falls back to dflt gsub" {
   buffer.add_codepoint(0x0628U)
   let result = buffer.shape_arabic(font)
   match result {
-    Err(err) => fail("shape error: \{err}")
+    Err(err) => fail("shape error: \{@debug.to_string(err)}")
     Ok(_) => ()
   }
   let infos = buffer.infos()
-  inspect(infos[0].codepoint, content="3")
+  @debug.debug_inspect(infos[0].codepoint, content="3")
 }
 
 ///|
@@ -2196,7 +2196,7 @@ test "buffer shape arabic syriac dflt gsub snapshot" {
   buffer.add_codepoint(0x0628U)
   let result = buffer.shape_arabic(font)
   match result {
-    Err(err) => fail("shape error: \{err}")
+    Err(err) => fail("shape error: \{@debug.to_string(err)}")
     Ok(_) => ()
   }
   let infos = buffer.infos()
@@ -2222,11 +2222,11 @@ test "buffer shape use fallback" {
   buffer.add_string("A")
   let result = buffer.shape_use(font)
   match result {
-    Err(err) => fail("shape error: \{err}")
+    Err(err) => fail("shape error: \{@debug.to_string(err)}")
     Ok(_) => ()
   }
   let infos = buffer.infos()
-  inspect(infos[0].codepoint, content="1")
+  @debug.debug_inspect(infos[0].codepoint, content="1")
 }
 
 ///|
@@ -2237,7 +2237,7 @@ test "buffer shape use fallback snapshot" {
   buffer.add_string("A")
   let result = buffer.shape_use(font)
   match result {
-    Err(err) => fail("shape error: \{err}")
+    Err(err) => fail("shape error: \{@debug.to_string(err)}")
     Ok(_) => ()
   }
   let infos = buffer.infos()
@@ -2263,16 +2263,16 @@ test "buffer shape hebrew skips gpos without hebr" {
   buffer.add_string("AB")
   let result = buffer.shape_hebrew(font)
   match result {
-    Err(err) => fail("shape error: \{err}")
+    Err(err) => fail("shape error: \{@debug.to_string(err)}")
     Ok(_) => ()
   }
   let infos = buffer.infos()
   let positions = buffer.positions()
-  inspect(infos[0].codepoint, content="3")
-  inspect(infos[1].codepoint, content="2")
-  inspect(positions[0].x_advance, content="500")
-  inspect(positions[1].x_advance, content="400")
-  inspect(positions[0].x_offset, content="0")
+  @debug.debug_inspect(infos[0].codepoint, content="3")
+  @debug.debug_inspect(infos[1].codepoint, content="2")
+  @debug.debug_inspect(positions[0].x_advance, content="500")
+  @debug.debug_inspect(positions[1].x_advance, content="400")
+  @debug.debug_inspect(positions[0].x_offset, content="0")
 }
 
 ///|
@@ -2283,7 +2283,7 @@ test "buffer shape hebrew skips gpos without hebr snapshot" {
   buffer.add_string("AB")
   let result = buffer.shape_hebrew(font)
   match result {
-    Err(err) => fail("shape error: \{err}")
+    Err(err) => fail("shape error: \{@debug.to_string(err)}")
     Ok(_) => ()
   }
   let infos = buffer.infos()
@@ -2309,14 +2309,14 @@ test "buffer shape hebrew applies hebr gpos" {
   buffer.add_string("A")
   let result = buffer.shape_hebrew(font)
   match result {
-    Err(err) => fail("shape error: \{err}")
+    Err(err) => fail("shape error: \{@debug.to_string(err)}")
     Ok(_) => ()
   }
   let infos = buffer.infos()
   let positions = buffer.positions()
-  inspect(infos[0].codepoint, content="3")
-  inspect(positions[0].x_advance, content="520")
-  inspect(positions[0].x_offset, content="6")
+  @debug.debug_inspect(infos[0].codepoint, content="3")
+  @debug.debug_inspect(positions[0].x_advance, content="520")
+  @debug.debug_inspect(positions[0].x_offset, content="6")
 }
 
 ///|
@@ -2327,7 +2327,7 @@ test "buffer shape hebrew applies hebr gpos snapshot" {
   buffer.add_string("A")
   let result = buffer.shape_hebrew(font)
   match result {
-    Err(err) => fail("shape error: \{err}")
+    Err(err) => fail("shape error: \{@debug.to_string(err)}")
     Ok(_) => ()
   }
   let infos = buffer.infos()

@@ -32,10 +32,10 @@ test "cff2 fdselect format4" {
     0x03,
   ]
   let values = match parse_fdselect(bytes[:], 0, 3) {
-    Err(err) => fail("fdselect parse error: \{err}")
+    Err(err) => fail("fdselect parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  inspect(values, content="[2, 2, 2]")
+  @debug.debug_inspect(values, content="[2, 2, 2]")
 }
 
 ///|
@@ -92,7 +92,7 @@ test "cff1 seac bounds" {
     charset_map: None,
   }
   let bounds = match cff1.glyph_bounds(3) {
-    Err(err) => fail("bounds error: \{err}")
+    Err(err) => fail("bounds error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   match bounds {
@@ -102,12 +102,12 @@ test "cff1 seac bounds" {
       let y_min = bounds.y_min.round().to_int()
       let x_max = bounds.x_max.round().to_int()
       let y_max = bounds.y_max.round().to_int()
-      inspect((x_min, y_min, x_max, y_max), content="(0, 0, 20, 35)")
+      @debug.debug_inspect((x_min, y_min, x_max, y_max), content="(0, 0, 20, 35)")
     }
   }
 
   let bounds = match cff1.glyph_bounds(4) {
-    Err(err) => fail("bounds error: \{err}")
+    Err(err) => fail("bounds error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   match bounds {
@@ -117,21 +117,21 @@ test "cff1 seac bounds" {
       let y_min = bounds.y_min.round().to_int()
       let x_max = bounds.x_max.round().to_int()
       let y_max = bounds.y_max.round().to_int()
-      inspect((x_min, y_min, x_max, y_max), content="(0, 0, 20, 35)")
+      @debug.debug_inspect((x_min, y_min, x_max, y_max), content="(0, 0, 20, 35)")
     }
   }
 
   let components = match cff1.seac_components(3) {
-    Err(err) => fail("seac components error: \{err}")
+    Err(err) => fail("seac components error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  inspect(components, content="Some((1, 2))")
+  @debug.debug_inspect(components, content="Some((1, 2))")
 
   let components = match cff1.seac_components(4) {
-    Err(err) => fail("seac components error: \{err}")
+    Err(err) => fail("seac components error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  inspect(components, content="Some((1, 2))")
+  @debug.debug_inspect(components, content="Some((1, 2))")
 }
 
 ///|
@@ -185,20 +185,20 @@ test "cff1 glyph names standard charset" {
     charset_map: None,
   }
   let name0 = match cff1.glyph_name(0) {
-    Err(err) => fail("glyph name error: \{err}")
+    Err(err) => fail("glyph name error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let name1 = match cff1.glyph_name(1) {
-    Err(err) => fail("glyph name error: \{err}")
+    Err(err) => fail("glyph name error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let gid1 = match cff1.glyph_from_name("space") {
-    Err(err) => fail("glyph from name error: \{err}")
+    Err(err) => fail("glyph from name error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  inspect(name0, content="Some(\".notdef\")")
-  inspect(name1, content="Some(\"space\")")
-  inspect(gid1, content="Some(1)")
+  @debug.debug_inspect(name0, content="Some(\".notdef\")")
+  @debug.debug_inspect(name1, content="Some(\"space\")")
+  @debug.debug_inspect(gid1, content="Some(1)")
 }
 
 ///|
@@ -227,18 +227,18 @@ test "cff1 glyph names custom strings" {
     charset_map: Some(map),
   }
   let name1 = match cff1.glyph_name(1) {
-    Err(err) => fail("glyph name error: \{err}")
+    Err(err) => fail("glyph name error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let name2 = match cff1.glyph_name(2) {
-    Err(err) => fail("glyph name error: \{err}")
+    Err(err) => fail("glyph name error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let gid2 = match cff1.glyph_from_name("customB") {
-    Err(err) => fail("glyph from name error: \{err}")
+    Err(err) => fail("glyph from name error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  inspect(name1, content="Some(\"customA\")")
-  inspect(name2, content="Some(\"customB\")")
-  inspect(gid2, content="Some(2)")
+  @debug.debug_inspect(name1, content="Some(\"customA\")")
+  @debug.debug_inspect(name2, content="Some(\"customB\")")
+  @debug.debug_inspect(gid2, content="Some(2)")
 }

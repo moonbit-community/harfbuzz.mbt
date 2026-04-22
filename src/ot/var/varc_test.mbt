@@ -101,55 +101,55 @@ fn build_varc_bytes_with_glyph_record() -> Bytes {
 ///|
 test "varc parse" {
   let varc = match VarcTable::parse(build_varc_bytes()[:]) {
-    Err(err) => fail("parse failed: \{err}")
+    Err(err) => fail("parse failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  inspect((varc.coverage_offset, varc.glyph_records_offset), content="(24, 24)")
+  @debug.debug_inspect((varc.coverage_offset, varc.glyph_records_offset), content="(24, 24)")
 }
 
 ///|
 test "varc axis indices list" {
   let varc = match VarcTable::parse(build_varc_bytes()[:]) {
-    Err(err) => fail("parse failed: \{err}")
+    Err(err) => fail("parse failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let indices = match varc.axis_indices(0) {
-    Err(err) => fail("axis indices failed: \{err}")
+    Err(err) => fail("axis indices failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  inspect(indices, content="[1, 2, 3]")
+  @debug.debug_inspect(indices, content="[1, 2, 3]")
 }
 
 ///|
 test "varc condition list" {
   let varc = match VarcTable::parse(build_varc_bytes_with_condition()[:]) {
-    Err(err) => fail("parse failed: \{err}")
+    Err(err) => fail("parse failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let conditions = match varc.conditions() {
-    Err(err) => fail("conditions failed: \{err}")
+    Err(err) => fail("conditions failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  inspect(conditions.length(), content="1")
+  @debug.debug_inspect(conditions.length(), content="1")
   let cond = conditions[0]
-  inspect(cond.evaluate([0], None), content="true")
-  inspect(cond.evaluate([20000], None), content="false")
+  @debug.debug_inspect(cond.evaluate([0], None), content="true")
+  @debug.debug_inspect(cond.evaluate([20000], None), content="false")
 }
 
 ///|
 test "varc glyph record" {
   let varc = match VarcTable::parse(build_varc_bytes_with_glyph_record()[:]) {
-    Err(err) => fail("parse failed: \{err}")
+    Err(err) => fail("parse failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let record = match varc.glyph_record(5) {
-    Err(err) => fail("glyph record failed: \{err}")
+    Err(err) => fail("glyph record failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  inspect(record.map(bytes => bytes.to_array().map(b => b.to_int())), content="Some([170])")
+  @debug.debug_inspect(record.map(bytes => bytes.to_array().map(b => b.to_int())), content="Some([170])")
   let missing = match varc.glyph_record(6) {
-    Err(err) => fail("glyph record missing failed: \{err}")
+    Err(err) => fail("glyph record missing failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  inspect(missing, content="None")
+  @debug.debug_inspect(missing, content="None")
 }

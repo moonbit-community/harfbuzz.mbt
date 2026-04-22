@@ -1,27 +1,24 @@
 {
   "import": [
+    "moonbit-community/harfbuzz/face",
+    "moonbitlang/core/debug",
     "moonbitlang/core/encoding/utf8",
     "moonbitlang/core/math",
-    "moonbit-community/harfbuzz/face",
     {
-      "path": "moonbit-community/harfbuzz/common",
-      "alias": "common"
-    },
-    {
-      "path": "moonbit-community/harfbuzz/sfnt",
-      "alias": "sfnt"
+      "path": "moonbit-community/harfbuzz/aat",
+      "alias": "aat"
     },
     {
       "path": "moonbit-community/harfbuzz/blob",
       "alias": "blob"
     },
     {
-      "path": "moonbit-community/harfbuzz/ot/tables",
-      "alias": "ot_tables"
+      "path": "moonbit-community/harfbuzz/common",
+      "alias": "common"
     },
     {
-      "path": "moonbit-community/harfbuzz/ot/var",
-      "alias": "ot_var"
+      "path": "moonbit-community/harfbuzz/draw",
+      "alias": "draw"
     },
     {
       "path": "moonbit-community/harfbuzz/ot/cff",
@@ -32,12 +29,16 @@
       "alias": "ot_color"
     },
     {
-      "path": "moonbit-community/harfbuzz/aat",
-      "alias": "aat"
+      "path": "moonbit-community/harfbuzz/ot/tables",
+      "alias": "ot_tables"
     },
     {
-      "path": "moonbit-community/harfbuzz/draw",
-      "alias": "draw"
+      "path": "moonbit-community/harfbuzz/ot/var",
+      "alias": "ot_var"
+    },
+    {
+      "path": "moonbit-community/harfbuzz/sfnt",
+      "alias": "sfnt"
     }
   ]
 }

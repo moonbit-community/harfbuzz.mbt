@@ -16,7 +16,7 @@
 /// Tag identifier (four bytes).
 pub struct Tag {
   value : UInt
-} derive(Eq, Show, ToJson, Hash)
+} derive(Eq, Debug, ToJson, Hash)
 
 ///|
 /// Construct a tag from four bytes.
@@ -82,8 +82,13 @@ pub fn Tag::to_string(self : Tag) -> String {
   ..write_char(b1.to_int().unsafe_to_char())
   ..write_char(b2.to_int().unsafe_to_char())
   ..write_char(b3.to_int().unsafe_to_char())
-  ..write_char(b4.to_int().unsafe_to_char())
+  .write_char(b4.to_int().unsafe_to_char())
   sb.to_string()
+}
+
+///|
+pub impl Show for Tag with output(self, logger) {
+  logger.write_string(self.to_string())
 }
 
 ///|

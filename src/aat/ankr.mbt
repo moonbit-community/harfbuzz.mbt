@@ -16,7 +16,7 @@
 pub struct Anchor {
   x : Int
   y : Int
-} derive(Eq, Show, ToJson)
+} derive(Eq, Debug, ToJson)
 
 ///|
 pub struct AnkrTable {
@@ -24,7 +24,7 @@ pub struct AnkrTable {
   lookup : LookupTable
   anchor_offset : Int
   data : Bytes
-} derive(Show, ToJson)
+} derive(Debug, ToJson)
 
 ///|
 pub fn AnkrTable::parse(

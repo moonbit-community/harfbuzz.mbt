@@ -354,33 +354,33 @@ fn build_font_bytes_test_cff2_vf() -> Bytes {
 test "font glyph bounds cff1 seac fixture" {
   let font = Font::from_bytes(build_font_bytes_cff1_seac_c0())
   let gid = match font.glyph_for_codepoint(0xC0U) {
-    Err(err) => fail("glyph lookup error: \{err}")
+    Err(err) => fail("glyph lookup error: \{@debug.to_string(err)}")
     Ok(None) => fail("missing glyph for U+00C0")
     Ok(Some(value)) => value
   }
   let bounds = match font.glyph_bounds(gid) {
-    Err(err) => fail("bounds error: \{err}")
+    Err(err) => fail("bounds error: \{@debug.to_string(err)}")
     Ok(None) => fail("missing bounds")
     Ok(Some(value)) => value
   }
-  inspect((bounds.x_min, bounds.y_min, bounds.x_max, bounds.y_max), content="(3, 0, 541, 861)")
+  @debug.debug_inspect((bounds.x_min, bounds.y_min, bounds.x_max, bounds.y_max), content="(3, 0, 541, 861)")
 }
 
 ///|
 test "font glyph bounds cff2 vf fixture" {
   let font = Font::from_bytes(build_font_bytes_test_cff2_vf())
   let gid = match font.glyph_for_codepoint(0x41U) {
-    Err(err) => fail("glyph lookup error: \{err}")
+    Err(err) => fail("glyph lookup error: \{@debug.to_string(err)}")
     Ok(None) => fail("missing glyph for U+0041")
     Ok(Some(value)) => value
   }
   let default_bounds = match font.glyph_bounds(gid) {
-    Err(err) => fail("bounds error: \{err}")
+    Err(err) => fail("bounds error: \{@debug.to_string(err)}")
     Ok(None) => fail("missing bounds")
     Ok(Some(value)) => value
   }
   let fvar = match font.fvar() {
-    Err(err) => fail("fvar error: \{err}")
+    Err(err) => fail("fvar error: \{@debug.to_string(err)}")
     Ok(None) => fail("missing fvar")
     Ok(Some(value)) => value
   }
@@ -392,11 +392,11 @@ test "font glyph bounds cff2 vf fixture" {
     @ot_var.AxisCoord::new(axis.tag, axis.max_value),
   ]
   match font.set_variations(variations) {
-    Err(err) => fail("set variations failed: \{err}")
+    Err(err) => fail("set variations failed: \{@debug.to_string(err)}")
     Ok(_) => ()
   }
   let max_bounds = match font.glyph_bounds(gid) {
-    Err(err) => fail("bounds error: \{err}")
+    Err(err) => fail("bounds error: \{@debug.to_string(err)}")
     Ok(None) => fail("missing bounds")
     Ok(Some(value)) => value
   }
@@ -404,15 +404,15 @@ test "font glyph bounds cff2 vf fixture" {
     @ot_var.AxisCoord::new(axis.tag, axis.min_value),
   ]
   match font.set_variations(variations_min) {
-    Err(err) => fail("set variations failed: \{err}")
+    Err(err) => fail("set variations failed: \{@debug.to_string(err)}")
     Ok(_) => ()
   }
   let min_bounds = match font.glyph_bounds(gid) {
-    Err(err) => fail("bounds error: \{err}")
+    Err(err) => fail("bounds error: \{@debug.to_string(err)}")
     Ok(None) => fail("missing bounds")
     Ok(Some(value)) => value
   }
-  inspect((default_bounds.x_min, default_bounds.y_min, default_bounds.x_max, default_bounds.y_max), content="(31, 0, 569, 656)")
-  inspect((max_bounds.x_min, max_bounds.y_min, max_bounds.x_max, max_bounds.y_max), content="(0, 0, 600, 650)")
-  inspect((min_bounds.x_min, min_bounds.y_min, min_bounds.x_max, min_bounds.y_max), content="(50, 0, 550, 660)")
+  @debug.debug_inspect((default_bounds.x_min, default_bounds.y_min, default_bounds.x_max, default_bounds.y_max), content="(31, 0, 569, 656)")
+  @debug.debug_inspect((max_bounds.x_min, max_bounds.y_min, max_bounds.x_max, max_bounds.y_max), content="(0, 0, 600, 650)")
+  @debug.debug_inspect((min_bounds.x_min, min_bounds.y_min, min_bounds.x_max, min_bounds.y_max), content="(50, 0, 550, 660)")
 }
