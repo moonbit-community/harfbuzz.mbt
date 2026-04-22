@@ -38,18 +38,37 @@ let use_feature_tags : Array[@common.Tag] = [
   @common.Tag::from_chars('p', 's', 't', 's'),
 ]
 
+///|
 let use_feature_rphf : Int = 4
+
+///|
 let use_feature_pref : Int = 5
+
+///|
 let use_feature_isol : Int = 13
+
+///|
 let use_feature_init : Int = 14
+
+///|
 let use_feature_medi : Int = 15
+
+///|
 let use_feature_fina : Int = 16
 
+///|
 let use_form_isol : Int = 0
+
+///|
 let use_form_init : Int = 1
+
+///|
 let use_form_medi : Int = 2
+
+///|
 let use_form_fina : Int = 3
 
+///|
 fn use_has_arabic_joining(script : @common.Script) -> Bool {
   script == @common.script_adlam ||
   script == @common.script_arabic ||
@@ -132,14 +151,17 @@ let use_cat_vmblw : Int = 38
 ///|
 let use_cat_vmpst : Int = 39
 
+///|
 fn use_category(codepoint : UInt) -> Int {
   use_get_category(codepoint).reinterpret_as_int()
 }
 
+///|
 fn is_halant_use(category : Int) -> Bool {
   category == use_cat_h || category == use_cat_hvm || category == use_cat_is
 }
 
+///|
 fn is_post_base_use(category : Int) -> Bool {
   category == use_cat_fabv ||
   category == use_cat_fblw ||
@@ -161,13 +183,18 @@ fn is_post_base_use(category : Int) -> Bool {
   category == use_cat_vmpre
 }
 
+///|
 fn move_index_use(
   buffer : Buffer,
   categories : Array[Int],
   from : Int,
   to : Int,
 ) -> Array[Int] {
-  if from == to || from < 0 || to < 0 || from >= buffer.infos.length() || to >= buffer.infos.length() {
+  if from == to ||
+    from < 0 ||
+    to < 0 ||
+    from >= buffer.infos.length() ||
+    to >= buffer.infos.length() {
     return categories
   }
   let info = buffer.infos[from]
@@ -200,6 +227,7 @@ fn move_index_use(
   next_categories
 }
 
+///|
 fn reorder_syllable_use(
   buffer : Buffer,
   categories : Array[Int],
@@ -239,12 +267,14 @@ fn reorder_syllable_use(
   next_categories
 }
 
+///|
 fn reorder_use_syllables(
   buffer : Buffer,
   categories : Array[Int],
   syllables : Array[Int],
 ) -> Unit {
-  if categories.length() != buffer.infos.length() || syllables.length() != buffer.infos.length() {
+  if categories.length() != buffer.infos.length() ||
+    syllables.length() != buffer.infos.length() {
     return ()
   }
   let mut current_categories = categories
@@ -262,12 +292,15 @@ fn reorder_use_syllables(
       syllable_type == use_syllable_type_symbol_cluster ||
       syllable_type == use_syllable_type_broken_cluster
     if allowed {
-      current_categories = reorder_syllable_use(buffer, current_categories, i, j)
+      current_categories = reorder_syllable_use(
+        buffer, current_categories, i, j,
+      )
     }
     i = j
   }
 }
 
+///|
 fn set_use_form_masks(
   masks : Array[UInt],
   isol_bit : UInt,
@@ -296,6 +329,7 @@ fn set_use_form_masks(
   }
 }
 
+///|
 fn use_apply_gsub(
   gsub : @ot_tables.GsubTable?,
   lookup_offsets : Array[Int],
@@ -310,18 +344,20 @@ fn use_apply_gsub(
     Some(value) => value
   }
   let clusters = Array::make(glyphs.length(), 0)
-  match gsub.apply_with_lookups(
-    glyphs,
-    clusters,
-    lookup_offsets[:],
-    masks=masks,
-    lookup_mask=1U,
-  ) {
+  match
+    gsub.apply_with_lookups(
+      glyphs,
+      clusters,
+      lookup_offsets[:],
+      masks~,
+      lookup_mask=1U,
+    ) {
     Err(_) => (glyphs, false)
     Ok((next, _, changed)) => (next, changed)
   }
 }
 
+///|
 fn update_use_categories_for_reph_pref(
   categories : Array[Int],
   syllables : Array[Int],
@@ -330,7 +366,8 @@ fn update_use_categories_for_reph_pref(
   rphf_lookups : Array[Int],
   pref_lookups : Array[Int],
 ) -> Unit {
-  if categories.length() != syllables.length() || categories.length() != glyphs.length() {
+  if categories.length() != syllables.length() ||
+    categories.length() != glyphs.length() {
     return ()
   }
   let mut i = 0
@@ -342,7 +379,13 @@ fn update_use_categories_for_reph_pref(
     }
     let len = j - i
     if len > 0 && !rphf_lookups.is_empty() {
-      let limit = if categories[i] == use_cat_r { 1 } else { if len > 3 { 3 } else { len } }
+      let limit = if categories[i] == use_cat_r {
+        1
+      } else if len > 3 {
+        3
+      } else {
+        len
+      }
       let masks = Array::make(len, 0U)
       for k in 0..<limit {
         masks[k] = 1U
@@ -351,12 +394,7 @@ fn update_use_categories_for_reph_pref(
       for k in i..<j {
         sub_glyphs.push(glyphs[k])
       }
-      let (_, changed) = use_apply_gsub(
-        gsub,
-        rphf_lookups,
-        sub_glyphs,
-        masks=masks,
-      )
+      let (_, changed) = use_apply_gsub(gsub, rphf_lookups, sub_glyphs, masks~)
       if changed {
         categories[i] = use_cat_r
       }
@@ -366,14 +404,14 @@ fn update_use_categories_for_reph_pref(
       for k in i..<j {
         sub_glyphs.push(glyphs[k])
       }
-      let (next, changed) = use_apply_gsub(
-        gsub,
-        pref_lookups,
-        sub_glyphs,
-      )
+      let (next, changed) = use_apply_gsub(gsub, pref_lookups, sub_glyphs)
       if changed {
         let mut idx = 0
-        let min_len = if next.length() < sub_glyphs.length() { next.length() } else { sub_glyphs.length() }
+        let min_len = if next.length() < sub_glyphs.length() {
+          next.length()
+        } else {
+          sub_glyphs.length()
+        }
         while idx < min_len && next[idx] == sub_glyphs[idx] {
           idx = idx + 1
         }
@@ -387,6 +425,7 @@ fn update_use_categories_for_reph_pref(
   }
 }
 
+///|
 fn apply_use_arabic_form_masks(
   masks : Array[UInt],
   actions : Array[Int],
@@ -415,6 +454,7 @@ fn apply_use_arabic_form_masks(
   true
 }
 
+///|
 fn build_use_feature_masks(
   categories : Array[Int],
   syllables : Array[Int],
@@ -428,12 +468,7 @@ fn build_use_feature_masks(
   let medi_bit = 1U << use_feature_medi
   let fina_bit = 1U << use_feature_fina
   let applied_arabic = apply_use_arabic_form_masks(
-    masks,
-    arabic_actions,
-    isol_bit,
-    init_bit,
-    medi_bit,
-    fina_bit,
+    masks, arabic_actions, isol_bit, init_bit, medi_bit, fina_bit,
   )
   let mut last_start = -1
   let mut last_form = -1
@@ -445,8 +480,7 @@ fn build_use_feature_masks(
       j = j + 1
     }
     let syllable_type = syllable & 0x0f
-    let joinable =
-      syllable_type == use_syllable_type_virama_terminated_cluster ||
+    let joinable = syllable_type == use_syllable_type_virama_terminated_cluster ||
       syllable_type == use_syllable_type_sakot_terminated_cluster ||
       syllable_type == use_syllable_type_standard_cluster ||
       syllable_type == use_syllable_type_number_joiner_terminated_cluster ||
@@ -465,26 +499,12 @@ fn build_use_feature_masks(
           use_form_init
         }
         set_use_form_masks(
-          masks,
-          isol_bit,
-          init_bit,
-          medi_bit,
-          fina_bit,
-          last_start,
-          i,
-          prev_form,
+          masks, isol_bit, init_bit, medi_bit, fina_bit, last_start, i, prev_form,
         )
       }
       let current_form = if join { use_form_fina } else { use_form_isol }
       set_use_form_masks(
-        masks,
-        isol_bit,
-        init_bit,
-        medi_bit,
-        fina_bit,
-        i,
-        j,
-        current_form,
+        masks, isol_bit, init_bit, medi_bit, fina_bit, i, j, current_form,
       )
       last_start = i
       last_form = current_form
@@ -517,8 +537,10 @@ pub fn Buffer::shape_use(
     let dflt_tag = @common.Tag::from_chars('D', 'F', 'L', 'T')
     let latn_tag = @common.Tag::from_chars('l', 'a', 't', 'n')
     if !buffer_layout_has_script(gsub.layout(), script_tag) &&
-      (buffer_layout_has_script(gsub.layout(), dflt_tag) ||
-        buffer_layout_has_script(gsub.layout(), latn_tag)) {
+      (
+        buffer_layout_has_script(gsub.layout(), dflt_tag) ||
+        buffer_layout_has_script(gsub.layout(), latn_tag)
+      ) {
       return self.shape_ot_with_options(
         font,
         fallback_position=false,
@@ -537,14 +559,10 @@ pub fn Buffer::shape_use(
     marks.push(@unicode.is_mark(info.codepoint))
   }
   let syllables = find_syllables_use(categories, marks)
-  match insert_dotted_circle_for_syllables_with_repha(
-    font,
-    self,
-    syllables,
-    use_syllable_type_broken_cluster,
-    categories_i,
-    use_cat_r,
-  ) {
+  match
+    insert_dotted_circle_for_syllables_with_repha(
+      font, self, syllables, use_syllable_type_broken_cluster, categories_i, use_cat_r,
+    ) {
     Err(err) => return Err(err)
     Ok(_) => ()
   }
@@ -562,21 +580,27 @@ pub fn Buffer::shape_use(
   let mut pref_lookups : Array[Int] = []
   if gsub is Some(gsub) {
     let lang_tag = language_to_ot_tag(self.language)
-    rphf_lookups = match gsub.layout().select_lookup_offsets_for_feature(
-      script_tag,
-      use_feature_tags[use_feature_rphf],
-      language_tag=lang_tag,
-      include_required=false,
-    ) {
+    rphf_lookups = match
+      gsub
+      .layout()
+      .select_lookup_offsets_for_feature(
+        script_tag,
+        use_feature_tags[use_feature_rphf],
+        language_tag=lang_tag,
+        include_required=false,
+      ) {
       Err(err) => return Err(Layout(err))
       Ok(value) => value
     }
-    pref_lookups = match gsub.layout().select_lookup_offsets_for_feature(
-      script_tag,
-      use_feature_tags[use_feature_pref],
-      language_tag=lang_tag,
-      include_required=false,
-    ) {
+    pref_lookups = match
+      gsub
+      .layout()
+      .select_lookup_offsets_for_feature(
+        script_tag,
+        use_feature_tags[use_feature_pref],
+        language_tag=lang_tag,
+        include_required=false,
+      ) {
       Err(err) => return Err(Layout(err))
       Ok(value) => value
     }
@@ -592,11 +616,7 @@ pub fn Buffer::shape_use(
       glyphs_for_reorder.push(glyph)
     }
     update_use_categories_for_reph_pref(
-      categories_after_i,
-      syllables_after,
-      glyphs_for_reorder,
-      gsub,
-      rphf_lookups,
+      categories_after_i, syllables_after, glyphs_for_reorder, gsub, rphf_lookups,
       pref_lookups,
     )
   }
@@ -615,23 +635,26 @@ pub fn Buffer::shape_use(
   let glyph_masks = build_use_feature_masks(
     reordered_categories,
     syllables_after,
-    arabic_actions=arabic_actions,
+    arabic_actions~,
   )
-  let (unicode_mark_flags, combining_classes) = collect_mark_fallback_data(self.infos)
+  let (unicode_mark_flags, combining_classes) = collect_mark_fallback_data(
+    self.infos,
+  )
   match self.shape_basic(font) {
     Err(err) => return Err(err)
     Ok(_) => ()
   }
   if gsub is Some(gsub) {
-    match apply_gsub_features_for_syllables(
-      font,
-      self,
-      gsub,
-      use_feature_tags,
-      syllables_after,
-      glyph_masks=glyph_masks,
-      script_tag=script_tag,
-    ) {
+    match
+      apply_gsub_features_for_syllables(
+        font,
+        self,
+        gsub,
+        use_feature_tags,
+        syllables_after,
+        glyph_masks~,
+        script_tag~,
+      ) {
       Err(err) => return Err(err)
       Ok(_) => ()
     }
@@ -641,7 +664,7 @@ pub fn Buffer::shape_use(
     self,
     zero_width_marks=ZeroWidthMarks::ByGdefEarly,
     fallback_position=false,
-    unicode_mark_flags=unicode_mark_flags,
-    combining_classes=combining_classes,
+    unicode_mark_flags~,
+    combining_classes~,
   )
 }

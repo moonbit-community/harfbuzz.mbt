@@ -15,62 +15,91 @@
 ///|
 /// Unicode general category constants (hb-unicode.h order).
 pub let gc_control : UInt = 0U
+
 ///|
 pub let gc_format : UInt = 1U
+
 ///|
 pub let gc_unassigned : UInt = 2U
+
 ///|
 pub let gc_private_use : UInt = 3U
+
 ///|
 pub let gc_surrogate : UInt = 4U
+
 ///|
 pub let gc_lowercase_letter : UInt = 5U
+
 ///|
 pub let gc_modifier_letter : UInt = 6U
+
 ///|
 pub let gc_other_letter : UInt = 7U
+
 ///|
 pub let gc_titlecase_letter : UInt = 8U
+
 ///|
 pub let gc_uppercase_letter : UInt = 9U
+
 ///|
 pub let gc_spacing_mark : UInt = 10U
+
 ///|
 pub let gc_enclosing_mark : UInt = 11U
+
 ///|
 pub let gc_non_spacing_mark : UInt = 12U
+
 ///|
 pub let gc_decimal_number : UInt = 13U
+
 ///|
 pub let gc_letter_number : UInt = 14U
+
 ///|
 pub let gc_other_number : UInt = 15U
+
 ///|
 pub let gc_connect_punctuation : UInt = 16U
+
 ///|
 pub let gc_dash_punctuation : UInt = 17U
+
 ///|
 pub let gc_close_punctuation : UInt = 18U
+
 ///|
 pub let gc_final_punctuation : UInt = 19U
+
 ///|
 pub let gc_initial_punctuation : UInt = 20U
+
 ///|
 pub let gc_other_punctuation : UInt = 21U
+
 ///|
 pub let gc_open_punctuation : UInt = 22U
+
 ///|
 pub let gc_currency_symbol : UInt = 23U
+
 ///|
 pub let gc_modifier_symbol : UInt = 24U
+
 ///|
 pub let gc_math_symbol : UInt = 25U
+
 ///|
 pub let gc_other_symbol : UInt = 26U
+
 ///|
 pub let gc_line_separator : UInt = 27U
+
 ///|
 pub let gc_paragraph_separator : UInt = 28U
+
 ///|
 pub let gc_space_separator : UInt = 29U
 
@@ -204,7 +233,9 @@ fn decode3_11_7_14_3(v : UInt) -> UInt {
 
 ///|
 fn encode3_u64(a : UInt, b : UInt, c : UInt) -> UInt64 {
-  (UInt64::extend_uint(a) << 42) | (UInt64::extend_uint(b) << 21) | UInt64::extend_uint(c)
+  (UInt64::extend_uint(a) << 42) |
+  (UInt64::extend_uint(b) << 21) |
+  UInt64::extend_uint(c)
 }
 
 ///|
@@ -278,13 +309,13 @@ fn decompose_hangul(ab : UInt) -> (UInt, UInt)? {
     return None
   }
   let si = ab - sbase
-  if (si % tcount) != 0U {
-    let a = sbase + (si / tcount) * tcount
-    let b = tbase + (si % tcount)
+  if si % tcount != 0U {
+    let a = sbase + si / tcount * tcount
+    let b = tbase + si % tcount
     return Some((a, b))
   }
-  let a = lbase + (si / ncount)
-  let b = vbase + (si % ncount) / tcount
+  let a = lbase + si / ncount
+  let b = vbase + si % ncount / tcount
   Some((a, b))
 }
 
@@ -299,12 +330,14 @@ fn compose_hangul(a : UInt, b : UInt) -> UInt? {
   let vcount = 21U
   let tcount = 28U
   let ncount = vcount * tcount
-  if a >= sbase && a < (sbase + scount) &&
-    b > tbase && b < (tbase + tcount) &&
-    ((a - sbase) % tcount) == 0U {
+  if a >= sbase &&
+    a < sbase + scount &&
+    b > tbase &&
+    b < tbase + tcount &&
+    (a - sbase) % tcount == 0U {
     return Some(a + (b - tbase))
   }
-  if a >= lbase && a < (lbase + lcount) && b >= vbase && b < (vbase + vcount) {
+  if a >= lbase && a < lbase + lcount && b >= vbase && b < vbase + vcount {
     let li = a - lbase
     let vi = b - vbase
     return Some(sbase + li * ncount + vi * tcount)
@@ -322,7 +355,9 @@ pub fn general_category(u : UInt) -> UInt {
 /// Return true if the codepoint is in a Unicode mark category.
 pub fn is_mark(u : UInt) -> Bool {
   let cat = general_category(u)
-  cat == gc_non_spacing_mark || cat == gc_spacing_mark || cat == gc_enclosing_mark
+  cat == gc_non_spacing_mark ||
+  cat == gc_spacing_mark ||
+  cat == gc_enclosing_mark
 }
 
 ///|
@@ -357,7 +392,11 @@ pub fn modified_combining_class(u : UInt) -> UInt {
 pub fn mirroring(u : UInt) -> UInt {
   let offset = ucd_bmg(u)
   let result = u.reinterpret_as_int() + offset
-  if result < 0 { u } else { result.reinterpret_as_uint() }
+  if result < 0 {
+    u
+  } else {
+    result.reinterpret_as_uint()
+  }
 }
 
 ///|
@@ -387,7 +426,11 @@ pub fn compose(a : UInt, b : UInt) -> UInt? {
       None => None
       Some(value) => {
         let composed = decode3_11_7_14_3(value)
-        if composed == 0U { None } else { Some(composed) }
+        if composed == 0U {
+          None
+        } else {
+          Some(composed)
+        }
       }
     }
   } else {
@@ -396,7 +439,11 @@ pub fn compose(a : UInt, b : UInt) -> UInt? {
       None => None
       Some(value) => {
         let composed = decode3_3(value)
-        if composed == 0U { None } else { Some(composed) }
+        if composed == 0U {
+          None
+        } else {
+          Some(composed)
+        }
       }
     }
   }

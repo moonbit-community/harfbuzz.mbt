@@ -56,7 +56,10 @@ fn parse_lookup(
                 Ok((ext_type, ext_offset)) => {
                   match extension_subtable_type {
                     None => extension_subtable_type = Some(ext_type)
-                    Some(prev) => if prev != ext_type { return Err(InvalidFormat) }
+                    Some(prev) =>
+                      if prev != ext_type {
+                        return Err(InvalidFormat)
+                      }
                   }
                   offsets.push(ext_offset)
                 }
@@ -73,19 +76,18 @@ fn parse_lookup(
           Some(value) => resolved_type = value
         }
       }
-      let mark_filtering_set =
-        if (lookup_flag & 0x0010) != 0 {
-          let mark_offset = offset + header_len
-          if mark_offset + 2 > data.length() {
-            return Err(UnexpectedEof)
-          }
-          match read_u16_int(data, mark_offset) {
-            Err(err) => return Err(err)
-            Ok(value) => Some(value)
-          }
-        } else {
-          None
+      let mark_filtering_set = if (lookup_flag & 0x0010) != 0 {
+        let mark_offset = offset + header_len
+        if mark_offset + 2 > data.length() {
+          return Err(UnexpectedEof)
         }
+        match read_u16_int(data, mark_offset) {
+          Err(err) => return Err(err)
+          Ok(value) => Some(value)
+        }
+      } else {
+        None
+      }
       Ok((resolved_type, lookup_flag, mark_filtering_set, offsets))
     }
   }

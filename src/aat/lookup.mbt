@@ -42,10 +42,12 @@ pub(all) enum LookupTable {
   Format10(Int, UInt, Array[UInt])
 } derive(Eq, Debug, ToJson)
 
+///|
 fn within_range(glyph : UInt, first : UInt, last : UInt) -> Bool {
   glyph >= first && glyph <= last
 }
 
+///|
 fn LookupTable::value_for(self : LookupTable, glyph : UInt) -> UInt? {
   match self {
     Format0(values) => {
@@ -108,6 +110,7 @@ fn LookupTable::value_for(self : LookupTable, glyph : UInt) -> UInt? {
   }
 }
 
+///|
 fn read_lookup_value(
   data : BytesView,
   offset : Int,
@@ -122,6 +125,7 @@ fn read_lookup_value(
   }
 }
 
+///|
 fn parse_format0(
   data : BytesView,
   offset : Int,
@@ -146,6 +150,7 @@ fn parse_format0(
   Ok(Format0(values))
 }
 
+///|
 fn parse_binsearch_header(
   data : BytesView,
   offset : Int,
@@ -170,6 +175,7 @@ fn parse_binsearch_header(
   }
 }
 
+///|
 fn parse_format2(
   data : BytesView,
   offset : Int,
@@ -208,6 +214,7 @@ fn parse_format2(
   }
 }
 
+///|
 fn parse_format4(
   data : BytesView,
   offset : Int,
@@ -242,12 +249,17 @@ fn parse_format4(
               return Err(InvalidFormat)
             }
             let values_start = offset + values_offset
-            if values_start < 0 || values_start + count * value_size > data.length() {
+            if values_start < 0 ||
+              values_start + count * value_size > data.length() {
               return Err(UnexpectedEof)
             }
             let values : Array[UInt] = []
             for j in 0..<count {
-              let value = read_lookup_value(data, values_start + j * value_size, value_size)
+              let value = read_lookup_value(
+                data,
+                values_start + j * value_size,
+                value_size,
+              )
               match value {
                 Err(err) => return Err(err)
                 Ok(value) => values.push(value)
@@ -262,6 +274,7 @@ fn parse_format4(
   }
 }
 
+///|
 fn parse_format6(
   data : BytesView,
   offset : Int,
@@ -298,6 +311,7 @@ fn parse_format6(
   }
 }
 
+///|
 fn parse_format8(
   data : BytesView,
   offset : Int,
@@ -329,6 +343,7 @@ fn parse_format8(
   }
 }
 
+///|
 fn parse_format10(
   data : BytesView,
   offset : Int,
@@ -372,7 +387,7 @@ fn parse_lookup_with_value_size(
   let format = read_u16_int(data, offset)
   match format {
     Err(err) => Err(err)
-    Ok(format) => {
+    Ok(format) =>
       match format {
         0 => parse_format0(data, offset, num_glyphs, value_size)
         2 => parse_format2(data, offset, value_size)
@@ -382,7 +397,6 @@ fn parse_lookup_with_value_size(
         10 => parse_format10(data, offset)
         _ => Err(InvalidFormat)
       }
-    }
   }
 }
 

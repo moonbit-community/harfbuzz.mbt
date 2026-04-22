@@ -42,7 +42,11 @@ pub fn GlyphPoint::new(
 }
 
 ///|
-pub fn GlyphPoint::translate(self : GlyphPoint, dx : Double, dy : Double) -> Unit {
+pub fn GlyphPoint::translate(
+  self : GlyphPoint,
+  dx : Double,
+  dy : Double,
+) -> Unit {
   self.x = self.x + dx
   self.y = self.y + dy
 }
@@ -54,7 +58,13 @@ pub fn GlyphPoint::set(self : GlyphPoint, x : Double, y : Double) -> Unit {
 }
 
 ///|
-pub fn GlyphPoint::transform(self : GlyphPoint, a : Double, b : Double, c : Double, d : Double) -> Unit {
+pub fn GlyphPoint::transform(
+  self : GlyphPoint,
+  a : Double,
+  b : Double,
+  c : Double,
+  d : Double,
+) -> Unit {
   let nx = self.x * a + self.y * c
   let ny = self.x * b + self.y * d
   self.x = nx
@@ -137,6 +147,7 @@ pub fn GlyfTable::glyph_bounds(
   }
 }
 
+///|
 fn read_simple_flags(
   data : BytesView,
   offset : Int,
@@ -174,6 +185,7 @@ fn read_simple_flags(
   Ok((flags, pos))
 }
 
+///|
 fn read_simple_coords(
   data : BytesView,
   offset : Int,
@@ -197,24 +209,23 @@ fn read_simple_coords(
       } else {
         value = value - delta
       }
-    } else {
-      if (flag & same_flag) == 0 {
-        if pos + 2 > end {
-          return Err(UnexpectedEof)
-        }
-        let delta = read_i16(data, pos)
-        match delta {
-          Err(err) => return Err(err)
-          Ok(v) => value = value + v
-        }
-        pos = pos + 2
+    } else if (flag & same_flag) == 0 {
+      if pos + 2 > end {
+        return Err(UnexpectedEof)
       }
+      let delta = read_i16(data, pos)
+      match delta {
+        Err(err) => return Err(err)
+        Ok(v) => value = value + v
+      }
+      pos = pos + 2
     }
     coords.push(value)
   }
   Ok((coords, pos))
 }
 
+///|
 fn read_i8(data : BytesView, offset : Int) -> Result[Int, SfntError] {
   if offset < 0 || offset >= data.length() {
     return Err(UnexpectedEof)
@@ -223,6 +234,7 @@ fn read_i8(data : BytesView, offset : Int) -> Result[Int, SfntError] {
   Ok(if v >= 0x80 { v - 0x100 } else { v })
 }
 
+///|
 fn f2dot14_to_double(value : Int) -> Double {
   value.to_double() / 16384.0
 }
@@ -296,36 +308,20 @@ pub fn GlyfTable::glyph_simple_points(
   if pos > offset + length {
     return Err(UnexpectedEof)
   }
-  let (flags, after_flags) = match read_simple_flags(
-    self.data,
-    pos,
-    offset + length,
-    point_count,
-  ) {
+  let (flags, after_flags) = match
+    read_simple_flags(self.data, pos, offset + length, point_count) {
     Err(err) => return Err(err)
     Ok(value) => value
   }
   pos = after_flags
-  let (x_coords, after_x) = match read_simple_coords(
-    self.data,
-    pos,
-    offset + length,
-    flags,
-    0x02,
-    0x10,
-  ) {
+  let (x_coords, after_x) = match
+    read_simple_coords(self.data, pos, offset + length, flags, 0x02, 0x10) {
     Err(err) => return Err(err)
     Ok(value) => value
   }
   pos = after_x
-  let (y_coords, _) = match read_simple_coords(
-    self.data,
-    pos,
-    offset + length,
-    flags,
-    0x04,
-    0x20,
-  ) {
+  let (y_coords, _) = match
+    read_simple_coords(self.data, pos, offset + length, flags, 0x04, 0x20) {
     Err(err) => return Err(err)
     Ok(value) => value
   }

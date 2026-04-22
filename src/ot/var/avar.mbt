@@ -34,9 +34,16 @@ pub fn AvarTable::axis_count(self : AvarTable) -> Int {
 }
 
 ///|
-pub fn AvarTable::map_coords_16_16(self : AvarTable, coords : Array[Int]) -> Array[Int] {
+pub fn AvarTable::map_coords_16_16(
+  self : AvarTable,
+  coords : Array[Int],
+) -> Array[Int] {
   let out = coords.copy()
-  let count = if out.length() < self.axes.length() { out.length() } else { self.axes.length() }
+  let count = if out.length() < self.axes.length() {
+    out.length()
+  } else {
+    self.axes.length()
+  }
   for i in 0..<count {
     let value = out[i].to_double() / 65536.0
     let mapped = self.axes[i].map_value(value)
@@ -46,7 +53,10 @@ pub fn AvarTable::map_coords_16_16(self : AvarTable, coords : Array[Int]) -> Arr
 }
 
 ///|
-pub fn AvarSegmentMap::map_value(self : AvarSegmentMap, value : Double) -> Double {
+pub fn AvarSegmentMap::map_value(
+  self : AvarSegmentMap,
+  value : Double,
+) -> Double {
   if self.mappings.length() == 0 {
     return value
   }
@@ -87,7 +97,7 @@ pub fn AvarSegmentMap::map_value(self : AvarSegmentMap, value : Double) -> Doubl
       if denom == 0.0 {
         return after_to
       }
-      return before_to + ((after_to - before_to) * (value - before_from)) / denom
+      return before_to + (after_to - before_to) * (value - before_from) / denom
     }
   }
   value
@@ -120,16 +130,17 @@ pub fn AvarTable::parse(data : BytesView) -> Result[AvarTable, VarError] {
               match (from_raw, to_raw) {
                 (Err(err), _) => return Err(err)
                 (_, Err(err)) => return Err(err)
-                (Ok(from_raw), Ok(to_raw)) => mappings.push(AvarMapping::{ from_raw, to_raw })
+                (Ok(from_raw), Ok(to_raw)) =>
+                  mappings.push(AvarMapping::{ from_raw, to_raw })
               }
               offset = offset + 4
             }
             mappings.sort_by((a, b) => a.from_raw - b.from_raw)
-            axes.push(AvarSegmentMap::{ mappings })
+            axes.push(AvarSegmentMap::{ mappings, })
           }
         }
       }
-      Ok(AvarTable::{ axes })
+      Ok(AvarTable::{ axes, })
     }
   }
 }

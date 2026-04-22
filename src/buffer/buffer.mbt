@@ -106,7 +106,11 @@ pub fn Buffer::add_codepoint(
   cluster? : Int = -1,
 ) -> Unit {
   let actual_cluster = if cluster < 0 { self.infos.length() } else { cluster }
-  self.infos.push(GlyphInfo::{ codepoint, cluster: actual_cluster, unicode: codepoint })
+  self.infos.push(GlyphInfo::{
+    codepoint,
+    cluster: actual_cluster,
+    unicode: codepoint,
+  })
   self.positions.push(GlyphPosition::{
     x_advance: 0,
     y_advance: 0,
@@ -187,7 +191,12 @@ pub fn Buffer::replace_glyphs(
   if next_positions.is_empty() {
     let filled : Array[GlyphPosition] = []
     for _ in 0..<infos.length() {
-      filled.push(GlyphPosition::{ x_advance: 0, y_advance: 0, x_offset: 0, y_offset: 0 })
+      filled.push(GlyphPosition::{
+        x_advance: 0,
+        y_advance: 0,
+        x_offset: 0,
+        y_offset: 0,
+      })
     }
     next_positions = filled
   }
@@ -214,7 +223,11 @@ pub fn Buffer::merge_clusters(self : Buffer, start : Int, end : Int) -> Unit {
   }
   for i in start..<end {
     let info = self.infos[i]
-    self.infos[i] = GlyphInfo::{ codepoint: info.codepoint, cluster: min_cluster, unicode: info.unicode }
+    self.infos[i] = GlyphInfo::{
+      codepoint: info.codepoint,
+      cluster: min_cluster,
+      unicode: info.unicode,
+    }
   }
 }
 
@@ -316,19 +329,28 @@ pub fn Buffer::gpos_features(self : Buffer) -> ArrayView[@common.Tag] {
 
 ///|
 /// Preserve default-ignorable codepoints (do not hide/zero).
-pub fn Buffer::set_preserve_default_ignorables(self : Buffer, preserve : Bool) -> Unit {
+pub fn Buffer::set_preserve_default_ignorables(
+  self : Buffer,
+  preserve : Bool,
+) -> Unit {
   self.preserve_default_ignorables = preserve
 }
 
 ///|
 /// Remove default-ignorable glyphs instead of zeroing advances.
-pub fn Buffer::set_remove_default_ignorables(self : Buffer, remove : Bool) -> Unit {
+pub fn Buffer::set_remove_default_ignorables(
+  self : Buffer,
+  remove : Bool,
+) -> Unit {
   self.remove_default_ignorables = remove
 }
 
 ///|
 /// Set the fallback glyph for not-found variation selectors.
-pub fn Buffer::set_not_found_variation_selector(self : Buffer, glyph : UInt?) -> Unit {
+pub fn Buffer::set_not_found_variation_selector(
+  self : Buffer,
+  glyph : UInt?,
+) -> Unit {
   self.not_found_variation_selector = glyph
 }
 
@@ -377,6 +399,7 @@ fn default_feature_tags(direction : @common.Direction) -> Array[@common.Tag] {
   tags
 }
 
+///|
 fn tag_in_list(tags : Array[@common.Tag], tag : @common.Tag) -> Bool {
   for entry in tags {
     if entry == tag {
@@ -386,6 +409,7 @@ fn tag_in_list(tags : Array[@common.Tag], tag : @common.Tag) -> Bool {
   false
 }
 
+///|
 fn update_default_features(buffer : Buffer) -> Unit {
   if buffer.gsub_features_default {
     buffer.gsub_features = default_feature_tags(buffer.direction)
@@ -395,6 +419,7 @@ fn update_default_features(buffer : Buffer) -> Unit {
   }
 }
 
+///|
 fn fallback_glyph_for_codepoint(
   font : @font.Font,
   codepoint : UInt,
@@ -418,6 +443,7 @@ fn fallback_glyph_for_codepoint(
   Ok((None, None))
 }
 
+///|
 fn space_fallback_divisor(space_type : @unicode.SpaceFallbackType) -> Int? {
   match space_type {
     @unicode.SpaceFallbackType::SpaceEm => Some(1)
@@ -431,6 +457,7 @@ fn space_fallback_divisor(space_type : @unicode.SpaceFallbackType) -> Int? {
   }
 }
 
+///|
 fn advance_for_codepoint(
   font : @font.Font,
   codepoint : UInt,
@@ -468,6 +495,7 @@ fn advance_for_codepoint(
   }
 }
 
+///|
 fn adjust_space_fallback_position(
   font : @font.Font,
   direction : @common.Direction,
@@ -478,7 +506,7 @@ fn adjust_space_fallback_position(
   match space_type {
     @unicode.SpaceFallbackType::NotSpace => Ok(pos)
     @unicode.SpaceFallbackType::Space => Ok(pos)
-    @unicode.SpaceFallbackType::SpaceNarrow => {
+    @unicode.SpaceFallbackType::SpaceNarrow =>
       if horizontal {
         Ok(GlyphPosition::{
           x_advance: pos.x_advance / 2,
@@ -494,7 +522,6 @@ fn adjust_space_fallback_position(
           y_offset: pos.y_offset,
         })
       }
-    }
     @unicode.SpaceFallbackType::Space4Em18 => {
       let (scale_x, scale_y) = font.get_scale()
       let scale = if horizontal { scale_x } else { scale_y }
@@ -519,7 +546,8 @@ fn adjust_space_fallback_position(
       let mut value : Int? = None
       let mut digit = 0x30
       while digit <= 0x39 {
-        match advance_for_codepoint(font, digit.reinterpret_as_uint(), horizontal) {
+        match
+          advance_for_codepoint(font, digit.reinterpret_as_uint(), horizontal) {
           Err(err) => return Err(err)
           Ok(None) => ()
           Ok(Some(advance)) => {
@@ -665,7 +693,9 @@ pub fn Buffer::normalize(self : Buffer) -> Unit {
   let mut start = 0
   while start < len {
     let mut end = start + 1
-    let mut cluster_has_vs = @unicode.is_variation_selector(self.infos[start].codepoint)
+    let mut cluster_has_vs = @unicode.is_variation_selector(
+      self.infos[start].codepoint,
+    )
     while end < len {
       let codepoint = self.infos[end].codepoint
       if @unicode.is_variation_selector(codepoint) {
@@ -727,7 +757,11 @@ pub fn Buffer::normalize(self : Buffer) -> Unit {
         Some(composed) => {
           self.merge_clusters(start, i + 1)
           let base = self.infos[start]
-          self.infos[start] = GlyphInfo::{ codepoint: composed, cluster: base.cluster, unicode: composed }
+          self.infos[start] = GlyphInfo::{
+            codepoint: composed,
+            cluster: base.cluster,
+            unicode: composed,
+          }
           ignore(self.infos.remove(i))
           ignore(self.positions.remove(i))
           len = len - 1
@@ -772,7 +806,9 @@ fn reorder_marks_arabic(buffer : Buffer, start : Int, end : Int) -> Unit {
     if i >= end {
       break
     }
-    let current_cc = @unicode.modified_combining_class(buffer.infos[i].codepoint).reinterpret_as_int()
+    let current_cc = @unicode.modified_combining_class(
+      buffer.infos[i].codepoint,
+    ).reinterpret_as_int()
     if current_cc > cc {
       cc = cc + 10
       continue
@@ -841,7 +877,11 @@ fn normalize_hangul(buffer : Buffer, vs_clusters : Map[Int, Bool]) -> Unit {
       Some(value) => {
         buffer.merge_clusters(i, i + 2)
         let base = buffer.infos[i]
-        buffer.infos[i] = GlyphInfo::{ codepoint: value, cluster: base.cluster, unicode: value }
+        buffer.infos[i] = GlyphInfo::{
+          codepoint: value,
+          cluster: base.cluster,
+          unicode: value,
+        }
         ignore(buffer.infos.remove(i + 1))
         ignore(buffer.positions.remove(i + 1))
         len = len - 1
@@ -853,7 +893,11 @@ fn normalize_hangul(buffer : Buffer, vs_clusters : Map[Int, Bool]) -> Unit {
               Some(composed) => {
                 buffer.merge_clusters(i, i + 2)
                 let base = buffer.infos[i]
-                buffer.infos[i] = GlyphInfo::{ codepoint: composed, cluster: base.cluster, unicode: composed }
+                buffer.infos[i] = GlyphInfo::{
+                  codepoint: composed,
+                  cluster: base.cluster,
+                  unicode: composed,
+                }
                 ignore(buffer.infos.remove(i + 1))
                 ignore(buffer.positions.remove(i + 1))
                 len = len - 1
@@ -926,8 +970,8 @@ fn is_hangul_syllable(u : UInt) -> Bool {
 ///|
 fn is_modifier_combining_mark(u : UInt) -> Bool {
   let marks : Array[UInt] = [
-    0x0654U, 0x0655U, 0x0658U, 0x06DCU, 0x06E3U, 0x06E7U, 0x06E8U,
-    0x08CAU, 0x08CBU, 0x08CDU, 0x08CEU, 0x08CFU, 0x08D3U, 0x08F3U,
+    0x0654U, 0x0655U, 0x0658U, 0x06DCU, 0x06E3U, 0x06E7U, 0x06E8U, 0x08CAU, 0x08CBU,
+    0x08CDU, 0x08CEU, 0x08CFU, 0x08D3U, 0x08F3U,
   ]
   for mark in marks {
     if mark == u {
@@ -940,10 +984,9 @@ fn is_modifier_combining_mark(u : UInt) -> Bool {
 ///|
 fn compose_hebrew(a : UInt, b : UInt) -> UInt? {
   let dagesh_forms : Array[UInt] = [
-    0xFB30U, 0xFB31U, 0xFB32U, 0xFB33U, 0xFB34U, 0xFB35U, 0xFB36U, 0U,
-    0xFB38U, 0xFB39U, 0xFB3AU, 0xFB3BU, 0xFB3CU, 0U, 0xFB3EU, 0U,
-    0xFB40U, 0xFB41U, 0U, 0xFB43U, 0xFB44U, 0U, 0xFB46U, 0xFB47U,
-    0xFB48U, 0xFB49U, 0xFB4AU,
+    0xFB30U, 0xFB31U, 0xFB32U, 0xFB33U, 0xFB34U, 0xFB35U, 0xFB36U, 0U, 0xFB38U, 0xFB39U,
+    0xFB3AU, 0xFB3BU, 0xFB3CU, 0U, 0xFB3EU, 0U, 0xFB40U, 0xFB41U, 0U, 0xFB43U, 0xFB44U,
+    0U, 0xFB46U, 0xFB47U, 0xFB48U, 0xFB49U, 0xFB4AU,
   ]
   match b {
     0x05B4U => if a == 0x05D9U { Some(0xFB1DU) } else { None }
@@ -957,9 +1000,14 @@ fn compose_hebrew(a : UInt, b : UInt) -> UInt? {
       }
     0x05B8U => if a == 0x05D0U { Some(0xFB2FU) } else { None }
     0x05B9U => if a == 0x05D5U { Some(0xFB4BU) } else { None }
-    0x05BCU => if a >= 0x05D0U && a <= 0x05EAU {
+    0x05BCU =>
+      if a >= 0x05D0U && a <= 0x05EAU {
         let form = dagesh_forms[(a - 0x05D0U).reinterpret_as_int()]
-        if form == 0U { None } else { Some(form) }
+        if form == 0U {
+          None
+        } else {
+          Some(form)
+        }
       } else if a == 0xFB2AU {
         Some(0xFB2CU)
       } else if a == 0xFB2BU {
@@ -967,7 +1015,8 @@ fn compose_hebrew(a : UInt, b : UInt) -> UInt? {
       } else {
         None
       }
-    0x05BFU => if a == 0x05D1U {
+    0x05BFU =>
+      if a == 0x05D1U {
         Some(0xFB4CU)
       } else if a == 0x05DBU {
         Some(0xFB4DU)
@@ -976,14 +1025,16 @@ fn compose_hebrew(a : UInt, b : UInt) -> UInt? {
       } else {
         None
       }
-    0x05C1U => if a == 0x05E9U {
+    0x05C1U =>
+      if a == 0x05E9U {
         Some(0xFB2AU)
       } else if a == 0xFB49U {
         Some(0xFB2CU)
       } else {
         None
       }
-    0x05C2U => if a == 0x05E9U {
+    0x05C2U =>
+      if a == 0x05E9U {
         Some(0xFB2BU)
       } else if a == 0xFB49U {
         Some(0xFB2DU)
@@ -1067,7 +1118,8 @@ pub fn Buffer::shape_basic(
     if i + 1 < self.infos.length() {
       let next = self.infos[i + 1]
       if @unicode.is_variation_selector(next.codepoint) {
-        let mapping = match font.variation_glyph_for(info.codepoint, next.codepoint) {
+        let mapping = match
+          font.variation_glyph_for(info.codepoint, next.codepoint) {
           Err(err) => return Err(Font(err))
           Ok(value) => value
         }
@@ -1103,12 +1155,17 @@ pub fn Buffer::shape_basic(
     match space_type {
       None => ()
       Some(space_type) =>
-        pos = match adjust_space_fallback_position(font, self.direction, space_type, pos) {
+        pos = match
+          adjust_space_fallback_position(font, self.direction, space_type, pos) {
           Err(err) => return Err(err)
           Ok(value) => value
         }
     }
-    new_infos.push(GlyphInfo::{ codepoint: glyph, cluster: info.cluster, unicode: info.unicode })
+    new_infos.push(GlyphInfo::{
+      codepoint: glyph,
+      cluster: info.cluster,
+      unicode: info.unicode,
+    })
     new_positions.push(pos)
     if skip_next {
       i = i + 2
@@ -1140,9 +1197,15 @@ pub fn Buffer::apply_trak(
       let horizontal = self.direction.is_horizontal()
       let (ppem_x, ppem_y) = font.get_ppem()
       let ptem = if horizontal {
-        if ppem_x > 0 { ppem_x.to_double() } else { 12.0 }
+        if ppem_x > 0 {
+          ppem_x.to_double()
+        } else {
+          12.0
+        }
+      } else if ppem_y > 0 {
+        ppem_y.to_double()
       } else {
-        if ppem_y > 0 { ppem_y.to_double() } else { 12.0 }
+        12.0
       }
       let tracking = trak.tracking(ptem, horizontal)
       let (scale_x, scale_y) = font.get_scale()
@@ -1284,7 +1347,7 @@ pub fn Buffer::apply_kerx(
     scale_y,
     upem,
     ankr,
-    contour_point=contour_point,
+    contour_point~,
   )
   if adjustments.length() != self.positions.length() {
     return Ok(())
@@ -1299,14 +1362,12 @@ pub fn Buffer::apply_kerx(
       adj.y_offset == 0 {
       positions.push(pos)
     } else {
-      positions.push(
-        GlyphPosition::{
-          x_advance: pos.x_advance + adj.x_advance,
-          y_advance: pos.y_advance + adj.y_advance,
-          x_offset: pos.x_offset + adj.x_offset,
-          y_offset: pos.y_offset + adj.y_offset,
-        },
-      )
+      positions.push(GlyphPosition::{
+        x_advance: pos.x_advance + adj.x_advance,
+        y_advance: pos.y_advance + adj.y_advance,
+        x_offset: pos.x_offset + adj.x_offset,
+        y_offset: pos.y_offset + adj.y_offset,
+      })
     }
   }
   self.positions = positions
@@ -1315,7 +1376,10 @@ pub fn Buffer::apply_kerx(
 
 ///|
 /// Return true if kerx data is present.
-pub fn Buffer::has_kerx(self : Buffer, font : @font.Font) -> Result[Bool, ShapeError] {
+pub fn Buffer::has_kerx(
+  self : Buffer,
+  font : @font.Font,
+) -> Result[Bool, ShapeError] {
   ignore(self)
   let kerx = match font.kerx() {
     Err(err) => return Err(Font(err))
@@ -1357,32 +1421,34 @@ pub fn Buffer::apply_gpos(
   }
   let script_tag = self.script.to_tag()
   let lang_tag = language_to_ot_tag(self.language)
-  let feature_tags : Array[@common.Tag] =
-    if include_all_features {
-      [
-        @common.Tag::from_chars('a', 'b', 'v', 'm'),
-        @common.Tag::from_chars('b', 'l', 'w', 'm'),
-        @common.Tag::from_chars('c', 'c', 'm', 'p'),
-        @common.Tag::from_chars('l', 'o', 'c', 'l'),
-        @common.Tag::from_chars('m', 'a', 'r', 'k'),
-        @common.Tag::from_chars('m', 'k', 'm', 'k'),
-        @common.Tag::from_chars('r', 'l', 'i', 'g'),
-        @common.Tag::from_chars('c', 'a', 'l', 't'),
-        @common.Tag::from_chars('c', 'l', 'i', 'g'),
-        @common.Tag::from_chars('c', 'u', 'r', 's'),
-        @common.Tag::from_chars('d', 'i', 's', 't'),
-        @common.Tag::from_chars('k', 'e', 'r', 'n'),
-        @common.Tag::from_chars('l', 'i', 'g', 'a'),
-        @common.Tag::from_chars('r', 'c', 'l', 't'),
-      ]
-    } else {
-      self.gpos_features
-    }
-  let lookup_offsets = match gpos.layout().select_lookup_offsets_with_features(
-    script_tag,
-    language_tag=lang_tag,
-    feature_tags=feature_tags,
-  ) {
+  let feature_tags : Array[@common.Tag] = if include_all_features {
+    [
+      @common.Tag::from_chars('a', 'b', 'v', 'm'),
+      @common.Tag::from_chars('b', 'l', 'w', 'm'),
+      @common.Tag::from_chars('c', 'c', 'm', 'p'),
+      @common.Tag::from_chars('l', 'o', 'c', 'l'),
+      @common.Tag::from_chars('m', 'a', 'r', 'k'),
+      @common.Tag::from_chars('m', 'k', 'm', 'k'),
+      @common.Tag::from_chars('r', 'l', 'i', 'g'),
+      @common.Tag::from_chars('c', 'a', 'l', 't'),
+      @common.Tag::from_chars('c', 'l', 'i', 'g'),
+      @common.Tag::from_chars('c', 'u', 'r', 's'),
+      @common.Tag::from_chars('d', 'i', 's', 't'),
+      @common.Tag::from_chars('k', 'e', 'r', 'n'),
+      @common.Tag::from_chars('l', 'i', 'g', 'a'),
+      @common.Tag::from_chars('r', 'c', 'l', 't'),
+    ]
+  } else {
+    self.gpos_features
+  }
+  let lookup_offsets = match
+    gpos
+    .layout()
+    .select_lookup_offsets_with_features(
+      script_tag,
+      language_tag=lang_tag,
+      feature_tags~,
+    ) {
     Err(err) => return Err(Layout(err))
     Ok(value) => value
   }
@@ -1394,25 +1460,27 @@ pub fn Buffer::apply_gpos(
   }
   let deltas = match gdef {
     None =>
-      match gpos.position_deltas_with_lookups(
-        glyphs[:],
-        lookup_offsets[:],
-        clusters=clusters[:],
-        advances_x=advances_x[:],
-        advances_y=advances_y[:],
-      ) {
+      match
+        gpos.position_deltas_with_lookups(
+          glyphs[:],
+          lookup_offsets[:],
+          clusters=clusters[:],
+          advances_x=advances_x[:],
+          advances_y=advances_y[:],
+        ) {
         Err(err) => return Err(Layout(err))
         Ok(value) => value
       }
     Some(gdef) =>
-      match gpos.position_deltas_with_lookups(
-        glyphs[:],
-        lookup_offsets[:],
-        gdef=gdef,
-        clusters=clusters[:],
-        advances_x=advances_x[:],
-        advances_y=advances_y[:],
-      ) {
+      match
+        gpos.position_deltas_with_lookups(
+          glyphs[:],
+          lookup_offsets[:],
+          gdef~,
+          clusters=clusters[:],
+          advances_x=advances_x[:],
+          advances_y=advances_y[:],
+        ) {
         Err(err) => return Err(Layout(err))
         Ok(value) => value
       }
@@ -1440,8 +1508,9 @@ pub fn Buffer::apply_gpos(
     Err(err) => return Err(err)
     Ok(_) => ()
   }
-  if include_all_features && adjust_mark_offsets &&
-      unicode_mark_flags.length() == self.positions.length() {
+  if include_all_features &&
+    adjust_mark_offsets &&
+    unicode_mark_flags.length() == self.positions.length() {
     let mut advance_since_base = 0
     let mut has_base = false
     for i in 0..<self.positions.length() {
@@ -1472,7 +1541,7 @@ pub fn Buffer::shape_ot(
 ) -> Result[Unit, ShapeError] {
   self.shape_ot_with_options(
     font,
-    fallback_position=fallback_position,
+    fallback_position~,
     zero_width_marks=ZeroWidthMarks::ByGdefLate,
   )
 }
@@ -1485,7 +1554,9 @@ fn Buffer::shape_ot_with_options(
   zero_width_marks? : ZeroWidthMarks = ZeroWidthMarks::ByGdefLate,
 ) -> Result[Unit, ShapeError] {
   self.guess_segment_properties()
-  let (unicode_mark_flags, combining_classes) = collect_mark_fallback_data(self.infos)
+  let (unicode_mark_flags, combining_classes) = collect_mark_fallback_data(
+    self.infos,
+  )
   let gsub = match font.gsub() {
     Err(err) => return Err(Font(err))
     Ok(value) => value
@@ -1500,34 +1571,37 @@ fn Buffer::shape_ot_with_options(
   }
   let script_tag = self.script.to_tag()
   let lang_tag = language_to_ot_tag(self.language)
-  let map = match @ot_map.OtMap::new(
-    gsub,
-    gpos,
-    script_tag,
-    language_tag=lang_tag,
-    gsub_features=self.gsub_features,
-    gpos_features=self.gpos_features,
-  ) {
+  let map = match
+    @ot_map.OtMap::new(
+      gsub,
+      gpos,
+      script_tag,
+      language_tag=lang_tag,
+      gsub_features=self.gsub_features,
+      gpos_features=self.gpos_features,
+    ) {
     Err(err) => return Err(Layout(err))
     Ok(value) => value
   }
   let gpos_lookups = map.gpos_lookups()
   let gpos_present = gpos is Some(_) && !gpos_lookups.is_empty()
-  let kern_tag =
-    if self.direction.is_horizontal() {
-      @common.Tag::from_chars('k', 'e', 'r', 'n')
-    } else {
-      @common.Tag::from_chars('v', 'k', 'r', 'n')
-    }
+  let kern_tag = if self.direction.is_horizontal() {
+    @common.Tag::from_chars('k', 'e', 'r', 'n')
+  } else {
+    @common.Tag::from_chars('v', 'k', 'r', 'n')
+  }
   let wants_kern = tag_in_list(self.gpos_features, kern_tag)
   let mut has_gpos_kern = false
   if wants_kern && gpos is Some(gpos) {
-    let kern_lookups = match gpos.layout().select_lookup_offsets_for_feature(
-      script_tag,
-      kern_tag,
-      language_tag=lang_tag,
-      include_required=false,
-    ) {
+    let kern_lookups = match
+      gpos
+      .layout()
+      .select_lookup_offsets_for_feature(
+        script_tag,
+        kern_tag,
+        language_tag=lang_tag,
+        include_required=false,
+      ) {
       Err(err) => return Err(Layout(err))
       Ok(value) => value
     }
@@ -1542,14 +1616,14 @@ fn Buffer::shape_ot_with_options(
     let mut gsub_alt_values : Array[Int] = []
     match self.gsub_feature_values {
       None => ()
-      Some(feature_values) => {
-        if !feature_values.values.is_empty() && feature_values.values.length() == self.infos.length() {
+      Some(feature_values) =>
+        if !feature_values.values.is_empty() &&
+          feature_values.values.length() == self.infos.length() {
           gsub_alt_values = feature_values.values
           for value in gsub_alt_values {
             gsub_masks.push(if value > 0 { 1U } else { 0U })
           }
         }
-      }
     }
     let use_feature_values = !gsub_masks.is_empty()
     let glyphs : Array[UInt] = []
@@ -1558,11 +1632,11 @@ fn Buffer::shape_ot_with_options(
       glyphs.push(info.codepoint)
       clusters.push(info.cluster)
     }
-    let (next_glyphs, next_clusters, changed) =
-      if use_feature_values {
-        let result = match gdef {
-          None =>
-            match gsub.apply_with_lookups_and_masks(
+    let (next_glyphs, next_clusters, changed) = if use_feature_values {
+      let result = match gdef {
+        None =>
+          match
+            gsub.apply_with_lookups_and_masks(
               glyphs,
               clusters,
               map.gsub_lookups(),
@@ -1570,48 +1644,41 @@ fn Buffer::shape_ot_with_options(
               lookup_mask=1U,
               alt_values=gsub_alt_values,
             ) {
-              Err(err) => return Err(Layout(err))
-              Ok(value) => value
-            }
-          Some(gdef) =>
-            match gsub.apply_with_lookups_and_masks(
+            Err(err) => return Err(Layout(err))
+            Ok(value) => value
+          }
+        Some(gdef) =>
+          match
+            gsub.apply_with_lookups_and_masks(
               glyphs,
               clusters,
               map.gsub_lookups(),
-              gdef=gdef,
+              gdef~,
               masks=gsub_masks,
               lookup_mask=1U,
               alt_values=gsub_alt_values,
             ) {
-              Err(err) => return Err(Layout(err))
-              Ok(value) => value
-            }
-        }
-        let (glyphs, clusters, _, changed) = result
-        (glyphs, clusters, changed)
-      } else {
-        match gdef {
-          None =>
-            match gsub.apply_with_lookups(
-              glyphs,
-              clusters,
-              map.gsub_lookups(),
-            ) {
-              Err(err) => return Err(Layout(err))
-              Ok(value) => value
-            }
-          Some(gdef) =>
-            match gsub.apply_with_lookups(
-              glyphs,
-              clusters,
-              map.gsub_lookups(),
-              gdef=gdef,
-            ) {
-              Err(err) => return Err(Layout(err))
-              Ok(value) => value
-            }
-        }
+            Err(err) => return Err(Layout(err))
+            Ok(value) => value
+          }
       }
+      let (glyphs, clusters, _, changed) = result
+      (glyphs, clusters, changed)
+    } else {
+      match gdef {
+        None =>
+          match gsub.apply_with_lookups(glyphs, clusters, map.gsub_lookups()) {
+            Err(err) => return Err(Layout(err))
+            Ok(value) => value
+          }
+        Some(gdef) =>
+          match
+            gsub.apply_with_lookups(glyphs, clusters, map.gsub_lookups(), gdef~) {
+            Err(err) => return Err(Layout(err))
+            Ok(value) => value
+          }
+      }
+    }
     if changed || next_glyphs.length() != self.infos.length() {
       let same_len = next_glyphs.length() == self.infos.length()
       let new_infos : Array[GlyphInfo] = []
@@ -1633,7 +1700,10 @@ fn Buffer::shape_ot_with_options(
   }
   match zero_width_marks {
     ZeroWidthMarks::ByGdefEarly =>
-      match zero_marks_by_gdef_or_unicode(font, self, unicode_mark_flags, gpos_present) {
+      match
+        zero_marks_by_gdef_or_unicode(
+          font, self, unicode_mark_flags, gpos_present,
+        ) {
         Err(err) => return Err(err)
         Ok(_) => ()
       }
@@ -1658,25 +1728,27 @@ fn Buffer::shape_ot_with_options(
     }
     let deltas = match gdef {
       None =>
-        match gpos.position_deltas_with_lookups(
-          glyphs[:],
-          gpos_lookups,
-          clusters=clusters[:],
-          advances_x=advances_x[:],
-          advances_y=advances_y[:],
-        ) {
+        match
+          gpos.position_deltas_with_lookups(
+            glyphs[:],
+            gpos_lookups,
+            clusters=clusters[:],
+            advances_x=advances_x[:],
+            advances_y=advances_y[:],
+          ) {
           Err(err) => return Err(Layout(err))
           Ok(value) => value
         }
       Some(gdef) =>
-        match gpos.position_deltas_with_lookups(
-          glyphs[:],
-          gpos_lookups,
-          gdef=gdef,
-          clusters=clusters[:],
-          advances_x=advances_x[:],
-          advances_y=advances_y[:],
-        ) {
+        match
+          gpos.position_deltas_with_lookups(
+            glyphs[:],
+            gpos_lookups,
+            gdef~,
+            clusters=clusters[:],
+            advances_x=advances_x[:],
+            advances_y=advances_y[:],
+          ) {
           Err(err) => return Err(Layout(err))
           Ok(value) => value
         }
@@ -1727,14 +1799,18 @@ fn Buffer::shape_ot_with_options(
   }
   match zero_width_marks {
     ZeroWidthMarks::ByGdefLate =>
-      match zero_marks_by_gdef_or_unicode(font, self, unicode_mark_flags, gpos_present) {
+      match
+        zero_marks_by_gdef_or_unicode(
+          font, self, unicode_mark_flags, gpos_present,
+        ) {
         Err(err) => return Err(err)
         Ok(_) => ()
       }
     _ => ()
   }
   if fallback_position && !gpos_present {
-    match fallback_mark_position(font, self, unicode_mark_flags, combining_classes) {
+    match
+      fallback_mark_position(font, self, unicode_mark_flags, combining_classes) {
       Err(err) => return Err(err)
       Ok(_) => ()
     }
@@ -1778,22 +1854,21 @@ fn apply_default_ignorables(buffer : Buffer) -> Unit {
       continue
     }
     let pos = buffer.positions[i]
-    let next_pos =
-      if buffer.direction.is_vertical() {
-        GlyphPosition::{
-          x_advance: 0,
-          y_advance: 0,
-          x_offset: pos.x_offset,
-          y_offset: 0,
-        }
-      } else {
-        GlyphPosition::{
-          x_advance: 0,
-          y_advance: 0,
-          x_offset: 0,
-          y_offset: pos.y_offset,
-        }
+    let next_pos = if buffer.direction.is_vertical() {
+      GlyphPosition::{
+        x_advance: 0,
+        y_advance: 0,
+        x_offset: pos.x_offset,
+        y_offset: 0,
       }
+    } else {
+      GlyphPosition::{
+        x_advance: 0,
+        y_advance: 0,
+        x_offset: 0,
+        y_offset: pos.y_offset,
+      }
+    }
     buffer.positions[i] = next_pos
   }
 }
@@ -1802,11 +1877,15 @@ fn apply_default_ignorables(buffer : Buffer) -> Unit {
 fn apply_variation_selector_fallback(buffer : Buffer) -> Unit {
   match buffer.not_found_variation_selector {
     None => ()
-    Some(glyph) => {
+    Some(glyph) =>
       for i in 0..<buffer.infos.length() {
         let info = buffer.infos[i]
         if @unicode.is_variation_selector(info.unicode) {
-          buffer.infos[i] = GlyphInfo::{ codepoint: glyph, cluster: info.cluster, unicode: info.unicode }
+          buffer.infos[i] = GlyphInfo::{
+            codepoint: glyph,
+            cluster: info.cluster,
+            unicode: info.unicode,
+          }
           buffer.positions[i] = GlyphPosition::{
             x_advance: 0,
             y_advance: 0,
@@ -1815,7 +1894,6 @@ fn apply_variation_selector_fallback(buffer : Buffer) -> Unit {
           }
         }
       }
-    }
   }
 }
 

@@ -35,6 +35,7 @@ pub fn OpbdTable::has_data(self : OpbdTable) -> Bool {
   self.version != 0
 }
 
+///|
 fn read_bounds(
   data : BytesView,
   offset : Int,
@@ -107,7 +108,10 @@ pub fn OpbdTable::bounds(
   }
   if self.format == 1 {
     let contour_point = contour_point
-    if bounds.left < 0 || bounds.top < 0 || bounds.right < 0 || bounds.bottom < 0 {
+    if bounds.left < 0 ||
+      bounds.top < 0 ||
+      bounds.right < 0 ||
+      bounds.bottom < 0 {
       return Ok(None)
     }
     let left = contour_point(glyph, bounds.left)

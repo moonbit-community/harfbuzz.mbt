@@ -15,6 +15,7 @@
 ///|
 let dotted_circle_codepoint : UInt = 0x25CCU
 
+///|
 fn insert_dotted_circle_for_syllables(
   font : @font.Font,
   buffer : Buffer,
@@ -24,7 +25,8 @@ fn insert_dotted_circle_for_syllables(
   if buffer.infos.length() != syllables.length() || buffer.infos.is_empty() {
     return Ok(false)
   }
-  let has_dotted_circle = match font.glyph_for_codepoint(dotted_circle_codepoint) {
+  let has_dotted_circle = match
+    font.glyph_for_codepoint(dotted_circle_codepoint) {
     Err(err) => return Err(Font(err))
     Ok(None) => false
     Ok(Some(_)) => true
@@ -46,7 +48,12 @@ fn insert_dotted_circle_for_syllables(
         cluster: info.cluster,
         unicode: dotted_circle_codepoint,
       })
-      next_positions.push(GlyphPosition::{ x_advance: 0, y_advance: 0, x_offset: 0, y_offset: 0 })
+      next_positions.push(GlyphPosition::{
+        x_advance: 0,
+        y_advance: 0,
+        x_offset: 0,
+        y_offset: 0,
+      })
     }
     next_infos.push(buffer.infos[i])
     next_positions.push(buffer.positions[i])
@@ -59,6 +66,7 @@ fn insert_dotted_circle_for_syllables(
   Ok(inserted)
 }
 
+///|
 fn insert_dotted_circle_for_syllables_with_repha(
   font : @font.Font,
   buffer : Buffer,
@@ -67,11 +75,13 @@ fn insert_dotted_circle_for_syllables_with_repha(
   categories : Array[Int],
   repha_category : Int,
 ) -> Result[Bool, ShapeError] {
-  if buffer.infos.length() != syllables.length() || buffer.infos.is_empty() ||
+  if buffer.infos.length() != syllables.length() ||
+    buffer.infos.is_empty() ||
     categories.length() != buffer.infos.length() {
     return Ok(false)
   }
-  let has_dotted_circle = match font.glyph_for_codepoint(dotted_circle_codepoint) {
+  let has_dotted_circle = match
+    font.glyph_for_codepoint(dotted_circle_codepoint) {
     Err(err) => return Err(Font(err))
     Ok(None) => false
     Ok(Some(_)) => true
@@ -91,8 +101,8 @@ fn insert_dotted_circle_for_syllables_with_repha(
       last_syllable = syllable
       let mut j = i
       while j < buffer.infos.length() &&
-        syllables[j] == syllable &&
-        categories[j] == repha_category {
+            syllables[j] == syllable &&
+            categories[j] == repha_category {
         next_infos.push(buffer.infos[j])
         next_positions.push(buffer.positions[j])
         j = j + 1
@@ -102,8 +112,17 @@ fn insert_dotted_circle_for_syllables_with_repha(
       } else {
         buffer.infos[i].cluster
       }
-      next_infos.push(GlyphInfo::{ codepoint: dotted_circle_codepoint, cluster, unicode: dotted_circle_codepoint })
-      next_positions.push(GlyphPosition::{ x_advance: 0, y_advance: 0, x_offset: 0, y_offset: 0 })
+      next_infos.push(GlyphInfo::{
+        codepoint: dotted_circle_codepoint,
+        cluster,
+        unicode: dotted_circle_codepoint,
+      })
+      next_positions.push(GlyphPosition::{
+        x_advance: 0,
+        y_advance: 0,
+        x_offset: 0,
+        y_offset: 0,
+      })
       while j < buffer.infos.length() && syllables[j] == syllable {
         next_infos.push(buffer.infos[j])
         next_positions.push(buffer.positions[j])
@@ -149,12 +168,15 @@ fn apply_gsub_features_for_syllables(
   let lang_tag = language_to_ot_tag(buffer.language)
   let feature_lookups : Array[Array[Int]] = []
   for feature_tag in feature_tags {
-    let lookup_offsets = match gsub.layout().select_lookup_offsets_for_feature(
-      script_tag,
-      feature_tag,
-      language_tag=lang_tag,
-      include_required=false,
-    ) {
+    let lookup_offsets = match
+      gsub
+      .layout()
+      .select_lookup_offsets_for_feature(
+        script_tag,
+        feature_tag,
+        language_tag=lang_tag,
+        include_required=false,
+      ) {
       Err(err) => return Err(Layout(err))
       Ok(value) => value
     }
@@ -220,25 +242,27 @@ fn apply_gsub_features_for_syllables(
       let lookup_mask = 1U << feature_index
       let result = match gdef {
         None =>
-          match gsub.apply_with_lookups_and_masks(
-            sub_glyphs,
-            sub_clusters,
-            lookup_offsets[:],
-            masks=sub_masks,
-            lookup_mask=lookup_mask,
-          ) {
+          match
+            gsub.apply_with_lookups_and_masks(
+              sub_glyphs,
+              sub_clusters,
+              lookup_offsets[:],
+              masks=sub_masks,
+              lookup_mask~,
+            ) {
             Err(err) => return Err(Layout(err))
             Ok(value) => value
           }
         Some(gdef) =>
-          match gsub.apply_with_lookups_and_masks(
-            sub_glyphs,
-            sub_clusters,
-            lookup_offsets[:],
-            gdef=gdef,
-            masks=sub_masks,
-            lookup_mask=lookup_mask,
-          ) {
+          match
+            gsub.apply_with_lookups_and_masks(
+              sub_glyphs,
+              sub_clusters,
+              lookup_offsets[:],
+              gdef~,
+              masks=sub_masks,
+              lookup_mask~,
+            ) {
             Err(err) => return Err(Layout(err))
             Ok(value) => value
           }
@@ -313,7 +337,11 @@ fn apply_gsub_features_for_syllables(
       } else {
         0U
       }
-      infos.push(GlyphInfo::{ codepoint: glyph, cluster: current_clusters[idx], unicode })
+      infos.push(GlyphInfo::{
+        codepoint: glyph,
+        cluster: current_clusters[idx],
+        unicode,
+      })
       positions.push(pos)
     }
     buffer.infos = infos

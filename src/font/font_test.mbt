@@ -361,7 +361,12 @@ fn build_gvar_table_composite(tuple_data : Bytes) -> Bytes {
 ///|
 fn build_font_bytes_gvar_composite() -> Bytes {
   let glyf = build_glyf_table_composite()
-  let offsets : Array[Int] = [0, 0, glyf.length() - build_glyf_composite_one_component().length(), glyf.length()]
+  let offsets : Array[Int] = [
+    0,
+    0,
+    glyf.length() - build_glyf_composite_one_component().length(),
+    glyf.length(),
+  ]
   let loca = build_loca_short(offsets)
   let gvar = build_gvar_table_composite(build_gvar_tuple_composite())
   let tables : Array[(@common.Tag, Bytes)] = [
@@ -427,6 +432,7 @@ fn build_cmap_format12(start : UInt, end : UInt, start_gid : UInt) -> Bytes {
   Bytes::from_array(bytes)
 }
 
+///|
 fn push_u32var(bytes : Array[Byte], value : UInt) -> Unit {
   if value < 0x80U {
     bytes.push(value.reinterpret_as_int().to_byte())
@@ -460,6 +466,7 @@ fn push_u32var(bytes : Array[Byte], value : UInt) -> Unit {
   bytes.push((value & 0xFFU).reinterpret_as_int().to_byte())
 }
 
+///|
 fn build_varc_table_bounds() -> Bytes {
   let record : Array[Byte] = []
   let flags = 16U // HAVE_TRANSLATE_X
@@ -491,6 +498,7 @@ fn build_varc_table_bounds() -> Bytes {
   Bytes::from_array(bytes)
 }
 
+///|
 fn build_font_bytes_varc_bounds() -> Bytes {
   let glyf = build_glyf_table()
   let loca = build_loca_short([0, 0, glyf.length(), glyf.length()])
@@ -532,7 +540,10 @@ fn build_font_bytes_hmtx_long_metrics() -> Bytes {
     (@common.Tag::from_chars('h', 'e', 'a', 'd'), build_head(1000, 0)),
     (@common.Tag::from_chars('m', 'a', 'x', 'p'), build_maxp(5)),
     (@common.Tag::from_chars('h', 'h', 'e', 'a'), build_hhea(2)),
-    (@common.Tag::from_chars('h', 'm', 't', 'x'), build_hmtx_long_metrics_case()),
+    (
+      @common.Tag::from_chars('h', 'm', 't', 'x'),
+      build_hmtx_long_metrics_case(),
+    ),
   ]
   build_sfnt(tables)
 }
@@ -541,18 +552,18 @@ fn build_font_bytes_hmtx_long_metrics() -> Bytes {
 fn build_fvar_table() -> Bytes {
   Bytes::from_array([
     0x00, 0x01, 0x00, 0x00, // version 1.0
-    0x00, 0x10, // axis offset
-    0x00, 0x02, // reserved
-    0x00, 0x01, // axis count
-    0x00, 0x14, // axis size
-    0x00, 0x00, // instance count
-    0x00, 0x08, // instance size
-    0x77, 0x67, 0x68, 0x74, // 'wght'
-    0xFF, 0xFF, 0x00, 0x00, // min -1.0
-    0x00, 0x00, 0x00, 0x00, // default 0.0
-    0x00, 0x01, 0x00, 0x00, // max 1.0
-    0x00, 0x00, // flags
-    0x01, 0x00, // name id
+     0x00, 0x10, // axis offset
+     0x00, 0x02, // reserved
+     0x00, 0x01, // axis count
+     0x00, 0x14, // axis size
+     0x00, 0x00, // instance count
+     0x00, 0x08, // instance size
+     0x77, 0x67, 0x68, 0x74, // 'wght'
+     0xFF, 0xFF, 0x00, 0x00, // min -1.0
+     0x00, 0x00, 0x00, 0x00, // default 0.0
+     0x00, 0x01, 0x00, 0x00, // max 1.0
+     0x00, 0x00, // flags
+     0x01, 0x00, // name id
   ])
 }
 
@@ -560,13 +571,13 @@ fn build_fvar_table() -> Bytes {
 fn build_avar_table() -> Bytes {
   Bytes::from_array([
     0x00, 0x01, 0x00, 0x00, // version 1.0
-    0x00, 0x00, // reserved
-    0x00, 0x01, // axis count
-    0x00, 0x04, // segment count
-    0xC0, 0x00, 0xC0, 0x00, // -1.0 -> -1.0
-    0x00, 0x00, 0x00, 0x00, // 0.0 -> 0.0
-    0x20, 0x00, 0x30, 0x00, // 0.5 -> 0.75
-    0x40, 0x00, 0x40, 0x00, // 1.0 -> 1.0
+     0x00, 0x00, // reserved
+     0x00, 0x01, // axis count
+     0x00, 0x04, // segment count
+     0xC0, 0x00, 0xC0, 0x00, // -1.0 -> -1.0
+     0x00, 0x00, 0x00, 0x00, // 0.0 -> 0.0
+     0x20, 0x00, 0x30, 0x00, // 0.5 -> 0.75
+     0x40, 0x00, 0x40, 0x00, // 1.0 -> 1.0
   ])
 }
 
@@ -1032,7 +1043,10 @@ test "font gvar composite deltas" {
     None => fail("missing gvar")
     Some(gvar) => {
       let data = gvar.glyph_variation_data(2)
-      @debug.debug_inspect(data.map(bytes => bytes.length()), content="Some(18)")
+      @debug.debug_inspect(
+        data.map(bytes => bytes.length()),
+        content="Some(18)",
+      )
       let deltas = match gvar.glyph_deltas(2, [16384], 5) {
         Err(err) => fail("gvar deltas error: \{@debug.to_string(err)}")
         Ok(value) => value
@@ -1084,7 +1098,8 @@ test "font mvar delta" {
     Err(err) => fail("set variations failed: \{@debug.to_string(err)}")
     Ok(_) => ()
   }
-  let delta = match font.mvar_delta(@common.Tag::from_chars('T', 'E', 'S', 'T')) {
+  let delta = match
+    font.mvar_delta(@common.Tag::from_chars('T', 'E', 'S', 'T')) {
     Err(err) => fail("mvar error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -1121,23 +1136,25 @@ test "font glyph bounds varc composite" {
     Ok(None) => fail("missing bounds")
     Ok(Some(value)) => value
   }
-  @debug.debug_inspect((bounds.x_min, bounds.y_min, bounds.x_max, bounds.y_max), content="(25, -2, 70, 100)")
+  @debug.debug_inspect(
+    (bounds.x_min, bounds.y_min, bounds.x_max, bounds.y_max),
+    content="(25, -2, 70, 100)",
+  )
 }
 
+///|
 test "font draw glyph simple square" {
   let bytes = build_font_bytes_simple_square()
   let font = Font::from_bytes(bytes)
   let ops : Array[String] = []
   let funcs : @draw.DrawFuncs[Array[String]] = @draw.DrawFuncs::new()
-  funcs.set_move_to(Some((data, _st, x, y) => {
-    data.push("M\{x.to_int()},\{y.to_int()}")
-  }))
-  funcs.set_line_to(Some((data, _st, x, y) => {
-    data.push("L\{x.to_int()},\{y.to_int()}")
-  }))
-  funcs.set_close_path(Some((data, _st) => {
-    data.push("Z")
-  }))
+  funcs.set_move_to(
+    Some((data, _st, x, y) => data.push("M\{x.to_int()},\{y.to_int()}")),
+  )
+  funcs.set_line_to(
+    Some((data, _st, x, y) => data.push("L\{x.to_int()},\{y.to_int()}")),
+  )
+  funcs.set_close_path(Some((data, _st) => data.push("Z")))
   let ok = match font.draw_glyph_or_fail(0U, funcs, ops) {
     Err(err) => fail("draw error: \{@debug.to_string(err)}")
     Ok(value) => value

@@ -12,9 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+///|
 let max_paint_depth : Int = 64
 
-fn resolve_offset(base : Int, rel : Int, data : BytesView) -> Result[Int, ColorError] {
+///|
+fn resolve_offset(
+  base : Int,
+  rel : Int,
+  data : BytesView,
+) -> Result[Int, ColorError] {
   let abs = base + rel
   if abs < 0 || abs >= data.length() {
     Err(UnexpectedEof)
@@ -23,6 +29,7 @@ fn resolve_offset(base : Int, rel : Int, data : BytesView) -> Result[Int, ColorE
   }
 }
 
+///|
 fn parse_color_stop(
   data : BytesView,
   offset : Int,
@@ -54,6 +61,7 @@ fn parse_color_stop(
   }
 }
 
+///|
 fn parse_color_line(
   data : BytesView,
   offset : Int,
@@ -86,6 +94,7 @@ fn parse_color_line(
   }
 }
 
+///|
 fn parse_affine(
   data : BytesView,
   offset : Int,
@@ -118,6 +127,7 @@ fn parse_affine(
   }
 }
 
+///|
 fn parse_paint(
   data : BytesView,
   offset : Int,
@@ -176,8 +186,17 @@ fn parse_paint(
             (_, _, _, _, Err(err), _, _) => Err(err)
             (_, _, _, _, _, Err(err), _) => Err(err)
             (_, _, _, _, _, _, Err(err)) => Err(err)
-            (Ok(color_line_offset), Ok(x0), Ok(y0), Ok(x1), Ok(y1), Ok(x2), Ok(y2)) => {
-              let line_offset = match resolve_offset(offset, color_line_offset, data) {
+            (
+              Ok(color_line_offset),
+              Ok(x0),
+              Ok(y0),
+              Ok(x1),
+              Ok(y1),
+              Ok(x2),
+              Ok(y2),
+            ) => {
+              let line_offset = match
+                resolve_offset(offset, color_line_offset, data) {
                 Err(err) => return Err(err)
                 Ok(value) => value
               }
@@ -194,16 +213,11 @@ fn parse_paint(
                   Ok(value) => var_idx_base = Some(value)
                 }
               }
-              Ok(@paint.Paint::LinearGradient(
-                color_line,
-                x0,
-                y0,
-                x1,
-                y1,
-                x2,
-                y2,
-                var_idx_base,
-              ))
+              Ok(
+                @paint.Paint::LinearGradient(
+                  color_line, x0, y0, x1, y1, x2, y2, var_idx_base,
+                ),
+              )
             }
           }
         }
@@ -223,8 +237,17 @@ fn parse_paint(
             (_, _, _, _, Err(err), _, _) => Err(err)
             (_, _, _, _, _, Err(err), _) => Err(err)
             (_, _, _, _, _, _, Err(err)) => Err(err)
-            (Ok(color_line_offset), Ok(x0), Ok(y0), Ok(r0), Ok(x1), Ok(y1), Ok(r1)) => {
-              let line_offset = match resolve_offset(offset, color_line_offset, data) {
+            (
+              Ok(color_line_offset),
+              Ok(x0),
+              Ok(y0),
+              Ok(r0),
+              Ok(x1),
+              Ok(y1),
+              Ok(r1),
+            ) => {
+              let line_offset = match
+                resolve_offset(offset, color_line_offset, data) {
                 Err(err) => return Err(err)
                 Ok(value) => value
               }
@@ -241,16 +264,11 @@ fn parse_paint(
                   Ok(value) => var_idx_base = Some(value)
                 }
               }
-              Ok(@paint.Paint::RadialGradient(
-                color_line,
-                x0,
-                y0,
-                r0,
-                x1,
-                y1,
-                r1,
-                var_idx_base,
-              ))
+              Ok(
+                @paint.Paint::RadialGradient(
+                  color_line, x0, y0, r0, x1, y1, r1, var_idx_base,
+                ),
+              )
             }
           }
         }
@@ -260,14 +278,22 @@ fn parse_paint(
           let center_y = read_i16(data, offset + 6)
           let start_angle = read_i16(data, offset + 8)
           let end_angle = read_i16(data, offset + 10)
-          match (color_line_offset, center_x, center_y, start_angle, end_angle) {
+          match
+            (color_line_offset, center_x, center_y, start_angle, end_angle) {
             (Err(err), _, _, _, _) => Err(err)
             (_, Err(err), _, _, _) => Err(err)
             (_, _, Err(err), _, _) => Err(err)
             (_, _, _, Err(err), _) => Err(err)
             (_, _, _, _, Err(err)) => Err(err)
-            (Ok(color_line_offset), Ok(center_x), Ok(center_y), Ok(start_angle), Ok(end_angle)) => {
-              let line_offset = match resolve_offset(offset, color_line_offset, data) {
+            (
+              Ok(color_line_offset),
+              Ok(center_x),
+              Ok(center_y),
+              Ok(start_angle),
+              Ok(end_angle),
+            ) => {
+              let line_offset = match
+                resolve_offset(offset, color_line_offset, data) {
                 Err(err) => return Err(err)
                 Ok(value) => value
               }
@@ -284,14 +310,11 @@ fn parse_paint(
                   Ok(value) => var_idx_base = Some(value)
                 }
               }
-              Ok(@paint.Paint::SweepGradient(
-                color_line,
-                center_x,
-                center_y,
-                start_angle,
-                end_angle,
-                var_idx_base,
-              ))
+              Ok(
+                @paint.Paint::SweepGradient(
+                  color_line, center_x, center_y, start_angle, end_angle, var_idx_base,
+                ),
+              )
             }
           }
         }
@@ -302,7 +325,8 @@ fn parse_paint(
             (Err(err), _) => Err(err)
             (_, Err(err)) => Err(err)
             (Ok(paint_offset), Ok(glyph_id)) => {
-              let child_offset = match resolve_offset(offset, paint_offset, data) {
+              let child_offset = match
+                resolve_offset(offset, paint_offset, data) {
                 Err(err) => return Err(err)
                 Ok(value) => value
               }
@@ -332,7 +356,8 @@ fn parse_paint(
                 Err(err) => return Err(err)
                 Ok(value) => value
               }
-              let transform_abs = match resolve_offset(offset, transform_offset, data) {
+              let transform_abs = match
+                resolve_offset(offset, transform_offset, data) {
                 Err(err) => return Err(err)
                 Ok(value) => value
               }
@@ -422,7 +447,13 @@ fn parse_paint(
             (_, _, Err(err), _, _) => Err(err)
             (_, _, _, Err(err), _) => Err(err)
             (_, _, _, _, Err(err)) => Err(err)
-            (Ok(src_offset), Ok(scale_x), Ok(scale_y), Ok(center_x), Ok(center_y)) => {
+            (
+              Ok(src_offset),
+              Ok(scale_x),
+              Ok(scale_y),
+              Ok(center_x),
+              Ok(center_y),
+            ) => {
               let src_abs = match resolve_offset(offset, src_offset, data) {
                 Err(err) => return Err(err)
                 Ok(value) => value
@@ -440,14 +471,11 @@ fn parse_paint(
                   Ok(value) => var_idx_base = Some(value)
                 }
               }
-              Ok(@paint.Paint::ScaleAroundCenter(
-                scale_x,
-                scale_y,
-                center_x,
-                center_y,
-                var_idx_base,
-                src,
-              ))
+              Ok(
+                @paint.Paint::ScaleAroundCenter(
+                  scale_x, scale_y, center_x, center_y, var_idx_base, src,
+                ),
+              )
             }
           }
         }
@@ -507,13 +535,11 @@ fn parse_paint(
                   Ok(value) => var_idx_base = Some(value)
                 }
               }
-              Ok(@paint.Paint::ScaleUniformAroundCenter(
-                scale,
-                center_x,
-                center_y,
-                var_idx_base,
-                src,
-              ))
+              Ok(
+                @paint.Paint::ScaleUniformAroundCenter(
+                  scale, center_x, center_y, var_idx_base, src,
+                ),
+              )
             }
           }
         }
@@ -573,13 +599,11 @@ fn parse_paint(
                   Ok(value) => var_idx_base = Some(value)
                 }
               }
-              Ok(@paint.Paint::RotateAroundCenter(
-                angle,
-                center_x,
-                center_y,
-                var_idx_base,
-                src,
-              ))
+              Ok(
+                @paint.Paint::RotateAroundCenter(
+                  angle, center_x, center_y, var_idx_base, src,
+                ),
+              )
             }
           }
         }
@@ -643,14 +667,11 @@ fn parse_paint(
                   Ok(value) => var_idx_base = Some(value)
                 }
               }
-              Ok(@paint.Paint::SkewAroundCenter(
-                x_skew,
-                y_skew,
-                center_x,
-                center_y,
-                var_idx_base,
-                src,
-              ))
+              Ok(
+                @paint.Paint::SkewAroundCenter(
+                  x_skew, y_skew, center_x, center_y, var_idx_base, src,
+                ),
+              )
             }
           }
         }
@@ -667,7 +688,8 @@ fn parse_paint(
                 Err(err) => return Err(err)
                 Ok(value) => value
               }
-              let backdrop_abs = match resolve_offset(offset, backdrop_offset, data) {
+              let backdrop_abs = match
+                resolve_offset(offset, backdrop_offset, data) {
                 Err(err) => return Err(err)
                 Ok(value) => value
               }
@@ -689,6 +711,7 @@ fn parse_paint(
   }
 }
 
+///|
 fn parse_paint_root(
   data : BytesView,
   offset : Int,

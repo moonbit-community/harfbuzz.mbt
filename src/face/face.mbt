@@ -40,7 +40,11 @@ pub fn face_count(blob : @blob.Blob) -> Int {
     let b2 = data[10].to_uint()
     let b3 = data[11].to_uint()
     let value = ((b0 << 24) | (b1 << 16) | (b2 << 8) | b3).reinterpret_as_int()
-    if value < 0 { 0 } else { value }
+    if value < 0 {
+      0
+    } else {
+      value
+    }
   } else {
     let sfnt = @common.Tag::from_bytes(0x00, 0x01, 0x00, 0x00)
     let otto = @common.Tag::from_chars('O', 'T', 'T', 'O')

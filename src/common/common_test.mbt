@@ -39,9 +39,15 @@ test "direction parsing and helpers" {
   @debug.debug_inspect(rev.to_string(), content="rtl")
   assert_true(rev.is_backward())
   @debug.debug_inspect(Direction::from_string("rtl").to_string(), content="rtl")
-  @debug.debug_inspect(Direction::from_string("x").to_string(), content="invalid")
+  @debug.debug_inspect(
+    Direction::from_string("x").to_string(),
+    content="invalid",
+  )
   @debug.debug_inspect(Direction::from_string("ttb").to_string(), content="ttb")
-  @debug.debug_inspect(Direction::from_string("t", len=0).to_string(), content="invalid")
+  @debug.debug_inspect(
+    Direction::from_string("t", len=0).to_string(),
+    content="invalid",
+  )
   let invalid = Direction::from_string("")
   @debug.debug_inspect(invalid.reverse().to_string(), content="invalid")
 }
@@ -77,23 +83,62 @@ test "script aliases and direction" {
 
 ///|
 test "script tag aliases" {
-  @debug.debug_inspect(Script::from_string("Aran").to_tag().to_string(), content="Arab")
-  @debug.debug_inspect(Script::from_string("Cyrs").to_tag().to_string(), content="Cyrl")
-  @debug.debug_inspect(Script::from_string("Geok").to_tag().to_string(), content="Geor")
-  @debug.debug_inspect(Script::from_string("Latf").to_tag().to_string(), content="Latn")
-  @debug.debug_inspect(Script::from_string("Latg").to_tag().to_string(), content="Latn")
-  @debug.debug_inspect(Script::from_string("Syrn").to_tag().to_string(), content="Syrc")
-  @debug.debug_inspect(Script::from_string("Qaac").to_tag().to_string(), content="Copt")
-  @debug.debug_inspect(Script::from_string("Jamo").to_tag().to_string(), content="Hang")
+  @debug.debug_inspect(
+    Script::from_string("Aran").to_tag().to_string(),
+    content="Arab",
+  )
+  @debug.debug_inspect(
+    Script::from_string("Cyrs").to_tag().to_string(),
+    content="Cyrl",
+  )
+  @debug.debug_inspect(
+    Script::from_string("Geok").to_tag().to_string(),
+    content="Geor",
+  )
+  @debug.debug_inspect(
+    Script::from_string("Latf").to_tag().to_string(),
+    content="Latn",
+  )
+  @debug.debug_inspect(
+    Script::from_string("Latg").to_tag().to_string(),
+    content="Latn",
+  )
+  @debug.debug_inspect(
+    Script::from_string("Syrn").to_tag().to_string(),
+    content="Syrc",
+  )
+  @debug.debug_inspect(
+    Script::from_string("Qaac").to_tag().to_string(),
+    content="Copt",
+  )
+  @debug.debug_inspect(
+    Script::from_string("Jamo").to_tag().to_string(),
+    content="Hang",
+  )
 }
 
 ///|
 test "script tag normalization" {
-  @debug.debug_inspect(Script::from_string("zyyy").to_tag().to_string(), content="Zyyy")
-  @debug.debug_inspect(Script::from_string("zinh").to_tag().to_string(), content="Zinh")
-  @debug.debug_inspect(Script::from_string("zzzz").to_tag().to_string(), content="Zzzz")
-  @debug.debug_inspect(Script::from_string("kana").to_tag().to_string(), content="Kana")
-  @debug.debug_inspect(Script::from_string("math").to_tag().to_string(), content="Math")
+  @debug.debug_inspect(
+    Script::from_string("zyyy").to_tag().to_string(),
+    content="Zyyy",
+  )
+  @debug.debug_inspect(
+    Script::from_string("zinh").to_tag().to_string(),
+    content="Zinh",
+  )
+  @debug.debug_inspect(
+    Script::from_string("zzzz").to_tag().to_string(),
+    content="Zzzz",
+  )
+  @debug.debug_inspect(
+    Script::from_string("kana").to_tag().to_string(),
+    content="Kana",
+  )
+  @debug.debug_inspect(
+    Script::from_string("math").to_tag().to_string(),
+    content="Math",
+  )
 }
 
 ///|
@@ -111,9 +156,18 @@ test "script horizontal direction mapping" {
     script_old_italic.horizontal_direction().to_string(),
     content="invalid",
   )
-  @debug.debug_inspect(script_tifinagh.horizontal_direction().to_string(), content="invalid")
-  @debug.debug_inspect(script_adlam.horizontal_direction().to_string(), content="rtl")
-  @debug.debug_inspect(script_latin.horizontal_direction().to_string(), content="ltr")
+  @debug.debug_inspect(
+    script_tifinagh.horizontal_direction().to_string(),
+    content="invalid",
+  )
+  @debug.debug_inspect(
+    script_adlam.horizontal_direction().to_string(),
+    content="rtl",
+  )
+  @debug.debug_inspect(
+    script_latin.horizontal_direction().to_string(),
+    content="ltr",
+  )
 }
 
 ///|
@@ -128,7 +182,11 @@ fn expect_parse_int(result : (Int, Int)?, value : Int, idx : Int) -> Unit raise 
 }
 
 ///|
-fn expect_parse_uint(result : (UInt, Int)?, value : UInt, idx : Int) -> Unit raise {
+fn expect_parse_uint(
+  result : (UInt, Int)?,
+  value : UInt,
+  idx : Int,
+) -> Unit raise {
   match result {
     None => fail("expected uint parse")
     Some((parsed, next_idx)) => {
@@ -139,7 +197,11 @@ fn expect_parse_uint(result : (UInt, Int)?, value : UInt, idx : Int) -> Unit rai
 }
 
 ///|
-fn expect_parse_double(result : (Double, Int)?, thousand : Int, idx : Int) -> Unit raise {
+fn expect_parse_double(
+  result : (Double, Int)?,
+  thousand : Int,
+  idx : Int,
+) -> Unit raise {
   match result {
     None => fail("expected double parse")
     Some((parsed, next_idx)) => {
@@ -169,7 +231,11 @@ test "number parse double" {
   expect_parse_double(parse_double("0.123e0", end=7, whole=true), 123, 7)
   expect_parse_double(parse_double("123e-3", end=6, whole=true), 123, 6)
   expect_parse_double(parse_double(".000123e+3", end=10, whole=true), 123, 10)
-  expect_parse_double(parse_double("-.000000123e6", end=13, whole=true), -123, 13)
+  expect_parse_double(
+    parse_double("-.000000123e6", end=13, whole=true),
+    -123,
+    13,
+  )
   expect_parse_double(parse_double("-1.23E-1", end=8, whole=true), -123, 8)
 }
 
@@ -183,7 +249,10 @@ test "codepoint set basics" {
   assert_true(set.add_sorted_array([12U, 13U, 14U]))
   set.del(3U)
   set.del_range(10U, 11U)
-  @debug.debug_inspect(set.to_sorted_array(), content="[2, 4, 6, 7, 12, 13, 14]")
+  @debug.debug_inspect(
+    set.to_sorted_array(),
+    content="[2, 4, 6, 7, 12, 13, 14]",
+  )
   @debug.debug_inspect(set.population(), content="7")
   @debug.debug_inspect(set.get_min(), content="2")
   @debug.debug_inspect(set.get_max(), content="14")
@@ -390,12 +459,7 @@ test "serialize objects detects overflow" {
 test "serialize objects whence and signed offsets" {
   let obj0 = SerializeObject::new(Bytes::from_array([0, 0, 0, 0]))
   obj0.real_links.push(
-    SerializeLink::new(
-      2,
-      0,
-      1,
-      whence=SerializeWhence::Tail,
-    ),
+    SerializeLink::new(2, 0, 1, whence=SerializeWhence::Tail),
   )
   let obj1 = SerializeObject::new(Bytes::from_array([0x11, 0x22]))
   let result = serialize_objects([obj0, obj1])
@@ -409,12 +473,7 @@ test "serialize objects whence and signed offsets" {
 
   let obj2 = SerializeObject::new(Bytes::from_array([0, 0]))
   obj2.real_links.push(
-    SerializeLink::new(
-      2,
-      0,
-      1,
-      whence=SerializeWhence::Absolute,
-    ),
+    SerializeLink::new(2, 0, 1, whence=SerializeWhence::Absolute),
   )
   let obj3 = SerializeObject::new(Bytes::from_array([0xAA, 0xBB]))
   let result2 = serialize_objects([obj2, obj3])
@@ -428,14 +487,7 @@ test "serialize objects whence and signed offsets" {
 
   let obj4 = SerializeObject::new(Bytes::from_array([0, 0]))
   let obj5 = SerializeObject::new(Bytes::from_array([0, 0]))
-  obj5.real_links.push(
-    SerializeLink::new(
-      2,
-      0,
-      0,
-      is_signed=true,
-    ),
-  )
+  obj5.real_links.push(SerializeLink::new(2, 0, 0, is_signed=true))
   let result3 = serialize_objects([obj4, obj5])
   match result3 {
     Err(err) => fail("serialize failed: \{@debug.to_string(err)}")

@@ -47,12 +47,10 @@ pub fn GdefTable::parse(blob : @blob.Blob) -> Result[GdefTable, OtLayoutError] {
       let attach_list_offset = read_u16_int(data, 6)
       let lig_caret_list_offset = read_u16_int(data, 8)
       let mark_attach_class_def_offset = read_u16_int(data, 10)
-      match (
-        glyph_class_def_offset,
-        attach_list_offset,
-        lig_caret_list_offset,
-        mark_attach_class_def_offset,
-      ) {
+      match
+        (
+          glyph_class_def_offset, attach_list_offset, lig_caret_list_offset, mark_attach_class_def_offset,
+        ) {
         (Err(err), _, _, _) => Err(err)
         (_, Err(err), _, _) => Err(err)
         (_, _, Err(err), _) => Err(err)
@@ -63,15 +61,14 @@ pub fn GdefTable::parse(blob : @blob.Blob) -> Result[GdefTable, OtLayoutError] {
           Ok(lig_caret_list_offset),
           Ok(mark_attach_class_def_offset),
         ) => {
-          let mark_glyph_sets_def_offset =
-            if version >= 0x00010002U {
-              match read_u16_int(data, 12) {
-                Err(err) => return Err(err)
-                Ok(value) => if value == 0 { None } else { Some(value) }
-              }
-            } else {
-              None
+          let mark_glyph_sets_def_offset = if version >= 0x00010002U {
+            match read_u16_int(data, 12) {
+              Err(err) => return Err(err)
+              Ok(value) => if value == 0 { None } else { Some(value) }
             }
+          } else {
+            None
+          }
           let header = GdefHeader::{
             version,
             glyph_class_def_offset: if glyph_class_def_offset == 0 {

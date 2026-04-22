@@ -19,19 +19,18 @@ struct PointDelta {
   mut referenced : Bool
 } derive(Debug, ToJson)
 
+///|
 fn clone_points(points : Array[@sfnt.GlyphPoint]) -> Array[@sfnt.GlyphPoint] {
   let out : Array[@sfnt.GlyphPoint] = []
   for point in points {
-    out.push(@sfnt.GlyphPoint::new(
-      point.x,
-      point.y,
-      point.flag,
-      point.is_end_point,
-    ))
+    out.push(
+      @sfnt.GlyphPoint::new(point.x, point.y, point.flag, point.is_end_point),
+    )
   }
   out
 }
 
+///|
 fn make_deltas(count : Int) -> Array[PointDelta] {
   let deltas : Array[PointDelta] = []
   for _ in 0..<count {
@@ -40,10 +39,16 @@ fn make_deltas(count : Int) -> Array[PointDelta] {
   deltas
 }
 
+///|
 fn next_index(i : Int, start : Int, end : Int) -> Int {
-  if i >= end { start } else { i + 1 }
+  if i >= end {
+    start
+  } else {
+    i + 1
+  }
 }
 
+///|
 fn infer_delta(
   orig_points : Array[@sfnt.GlyphPoint],
   deltas : Array[PointDelta],
@@ -54,7 +59,11 @@ fn infer_delta(
 ) -> Double {
   let prev_val = if use_x { orig_points[prev].x } else { orig_points[prev].y }
   let next_val = if use_x { orig_points[next].x } else { orig_points[next].y }
-  let target_val = if use_x { orig_points[target].x } else { orig_points[target].y }
+  let target_val = if use_x {
+    orig_points[target].x
+  } else {
+    orig_points[target].y
+  }
   let prev_delta = if use_x { deltas[prev].x } else { deltas[prev].y }
   let next_delta = if use_x { deltas[next].x } else { deltas[next].y }
   if prev_val == next_val {
@@ -72,6 +81,7 @@ fn infer_delta(
   prev_delta + ratio * (next_delta - prev_delta)
 }
 
+///|
 fn iup_interpolate(
   orig_points : Array[@sfnt.GlyphPoint],
   deltas : Array[PointDelta],
@@ -87,7 +97,7 @@ fn iup_interpolate(
       break
     }
     let refs : Array[Int] = []
-    for i in start..=end {
+    for i in start..<=end {
       if deltas[i].referenced {
         refs.push(i)
       }
@@ -114,6 +124,7 @@ fn iup_interpolate(
   }
 }
 
+///|
 fn apply_gvar_deltas_to_points(
   points : Array[@sfnt.GlyphPoint],
   coords : Array[Int],
@@ -172,12 +183,11 @@ fn apply_gvar_deltas_to_points(
                 continue
               }
               if i < tuple.deltas_x.length() {
-                deltas[idx].x =
-                  deltas[idx].x + tuple.deltas_x[i].to_double() * scalar
+                deltas[idx].x = deltas[idx].x +
+                  tuple.deltas_x[i].to_double() * scalar
               }
               if i < deltas_y.length() {
-                deltas[idx].y =
-                  deltas[idx].y + deltas_y[i].to_double() * scalar
+                deltas[idx].y = deltas[idx].y + deltas_y[i].to_double() * scalar
               }
               deltas[idx].referenced = true
             }
@@ -196,6 +206,7 @@ fn apply_gvar_deltas_to_points(
   }
 }
 
+///|
 fn transform_points(
   points : Array[@sfnt.GlyphPoint],
   a : Double,
@@ -211,6 +222,7 @@ fn transform_points(
   }
 }
 
+///|
 fn translate_points(
   points : Array[@sfnt.GlyphPoint],
   dx : Double,
@@ -224,6 +236,7 @@ fn translate_points(
   }
 }
 
+///|
 fn apply_component_transform(
   points : Array[@sfnt.GlyphPoint],
   component : @sfnt.CompositeComponent,
@@ -238,6 +251,7 @@ fn apply_component_transform(
   }
 }
 
+///|
 fn build_phantom_points(
   bounds : @sfnt.GlyphBounds?,
   hmtx : @sfnt.HmtxTable,
@@ -272,33 +286,18 @@ fn build_phantom_points(
   }
   let v_orig = y_max + tsb
   let phantoms : Array[@sfnt.GlyphPoint] = []
-  phantoms.push(@sfnt.GlyphPoint::new(
-    h_delta.to_double(),
-    0.0,
-    0,
-    false,
-  ))
-  phantoms.push(@sfnt.GlyphPoint::new(
-    (h_adv + h_delta).to_double(),
-    0.0,
-    0,
-    false,
-  ))
-  phantoms.push(@sfnt.GlyphPoint::new(
-    0.0,
-    v_orig.to_double(),
-    0,
-    false,
-  ))
-  phantoms.push(@sfnt.GlyphPoint::new(
-    0.0,
-    (v_orig - v_adv).to_double(),
-    0,
-    false,
-  ))
+  phantoms.push(@sfnt.GlyphPoint::new(h_delta.to_double(), 0.0, 0, false))
+  phantoms.push(
+    @sfnt.GlyphPoint::new((h_adv + h_delta).to_double(), 0.0, 0, false),
+  )
+  phantoms.push(@sfnt.GlyphPoint::new(0.0, v_orig.to_double(), 0, false))
+  phantoms.push(
+    @sfnt.GlyphPoint::new(0.0, (v_orig - v_adv).to_double(), 0, false),
+  )
   Ok(phantoms)
 }
 
+///|
 fn split_phantoms(
   points : Array[@sfnt.GlyphPoint],
 ) -> (Array[@sfnt.GlyphPoint], Array[@sfnt.GlyphPoint]) {
@@ -319,7 +318,10 @@ fn split_phantoms(
   (outlines, phantoms)
 }
 
-fn ensure_four_phantoms(points : Array[@sfnt.GlyphPoint]) -> Array[@sfnt.GlyphPoint] {
+///|
+fn ensure_four_phantoms(
+  points : Array[@sfnt.GlyphPoint],
+) -> Array[@sfnt.GlyphPoint] {
   if points.length() >= 4 {
     return points
   }
@@ -333,6 +335,7 @@ fn ensure_four_phantoms(points : Array[@sfnt.GlyphPoint]) -> Array[@sfnt.GlyphPo
   out
 }
 
+///|
 fn glyph_bounds_from_points(
   points : Array[@sfnt.GlyphPoint],
   contour_count : Int,
@@ -347,10 +350,18 @@ fn glyph_bounds_from_points(
   let mut max_y = points[0].y
   for i in 1..<contour_points {
     let p = points[i]
-    if p.x < min_x { min_x = p.x }
-    if p.x > max_x { max_x = p.x }
-    if p.y < min_y { min_y = p.y }
-    if p.y > max_y { max_y = p.y }
+    if p.x < min_x {
+      min_x = p.x
+    }
+    if p.x > max_x {
+      max_x = p.x
+    }
+    if p.y < min_y {
+      min_y = p.y
+    }
+    if p.y > max_y {
+      max_y = p.y
+    }
   }
   let x_min = @math.floor(min_x).to_int()
   let y_min = @math.floor(min_y).to_int()
@@ -359,6 +370,7 @@ fn glyph_bounds_from_points(
   Some(@sfnt.GlyphBounds::new(contour_count, x_min, y_min, x_max, y_max))
 }
 
+///|
 fn Font::glyph_points_with_gvar_depth(
   self : Font,
   glyph : UInt,
@@ -418,12 +430,9 @@ fn Font::glyph_points_with_gvar_depth(
           }
           let trans_points : Array[@sfnt.GlyphPoint] = []
           for component in components {
-            trans_points.push(@sfnt.GlyphPoint::new(
-              component.tx,
-              component.ty,
-              0,
-              true,
-            ))
+            trans_points.push(
+              @sfnt.GlyphPoint::new(component.tx, component.ty, 0, true),
+            )
           }
           let phantoms = match build_phantom_points(bounds, hmtx, vmtx, index) {
             Err(err) => return Err(err)
@@ -444,7 +453,8 @@ fn Font::glyph_points_with_gvar_depth(
             match gvar {
               None => ()
               Some(gvar) =>
-                match apply_gvar_deltas_to_points(var_points, coords, gvar, index) {
+                match
+                  apply_gvar_deltas_to_points(var_points, coords, gvar, index) {
                   Err(err) => return Err(Var(err))
                   Ok(_) => ()
                 }
@@ -467,18 +477,17 @@ fn Font::glyph_points_with_gvar_depth(
             match comp_gid {
               None => ()
               Some(comp_gid) => {
-                let comp_points = match self.glyph_points_with_gvar_depth(
-                  comp_gid,
-                  coords,
-                  depth - 1,
-                ) {
+                let comp_points = match
+                  self.glyph_points_with_gvar_depth(comp_gid, coords, depth - 1) {
                   Err(err) => return Err(err)
                   Ok(value) => value
                 }
                 match comp_points {
                   None => ()
                   Some(comp_points) => {
-                    let (comp_outline, comp_phantoms) = split_phantoms(comp_points)
+                    let (comp_outline, comp_phantoms) = split_phantoms(
+                      comp_points,
+                    )
                     if component.use_my_metrics && comp_phantoms.length() >= 4 {
                       parent_phantoms = comp_phantoms
                     }
@@ -491,8 +500,10 @@ fn Font::glyph_points_with_gvar_depth(
                       if component.is_anchored {
                         let p1 = component.arg1
                         let p2 = component.arg2
-                        if p1 >= 0 && p1 < all_points.length() &&
-                          p2 >= 0 && p2 < comp_outline.length() {
+                        if p1 >= 0 &&
+                          p1 < all_points.length() &&
+                          p2 >= 0 &&
+                          p2 < comp_outline.length() {
                           let dx = all_points[p1].x - comp_outline[p2].x
                           let dy = all_points[p1].y - comp_outline[p2].y
                           translate_points(comp_outline, dx, dy)
@@ -551,6 +562,7 @@ fn Font::glyph_points_with_gvar_depth(
   }
 }
 
+///|
 fn Font::glyph_points_with_gvar(
   self : Font,
   glyph : UInt,
@@ -559,6 +571,7 @@ fn Font::glyph_points_with_gvar(
   self.glyph_points_with_gvar_depth(glyph, coords, 8)
 }
 
+///|
 fn glyph_bounds_from_points_for_font(
   points : Array[@sfnt.GlyphPoint],
 ) -> @sfnt.GlyphBounds? {
@@ -575,6 +588,7 @@ fn glyph_bounds_from_points_for_font(
   glyph_bounds_from_points(points, contour_count, contour_points)
 }
 
+///|
 fn Font::glyph_gvar_advance(
   self : Font,
   glyph : UInt,

@@ -89,17 +89,11 @@ pub fn PostTable::parse(data : BytesView) -> Result[PostTable, SfntError] {
   let max_mem_type42 = read_u32_int(data, 20)
   let min_mem_type1 = read_u32_int(data, 24)
   let max_mem_type1 = read_u32_int(data, 28)
-  match (
-    version,
-    italic_angle,
-    underline_position,
-    underline_thickness,
-    is_fixed_pitch,
-    min_mem_type42,
-    max_mem_type42,
-    min_mem_type1,
-    max_mem_type1,
-  ) {
+  match
+    (
+      version, italic_angle, underline_position, underline_thickness, is_fixed_pitch,
+      min_mem_type42, max_mem_type42, min_mem_type1, max_mem_type1,
+    ) {
     (Err(err), _, _, _, _, _, _, _, _) => Err(err)
     (_, Err(err), _, _, _, _, _, _, _) => Err(err)
     (_, _, Err(err), _, _, _, _, _, _) => Err(err)

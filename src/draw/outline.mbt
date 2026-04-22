@@ -30,15 +30,21 @@ pub struct OutlinePoint {
 } derive(Eq, Debug, ToJson)
 
 ///|
-pub fn OutlinePoint::new(x : Double, y : Double, kind : OutlinePointKind) -> OutlinePoint {
+pub fn OutlinePoint::new(
+  x : Double,
+  y : Double,
+  kind : OutlinePointKind,
+) -> OutlinePoint {
   OutlinePoint::{ x, y, kind }
 }
 
+///|
 priv struct OutlineVector {
   mut x : Double
   mut y : Double
 }
 
+///|
 fn OutlineVector::normalize_len(self : OutlineVector) -> Double {
   let len = (self.x * self.x + self.y * self.y).sqrt()
   if len != 0.0 {
@@ -67,7 +73,11 @@ pub fn Outline::reset(self : Outline) -> Unit {
 }
 
 ///|
-pub fn[T] Outline::replay(self : Outline, pen : DrawFuncs[T], pen_data : T) -> Unit {
+pub fn[T] Outline::replay(
+  self : Outline,
+  pen : DrawFuncs[T],
+  pen_data : T,
+) -> Unit {
   let session = DrawSession::new(pen, pen_data)
   let mut first = 0
   for contour in self.contours {
@@ -76,12 +86,8 @@ pub fn[T] Outline::replay(self : Outline, pen : DrawFuncs[T], pen_data : T) -> U
       let p1 = self.points[i]
       i = i + 1
       match p1.kind {
-        OutlinePointKind::MoveTo => {
-          session.move_to(p1.x, p1.y)
-        }
-        OutlinePointKind::LineTo => {
-          session.line_to(p1.x, p1.y)
-        }
+        OutlinePointKind::MoveTo => session.move_to(p1.x, p1.y)
+        OutlinePointKind::LineTo => session.line_to(p1.x, p1.y)
         OutlinePointKind::QuadraticTo => {
           let p2 = self.points[i]
           i = i + 1
@@ -225,14 +231,27 @@ pub fn Outline::embolden(
   }
 }
 
-fn outline_recording_pen_move_to(data : Outline, _st : DrawState, to_x : Double, to_y : Double) -> Unit {
+///|
+fn outline_recording_pen_move_to(
+  data : Outline,
+  _st : DrawState,
+  to_x : Double,
+  to_y : Double,
+) -> Unit {
   data.points.push(OutlinePoint::new(to_x, to_y, OutlinePointKind::MoveTo))
 }
 
-fn outline_recording_pen_line_to(data : Outline, _st : DrawState, to_x : Double, to_y : Double) -> Unit {
+///|
+fn outline_recording_pen_line_to(
+  data : Outline,
+  _st : DrawState,
+  to_x : Double,
+  to_y : Double,
+) -> Unit {
   data.points.push(OutlinePoint::new(to_x, to_y, OutlinePointKind::LineTo))
 }
 
+///|
 fn outline_recording_pen_quadratic_to(
   data : Outline,
   _st : DrawState,
@@ -241,10 +260,13 @@ fn outline_recording_pen_quadratic_to(
   to_x : Double,
   to_y : Double,
 ) -> Unit {
-  data.points.push(OutlinePoint::new(control_x, control_y, OutlinePointKind::QuadraticTo))
+  data.points.push(
+    OutlinePoint::new(control_x, control_y, OutlinePointKind::QuadraticTo),
+  )
   data.points.push(OutlinePoint::new(to_x, to_y, OutlinePointKind::QuadraticTo))
 }
 
+///|
 fn outline_recording_pen_cubic_to(
   data : Outline,
   _st : DrawState,
@@ -255,11 +277,16 @@ fn outline_recording_pen_cubic_to(
   to_x : Double,
   to_y : Double,
 ) -> Unit {
-  data.points.push(OutlinePoint::new(control1_x, control1_y, OutlinePointKind::CubicTo))
-  data.points.push(OutlinePoint::new(control2_x, control2_y, OutlinePointKind::CubicTo))
+  data.points.push(
+    OutlinePoint::new(control1_x, control1_y, OutlinePointKind::CubicTo),
+  )
+  data.points.push(
+    OutlinePoint::new(control2_x, control2_y, OutlinePointKind::CubicTo),
+  )
   data.points.push(OutlinePoint::new(to_x, to_y, OutlinePointKind::CubicTo))
 }
 
+///|
 fn outline_recording_pen_close_path(data : Outline, _st : DrawState) -> Unit {
   data.contours.push(data.points.length())
 }

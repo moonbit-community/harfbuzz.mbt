@@ -12,7 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+///|
 let f2dot14_scale : Double = 1.0 / 16384.0
+
+///|
 let f16dot16_scale : Double = 1.0 / 65536.0
 
 ///|

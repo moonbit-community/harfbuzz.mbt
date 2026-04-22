@@ -126,11 +126,7 @@ pub fn LayoutTable::select_lookup_offsets_for_feature(
   include_required? : Bool = true,
 ) -> Result[Array[Int], OtLayoutError] {
   select_lookup_offsets_for_feature_internal(
-    self,
-    script_tag,
-    language_tag,
-    feature_tag,
-    include_required,
+    self, script_tag, language_tag, feature_tag, include_required,
   )
 }
 
@@ -141,7 +137,7 @@ pub fn LayoutTable::select_lookup_offsets(
   script_tag : @common.Tag,
   language_tag? : @common.Tag = @common.tag_none,
 ) -> Result[Array[Int], OtLayoutError] {
-  self.select_lookup_offsets_with_features(script_tag, language_tag=language_tag)
+  self.select_lookup_offsets_with_features(script_tag, language_tag~)
 }
 
 ///|
@@ -151,11 +147,8 @@ fn select_lookup_offsets_internal(
   language_tag : @common.Tag,
   feature_tags : Array[@common.Tag],
 ) -> Result[Array[Int], OtLayoutError] {
-  let (required_feature, feature_indices) = match resolve_lang_sys_features(
-    layout,
-    script_tag,
-    language_tag,
-  ) {
+  let (required_feature, feature_indices) = match
+    resolve_lang_sys_features(layout, script_tag, language_tag) {
     Err(err) => return Err(err)
     Ok(value) => value
   }
@@ -185,7 +178,8 @@ fn select_lookup_offsets_internal(
   }
   let lookup_indices : Array[Int] = []
   for feature_index in selected_features {
-    if feature_index < 0 || feature_index >= layout.feature_list.records.length() {
+    if feature_index < 0 ||
+      feature_index >= layout.feature_list.records.length() {
       continue
     }
     let record = layout.feature_list.records[feature_index]
@@ -215,11 +209,8 @@ fn select_lookup_offsets_for_feature_internal(
   feature_tag : @common.Tag,
   include_required : Bool,
 ) -> Result[Array[Int], OtLayoutError] {
-  let (required_feature, feature_indices) = match resolve_lang_sys_features(
-    layout,
-    script_tag,
-    language_tag,
-  ) {
+  let (required_feature, feature_indices) = match
+    resolve_lang_sys_features(layout, script_tag, language_tag) {
     Err(err) => return Err(err)
     Ok(value) => value
   }
@@ -234,7 +225,8 @@ fn select_lookup_offsets_for_feature_internal(
     }
   }
   for feature_index in feature_indices {
-    if feature_index < 0 || feature_index >= layout.feature_list.records.length() {
+    if feature_index < 0 ||
+      feature_index >= layout.feature_list.records.length() {
       continue
     }
     let record = layout.feature_list.records[feature_index]
@@ -244,7 +236,8 @@ fn select_lookup_offsets_for_feature_internal(
   }
   let lookup_indices : Array[Int] = []
   for feature_index in selected_features {
-    if feature_index < 0 || feature_index >= layout.feature_list.records.length() {
+    if feature_index < 0 ||
+      feature_index >= layout.feature_list.records.length() {
       continue
     }
     let record = layout.feature_list.records[feature_index]
@@ -273,9 +266,11 @@ fn resolve_lang_sys_features(
   language_tag : @common.Tag,
 ) -> Result[(Int?, Array[Int]), OtLayoutError] {
   let normalized_script = lowercase_tag(script_tag)
-  let script_offset = match find_script_offset(layout.script_list.records, normalized_script) {
+  let script_offset = match
+    find_script_offset(layout.script_list.records, normalized_script) {
     Some(offset) => Some(offset)
-    None => if normalized_script != script_tag {
+    None =>
+      if normalized_script != script_tag {
         find_script_offset(layout.script_list.records, script_tag)
       } else {
         None
@@ -283,10 +278,11 @@ fn resolve_lang_sys_features(
   }
   let script_offset = match script_offset {
     Some(offset) => Some(offset)
-    None => find_script_offset(
-      layout.script_list.records,
-      @common.Tag::from_chars('D', 'F', 'L', 'T'),
-    )
+    None =>
+      find_script_offset(
+        layout.script_list.records,
+        @common.Tag::from_chars('D', 'F', 'L', 'T'),
+      )
   }
   let resolved_script_offset = match script_offset {
     Some(offset) => offset
@@ -297,10 +293,8 @@ fn resolve_lang_sys_features(
         layout.script_list.records[0].offset
       }
   }
-  let (default_lang, lang_records) = match parse_script_table(
-    layout.data,
-    resolved_script_offset,
-  ) {
+  let (default_lang, lang_records) = match
+    parse_script_table(layout.data, resolved_script_offset) {
     Err(err) => return Err(err)
     Ok(value) => value
   }
@@ -335,7 +329,7 @@ pub struct GsubTable {
 pub fn GsubTable::parse(blob : @blob.Blob) -> Result[GsubTable, OtLayoutError] {
   match LayoutTable::parse(blob) {
     Err(err) => Err(err)
-    Ok(layout) => Ok(GsubTable::{ layout })
+    Ok(layout) => Ok(GsubTable::{ layout, })
   }
 }
 
@@ -354,7 +348,7 @@ pub struct GposTable {
 pub fn GposTable::parse(blob : @blob.Blob) -> Result[GposTable, OtLayoutError] {
   match LayoutTable::parse(blob) {
     Err(err) => Err(err)
-    Ok(layout) => Ok(GposTable::{ layout })
+    Ok(layout) => Ok(GposTable::{ layout, })
   }
 }
 
@@ -385,15 +379,14 @@ pub fn LayoutTable::parse(
       if script_offset == 0 || feature_offset == 0 || lookup_offset == 0 {
         return Err(InvalidFormat)
       }
-      let feature_variations_offset =
-        if version >= 0x00010001U {
-          match read_u32_int(data, 10) {
-            Err(err) => return Err(err)
-            Ok(value) => if value == 0 { None } else { Some(value) }
-          }
-        } else {
-          None
+      let feature_variations_offset = if version >= 0x00010001U {
+        match read_u32_int(data, 10) {
+          Err(err) => return Err(err)
+          Ok(value) => if value == 0 { None } else { Some(value) }
         }
+      } else {
+        None
+      }
       let script_list = match parse_script_list(data, script_offset) {
         Err(err) => return Err(err)
         Ok(value) => value
@@ -456,7 +449,7 @@ fn parse_script_list(
           }
         }
       }
-      Ok(ScriptList::{ records })
+      Ok(ScriptList::{ records, })
     }
   }
 }
@@ -499,7 +492,7 @@ fn parse_feature_list(
           }
         }
       }
-      Ok(FeatureList::{ records })
+      Ok(FeatureList::{ records, })
     }
   }
 }
@@ -538,16 +531,13 @@ fn parse_lookup_list(
           }
         }
       }
-      Ok(LookupList::{ offsets })
+      Ok(LookupList::{ offsets, })
     }
   }
 }
 
 ///|
-fn find_script_offset(
-  records : Array[ScriptRecord],
-  tag : @common.Tag,
-) -> Int? {
+fn find_script_offset(records : Array[ScriptRecord], tag : @common.Tag) -> Int? {
   for record in records {
     if record.tag == tag {
       return Some(record.offset)
@@ -652,7 +642,11 @@ fn parse_lang_sys_table(
           Ok(value) => indices.push(value)
         }
       }
-      let required = if req_feature == 0xffff { None } else { Some(req_feature) }
+      let required = if req_feature == 0xffff {
+        None
+      } else {
+        Some(req_feature)
+      }
       Ok((required, indices))
     }
   }
@@ -809,7 +803,10 @@ fn read_i16(data : BytesView, offset : Int) -> Result[Int, OtLayoutError] {
 }
 
 ///|
-fn read_tag(data : BytesView, offset : Int) -> Result[@common.Tag, OtLayoutError] {
+fn read_tag(
+  data : BytesView,
+  offset : Int,
+) -> Result[@common.Tag, OtLayoutError] {
   match check_range(data, offset, 4) {
     Err(err) => return Err(err)
     Ok(_) => ()

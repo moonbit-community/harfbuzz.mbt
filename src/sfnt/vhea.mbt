@@ -23,6 +23,6 @@ pub struct VheaTable {
 pub fn VheaTable::parse(data : BytesView) -> Result[VheaTable, SfntError] {
   match read_u16_int(data, 34) {
     Err(err) => Err(err)
-    Ok(number_of_vmetrics) => Ok(VheaTable::{ number_of_vmetrics })
+    Ok(number_of_vmetrics) => Ok(VheaTable::{ number_of_vmetrics, })
   }
 }

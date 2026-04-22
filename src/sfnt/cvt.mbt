@@ -40,5 +40,5 @@ pub fn CvtTable::parse(data : BytesView) -> Result[CvtTable, SfntError] {
     }
     pos = pos + 2
   }
-  Ok(CvtTable::{ values })
+  Ok(CvtTable::{ values, })
 }

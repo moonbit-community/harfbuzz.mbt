@@ -1,6 +1,0 @@
-{
-  "import": [
-    "moonbit-community/harfbuzz/common",
-    "moonbitlang/core/debug"
-  ]
-}

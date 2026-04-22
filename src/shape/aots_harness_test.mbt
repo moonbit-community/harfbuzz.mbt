@@ -81,15 +81,18 @@ fn run_aots_case(case : AotsTestCase) -> Result[String, String] {
     buffer.set_gsub_feature_values(feature, case.feature_values)
   }
   match buffer.shape_ot(font) {
-    Err(err) => return Err("shape error for \{case.font}: \{@debug.to_string(err)}")
+    Err(err) =>
+      return Err("shape error for \{case.font}: \{@debug.to_string(err)}")
     Ok(_) => ()
   }
-  Ok(serialize_glyphs(
-    buffer.infos(),
-    buffer.positions(),
-    case.no_positions,
-    case.no_advances,
-  ))
+  Ok(
+    serialize_glyphs(
+      buffer.infos(),
+      buffer.positions(),
+      case.no_positions,
+      case.no_advances,
+    ),
+  )
 }
 
 ///|
@@ -98,14 +101,12 @@ test "shape aots fixtures" {
   let mut mismatched = 0
   for case in aots_test_cases {
     match run_aots_case(case) {
-      Err(_) => {
-        skipped = skipped + 1
-      }
-      Ok(actual) =>
-        if actual != case.expected {
-          mismatched = mismatched + 1
-        }
+      Err(_) => skipped = skipped + 1
+      Ok(actual) => if actual != case.expected { mismatched = mismatched + 1 }
     }
   }
-  @debug.debug_inspect((aots_skipped_cases, skipped, mismatched), content="(0, 0, 0)")
+  @debug.debug_inspect(
+    (aots_skipped_cases, skipped, mismatched),
+    content="(0, 0, 0)",
+  )
 }

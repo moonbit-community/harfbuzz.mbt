@@ -37,12 +37,14 @@ fn push_i16_multi(bytes : Array[Byte], value : Int) -> Unit {
   push_u16_multi(bytes, adjusted)
 }
 
+///|
 fn append_bytes(dst : Array[Byte], src : Array[Byte]) -> Unit {
   for b in src {
     dst.push(b)
   }
 }
 
+///|
 fn build_sparse_region_list() -> Array[Byte] {
   let bytes : Array[Byte] = []
   push_u16_multi(bytes, 1) // region count
@@ -55,6 +57,7 @@ fn build_sparse_region_list() -> Array[Byte] {
   bytes
 }
 
+///|
 fn build_multi_var_data() -> Array[Byte] {
   let bytes : Array[Byte] = []
   push_u8_multi(bytes, 1) // format
@@ -88,7 +91,8 @@ fn build_multi_item_store() -> Bytes {
 
 ///|
 test "multi item var store delta" {
-  let store = match MultiItemVariationStore::parse(build_multi_item_store()[:]) {
+  let store = match
+    MultiItemVariationStore::parse(build_multi_item_store()[:]) {
     Err(err) => fail("parse failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }

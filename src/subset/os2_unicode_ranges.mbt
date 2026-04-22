@@ -227,7 +227,7 @@ fn os2_unicode_ranges_from_codepoints(
     let cp = pair.0
     match os2_unicode_range_bit(cp) {
       None => ()
-      Some(bit) => {
+      Some(bit) =>
         if bit < 32 {
           bits1 = bits1 | (1U << bit)
         } else if bit < 64 {
@@ -237,7 +237,6 @@ fn os2_unicode_ranges_from_codepoints(
         } else if bit < 128 {
           bits4 = bits4 | (1U << (bit - 96))
         }
-      }
     }
   }
   (bits1, bits2, bits3, bits4)

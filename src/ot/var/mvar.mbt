@@ -35,7 +35,12 @@ pub fn MvarTable::parse(data : BytesView) -> Result[MvarTable, VarError] {
     (_, Err(err), _, _) => Err(err)
     (_, _, Err(err), _) => Err(err)
     (_, _, _, Err(err)) => Err(err)
-    (Ok(version), Ok(value_record_size), Ok(value_record_count), Ok(var_store_offset)) => {
+    (
+      Ok(version),
+      Ok(value_record_size),
+      Ok(value_record_count),
+      Ok(var_store_offset),
+    ) => {
       let major = (version >> 16) & 0xFFFFU
       if major != 1U {
         return Err(InvalidFormat)
@@ -61,8 +66,7 @@ pub fn MvarTable::parse(data : BytesView) -> Result[MvarTable, VarError] {
         match (tag, var_idx) {
           (Err(err), _) => return Err(err)
           (_, Err(err)) => return Err(err)
-          (Ok(tag), Ok(var_idx)) =>
-            records.push(MvarRecord::{ tag, var_idx })
+          (Ok(tag), Ok(var_idx)) => records.push(MvarRecord::{ tag, var_idx })
         }
         offset = offset + value_record_size
       }

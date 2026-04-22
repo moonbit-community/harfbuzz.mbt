@@ -20,10 +20,7 @@ test "myanmar reorder prebase and left matra" {
   buffer.add_codepoint(12U)
   buffer.add_codepoint(13U)
   let categories : Array[Int] = [
-    myanmar_cat_c,
-    myanmar_cat_mr,
-    myanmar_cat_vpre,
-    myanmar_cat_vblw,
+    myanmar_cat_c, myanmar_cat_mr, myanmar_cat_vpre, myanmar_cat_vblw,
   ]
   let syllables : Array[Int] = []
   let syllable = (1 << 4) | myanmar_syllable_type_consonant

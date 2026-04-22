@@ -49,7 +49,7 @@ pub fn LocaTable::parse(
       }
       offset = offset + 2
     }
-    Ok(LocaTable::{ offsets })
+    Ok(LocaTable::{ offsets, })
   } else if index_to_loc_format == 1 {
     let mut offset = 0
     for _ in 0..<count {
@@ -66,7 +66,7 @@ pub fn LocaTable::parse(
       }
       offset = offset + 4
     }
-    Ok(LocaTable::{ offsets })
+    Ok(LocaTable::{ offsets, })
   } else {
     Err(InvalidFormat)
   }

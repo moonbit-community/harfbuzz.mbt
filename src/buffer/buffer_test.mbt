@@ -52,7 +52,10 @@ test "buffer properties" {
   buffer.set_language(@common.Language::from_string("en"))
   @debug.debug_inspect(buffer.get_direction().to_string(), content="ltr")
   @debug.debug_inspect(buffer.get_script().to_tag().to_string(), content="Latn")
-  @debug.debug_inspect(buffer.get_language().to_string(), content="Some(\"en\")")
+  @debug.debug_inspect(
+    buffer.get_language().to_string(),
+    content="Some(\"en\")",
+  )
 }
 
 ///|
@@ -60,8 +63,14 @@ test "buffer default feature list horizontal" {
   let buffer = Buffer::new()
   buffer.set_direction(@common.direction_ltr)
   let tags = buffer.gsub_features()
-  @debug.debug_inspect(has_tag(tags, @common.Tag::from_chars('c', 'c', 'm', 'p')), content="true")
-  @debug.debug_inspect(has_tag(tags, @common.Tag::from_chars('k', 'e', 'r', 'n')), content="true")
+  @debug.debug_inspect(
+    has_tag(tags, @common.Tag::from_chars('c', 'c', 'm', 'p')),
+    content="true",
+  )
+  @debug.debug_inspect(
+    has_tag(tags, @common.Tag::from_chars('k', 'e', 'r', 'n')),
+    content="true",
+  )
 }
 
 ///|
@@ -69,8 +78,14 @@ test "buffer default feature list vertical" {
   let buffer = Buffer::new()
   buffer.set_direction(@common.direction_ttb)
   let tags = buffer.gsub_features()
-  @debug.debug_inspect(has_tag(tags, @common.Tag::from_chars('v', 'e', 'r', 't')), content="true")
-  @debug.debug_inspect(has_tag(tags, @common.Tag::from_chars('k', 'e', 'r', 'n')), content="false")
+  @debug.debug_inspect(
+    has_tag(tags, @common.Tag::from_chars('v', 'e', 'r', 't')),
+    content="true",
+  )
+  @debug.debug_inspect(
+    has_tag(tags, @common.Tag::from_chars('k', 'e', 'r', 'n')),
+    content="false",
+  )
 }
 
 ///|
@@ -78,10 +93,22 @@ test "buffer default feature list rtl" {
   let buffer = Buffer::new()
   buffer.set_direction(@common.direction_rtl)
   let tags = buffer.gsub_features()
-  @debug.debug_inspect(has_tag(tags, @common.Tag::from_chars('r', 't', 'l', 'a')), content="true")
-  @debug.debug_inspect(has_tag(tags, @common.Tag::from_chars('r', 't', 'l', 'm')), content="true")
-  @debug.debug_inspect(has_tag(tags, @common.Tag::from_chars('l', 't', 'r', 'a')), content="false")
-  @debug.debug_inspect(has_tag(tags, @common.Tag::from_chars('r', 'c', 'l', 't')), content="true")
+  @debug.debug_inspect(
+    has_tag(tags, @common.Tag::from_chars('r', 't', 'l', 'a')),
+    content="true",
+  )
+  @debug.debug_inspect(
+    has_tag(tags, @common.Tag::from_chars('r', 't', 'l', 'm')),
+    content="true",
+  )
+  @debug.debug_inspect(
+    has_tag(tags, @common.Tag::from_chars('l', 't', 'r', 'a')),
+    content="false",
+  )
+  @debug.debug_inspect(
+    has_tag(tags, @common.Tag::from_chars('r', 'c', 'l', 't')),
+    content="true",
+  )
 }
 
 ///|
@@ -103,11 +130,20 @@ test "buffer feature list honors manual override" {
 ///|
 test "buffer variation selector fallback" {
   let buffer = Buffer::new()
-  @debug.debug_inspect(buffer.get_not_found_variation_selector(), content="None")
+  @debug.debug_inspect(
+    buffer.get_not_found_variation_selector(),
+    content="None",
+  )
   buffer.set_not_found_variation_selector(Some(5U))
-  @debug.debug_inspect(buffer.get_not_found_variation_selector(), content="Some(5)")
+  @debug.debug_inspect(
+    buffer.get_not_found_variation_selector(),
+    content="Some(5)",
+  )
   buffer.set_not_found_variation_selector(None)
-  @debug.debug_inspect(buffer.get_not_found_variation_selector(), content="None")
+  @debug.debug_inspect(
+    buffer.get_not_found_variation_selector(),
+    content="None",
+  )
 }
 
 ///|
@@ -121,7 +157,10 @@ test "buffer clear preserves properties" {
   @debug.debug_inspect(buffer.len(), content="0")
   @debug.debug_inspect(buffer.get_direction().to_string(), content="rtl")
   @debug.debug_inspect(buffer.get_script().to_tag().to_string(), content="Arab")
-  @debug.debug_inspect(buffer.get_language().to_string(), content="Some(\"fa\")")
+  @debug.debug_inspect(
+    buffer.get_language().to_string(),
+    content="Some(\"fa\")",
+  )
 }
 
 ///|
@@ -161,7 +200,10 @@ test "buffer replace glyphs" {
   for pos in positions0 {
     positions1.push(pos)
   }
-  @debug.debug_inspect(buffer.replace_glyphs(infos1, positions=positions1), content="false")
+  @debug.debug_inspect(
+    buffer.replace_glyphs(infos1, positions=positions1),
+    content="false",
+  )
   @debug.debug_inspect(buffer.len(), content="1")
 }
 
@@ -189,7 +231,10 @@ test "buffer guess segment properties" {
   buffer.set_script(@common.script_arabic)
   buffer.guess_segment_properties()
   @debug.debug_inspect(buffer.get_direction().to_string(), content="rtl")
-  @debug.debug_inspect(buffer.get_language().to_string(), content="Some(\"und\")")
+  @debug.debug_inspect(
+    buffer.get_language().to_string(),
+    content="Some(\"und\")",
+  )
 }
 
 ///|
@@ -372,6 +417,7 @@ fn push_u32(bytes : Array[Byte], value : Int) -> Unit {
   bytes.push((value & 0xff).to_byte())
 }
 
+///|
 fn push_u24(bytes : Array[Byte], value : Int) -> Unit {
   bytes.push(((value >> 16) & 0xff).to_byte())
   bytes.push(((value >> 8) & 0xff).to_byte())
@@ -481,6 +527,7 @@ fn build_hmtx_ot() -> Bytes {
   Bytes::from_array(bytes)
 }
 
+///|
 fn build_loca_short(offsets : Array[Int]) -> Bytes {
   let bytes : Array[Byte] = []
   for offset in offsets {
@@ -489,6 +536,7 @@ fn build_loca_short(offsets : Array[Int]) -> Bytes {
   Bytes::from_array(bytes)
 }
 
+///|
 fn build_glyf_mark_fallback() -> Bytes {
   let bytes : Array[Byte] = []
   push_i16(bytes, 1)
@@ -843,7 +891,11 @@ fn build_cmap_format12_groups(groups : Array[(UInt, UInt, UInt)]) -> Bytes {
   Bytes::from_array(bytes)
 }
 
-fn build_cmap_format14_non_default(selector : UInt, mappings : Array[(UInt, UInt)]) -> Bytes {
+///|
+fn build_cmap_format14_non_default(
+  selector : UInt,
+  mappings : Array[(UInt, UInt)],
+) -> Bytes {
   let bytes : Array[Byte] = []
   let non_default_offset = 21
   let length = non_default_offset + 4 + mappings.length() * 5
@@ -862,7 +914,11 @@ fn build_cmap_format14_non_default(selector : UInt, mappings : Array[(UInt, UInt
   Bytes::from_array(bytes)
 }
 
-fn build_cmap_format14_default(selector : UInt, ranges : Array[(UInt, UInt)]) -> Bytes {
+///|
+fn build_cmap_format14_default(
+  selector : UInt,
+  ranges : Array[(UInt, UInt)],
+) -> Bytes {
   let bytes : Array[Byte] = []
   let default_offset = 21
   let length = default_offset + 4 + ranges.length() * 4
@@ -881,7 +937,11 @@ fn build_cmap_format14_default(selector : UInt, ranges : Array[(UInt, UInt)]) ->
   Bytes::from_array(bytes)
 }
 
-fn build_cmap_table_with_variation(subtable : Bytes, variation : Bytes) -> Bytes {
+///|
+fn build_cmap_table_with_variation(
+  subtable : Bytes,
+  variation : Bytes,
+) -> Bytes {
   let bytes : Array[Byte] = []
   push_u16(bytes, 0)
   push_u16(bytes, 2)
@@ -939,10 +999,9 @@ fn build_font_bytes() -> Bytes {
 
 ///|
 fn build_font_bytes_space_fallback() -> Bytes {
-  let cmap = build_cmap_table(build_cmap_format12_groups([
-    (0x0020U, 0x0020U, 1U),
-    (0x2010U, 0x2010U, 2U),
-  ]))
+  let cmap = build_cmap_table(
+    build_cmap_format12_groups([(0x0020U, 0x0020U, 1U), (0x2010U, 0x2010U, 2U)]),
+  )
   let tables : Array[(@common.Tag, Bytes)] = [
     (@common.Tag::from_chars('h', 'e', 'a', 'd'), build_head(1000, 0)),
     (@common.Tag::from_chars('m', 'a', 'x', 'p'), build_maxp(4)),
@@ -955,9 +1014,9 @@ fn build_font_bytes_space_fallback() -> Bytes {
 
 ///|
 fn build_font_bytes_default_ignorables() -> Bytes {
-  let cmap = build_cmap_table(build_cmap_format12_groups([
-    (0x200DU, 0x200DU, 1U),
-  ]))
+  let cmap = build_cmap_table(
+    build_cmap_format12_groups([(0x200DU, 0x200DU, 1U)]),
+  )
   let tables : Array[(@common.Tag, Bytes)] = [
     (@common.Tag::from_chars('h', 'e', 'a', 'd'), build_head(1000, 0)),
     (@common.Tag::from_chars('m', 'a', 'x', 'p'), build_maxp(4)),
@@ -972,10 +1031,7 @@ fn build_font_bytes_default_ignorables() -> Bytes {
 fn build_font_bytes_variation_selector() -> Bytes {
   let cmap = build_cmap_table_with_variation(
     build_cmap_format12(0x41U, 0x41U, 1U),
-    build_cmap_format14_non_default(
-      0xFE0FU,
-      [(0x41U, 3U)],
-    ),
+    build_cmap_format14_non_default(0xFE0FU, [(0x41U, 3U)]),
   )
   let tables : Array[(@common.Tag, Bytes)] = [
     (@common.Tag::from_chars('h', 'e', 'a', 'd'), build_head(1000, 0)),
@@ -991,10 +1047,7 @@ fn build_font_bytes_variation_selector() -> Bytes {
 fn build_font_bytes_variation_selector_default() -> Bytes {
   let cmap = build_cmap_table_with_variation(
     build_cmap_format12(0x41U, 0x41U, 1U),
-    build_cmap_format14_default(
-      0xFE0FU,
-      [(0x41U, 0U)],
-    ),
+    build_cmap_format14_default(0xFE0FU, [(0x41U, 0U)]),
   )
   let tables : Array[(@common.Tag, Bytes)] = [
     (@common.Tag::from_chars('h', 'e', 'a', 'd'), build_head(1000, 0)),
@@ -1118,11 +1171,13 @@ fn build_font_bytes_indic_dev2_dflt() -> Bytes {
     @common.Tag::from_chars('r', 'p', 'h', 'f'),
     script_list,
   )
-  let cmap = build_cmap_table(build_cmap_format12_groups([
-    (0x0930U, 0x0930U, 1U),
-    (0x094DU, 0x094DU, 2U),
-    (0x0915U, 0x0915U, 3U),
-  ]))
+  let cmap = build_cmap_table(
+    build_cmap_format12_groups([
+      (0x0930U, 0x0930U, 1U),
+      (0x094DU, 0x094DU, 2U),
+      (0x0915U, 0x0915U, 3U),
+    ]),
+  )
   let tables : Array[(@common.Tag, Bytes)] = [
     (@common.Tag::from_chars('h', 'e', 'a', 'd'), build_head(1000, 0)),
     (@common.Tag::from_chars('m', 'a', 'x', 'p'), build_maxp(4)),
@@ -1244,10 +1299,9 @@ fn build_font_bytes_kern_with_gpos() -> Bytes {
 
 ///|
 fn build_font_bytes_mark_fallback() -> Bytes {
-  let cmap = build_cmap_table(build_cmap_format12_groups([
-    (0x41U, 0x41U, 1U),
-    (0x0301U, 0x0301U, 2U),
-  ]))
+  let cmap = build_cmap_table(
+    build_cmap_format12_groups([(0x41U, 0x41U, 1U), (0x0301U, 0x0301U, 2U)]),
+  )
   let tables : Array[(@common.Tag, Bytes)] = [
     (@common.Tag::from_chars('h', 'e', 'a', 'd'), build_head(1000, 0)),
     (@common.Tag::from_chars('m', 'a', 'x', 'p'), build_maxp(4)),
@@ -1258,6 +1312,7 @@ fn build_font_bytes_mark_fallback() -> Bytes {
   build_sfnt(tables)
 }
 
+///|
 fn build_gdef_mark_class_table() -> Bytes {
   let bytes : Array[Byte] = []
   push_u32(bytes, 0x00010000)
@@ -1273,11 +1328,11 @@ fn build_gdef_mark_class_table() -> Bytes {
   Bytes::from_array(bytes)
 }
 
+///|
 fn build_font_bytes_mark_fallback_gdef() -> Bytes {
-  let cmap = build_cmap_table(build_cmap_format12_groups([
-    (0x41U, 0x41U, 1U),
-    (0x42U, 0x42U, 2U),
-  ]))
+  let cmap = build_cmap_table(
+    build_cmap_format12_groups([(0x41U, 0x41U, 1U), (0x42U, 0x42U, 2U)]),
+  )
   let tables : Array[(@common.Tag, Bytes)] = [
     (@common.Tag::from_chars('h', 'e', 'a', 'd'), build_head(1000, 0)),
     (@common.Tag::from_chars('m', 'a', 'x', 'p'), build_maxp(4)),
@@ -1289,13 +1344,19 @@ fn build_font_bytes_mark_fallback_gdef() -> Bytes {
   build_sfnt(tables)
 }
 
+///|
 fn build_font_bytes_mark_fallback_position() -> Bytes {
-  let cmap = build_cmap_table(build_cmap_format12_groups([
-    (0x41U, 0x41U, 1U),
-    (0x0301U, 0x0301U, 2U),
-  ]))
+  let cmap = build_cmap_table(
+    build_cmap_format12_groups([(0x41U, 0x41U, 1U), (0x0301U, 0x0301U, 2U)]),
+  )
   let glyf = build_glyf_mark_fallback()
-  let loca = build_loca_short([0, 0, glyf.length() / 2, glyf.length(), glyf.length()])
+  let loca = build_loca_short([
+    0,
+    0,
+    glyf.length() / 2,
+    glyf.length(),
+    glyf.length(),
+  ])
   let tables : Array[(@common.Tag, Bytes)] = [
     (@common.Tag::from_chars('h', 'e', 'a', 'd'), build_head(1000, 0)),
     (@common.Tag::from_chars('m', 'a', 'x', 'p'), build_maxp(4)),
@@ -1402,15 +1463,17 @@ test "buffer shape ot default ignorable zeroed snapshot" {
   let positions = buffer.positions()
   let snapshot : Array[(UInt, Int, Int, Int, Int)] = []
   for i in 0..<infos.length() {
-    snapshot.push((
-      infos[i].codepoint,
-      infos[i].cluster,
-      positions[i].x_advance,
-      positions[i].x_offset,
-      positions[i].y_offset,
-    ))
+    snapshot.push(
+      (
+        infos[i].codepoint,
+        infos[i].cluster,
+        positions[i].x_advance,
+        positions[i].x_offset,
+        positions[i].y_offset,
+      ),
+    )
   }
-  json_inspect(snapshot, content=[[1,0,0,0,0]])
+  json_inspect(snapshot, content=[[1, 0, 0, 0, 0]])
 }
 
 ///|
@@ -1443,15 +1506,17 @@ test "buffer shape ot preserve default ignorable snapshot" {
   let positions = buffer.positions()
   let snapshot : Array[(UInt, Int, Int, Int, Int)] = []
   for i in 0..<infos.length() {
-    snapshot.push((
-      infos[i].codepoint,
-      infos[i].cluster,
-      positions[i].x_advance,
-      positions[i].x_offset,
-      positions[i].y_offset,
-    ))
+    snapshot.push(
+      (
+        infos[i].codepoint,
+        infos[i].cluster,
+        positions[i].x_advance,
+        positions[i].x_offset,
+        positions[i].y_offset,
+      ),
+    )
   }
-  json_inspect(snapshot, content=[[1,0,300,0,0]])
+  json_inspect(snapshot, content=[[1, 0, 300, 0, 0]])
 }
 
 ///|
@@ -1489,15 +1554,17 @@ test "buffer shape ot variation selector fallback snapshot" {
   let positions = buffer.positions()
   let snapshot : Array[(UInt, Int, Int, Int, Int)] = []
   for i in 0..<infos.length() {
-    snapshot.push((
-      infos[i].codepoint,
-      infos[i].cluster,
-      positions[i].x_advance,
-      positions[i].x_offset,
-      positions[i].y_offset,
-    ))
+    snapshot.push(
+      (
+        infos[i].codepoint,
+        infos[i].cluster,
+        positions[i].x_advance,
+        positions[i].x_offset,
+        positions[i].y_offset,
+      ),
+    )
   }
-  json_inspect(snapshot, content=[[3,0,0,0,0]])
+  json_inspect(snapshot, content=[[3, 0, 0, 0, 0]])
 }
 
 ///|
@@ -1515,20 +1582,24 @@ test "buffer shape ot variation selector mapping snapshot" {
   let positions = buffer.positions()
   let snapshot : Array[(UInt, Int, Int, Int, Int)] = []
   for i in 0..<infos.length() {
-    snapshot.push((
-      infos[i].codepoint,
-      infos[i].cluster,
-      positions[i].x_advance,
-      positions[i].x_offset,
-      positions[i].y_offset,
-    ))
+    snapshot.push(
+      (
+        infos[i].codepoint,
+        infos[i].cluster,
+        positions[i].x_advance,
+        positions[i].x_offset,
+        positions[i].y_offset,
+      ),
+    )
   }
-  json_inspect(snapshot, content=[[3,0,500,0,0]])
+  json_inspect(snapshot, content=[[3, 0, 500, 0, 0]])
 }
 
 ///|
 test "buffer shape ot variation selector default snapshot" {
-  let font = @font.Font::from_bytes(build_font_bytes_variation_selector_default())
+  let font = @font.Font::from_bytes(
+    build_font_bytes_variation_selector_default(),
+  )
   let buffer = Buffer::new()
   buffer.add_codepoint(0x41U)
   buffer.add_codepoint(0xFE0FU)
@@ -1541,15 +1612,17 @@ test "buffer shape ot variation selector default snapshot" {
   let positions = buffer.positions()
   let snapshot : Array[(UInt, Int, Int, Int, Int)] = []
   for i in 0..<infos.length() {
-    snapshot.push((
-      infos[i].codepoint,
-      infos[i].cluster,
-      positions[i].x_advance,
-      positions[i].x_offset,
-      positions[i].y_offset,
-    ))
+    snapshot.push(
+      (
+        infos[i].codepoint,
+        infos[i].cluster,
+        positions[i].x_advance,
+        positions[i].x_offset,
+        positions[i].y_offset,
+      ),
+    )
   }
-  json_inspect(snapshot, content=[[1,0,300,0,0]])
+  json_inspect(snapshot, content=[[1, 0, 300, 0, 0]])
 }
 
 ///|
@@ -1620,15 +1693,17 @@ test "buffer shape ot snapshot" {
   let positions = buffer.positions()
   let snapshot : Array[(UInt, Int, Int, Int, Int)] = []
   for i in 0..<infos.length() {
-    snapshot.push((
-      infos[i].codepoint,
-      infos[i].cluster,
-      positions[i].x_advance,
-      positions[i].x_offset,
-      positions[i].y_offset,
-    ))
+    snapshot.push(
+      (
+        infos[i].codepoint,
+        infos[i].cluster,
+        positions[i].x_advance,
+        positions[i].x_offset,
+        positions[i].y_offset,
+      ),
+    )
   }
-  json_inspect(snapshot, content=[[3,0,480,5,0],[2,1,410,0,0]])
+  json_inspect(snapshot, content=[[3, 0, 480, 5, 0], [2, 1, 410, 0, 0]])
 }
 
 ///|
@@ -1668,15 +1743,17 @@ test "buffer shape ot feature filter snapshot" {
   let positions = buffer.positions()
   let snapshot : Array[(UInt, Int, Int, Int, Int)] = []
   for i in 0..<infos.length() {
-    snapshot.push((
-      infos[i].codepoint,
-      infos[i].cluster,
-      positions[i].x_advance,
-      positions[i].x_offset,
-      positions[i].y_offset,
-    ))
+    snapshot.push(
+      (
+        infos[i].codepoint,
+        infos[i].cluster,
+        positions[i].x_advance,
+        positions[i].x_offset,
+        positions[i].y_offset,
+      ),
+    )
   }
-  json_inspect(snapshot, content=[[1,0,300,0,0],[2,1,400,0,0]])
+  json_inspect(snapshot, content=[[1, 0, 300, 0, 0], [2, 1, 400, 0, 0]])
 }
 
 ///|
@@ -1710,15 +1787,17 @@ test "buffer shape ot single pos snapshot" {
   let positions = buffer.positions()
   let snapshot : Array[(UInt, Int, Int, Int, Int)] = []
   for i in 0..<infos.length() {
-    snapshot.push((
-      infos[i].codepoint,
-      infos[i].cluster,
-      positions[i].x_advance,
-      positions[i].x_offset,
-      positions[i].y_offset,
-    ))
+    snapshot.push(
+      (
+        infos[i].codepoint,
+        infos[i].cluster,
+        positions[i].x_advance,
+        positions[i].x_offset,
+        positions[i].y_offset,
+      ),
+    )
   }
-  json_inspect(snapshot, content=[[3,0,520,6,0]])
+  json_inspect(snapshot, content=[[3, 0, 520, 6, 0]])
 }
 
 ///|
@@ -1751,15 +1830,17 @@ test "buffer shape ot kern fallback snapshot" {
   let positions = buffer.positions()
   let snapshot : Array[(UInt, Int, Int, Int, Int)] = []
   for i in 0..<infos.length() {
-    snapshot.push((
-      infos[i].codepoint,
-      infos[i].cluster,
-      positions[i].x_advance,
-      positions[i].x_offset,
-      positions[i].y_offset,
-    ))
+    snapshot.push(
+      (
+        infos[i].codepoint,
+        infos[i].cluster,
+        positions[i].x_advance,
+        positions[i].x_offset,
+        positions[i].y_offset,
+      ),
+    )
   }
-  json_inspect(snapshot, content=[[1,0,250,0,0],[2,1,400,0,0]])
+  json_inspect(snapshot, content=[[1, 0, 250, 0, 0], [2, 1, 400, 0, 0]])
 }
 
 ///|
@@ -1794,6 +1875,7 @@ test "buffer shape ot zeroes mark advances without gpos" {
   @debug.debug_inspect(positions[1].x_advance, content="0")
 }
 
+///|
 test "buffer shape ot zeroes mark advances using gdef mark class" {
   let font = @font.Font::from_bytes(build_font_bytes_mark_fallback_gdef())
   let buffer = Buffer::new()
@@ -1824,17 +1906,20 @@ test "buffer shape ot gdef mark class snapshot" {
   let positions = buffer.positions()
   let snapshot : Array[(UInt, Int, Int, Int, Int)] = []
   for i in 0..<infos.length() {
-    snapshot.push((
-      infos[i].codepoint,
-      infos[i].cluster,
-      positions[i].x_advance,
-      positions[i].x_offset,
-      positions[i].y_offset,
-    ))
+    snapshot.push(
+      (
+        infos[i].codepoint,
+        infos[i].cluster,
+        positions[i].x_advance,
+        positions[i].x_offset,
+        positions[i].y_offset,
+      ),
+    )
   }
-  json_inspect(snapshot, content=[[1,0,300,0,0],[2,1,0,-400,0]])
+  json_inspect(snapshot, content=[[1, 0, 300, 0, 0], [2, 1, 0, -400, 0]])
 }
 
+///|
 test "buffer shape ot fallback mark positioning without gpos" {
   let font = @font.Font::from_bytes(build_font_bytes_mark_fallback_position())
   let buffer = Buffer::new()
@@ -1866,15 +1951,17 @@ test "buffer shape ot fallback mark positioning snapshot" {
   let positions = buffer.positions()
   let snapshot : Array[(UInt, Int, Int, Int, Int)] = []
   for i in 0..<infos.length() {
-    snapshot.push((
-      infos[i].codepoint,
-      infos[i].cluster,
-      positions[i].x_advance,
-      positions[i].x_offset,
-      positions[i].y_offset,
-    ))
+    snapshot.push(
+      (
+        infos[i].codepoint,
+        infos[i].cluster,
+        positions[i].x_advance,
+        positions[i].x_offset,
+        positions[i].y_offset,
+      ),
+    )
   }
-  json_inspect(snapshot, content=[[1,0,300,0,0],[2,1,0,140,122]])
+  json_inspect(snapshot, content=[[1, 0, 300, 0, 0], [2, 1, 0, 140, 122]])
 }
 
 ///|
@@ -1907,15 +1994,17 @@ test "buffer shape ot skips kern for vertical snapshot" {
   let positions = buffer.positions()
   let snapshot : Array[(UInt, Int, Int, Int, Int)] = []
   for i in 0..<infos.length() {
-    snapshot.push((
-      infos[i].codepoint,
-      infos[i].cluster,
-      positions[i].x_advance,
-      positions[i].x_offset,
-      positions[i].y_offset,
-    ))
+    snapshot.push(
+      (
+        infos[i].codepoint,
+        infos[i].cluster,
+        positions[i].x_advance,
+        positions[i].x_offset,
+        positions[i].y_offset,
+      ),
+    )
   }
-  json_inspect(snapshot, content=[[1,0,0,0,0],[2,1,0,0,0]])
+  json_inspect(snapshot, content=[[1, 0, 0, 0, 0], [2, 1, 0, 0, 0]])
 }
 
 ///|
@@ -1948,15 +2037,17 @@ test "buffer shape myanmar fallback snapshot" {
   let positions = buffer.positions()
   let snapshot : Array[(UInt, Int, Int, Int, Int)] = []
   for i in 0..<infos.length() {
-    snapshot.push((
-      infos[i].codepoint,
-      infos[i].cluster,
-      positions[i].x_advance,
-      positions[i].x_offset,
-      positions[i].y_offset,
-    ))
+    snapshot.push(
+      (
+        infos[i].codepoint,
+        infos[i].cluster,
+        positions[i].x_advance,
+        positions[i].x_offset,
+        positions[i].y_offset,
+      ),
+    )
   }
-  json_inspect(snapshot, content=[[1,0,300,0,0]])
+  json_inspect(snapshot, content=[[1, 0, 300, 0, 0]])
 }
 
 ///|
@@ -1989,15 +2080,17 @@ test "buffer shape myanmar prefers mym2 over dflt snapshot" {
   let positions = buffer.positions()
   let snapshot : Array[(UInt, Int, Int, Int, Int)] = []
   for i in 0..<infos.length() {
-    snapshot.push((
-      infos[i].codepoint,
-      infos[i].cluster,
-      positions[i].x_advance,
-      positions[i].x_offset,
-      positions[i].y_offset,
-    ))
+    snapshot.push(
+      (
+        infos[i].codepoint,
+        infos[i].cluster,
+        positions[i].x_advance,
+        positions[i].x_offset,
+        positions[i].y_offset,
+      ),
+    )
   }
-  json_inspect(snapshot, content=[[3,0,500,0,0]])
+  json_inspect(snapshot, content=[[3, 0, 500, 0, 0]])
 }
 
 ///|
@@ -2030,15 +2123,17 @@ test "buffer shape indic fallback snapshot" {
   let positions = buffer.positions()
   let snapshot : Array[(UInt, Int, Int, Int, Int)] = []
   for i in 0..<infos.length() {
-    snapshot.push((
-      infos[i].codepoint,
-      infos[i].cluster,
-      positions[i].x_advance,
-      positions[i].x_offset,
-      positions[i].y_offset,
-    ))
+    snapshot.push(
+      (
+        infos[i].codepoint,
+        infos[i].cluster,
+        positions[i].x_advance,
+        positions[i].x_offset,
+        positions[i].y_offset,
+      ),
+    )
   }
-  json_inspect(snapshot, content=[[1,0,300,0,0]])
+  json_inspect(snapshot, content=[[1, 0, 300, 0, 0]])
 }
 
 ///|
@@ -2071,15 +2166,17 @@ test "buffer shape indic routes to use for dev3 gsub snapshot" {
   let positions = buffer.positions()
   let snapshot : Array[(UInt, Int, Int, Int, Int)] = []
   for i in 0..<infos.length() {
-    snapshot.push((
-      infos[i].codepoint,
-      infos[i].cluster,
-      positions[i].x_advance,
-      positions[i].x_offset,
-      positions[i].y_offset,
-    ))
+    snapshot.push(
+      (
+        infos[i].codepoint,
+        infos[i].cluster,
+        positions[i].x_advance,
+        positions[i].x_offset,
+        positions[i].y_offset,
+      ),
+    )
   }
-  json_inspect(snapshot, content=[[3,0,500,0,0]])
+  json_inspect(snapshot, content=[[3, 0, 500, 0, 0]])
 }
 
 ///|
@@ -2121,15 +2218,21 @@ test "buffer shape indic prefers dev2 over dflt snapshot" {
   let positions = buffer.positions()
   let snapshot : Array[(UInt, Int, Int, Int, Int)] = []
   for i in 0..<infos.length() {
-    snapshot.push((
-      infos[i].codepoint,
-      infos[i].cluster,
-      positions[i].x_advance,
-      positions[i].x_offset,
-      positions[i].y_offset,
-    ))
+    snapshot.push(
+      (
+        infos[i].codepoint,
+        infos[i].cluster,
+        positions[i].x_advance,
+        positions[i].x_offset,
+        positions[i].y_offset,
+      ),
+    )
   }
-  json_inspect(snapshot, content=[[3,0,500,0,0],[2,0,400,0,0],[3,0,500,0,0]])
+  json_inspect(snapshot, content=[
+    [3, 0, 500, 0, 0],
+    [2, 0, 400, 0, 0],
+    [3, 0, 500, 0, 0],
+  ])
 }
 
 ///|
@@ -2162,15 +2265,17 @@ test "buffer shape arabic syriac uses gsub snapshot" {
   let positions = buffer.positions()
   let snapshot : Array[(UInt, Int, Int, Int, Int)] = []
   for i in 0..<infos.length() {
-    snapshot.push((
-      infos[i].codepoint,
-      infos[i].cluster,
-      positions[i].x_advance,
-      positions[i].x_offset,
-      positions[i].y_offset,
-    ))
+    snapshot.push(
+      (
+        infos[i].codepoint,
+        infos[i].cluster,
+        positions[i].x_advance,
+        positions[i].x_offset,
+        positions[i].y_offset,
+      ),
+    )
   }
-  json_inspect(snapshot, content=[[3,0,500,0,0]])
+  json_inspect(snapshot, content=[[3, 0, 500, 0, 0]])
 }
 
 ///|
@@ -2203,15 +2308,17 @@ test "buffer shape arabic syriac dflt gsub snapshot" {
   let positions = buffer.positions()
   let snapshot : Array[(UInt, Int, Int, Int, Int)] = []
   for i in 0..<infos.length() {
-    snapshot.push((
-      infos[i].codepoint,
-      infos[i].cluster,
-      positions[i].x_advance,
-      positions[i].x_offset,
-      positions[i].y_offset,
-    ))
+    snapshot.push(
+      (
+        infos[i].codepoint,
+        infos[i].cluster,
+        positions[i].x_advance,
+        positions[i].x_offset,
+        positions[i].y_offset,
+      ),
+    )
   }
-  json_inspect(snapshot, content=[[3,0,500,0,0]])
+  json_inspect(snapshot, content=[[3, 0, 500, 0, 0]])
 }
 
 ///|
@@ -2244,15 +2351,17 @@ test "buffer shape use fallback snapshot" {
   let positions = buffer.positions()
   let snapshot : Array[(UInt, Int, Int, Int, Int)] = []
   for i in 0..<infos.length() {
-    snapshot.push((
-      infos[i].codepoint,
-      infos[i].cluster,
-      positions[i].x_advance,
-      positions[i].x_offset,
-      positions[i].y_offset,
-    ))
+    snapshot.push(
+      (
+        infos[i].codepoint,
+        infos[i].cluster,
+        positions[i].x_advance,
+        positions[i].x_offset,
+        positions[i].y_offset,
+      ),
+    )
   }
-  json_inspect(snapshot, content=[[1,0,300,0,0]])
+  json_inspect(snapshot, content=[[1, 0, 300, 0, 0]])
 }
 
 ///|
@@ -2290,15 +2399,17 @@ test "buffer shape hebrew skips gpos without hebr snapshot" {
   let positions = buffer.positions()
   let snapshot : Array[(UInt, Int, Int, Int, Int)] = []
   for i in 0..<infos.length() {
-    snapshot.push((
-      infos[i].codepoint,
-      infos[i].cluster,
-      positions[i].x_advance,
-      positions[i].x_offset,
-      positions[i].y_offset,
-    ))
+    snapshot.push(
+      (
+        infos[i].codepoint,
+        infos[i].cluster,
+        positions[i].x_advance,
+        positions[i].x_offset,
+        positions[i].y_offset,
+      ),
+    )
   }
-  json_inspect(snapshot, content=[[3,0,500,0,0],[2,1,400,0,0]])
+  json_inspect(snapshot, content=[[3, 0, 500, 0, 0], [2, 1, 400, 0, 0]])
 }
 
 ///|
@@ -2334,13 +2445,15 @@ test "buffer shape hebrew applies hebr gpos snapshot" {
   let positions = buffer.positions()
   let snapshot : Array[(UInt, Int, Int, Int, Int)] = []
   for i in 0..<infos.length() {
-    snapshot.push((
-      infos[i].codepoint,
-      infos[i].cluster,
-      positions[i].x_advance,
-      positions[i].x_offset,
-      positions[i].y_offset,
-    ))
+    snapshot.push(
+      (
+        infos[i].codepoint,
+        infos[i].cluster,
+        positions[i].x_advance,
+        positions[i].x_offset,
+        positions[i].y_offset,
+      ),
+    )
   }
-  json_inspect(snapshot, content=[[3,0,520,6,0]])
+  json_inspect(snapshot, content=[[3, 0, 520, 6, 0]])
 }

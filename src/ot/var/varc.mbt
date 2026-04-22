@@ -32,6 +32,7 @@ pub enum VarcCondition {
   Not(VarcCondition)
 } derive(Debug, ToJson)
 
+///|
 struct CffIndex {
   count : Int
   off_size : Int
@@ -39,6 +40,7 @@ struct CffIndex {
   data : Bytes
 } derive(Debug, ToJson)
 
+///|
 fn validate_offset(offset : Int, length : Int) -> Result[Unit, VarError] {
   if offset < 0 || offset > length {
     return Err(UnexpectedEof)
@@ -46,6 +48,7 @@ fn validate_offset(offset : Int, length : Int) -> Result[Unit, VarError] {
   Ok(())
 }
 
+///|
 fn parse_condition_at(
   data : BytesView,
   base : Int,
@@ -65,7 +68,7 @@ fn parse_condition_at(
   let format = read_u16_int(data, pos)
   match format {
     Err(err) => Err(err)
-    Ok(format) => {
+    Ok(format) =>
       if format == 1 {
         let axis_index = read_u16_int(data, pos + 2)
         let min_value = read_i16(data, pos + 4)
@@ -102,7 +105,8 @@ fn parse_condition_at(
               match child_offset {
                 Err(err) => return Err(err)
                 Ok(child_offset) => {
-                  let child = match parse_condition_at(data, pos, child_offset, depth + 1) {
+                  let child = match
+                    parse_condition_at(data, pos, child_offset, depth + 1) {
                     Err(err) => return Err(err)
                     Ok(value) => value
                   }
@@ -130,7 +134,6 @@ fn parse_condition_at(
       } else {
         Err(InvalidFormat)
       }
-    }
   }
 }
 
@@ -154,7 +157,7 @@ pub fn VarcCondition::evaluate(
         None => 0.0
         Some(f) => f(var_idx)
       }
-      (default_value.to_double() + delta) > 0.0
+      default_value.to_double() + delta > 0.0
     }
     And(conditions) => {
       for condition in conditions {
@@ -176,7 +179,12 @@ pub fn VarcCondition::evaluate(
   }
 }
 
-fn read_cff_offset(data : BytesView, offset : Int, size : Int) -> Result[Int, VarError] {
+///|
+fn read_cff_offset(
+  data : BytesView,
+  offset : Int,
+  size : Int,
+) -> Result[Int, VarError] {
   if size <= 0 || size > 4 {
     return Err(InvalidFormat)
   }
@@ -190,7 +198,11 @@ fn read_cff_offset(data : BytesView, offset : Int, size : Int) -> Result[Int, Va
   Ok(value)
 }
 
-fn parse_cff2_index(data : BytesView, offset : Int) -> Result[CffIndex, VarError] {
+///|
+fn parse_cff2_index(
+  data : BytesView,
+  offset : Int,
+) -> Result[CffIndex, VarError] {
   let count = read_u32_int(data, offset)
   match count {
     Err(err) => Err(err)
@@ -199,7 +211,12 @@ fn parse_cff2_index(data : BytesView, offset : Int) -> Result[CffIndex, VarError
         return Err(InvalidFormat)
       }
       if count == 0 {
-        return Ok(CffIndex::{ count: 0, off_size: 0, offsets: [], data: Bytes::from_array([]) })
+        return Ok(CffIndex::{
+          count: 0,
+          off_size: 0,
+          offsets: [],
+          data: Bytes::from_array([]),
+        })
       }
       let off_size = read_u8_int(data, offset + 4)
       match off_size {
@@ -235,7 +252,11 @@ fn parse_cff2_index(data : BytesView, offset : Int) -> Result[CffIndex, VarError
   }
 }
 
-fn CffIndex::item_bytes(self : CffIndex, index : Int) -> Result[Bytes, VarError] {
+///|
+fn CffIndex::item_bytes(
+  self : CffIndex,
+  index : Int,
+) -> Result[Bytes, VarError] {
   if index < 0 || index >= self.count {
     return Err(InvalidFormat)
   }
@@ -250,11 +271,17 @@ fn CffIndex::item_bytes(self : CffIndex, index : Int) -> Result[Bytes, VarError]
   Ok(self.data[start:end].to_bytes())
 }
 
+///|
 fn int8_from_byte_varc(value : Byte) -> Int {
   let v = value.to_int()
-  if v >= 0x80 { v - 0x100 } else { v }
+  if v >= 0x80 {
+    v - 0x100
+  } else {
+    v
+  }
 }
 
+///|
 fn decode_tuple_values(data : BytesView) -> Result[Array[Int], VarError] {
   let values : Array[Int] = []
   let mut pos = 0
@@ -306,6 +333,7 @@ fn decode_tuple_values(data : BytesView) -> Result[Array[Int], VarError] {
   Ok(values)
 }
 
+///|
 fn decode_tuple_values_count(
   data : BytesView,
   count : Int,
@@ -338,11 +366,7 @@ fn decode_tuple_values_count(
         let value = read_i16(data, pos)
         match value {
           Err(err) => return Err(err)
-          Ok(v) => {
-            if values.length() < count {
-              values.push(v)
-            }
-          }
+          Ok(v) => if values.length() < count { values.push(v) }
         }
         pos = pos + 2
       }
@@ -355,11 +379,7 @@ fn decode_tuple_values_count(
         let value = read_i32(data, pos)
         match value {
           Err(err) => return Err(err)
-          Ok(v) => {
-            if values.length() < count {
-              values.push(v)
-            }
-          }
+          Ok(v) => if values.length() < count { values.push(v) }
         }
         pos = pos + 4
       }
@@ -378,6 +398,7 @@ fn decode_tuple_values_count(
   Ok((values, pos))
 }
 
+///|
 fn read_u32var(data : BytesView, offset : Int) -> Result[(UInt, Int), VarError] {
   if offset < 0 || offset >= data.length() {
     return Err(UnexpectedEof)
@@ -424,6 +445,7 @@ fn read_u32var(data : BytesView, offset : Int) -> Result[(UInt, Int), VarError] 
   Ok((value, 5))
 }
 
+///|
 fn coverage_index_varc(
   data : BytesView,
   offset : Int,
@@ -446,6 +468,7 @@ fn coverage_index_varc(
   }
 }
 
+///|
 fn coverage_format1_varc(
   data : BytesView,
   offset : Int,
@@ -474,6 +497,7 @@ fn coverage_format1_varc(
   }
 }
 
+///|
 fn coverage_format2_varc(
   data : BytesView,
   offset : Int,
@@ -488,7 +512,8 @@ fn coverage_format2_varc(
     Ok(count) => {
       let record_offset = offset + 4
       let record_size = 6
-      if record_offset < 0 || record_offset + count * record_size > data.length() {
+      if record_offset < 0 ||
+        record_offset + count * record_size > data.length() {
         return Err(UnexpectedEof)
       }
       for i in 0..<count {
@@ -519,21 +544,25 @@ pub fn VarcTable::parse(data : BytesView) -> Result[VarcTable, VarError] {
   let condition_list_offset = read_u32_int(data, 12)
   let axis_indices_offset = read_u32_int(data, 16)
   let glyph_records_offset = read_u32_int(data, 20)
-  match (
-    version,
-    coverage_offset,
-    var_store_offset,
-    condition_list_offset,
-    axis_indices_offset,
-    glyph_records_offset,
-  ) {
+  match
+    (
+      version, coverage_offset, var_store_offset, condition_list_offset, axis_indices_offset,
+      glyph_records_offset,
+    ) {
     (Err(err), _, _, _, _, _) => Err(err)
     (_, Err(err), _, _, _, _) => Err(err)
     (_, _, Err(err), _, _, _) => Err(err)
     (_, _, _, Err(err), _, _) => Err(err)
     (_, _, _, _, Err(err), _) => Err(err)
     (_, _, _, _, _, Err(err)) => Err(err)
-    (Ok(version), Ok(coverage_offset), Ok(var_store_offset), Ok(condition_list_offset), Ok(axis_indices_offset), Ok(glyph_records_offset)) => {
+    (
+      Ok(version),
+      Ok(coverage_offset),
+      Ok(var_store_offset),
+      Ok(condition_list_offset),
+      Ok(axis_indices_offset),
+      Ok(glyph_records_offset),
+    ) => {
       let major = (version >> 16) & 0xFFFFU
       if major != 1U {
         return Err(InvalidFormat)
@@ -573,7 +602,9 @@ pub fn VarcTable::parse(data : BytesView) -> Result[VarcTable, VarError] {
 }
 
 ///|
-pub fn VarcTable::var_store(self : VarcTable) -> Result[MultiItemVariationStore?, VarError] {
+pub fn VarcTable::var_store(
+  self : VarcTable,
+) -> Result[MultiItemVariationStore?, VarError] {
   if self.var_store_offset == 0 {
     return Ok(None)
   }
@@ -587,7 +618,10 @@ pub fn VarcTable::var_store(self : VarcTable) -> Result[MultiItemVariationStore?
 }
 
 ///|
-pub fn VarcTable::axis_indices(self : VarcTable, index : Int) -> Result[Array[Int], VarError] {
+pub fn VarcTable::axis_indices(
+  self : VarcTable,
+  index : Int,
+) -> Result[Array[Int], VarError] {
   if self.axis_indices_offset == 0 {
     return Err(InvalidFormat)
   }
@@ -610,14 +644,16 @@ pub fn VarcTable::glyph_record(
   if self.coverage_offset == 0 || self.glyph_records_offset == 0 {
     return Ok(None)
   }
-  let index = match coverage_index_varc(self.data[:], self.coverage_offset, glyph) {
+  let index = match
+    coverage_index_varc(self.data[:], self.coverage_offset, glyph) {
     Err(err) => return Err(err)
     Ok(value) => value
   }
   match index {
     None => Ok(None)
     Some(index) => {
-      let records = match parse_cff2_index(self.data[:], self.glyph_records_offset) {
+      let records = match
+        parse_cff2_index(self.data[:], self.glyph_records_offset) {
         Err(err) => return Err(err)
         Ok(value) => value
       }
@@ -630,7 +666,9 @@ pub fn VarcTable::glyph_record(
 }
 
 ///|
-pub fn VarcTable::conditions(self : VarcTable) -> Result[Array[VarcCondition], VarError] {
+pub fn VarcTable::conditions(
+  self : VarcTable,
+) -> Result[Array[VarcCondition], VarError] {
   if self.condition_list_offset == 0 {
     return Ok([])
   }
@@ -653,7 +691,8 @@ pub fn VarcTable::conditions(self : VarcTable) -> Result[Array[VarcCondition], V
         match offset {
           Err(err) => return Err(err)
           Ok(offset) => {
-            let condition = match parse_condition_at(self.data[:], base, offset, 0) {
+            let condition = match
+              parse_condition_at(self.data[:], base, offset, 0) {
               Err(err) => return Err(err)
               Ok(value) => value
             }

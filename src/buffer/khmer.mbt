@@ -28,10 +28,19 @@ let khmer_feature_tags : Array[@common.Tag] = [
   @common.Tag::from_chars('c', 'l', 'i', 'g'),
 ]
 
+///|
 let khmer_feature_pref : Int = 2
+
+///|
 let khmer_feature_blwf : Int = 3
+
+///|
 let khmer_feature_abvf : Int = 4
+
+///|
 let khmer_feature_pstf : Int = 5
+
+///|
 let khmer_feature_cfar : Int = 6
 
 ///|
@@ -43,10 +52,12 @@ let khmer_cat_ra : Int = 15
 ///|
 let khmer_cat_vpre : Int = 22
 
+///|
 fn khmer_category(codepoint : UInt) -> Int {
   indic_category(indic_get_categories(codepoint)).reinterpret_as_int()
 }
 
+///|
 fn reorder_range_by_order(
   buffer : Buffer,
   categories : Array[Int],
@@ -81,6 +92,7 @@ fn reorder_range_by_order(
   next_categories
 }
 
+///|
 fn reorder_consonant_syllable_khmer(
   buffer : Buffer,
   categories : Array[Int],
@@ -131,12 +143,14 @@ fn reorder_consonant_syllable_khmer(
   reorder_range_by_order(buffer, categories, start, order)
 }
 
+///|
 fn reorder_khmer_syllables(
   buffer : Buffer,
   categories : Array[Int],
   syllables : Array[Int],
 ) -> Unit {
-  if categories.length() != buffer.infos.length() || syllables.length() != buffer.infos.length() {
+  if categories.length() != buffer.infos.length() ||
+    syllables.length() != buffer.infos.length() {
     return ()
   }
   let mut current_categories = categories
@@ -150,12 +164,15 @@ fn reorder_khmer_syllables(
     let syllable_type = syllable & 0x0f
     if syllable_type == khmer_syllable_type_consonant ||
       syllable_type == khmer_syllable_type_broken {
-      current_categories = reorder_consonant_syllable_khmer(buffer, current_categories, i, j)
+      current_categories = reorder_consonant_syllable_khmer(
+        buffer, current_categories, i, j,
+      )
     }
     i = j
   }
 }
 
+///|
 fn build_khmer_feature_masks(
   categories : Array[Int],
   syllables : Array[Int],
@@ -208,12 +225,10 @@ pub fn Buffer::shape_khmer(
     categories.push(indic_category(indic_get_categories(info.codepoint)))
   }
   let syllables = find_syllables_khmer(categories)
-  match insert_dotted_circle_for_syllables(
-    font,
-    self,
-    syllables,
-    khmer_syllable_type_broken,
-  ) {
+  match
+    insert_dotted_circle_for_syllables(
+      font, self, syllables, khmer_syllable_type_broken,
+    ) {
     Err(err) => return Err(err)
     Ok(_) => ()
   }
@@ -230,7 +245,9 @@ pub fn Buffer::shape_khmer(
   for info in self.infos {
     reordered_categories.push(khmer_category(info.codepoint))
   }
-  let glyph_masks = build_khmer_feature_masks(reordered_categories, syllables_after)
+  let glyph_masks = build_khmer_feature_masks(
+    reordered_categories, syllables_after,
+  )
   match self.shape_basic(font) {
     Err(err) => return Err(err)
     Ok(_) => ()
@@ -240,14 +257,15 @@ pub fn Buffer::shape_khmer(
     Ok(value) => value
   }
   if gsub is Some(gsub) {
-    match apply_gsub_features_for_syllables(
-      font,
-      self,
-      gsub,
-      khmer_feature_tags,
-      syllables_after,
-      glyph_masks=glyph_masks,
-    ) {
+    match
+      apply_gsub_features_for_syllables(
+        font,
+        self,
+        gsub,
+        khmer_feature_tags,
+        syllables_after,
+        glyph_masks~,
+      ) {
       Err(err) => return Err(err)
       Ok(_) => ()
     }

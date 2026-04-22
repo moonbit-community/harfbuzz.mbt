@@ -63,7 +63,9 @@ fn build_gvar_with_tuple() -> Bytes {
   push_u32_gvar(bytes, 24) // data offset (20 header + 4 offsets)
   push_u16_gvar(bytes, 0) // start 0
   push_u16_gvar(bytes, tuple.length() / 2) // end
-  for b in tuple { bytes.push(b) }
+  for b in tuple {
+    bytes.push(b)
+  }
   Bytes::from_array(bytes)
 }
 
@@ -75,8 +77,14 @@ test "gvar parse offsets" {
   }
   let g0 = gvar.glyph_variation_data(0)
   let g1 = gvar.glyph_variation_data(1)
-  @debug.debug_inspect(g0.map(bytes => bytes.to_array().map(b => b.to_int())), content="Some([1, 2])")
-  @debug.debug_inspect(g1.map(bytes => bytes.to_array().map(b => b.to_int())), content="Some([3, 4, 5, 6])")
+  @debug.debug_inspect(
+    g0.map(bytes => bytes.to_array().map(b => b.to_int())),
+    content="Some([1, 2])",
+  )
+  @debug.debug_inspect(
+    g1.map(bytes => bytes.to_array().map(b => b.to_int())),
+    content="Some([3, 4, 5, 6])",
+  )
 }
 
 ///|

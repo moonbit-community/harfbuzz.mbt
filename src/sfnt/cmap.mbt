@@ -43,7 +43,7 @@ pub fn CmapTable::parse(blob : @blob.Blob) -> Result[CmapTable, SfntError] {
             let format = read_u16_int(data, subtable_offset)
             match format {
               Err(err) => return Err(err)
-              Ok(format) => {
+              Ok(format) =>
                 if format == 14 {
                   if variation_offset is None {
                     variation_offset = Some(subtable_offset)
@@ -56,7 +56,6 @@ pub fn CmapTable::parse(blob : @blob.Blob) -> Result[CmapTable, SfntError] {
                     chosen_format = Some(format)
                   }
                 }
-              }
             }
           }
         }
@@ -71,6 +70,7 @@ pub fn CmapTable::parse(blob : @blob.Blob) -> Result[CmapTable, SfntError] {
   }
 }
 
+///|
 fn cmap_format_rank(format : Int) -> Int {
   if format == 12 {
     5
@@ -153,10 +153,12 @@ pub fn CmapTable::variation_mapping(
 ) -> Result[(Bool, UInt?), SfntError] {
   match self.variation_offset {
     None => Ok((false, None))
-    Some(offset) => variation_mapping_format14(self.data, offset, codepoint, selector)
+    Some(offset) =>
+      variation_mapping_format14(self.data, offset, codepoint, selector)
   }
 }
 
+///|
 fn variation_mapping_format14(
   data : BytesView,
   offset : Int,
@@ -179,7 +181,7 @@ fn variation_mapping_format14(
           (Err(err), _, _) => return Err(err)
           (_, Err(err), _) => return Err(err)
           (_, _, Err(err)) => return Err(err)
-          (Ok(vs), Ok(default_offset), Ok(non_default_offset)) => {
+          (Ok(vs), Ok(default_offset), Ok(non_default_offset)) =>
             if vs == selector {
               if non_default_offset != 0 {
                 let mapping = non_default_variation_mapping(
@@ -207,7 +209,6 @@ fn variation_mapping_format14(
               }
               return Ok((false, None))
             }
-          }
         }
         base = base + 11
       }
@@ -216,6 +217,7 @@ fn variation_mapping_format14(
   }
 }
 
+///|
 fn non_default_variation_mapping(
   data : BytesView,
   offset : Int,
@@ -235,11 +237,10 @@ fn non_default_variation_mapping(
         match (value, glyph_id) {
           (Err(err), _) => return Err(err)
           (_, Err(err)) => return Err(err)
-          (Ok(value), Ok(glyph_id)) => {
+          (Ok(value), Ok(glyph_id)) =>
             if value == codepoint {
               return Ok(Some(glyph_id.reinterpret_as_uint()))
             }
-          }
         }
         base = base + 5
       }
@@ -248,6 +249,7 @@ fn non_default_variation_mapping(
   }
 }
 
+///|
 fn default_variation_mapping(
   data : BytesView,
   offset : Int,
@@ -302,6 +304,7 @@ fn glyph_for_format0(
   }
 }
 
+///|
 fn collect_format0(
   data : BytesView,
   offset : Int,
@@ -356,6 +359,7 @@ fn glyph_for_format6(
   }
 }
 
+///|
 fn collect_format6(
   data : BytesView,
   offset : Int,
@@ -419,6 +423,7 @@ fn glyph_for_format10(
   }
 }
 
+///|
 fn collect_format10(
   data : BytesView,
   offset : Int,
@@ -482,6 +487,7 @@ fn glyph_for_format12(
   }
 }
 
+///|
 fn collect_format12(
   data : BytesView,
   offset : Int,
@@ -584,6 +590,7 @@ fn glyph_for_format4(
   }
 }
 
+///|
 fn collect_format4(
   data : BytesView,
   offset : Int,
@@ -616,21 +623,23 @@ fn collect_format4(
               (Ok(id_delta), Ok(id_range_offset)) => {
                 let mut cp = start_code
                 while cp <= end_code {
-                  let gid =
-                    if id_range_offset == 0 {
-                      (cp + id_delta) & 0xffff
-                    } else {
-                      let glyph_index_offset = id_range_offset_offset +
-                        i * 2 +
-                        id_range_offset +
-                        (cp - start_code) * 2
-                      match read_u16_int(data, glyph_index_offset) {
-                        Err(err) => return Err(err)
-                        Ok(glyph_id) => {
-                          if glyph_id == 0 { 0 } else { (glyph_id + id_delta) & 0xffff }
+                  let gid = if id_range_offset == 0 {
+                    (cp + id_delta) & 0xffff
+                  } else {
+                    let glyph_index_offset = id_range_offset_offset +
+                      i * 2 +
+                      id_range_offset +
+                      (cp - start_code) * 2
+                    match read_u16_int(data, glyph_index_offset) {
+                      Err(err) => return Err(err)
+                      Ok(glyph_id) =>
+                        if glyph_id == 0 {
+                          0
+                        } else {
+                          (glyph_id + id_delta) & 0xffff
                         }
-                      }
                     }
+                  }
                   if gid != 0 {
                     map.set(cp.reinterpret_as_uint(), gid.reinterpret_as_uint())
                   }

@@ -201,11 +201,13 @@ fn parse_kern_subtable_format2(
       if offset + 14 > limit {
         return Err(UnexpectedEof)
       }
-      let left = match parse_kern_class_table(data, offset + left_offset, limit) {
+      let left = match
+        parse_kern_class_table(data, offset + left_offset, limit) {
         Err(err) => return Err(err)
         Ok(value) => value
       }
-      let right = match parse_kern_class_table(data, offset + right_offset, limit) {
+      let right = match
+        parse_kern_class_table(data, offset + right_offset, limit) {
         Err(err) => return Err(err)
         Ok(value) => value
       }
@@ -265,13 +267,8 @@ fn parse_kern_subtable_format3(
   let left_class_count = read_u8_int(data, offset + 9)
   let right_class_count = read_u8_int(data, offset + 10)
   let flags = read_u8_int(data, offset + 11)
-  match (
-    glyph_count,
-    kern_value_count,
-    left_class_count,
-    right_class_count,
-    flags,
-  ) {
+  match
+    (glyph_count, kern_value_count, left_class_count, right_class_count, flags) {
     (Err(err), _, _, _, _) => Err(err)
     (_, Err(err), _, _, _) => Err(err)
     (_, _, Err(err), _, _) => Err(err)
@@ -284,7 +281,10 @@ fn parse_kern_subtable_format3(
       Ok(right_class_count),
       Ok(_),
     ) => {
-      if glyph_count < 0 || kern_value_count < 0 || left_class_count < 0 || right_class_count < 0 {
+      if glyph_count < 0 ||
+        kern_value_count < 0 ||
+        left_class_count < 0 ||
+        right_class_count < 0 {
         return Err(InvalidFormat)
       }
       if left_class_count == 0 || right_class_count == 0 {
@@ -407,46 +407,31 @@ pub fn KernTable::parse(data : BytesView) -> Result[KernTable, SfntError] {
             let cross_stream = (flags & 0x04) != 0
             let override_flag = (flags & 0x08) != 0
             if format == 0 {
-              let subtable = match parse_kern_subtable_format0(
-                data,
-                offset,
-                length,
-                format,
-                horizontal,
-                minimum,
-                cross_stream,
-                override_flag,
-              ) {
+              let subtable = match
+                parse_kern_subtable_format0(
+                  data, offset, length, format, horizontal, minimum, cross_stream,
+                  override_flag,
+                ) {
                 Err(err) => return Err(err)
                 Ok(value) => value
               }
               subtables.push(subtable)
             } else if format == 2 {
-              let subtable = match parse_kern_subtable_format2(
-                data,
-                offset,
-                length,
-                format,
-                horizontal,
-                minimum,
-                cross_stream,
-                override_flag,
-              ) {
+              let subtable = match
+                parse_kern_subtable_format2(
+                  data, offset, length, format, horizontal, minimum, cross_stream,
+                  override_flag,
+                ) {
                 Err(err) => return Err(err)
                 Ok(value) => value
               }
               subtables.push(subtable)
             } else if format == 3 {
-              let subtable = match parse_kern_subtable_format3(
-                data,
-                offset,
-                length,
-                format,
-                horizontal,
-                minimum,
-                cross_stream,
-                override_flag,
-              ) {
+              let subtable = match
+                parse_kern_subtable_format3(
+                  data, offset, length, format, horizontal, minimum, cross_stream,
+                  override_flag,
+                ) {
                 Err(err) => return Err(err)
                 Ok(value) => value
               }
@@ -456,7 +441,7 @@ pub fn KernTable::parse(data : BytesView) -> Result[KernTable, SfntError] {
           }
         }
       }
-      Ok(KernTable::{ subtables })
+      Ok(KernTable::{ subtables, })
     }
   }
 }
@@ -516,11 +501,20 @@ pub fn KernTable::kern_value(
         None => continue
         Some(value) => value
       }
-      let left_class = kern_class_for_u8(format3.left_class, format3.glyph_count, left)
-      let right_class = kern_class_for_u8(format3.right_class, format3.glyph_count, right)
-      if left_class < 0 || right_class < 0 ||
-          left_class >= format3.left_class_count ||
-          right_class >= format3.right_class_count {
+      let left_class = kern_class_for_u8(
+        format3.left_class,
+        format3.glyph_count,
+        left,
+      )
+      let right_class = kern_class_for_u8(
+        format3.right_class,
+        format3.glyph_count,
+        right,
+      )
+      if left_class < 0 ||
+        right_class < 0 ||
+        left_class >= format3.left_class_count ||
+        right_class >= format3.right_class_count {
         continue
       }
       let index = left_class * format3.right_class_count + right_class
@@ -540,7 +534,11 @@ pub fn KernTable::kern_value(
       found = true
     }
   }
-  if found { Some(value) } else { None }
+  if found {
+    Some(value)
+  } else {
+    None
+  }
 }
 
 ///|
@@ -558,7 +556,11 @@ fn kern_class_for(table : KernClassTable, glyph : UInt) -> Int {
 }
 
 ///|
-fn kern_class_for_u8(classes : Array[Int], glyph_count : Int, glyph : UInt) -> Int {
+fn kern_class_for_u8(
+  classes : Array[Int],
+  glyph_count : Int,
+  glyph : UInt,
+) -> Int {
   if glyph > 0xffffU {
     return 0
   }

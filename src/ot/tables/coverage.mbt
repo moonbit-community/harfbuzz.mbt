@@ -80,7 +80,8 @@ fn coverage_format2(
     Ok(count) => {
       let record_offset = offset + 4
       let record_size = 6
-      if record_offset < 0 || record_offset + count * record_size > data.length() {
+      if record_offset < 0 ||
+        record_offset + count * record_size > data.length() {
         return Err(UnexpectedEof)
       }
       for i in 0..<count {

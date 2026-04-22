@@ -92,10 +92,12 @@ let myanmar_pos_after_sub : Int = 9
 ///|
 let myanmar_pos_end : Int = 14
 
+///|
 fn myanmar_category(codepoint : UInt) -> Int {
   indic_category(indic_get_categories(codepoint)).reinterpret_as_int()
 }
 
+///|
 fn is_consonant_myanmar(category : Int) -> Bool {
   category == myanmar_cat_c ||
   category == myanmar_cat_cs ||
@@ -105,6 +107,7 @@ fn is_consonant_myanmar(category : Int) -> Bool {
   category == myanmar_cat_dotted_circle
 }
 
+///|
 fn reverse_range(buffer : Buffer, start : Int, end : Int) -> Unit {
   if start < 0 || end > buffer.infos.length() || start >= end {
     return ()
@@ -123,6 +126,7 @@ fn reverse_range(buffer : Buffer, start : Int, end : Int) -> Unit {
   }
 }
 
+///|
 fn reorder_by_positions(
   buffer : Buffer,
   positions : Array[Int],
@@ -134,7 +138,7 @@ fn reorder_by_positions(
   }
   let range_len = end - start
   let order : Array[Int] = []
-  for pos in myanmar_pos_start..=myanmar_pos_end {
+  for pos in myanmar_pos_start..<=myanmar_pos_end {
     for rel in 0..<range_len {
       if positions[start + rel] == pos {
         order.push(rel)
@@ -165,6 +169,7 @@ fn reorder_by_positions(
   next_pos_values
 }
 
+///|
 fn reorder_consonant_syllable_myanmar(
   buffer : Buffer,
   categories : Array[Int],
@@ -195,7 +200,10 @@ fn reorder_consonant_syllable_myanmar(
       break
     }
   }
-  let pos_values : Array[Int] = Array::make(buffer.infos.length(), myanmar_pos_start)
+  let pos_values : Array[Int] = Array::make(
+    buffer.infos.length(),
+    myanmar_pos_start,
+  )
   let reph_limit = if has_reph { start + 3 } else { start }
   for i in start..<reph_limit {
     pos_values[i] = myanmar_pos_after_main
@@ -255,7 +263,7 @@ fn reorder_consonant_syllable_myanmar(
   if first_left < last_left {
     reverse_range(buffer, first_left, last_left + 1)
     let mut i = first_left
-    for j in i..=last_left {
+    for j in i..<=last_left {
       let category = myanmar_category(buffer.infos[j].codepoint)
       if category == myanmar_cat_vpre {
         reverse_range(buffer, i, j + 1)
@@ -265,12 +273,14 @@ fn reorder_consonant_syllable_myanmar(
   }
 }
 
+///|
 fn reorder_myanmar_syllables(
   buffer : Buffer,
   categories : Array[Int],
   syllables : Array[Int],
 ) -> Unit {
-  if categories.length() != buffer.infos.length() || syllables.length() != buffer.infos.length() {
+  if categories.length() != buffer.infos.length() ||
+    syllables.length() != buffer.infos.length() {
     return ()
   }
   let mut i = 0
@@ -324,12 +334,10 @@ pub fn Buffer::shape_myanmar(
     categories.push(indic_category(indic_get_categories(info.codepoint)))
   }
   let syllables = find_syllables_myanmar(categories)
-  match insert_dotted_circle_for_syllables(
-    font,
-    self,
-    syllables,
-    myanmar_syllable_type_broken,
-  ) {
+  match
+    insert_dotted_circle_for_syllables(
+      font, self, syllables, myanmar_syllable_type_broken,
+    ) {
     Err(err) => return Err(err)
     Ok(_) => ()
   }
@@ -342,20 +350,23 @@ pub fn Buffer::shape_myanmar(
   }
   let syllables_after = find_syllables_myanmar(categories_after_u)
   reorder_myanmar_syllables(self, categories_after_i, syllables_after)
-  let (unicode_mark_flags, combining_classes) = collect_mark_fallback_data(self.infos)
+  let (unicode_mark_flags, combining_classes) = collect_mark_fallback_data(
+    self.infos,
+  )
   match self.shape_basic(font) {
     Err(err) => return Err(err)
     Ok(_) => ()
   }
   if gsub is Some(gsub) {
-    match apply_gsub_features_for_syllables(
-      font,
-      self,
-      gsub,
-      myanmar_feature_tags,
-      syllables_after,
-      script_tag=selected_script_tag,
-    ) {
+    match
+      apply_gsub_features_for_syllables(
+        font,
+        self,
+        gsub,
+        myanmar_feature_tags,
+        syllables_after,
+        script_tag=selected_script_tag,
+      ) {
       Err(err) => return Err(err)
       Ok(_) => ()
     }
@@ -365,7 +376,7 @@ pub fn Buffer::shape_myanmar(
     self,
     zero_width_marks=ZeroWidthMarks::ByGdefEarly,
     fallback_position=false,
-    unicode_mark_flags=unicode_mark_flags,
-    combining_classes=combining_classes,
+    unicode_mark_flags~,
+    combining_classes~,
   )
 }

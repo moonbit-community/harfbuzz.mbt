@@ -75,16 +75,26 @@ pub fn VarcTransform::apply_to_bounds(
   (min_x, min_y, max_x, max_y)
 }
 
+///|
 fn min4(a : Double, b : Double, c : Double, d : Double) -> Double {
   let ab = if a < b { a } else { b }
   let cd = if c < d { c } else { d }
-  if ab < cd { ab } else { cd }
+  if ab < cd {
+    ab
+  } else {
+    cd
+  }
 }
 
+///|
 fn max4(a : Double, b : Double, c : Double, d : Double) -> Double {
   let ab = if a > b { a } else { b }
   let cd = if c > d { c } else { d }
-  if ab > cd { ab } else { cd }
+  if ab > cd {
+    ab
+  } else {
+    cd
+  }
 }
 
 ///|
@@ -97,6 +107,7 @@ pub struct VarcComponent {
   transform : VarcTransform
 } derive(Debug, ToJson)
 
+///|
 priv struct VarcTransformRaw {
   mut translate_x : Double?
   mut translate_y : Double?
@@ -109,26 +120,64 @@ priv struct VarcTransformRaw {
   mut tcenter_y : Double?
 }
 
+///|
 let varc_flag_reset_unspecified_axes : UInt = 1U << 0
+
+///|
 let varc_flag_have_axes : UInt = 1U << 1
+
+///|
 let varc_flag_axis_values_have_variation : UInt = 1U << 2
+
+///|
 let varc_flag_transform_has_variation : UInt = 1U << 3
+
+///|
 let varc_flag_have_translate_x : UInt = 1U << 4
+
+///|
 let varc_flag_have_translate_y : UInt = 1U << 5
+
+///|
 let varc_flag_have_rotation : UInt = 1U << 6
+
+///|
 let varc_flag_have_condition : UInt = 1U << 7
+
+///|
 let varc_flag_have_scale_x : UInt = 1U << 8
+
+///|
 let varc_flag_have_scale_y : UInt = 1U << 9
+
+///|
 let varc_flag_have_tcenter_x : UInt = 1U << 10
+
+///|
 let varc_flag_have_tcenter_y : UInt = 1U << 11
+
+///|
 let varc_flag_gid_is_24bit : UInt = 1U << 12
+
+///|
 let varc_flag_have_skew_x : UInt = 1U << 13
+
+///|
 let varc_flag_have_skew_y : UInt = 1U << 14
+
+///|
 let varc_flag_reserved_mask : UInt = 0xFFFF8000U
+
+///|
 let varc_no_variation : UInt = 0xFFFFFFFFU
+
+///|
 let varc_max_axes : Int = 4096
+
+///|
 let varc_pi : Double = 3.141592653589793
 
+///|
 fn option_or(value : Double?, default_value : Double) -> Double {
   match value {
     None => default_value
@@ -136,6 +185,7 @@ fn option_or(value : Double?, default_value : Double) -> Double {
   }
 }
 
+///|
 fn read_glyph_id_24(data : BytesView, offset : Int) -> Result[Int, VarError] {
   if offset < 0 || offset + 3 > data.length() {
     return Err(UnexpectedEof)
@@ -146,6 +196,7 @@ fn read_glyph_id_24(data : BytesView, offset : Int) -> Result[Int, VarError] {
   Ok((b0 << 16) | (b1 << 8) | b2)
 }
 
+///|
 fn apply_axis_overrides(
   base_coords : Array[Int],
   axis_indices : Array[Int],
@@ -170,10 +221,12 @@ fn apply_axis_overrides(
   coords
 }
 
+///|
 fn finalize_value(raw : Double, mult : Double, divisor : Double) -> Double {
   (raw * mult).round() / divisor
 }
 
+///|
 fn finalize_transform(flags : UInt, raw : VarcTransformRaw) -> VarcTransform {
   let mut translate_x = 0.0
   let mut translate_y = 0.0
@@ -239,6 +292,7 @@ fn finalize_transform(flags : UInt, raw : VarcTransformRaw) -> VarcTransform {
   }
 }
 
+///|
 fn parse_component(
   data : BytesView,
   offset : Int,
@@ -283,15 +337,16 @@ fn parse_component(
     }
     let var_delta = match var_store {
       None => None
-      Some(store) => Some((var_idx : Int) => {
-        let var_idx_u = var_idx.reinterpret_as_uint()
-        if var_idx_u == varc_no_variation {
-          return 0.0
-        }
-        let out : Array[Double] = [0.0]
-        store.get_delta(var_idx_u, coords, out)
-        out[0]
-      })
+      Some(store) =>
+        Some((var_idx : Int) => {
+          let var_idx_u = var_idx.reinterpret_as_uint()
+          if var_idx_u == varc_no_variation {
+            return 0.0
+          }
+          let out : Array[Double] = [0.0]
+          store.get_delta(var_idx_u, coords, out)
+          out[0]
+        })
     }
     show = conditions[cond_idx].evaluate(coords, var_delta)
   }
@@ -308,7 +363,8 @@ fn parse_component(
       Err(err) => return Err(err)
       Ok(value) => value
     }
-    let (values, consumed) = match decode_tuple_values_count(data[pos:], axis_indices.length()) {
+    let (values, consumed) = match
+      decode_tuple_values_count(data[pos:], axis_indices.length()) {
       Err(err) => return Err(err)
       Ok(value) => value
     }
@@ -441,7 +497,7 @@ fn parse_component(
   }
 
   if show {
-  let transform_values : Array[Double] = []
+    let transform_values : Array[Double] = []
     if (flags & varc_flag_have_translate_x) != 0U {
       transform_values.push(option_or(transform_raw.translate_x, 0.0))
     }
@@ -480,50 +536,53 @@ fn parse_component(
 
     let mut index = 0
     if (flags & varc_flag_have_translate_x) != 0U {
-      transform_raw.translate_x = Some(transform_values[index]);
+      transform_raw.translate_x = Some(transform_values[index])
       index = index + 1
     }
     if (flags & varc_flag_have_translate_y) != 0U {
-      transform_raw.translate_y = Some(transform_values[index]);
+      transform_raw.translate_y = Some(transform_values[index])
       index = index + 1
     }
     if (flags & varc_flag_have_rotation) != 0U {
-      transform_raw.rotation = Some(transform_values[index]);
+      transform_raw.rotation = Some(transform_values[index])
       index = index + 1
     }
     if (flags & varc_flag_have_scale_x) != 0U {
-      transform_raw.scale_x = Some(transform_values[index]);
+      transform_raw.scale_x = Some(transform_values[index])
       index = index + 1
     }
     if (flags & varc_flag_have_scale_y) != 0U {
-      transform_raw.scale_y = Some(transform_values[index]);
+      transform_raw.scale_y = Some(transform_values[index])
       index = index + 1
     }
     if (flags & varc_flag_have_skew_x) != 0U {
-      transform_raw.skew_x = Some(transform_values[index]);
+      transform_raw.skew_x = Some(transform_values[index])
       index = index + 1
     }
     if (flags & varc_flag_have_skew_y) != 0U {
-      transform_raw.skew_y = Some(transform_values[index]);
+      transform_raw.skew_y = Some(transform_values[index])
       index = index + 1
     }
     if (flags & varc_flag_have_tcenter_x) != 0U {
-      transform_raw.tcenter_x = Some(transform_values[index]);
+      transform_raw.tcenter_x = Some(transform_values[index])
       index = index + 1
     }
     if (flags & varc_flag_have_tcenter_y) != 0U {
-      transform_raw.tcenter_y = Some(transform_values[index]);
+      transform_raw.tcenter_y = Some(transform_values[index])
       index = index + 1
     }
   }
 
-  let mut component_coords = if (flags & varc_flag_reset_unspecified_axes) != 0U || coords.length() > varc_max_axes {
+  let mut component_coords = if (flags & varc_flag_reset_unspecified_axes) != 0U ||
+    coords.length() > varc_max_axes {
     base_coords.copy()
   } else {
     coords.copy()
   }
   if axis_indices.length() > 0 {
-    component_coords = apply_axis_overrides(component_coords, axis_indices, axis_values)
+    component_coords = apply_axis_overrides(
+      component_coords, axis_indices, axis_values,
+    )
   }
 
   let transform = finalize_transform(flags, transform_raw)
@@ -566,15 +625,10 @@ pub fn VarcTable::glyph_components(
       let components : Array[VarcComponent] = []
       let mut pos = 0
       while pos < data.length() {
-        let (component, next_pos) = match parse_component(
-          data,
-          pos,
-          coords,
-          base_coords,
-          self,
-          var_store,
-          conditions,
-        ) {
+        let (component, next_pos) = match
+          parse_component(
+            data, pos, coords, base_coords, self, var_store, conditions,
+          ) {
           Err(err) => return Err(err)
           Ok(value) => value
         }

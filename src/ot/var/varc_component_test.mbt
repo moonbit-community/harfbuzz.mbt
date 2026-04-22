@@ -66,6 +66,7 @@ fn push_u32var_comp(bytes : Array[Byte], value : UInt) -> Unit {
   bytes.push((value & 0xFFU).reinterpret_as_int().to_byte())
 }
 
+///|
 fn push_tuple_values_bytes(bytes : Array[Byte], values : Array[Int]) -> Unit {
   let count = values.length()
   let control = (count - 1) & 0x3F
@@ -75,6 +76,7 @@ fn push_tuple_values_bytes(bytes : Array[Byte], values : Array[Int]) -> Unit {
   }
 }
 
+///|
 fn push_tuple_values_words(bytes : Array[Byte], values : Array[Int]) -> Unit {
   let count = values.length()
   let control = 0x40 | ((count - 1) & 0x3F)
@@ -84,6 +86,7 @@ fn push_tuple_values_words(bytes : Array[Byte], values : Array[Int]) -> Unit {
   }
 }
 
+///|
 fn build_varc_component_table() -> Bytes {
   let record : Array[Byte] = []
   let flags = 274U // HAVE_AXES | HAVE_TRANSLATE_X | HAVE_SCALE_X
@@ -149,12 +152,25 @@ test "varc component parse" {
   let comp = comps[0]
   @debug.debug_inspect(comp.glyph, content="7")
   @debug.debug_inspect(comp.axis_indices, content="[1, 2]")
-  @debug.debug_inspect(comp.axis_values.map(v => v.round().to_int()), content="[8192, 16384]")
+  @debug.debug_inspect(
+    comp.axis_values.map(v => v.round().to_int()),
+    content="[8192, 16384]",
+  )
   @debug.debug_inspect(comp.coords, content="[0, 8192, 16384]")
   let tx = comp.transform.translate_x.round().to_int()
   let sx = (comp.transform.scale_x * 1000.0).round().to_int()
   let sy = (comp.transform.scale_y * 1000.0).round().to_int()
   @debug.debug_inspect((tx, sx, sy), content="(50, 1000, 1000)")
-  let (bx0, by0, bx1, by1) = comp.transform.apply_to_bounds(0.0, 0.0, 10.0, 20.0)
-  @debug.debug_inspect((bx0.round().to_int(), by0.round().to_int(), bx1.round().to_int(), by1.round().to_int()), content="(50, 0, 60, 20)")
+  let (bx0, by0, bx1, by1) = comp.transform.apply_to_bounds(
+    0.0, 0.0, 10.0, 20.0,
+  )
+  @debug.debug_inspect(
+    (
+      bx0.round().to_int(),
+      by0.round().to_int(),
+      bx1.round().to_int(),
+      by1.round().to_int(),
+    ),
+    content="(50, 0, 60, 20)",
+  )
 }

@@ -60,7 +60,12 @@ pub fn VorgTable::parse(data : BytesView) -> Result[VorgTable, SfntError] {
         }
         offset = offset + 4
       }
-      Ok(VorgTable::{ major_version: major, minor_version: minor, default_origin_y, metrics })
+      Ok(VorgTable::{
+        major_version: major,
+        minor_version: minor,
+        default_origin_y,
+        metrics,
+      })
     }
   }
 }

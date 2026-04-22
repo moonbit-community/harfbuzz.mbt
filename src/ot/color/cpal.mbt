@@ -34,7 +34,8 @@ pub fn CpalTable::parse(data : BytesView) -> Result[CpalTable, ColorError] {
   let num_palettes = read_u16_int(data, 4)
   let num_color_records = read_u16_int(data, 6)
   let color_records_offset = read_u32_int(data, 8)
-  match (version, num_colors, num_palettes, num_color_records, color_records_offset) {
+  match
+    (version, num_colors, num_palettes, num_color_records, color_records_offset) {
     (Err(err), _, _, _, _) => Err(err)
     (_, Err(err), _, _, _) => Err(err)
     (_, _, Err(err), _, _) => Err(err)
@@ -47,7 +48,10 @@ pub fn CpalTable::parse(data : BytesView) -> Result[CpalTable, ColorError] {
       Ok(num_color_records),
       Ok(color_records_offset),
     ) => {
-      if version < 0 || num_colors < 0 || num_palettes < 0 || num_color_records < 0 {
+      if version < 0 ||
+        num_colors < 0 ||
+        num_palettes < 0 ||
+        num_color_records < 0 {
         return Err(InvalidFormat)
       }
       if version != 0 && version != 1 {
@@ -94,13 +98,15 @@ pub fn CpalTable::parse(data : BytesView) -> Result[CpalTable, ColorError] {
         let palette_flags_offset = read_u32_int(data, tail_offset)
         let palette_labels_offset = read_u32_int(data, tail_offset + 4)
         let color_labels_offset = read_u32_int(data, tail_offset + 8)
-        match (palette_flags_offset, palette_labels_offset, color_labels_offset) {
+        match
+          (palette_flags_offset, palette_labels_offset, color_labels_offset) {
           (Err(err), _, _) => return Err(err)
           (_, Err(err), _) => return Err(err)
           (_, _, Err(err)) => return Err(err)
           (Ok(flags_offset), Ok(labels_offset), Ok(colors_offset)) => {
             if flags_offset != 0 {
-              if flags_offset < 0 || flags_offset + num_palettes * 4 > data.length() {
+              if flags_offset < 0 ||
+                flags_offset + num_palettes * 4 > data.length() {
                 return Err(UnexpectedEof)
               }
               let flags : Array[UInt] = []
@@ -114,7 +120,8 @@ pub fn CpalTable::parse(data : BytesView) -> Result[CpalTable, ColorError] {
               palette_flags = Some(flags)
             }
             if labels_offset != 0 {
-              if labels_offset < 0 || labels_offset + num_palettes * 2 > data.length() {
+              if labels_offset < 0 ||
+                labels_offset + num_palettes * 2 > data.length() {
                 return Err(UnexpectedEof)
               }
               let labels : Array[Int] = []
@@ -128,7 +135,8 @@ pub fn CpalTable::parse(data : BytesView) -> Result[CpalTable, ColorError] {
               palette_labels = Some(labels)
             }
             if colors_offset != 0 {
-              if colors_offset < 0 || colors_offset + num_colors * 2 > data.length() {
+              if colors_offset < 0 ||
+                colors_offset + num_colors * 2 > data.length() {
                 return Err(UnexpectedEof)
               }
               let labels : Array[Int] = []
@@ -161,7 +169,10 @@ pub fn CpalTable::parse(data : BytesView) -> Result[CpalTable, ColorError] {
 
 ///|
 /// Get palette colors for the given palette index.
-pub fn CpalTable::palette_colors(self : CpalTable, palette_index : Int) -> Array[@paint.Color] {
+pub fn CpalTable::palette_colors(
+  self : CpalTable,
+  palette_index : Int,
+) -> Array[@paint.Color] {
   if palette_index < 0 || palette_index >= self.num_palettes {
     return []
   }

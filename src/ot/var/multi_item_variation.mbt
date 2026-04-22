@@ -40,7 +40,11 @@ pub struct MultiItemVariationStore {
   data_sets : Array[MultiVarData]
 } derive(Debug, ToJson)
 
-fn SparseVariationRegion::evaluate(self : SparseVariationRegion, coords : ArrayView[Int]) -> Double {
+///|
+fn SparseVariationRegion::evaluate(
+  self : SparseVariationRegion,
+  coords : ArrayView[Int],
+) -> Double {
   let mut scalar = 1.0
   for axis in self.axes {
     let coord = if axis.axis_index >= 0 && axis.axis_index < coords.length() {
@@ -57,6 +61,7 @@ fn SparseVariationRegion::evaluate(self : SparseVariationRegion, coords : ArrayV
   scalar
 }
 
+///|
 fn SparseVarRegionList::evaluate(
   self : SparseVarRegionList,
   region_index : Int,
@@ -68,6 +73,7 @@ fn SparseVarRegionList::evaluate(
   self.regions[region_index].evaluate(coords)
 }
 
+///|
 fn parse_sparse_variation_region(
   data : BytesView,
   offset : Int,
@@ -98,21 +104,18 @@ fn parse_sparse_variation_region(
           (_, _, Err(err), _) => return Err(err)
           (_, _, _, Err(err)) => return Err(err)
           (Ok(axis_index), Ok(start_coord), Ok(peak_coord), Ok(end_coord)) => {
-            let axis = VarRegionAxis::{
-              start_coord,
-              peak_coord,
-              end_coord,
-            }
+            let axis = VarRegionAxis::{ start_coord, peak_coord, end_coord }
             axes.push(SparseVarRegionAxis::{ axis_index, axis })
           }
         }
         pos = pos + record_size
       }
-      Ok(SparseVariationRegion::{ axes })
+      Ok(SparseVariationRegion::{ axes, })
     }
   }
 }
 
+///|
 fn parse_sparse_var_region_list(
   data : BytesView,
   offset : Int,
@@ -139,7 +142,8 @@ fn parse_sparse_var_region_list(
             if region_offset < 0 || region_offset >= data.length() {
               return Err(UnexpectedEof)
             }
-            let region = match parse_sparse_variation_region(data, region_offset) {
+            let region = match
+              parse_sparse_variation_region(data, region_offset) {
               Err(err) => return Err(err)
               Ok(value) => value
             }
@@ -147,12 +151,16 @@ fn parse_sparse_var_region_list(
           }
         }
       }
-      Ok(SparseVarRegionList::{ regions })
+      Ok(SparseVarRegionList::{ regions, })
     }
   }
 }
 
-fn parse_multi_var_data(data : BytesView, offset : Int) -> Result[MultiVarData, VarError] {
+///|
+fn parse_multi_var_data(
+  data : BytesView,
+  offset : Int,
+) -> Result[MultiVarData, VarError] {
   let format = read_u8_int(data, offset)
   match format {
     Err(err) => Err(err)
@@ -193,6 +201,7 @@ fn parse_multi_var_data(data : BytesView, offset : Int) -> Result[MultiVarData, 
   }
 }
 
+///|
 fn MultiVarData::add_delta(
   self : MultiVarData,
   inner : Int,
@@ -244,7 +253,8 @@ pub fn MultiItemVariationStore::parse(
       if region_offset < 0 || region_offset >= data.length() {
         return Err(UnexpectedEof)
       }
-      let region_list = match parse_sparse_var_region_list(data, region_offset) {
+      let region_list = match
+        parse_sparse_var_region_list(data, region_offset) {
         Err(err) => return Err(err)
         Ok(value) => value
       }

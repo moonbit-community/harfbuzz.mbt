@@ -62,7 +62,7 @@ fn parse_axis_value(
   let format = read_u16_int(data, offset)
   match format {
     Err(err) => Err(err)
-    Ok(format) => {
+    Ok(format) =>
       if format == 1 {
         let axis_index = read_u16_int(data, offset + 2)
         let flags = read_u16_int(data, offset + 4)
@@ -83,14 +83,10 @@ fn parse_axis_value(
         let nominal_value = read_fixed_16_16(data, offset + 8)
         let range_min = read_fixed_16_16(data, offset + 12)
         let range_max = read_fixed_16_16(data, offset + 16)
-        match (
-          axis_index,
-          flags,
-          value_name_id,
-          nominal_value,
-          range_min,
-          range_max,
-        ) {
+        match
+          (
+            axis_index, flags, value_name_id, nominal_value, range_min, range_max,
+          ) {
           (Err(err), _, _, _, _, _) => Err(err)
           (_, Err(err), _, _, _, _) => Err(err)
           (_, _, Err(err), _, _, _) => Err(err)
@@ -104,14 +100,12 @@ fn parse_axis_value(
             Ok(nominal_value),
             Ok(range_min),
             Ok(range_max),
-          ) => Ok(Format2(
-            axis_index,
-            flags,
-            value_name_id,
-            nominal_value,
-            range_min,
-            range_max,
-          ))
+          ) =>
+            Ok(
+              Format2(
+                axis_index, flags, value_name_id, nominal_value, range_min, range_max,
+              ),
+            )
         }
       } else if format == 3 {
         let axis_index = read_u16_int(data, offset + 2)
@@ -125,7 +119,13 @@ fn parse_axis_value(
           (_, _, Err(err), _, _) => Err(err)
           (_, _, _, Err(err), _) => Err(err)
           (_, _, _, _, Err(err)) => Err(err)
-          (Ok(axis_index), Ok(flags), Ok(value_name_id), Ok(value), Ok(linked_value)) =>
+          (
+            Ok(axis_index),
+            Ok(flags),
+            Ok(value_name_id),
+            Ok(value),
+            Ok(linked_value),
+          ) =>
             Ok(Format3(axis_index, flags, value_name_id, value, linked_value))
         }
       } else if format == 4 {
@@ -162,7 +162,6 @@ fn parse_axis_value(
       } else {
         Err(InvalidFormat)
       }
-    }
   }
 }
 
@@ -176,15 +175,11 @@ pub fn StatTable::parse(data : BytesView) -> Result[StatTable, SfntError] {
   let axis_value_count = read_u16_int(data, 12)
   let axis_value_offset = read_u32_int(data, 14)
   let elided_fallback_name_id = read_u16_int(data, 18)
-  match (
-    version,
-    design_axis_size,
-    design_axis_count,
-    design_axes_offset,
-    axis_value_count,
-    axis_value_offset,
-    elided_fallback_name_id,
-  ) {
+  match
+    (
+      version, design_axis_size, design_axis_count, design_axes_offset, axis_value_count,
+      axis_value_offset, elided_fallback_name_id,
+    ) {
     (Err(err), _, _, _, _, _, _) => Err(err)
     (_, Err(err), _, _, _, _, _) => Err(err)
     (_, _, Err(err), _, _, _, _) => Err(err)

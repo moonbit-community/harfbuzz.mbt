@@ -365,7 +365,7 @@ fn scale_value(value : Int, scale : Int, upem : Int) -> Int {
   if upem == 0 {
     return value
   }
-  (value * scale) / upem
+  value * scale / upem
 }
 
 ///|
@@ -460,6 +460,7 @@ fn Font::ensure_vhea(self : Font) -> Result[@sfnt.VheaTable, FontError] {
 }
 
 ///|
+
 ///|
 fn Font::ensure_cmap(self : Font) -> Result[@sfnt.CmapTable, FontError] {
   match self.cmap {
@@ -1179,6 +1180,7 @@ pub fn Font::hvar(self : Font) -> Result[@ot_var.HvarTable?, FontError] {
       }
   }
 }
+
 ///|
 pub fn Font::fvar(self : Font) -> Result[@ot_var.FvarTable?, FontError] {
   match self.fvar {
@@ -1373,7 +1375,10 @@ pub fn Font::varc_components(
 }
 
 ///|
-pub fn Font::mvar_delta(self : Font, tag : @common.Tag) -> Result[Double, FontError] {
+pub fn Font::mvar_delta(
+  self : Font,
+  tag : @common.Tag,
+) -> Result[Double, FontError] {
   match self.var_coords_norm {
     None => Ok(0.0)
     Some(coords) =>
@@ -1540,9 +1545,10 @@ pub fn Font::glyph_from_name(
     Some(post) =>
       match post.glyph_from_name(name) {
         None => ()
-        Some(glyph) => if glyph >= 0 && glyph < maxp.num_glyphs {
-          return Ok(Some(glyph.reinterpret_as_uint()))
-        }
+        Some(glyph) =>
+          if glyph >= 0 && glyph < maxp.num_glyphs {
+            return Ok(Some(glyph.reinterpret_as_uint()))
+          }
       }
     None => ()
   }
@@ -1590,9 +1596,10 @@ pub fn Font::set_variations(
       for variation in variations {
         match fvar.axis_index(variation.tag) {
           None => ()
-          Some(index) => if index >= 0 && index < axis_count {
-            design_coords[index] = variation.value
-          }
+          Some(index) =>
+            if index >= 0 && index < axis_count {
+              design_coords[index] = variation.value
+            }
         }
       }
       let mut normalized = fvar.normalize_design_coords(design_coords.copy())
@@ -1680,6 +1687,7 @@ pub fn Font::glyph_bounds(
   self.glyph_bounds_with_coords(glyph, coords, 8)
 }
 
+///|
 fn Font::glyph_bounds_with_coords(
   self : Font,
   glyph : UInt,
@@ -1696,7 +1704,8 @@ fn Font::glyph_bounds_with_coords(
   match varc {
     None => self.glyph_bounds_raw(glyph, coords)
     Some(varc) => {
-      let components = match varc.glyph_components(glyph.reinterpret_as_int(), coords, coords) {
+      let components = match
+        varc.glyph_components(glyph.reinterpret_as_int(), coords, coords) {
         Err(err) => return Err(Var(err))
         Ok(value) => value
       }
@@ -1714,11 +1723,12 @@ fn Font::glyph_bounds_with_coords(
         if comp.glyph < 0 {
           continue
         }
-        let bounds = match self.glyph_bounds_with_coords(
-          comp.glyph.reinterpret_as_uint(),
-          comp.coords,
-          depth - 1,
-        ) {
+        let bounds = match
+          self.glyph_bounds_with_coords(
+            comp.glyph.reinterpret_as_uint(),
+            comp.coords,
+            depth - 1,
+          ) {
           Err(err) => return Err(err)
           Ok(value) => value
         }
@@ -1768,6 +1778,7 @@ fn Font::glyph_bounds_with_coords(
   }
 }
 
+///|
 fn Font::glyph_bounds_raw(
   self : Font,
   glyph : UInt,
@@ -1843,6 +1854,7 @@ fn Font::glyph_bounds_raw(
   }
 }
 
+///|
 fn Font::glyph_bounds_cff1(
   self : Font,
   glyph : Int,
@@ -1868,6 +1880,7 @@ fn Font::glyph_bounds_cff1(
   }
 }
 
+///|
 fn Font::glyph_bounds_cff2(
   self : Font,
   glyph : Int,

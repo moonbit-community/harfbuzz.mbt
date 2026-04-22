@@ -101,7 +101,10 @@ test "cff1 charset format0" {
     Err(err) => fail("charset parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  @debug.debug_inspect((map.get(100), map.get(101)), content="(Some(1), Some(2))")
+  @debug.debug_inspect(
+    (map.get(100), map.get(101)),
+    content="(Some(1), Some(2))",
+  )
 }
 
 ///|
@@ -111,7 +114,10 @@ test "cff1 charset format1" {
     Err(err) => fail("charset parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  @debug.debug_inspect((map.get(200), map.get(201), map.get(202)), content="(Some(1), Some(2), Some(3))")
+  @debug.debug_inspect(
+    (map.get(200), map.get(201), map.get(202)),
+    content="(Some(1), Some(2), Some(3))",
+  )
 }
 
 ///|
@@ -121,7 +127,10 @@ test "cff1 charset format2" {
     Err(err) => fail("charset parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  @debug.debug_inspect((map.get(300), map.get(301), map.get(302)), content="(Some(1), Some(2), Some(3))")
+  @debug.debug_inspect(
+    (map.get(300), map.get(301), map.get(302)),
+    content="(Some(1), Some(2), Some(3))",
+  )
 }
 
 ///|
@@ -149,7 +158,10 @@ test "cff charstring bounds simple" {
       let y_min = bounds.y_min.round().to_int()
       let x_max = bounds.x_max.round().to_int()
       let y_max = bounds.y_max.round().to_int()
-      @debug.debug_inspect((x_min, y_min, x_max, y_max), content="(50, 0, 150, 50)")
+      @debug.debug_inspect(
+        (x_min, y_min, x_max, y_max),
+        content="(50, 0, 150, 50)",
+      )
     }
   }
 }
@@ -168,7 +180,10 @@ test "cff charstring dotsection" {
       let y_min = bounds.y_min.round().to_int()
       let x_max = bounds.x_max.round().to_int()
       let y_max = bounds.y_max.round().to_int()
-      @debug.debug_inspect((x_min, y_min, x_max, y_max), content="(0, 0, 50, 0)")
+      @debug.debug_inspect(
+        (x_min, y_min, x_max, y_max),
+        content="(0, 0, 50, 0)",
+      )
     }
   }
 }
@@ -176,58 +191,39 @@ test "cff charstring dotsection" {
 ///|
 test "cff2 parse minimal" {
   let bytes : Bytes = [
-    0x02,
-    0x00,
-    0x05,
-    0x00,
-    0x08,
-    0x9C,
-    0x11,
-    0xA3,
-    0x0C,
-    0x24,
-    0xAA,
-    0x0C,
-    0x25,
-    0x00,
-    0x00,
-    0x00,
-    0x00,
-    0x00,
-    0x00,
-    0x00,
-    0x01,
-    0x01,
-    0x01,
-    0x01,
-    0x00,
-    0x00,
-    0x00,
-    0x01,
-    0x01,
-    0x01,
-    0x01,
-    0x00,
-    0x00,
+    0x02, 0x00, 0x05, 0x00, 0x08, 0x9C, 0x11, 0xA3, 0x0C, 0x24, 0xAA, 0x0C, 0x25,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x01, 0x01, 0x01, 0x00, 0x00,
+    0x00, 0x01, 0x01, 0x01, 0x01, 0x00, 0x00,
   ]
   let cff2 = match Cff2Table::parse(bytes[:]) {
     Err(err) => fail("cff2 parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  @debug.debug_inspect((cff2.top_dict_offset, cff2.top_dict_size), content="(5, 8)")
-  @debug.debug_inspect((cff2.charstrings.count, cff2.fd_array.count), content="(1, 1)")
-  @debug.debug_inspect((cff2.fdselect_offset, cff2.vstore_offset), content="(31, 0)")
+  @debug.debug_inspect(
+    (cff2.top_dict_offset, cff2.top_dict_size),
+    content="(5, 8)",
+  )
+  @debug.debug_inspect(
+    (cff2.charstrings.count, cff2.fd_array.count),
+    content="(1, 1)",
+  )
+  @debug.debug_inspect(
+    (cff2.fdselect_offset, cff2.vstore_offset),
+    content="(31, 0)",
+  )
   match cff2.fd_select {
     None => fail("missing fd select")
     Some(values) => @debug.debug_inspect(values, content="[0]")
   }
 }
 
+///|
 fn push_u16(bytes : Array[Byte], value : Int) -> Unit {
   bytes.push(((value >> 8) & 0xff).to_byte())
   bytes.push((value & 0xff).to_byte())
 }
 
+///|
 fn push_u32(bytes : Array[Byte], value : Int) -> Unit {
   bytes.push(((value >> 24) & 0xff).to_byte())
   bytes.push(((value >> 16) & 0xff).to_byte())
@@ -235,11 +231,13 @@ fn push_u32(bytes : Array[Byte], value : Int) -> Unit {
   bytes.push((value & 0xff).to_byte())
 }
 
+///|
 fn push_i16(bytes : Array[Byte], value : Int) -> Unit {
   let adjusted = if value < 0 { value + 0x10000 } else { value }
   push_u16(bytes, adjusted)
 }
 
+///|
 fn build_item_variation_store_bytes() -> Bytes {
   let bytes : Array[Byte] = []
   push_u16(bytes, 1) // format
@@ -259,13 +257,16 @@ fn build_item_variation_store_bytes() -> Bytes {
   Bytes::from_array(bytes)
 }
 
+///|
 test "cff2 charstring blend bounds" {
-  let store = match @ot_var.ItemVariationStore::parse(build_item_variation_store_bytes()[:]) {
+  let store = match
+    @ot_var.ItemVariationStore::parse(build_item_variation_store_bytes()[:]) {
     Err(err) => fail("var store parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let bytes : Bytes = [149, 144, 140, 16, 139, 21, 14]
-  let bounds = match cff2_charstring_bounds(bytes[:], None, None, Some(store), 0, [16384]) {
+  let bounds = match
+    cff2_charstring_bounds(bytes[:], None, None, Some(store), 0, [16384]) {
     Err(err) => fail("bounds error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -276,7 +277,10 @@ test "cff2 charstring blend bounds" {
       let y_min = bounds.y_min.round().to_int()
       let x_max = bounds.x_max.round().to_int()
       let y_max = bounds.y_max.round().to_int()
-      @debug.debug_inspect((x_min, y_min, x_max, y_max), content="(15, 0, 15, 0)")
+      @debug.debug_inspect(
+        (x_min, y_min, x_max, y_max),
+        content="(15, 0, 15, 0)",
+      )
     }
   }
 }

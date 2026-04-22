@@ -12,11 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+///|
 fn is_zero_width_mark(u : UInt) -> Bool {
   let cat = @unicode.general_category(u)
   cat == @unicode.gc_non_spacing_mark || cat == @unicode.gc_enclosing_mark
 }
 
+///|
 fn mark_flags_from_infos(infos : Array[GlyphInfo]) -> Array[Bool] {
   let flags : Array[Bool] = []
   for info in infos {
@@ -25,6 +27,7 @@ fn mark_flags_from_infos(infos : Array[GlyphInfo]) -> Array[Bool] {
   flags
 }
 
+///|
 fn mark_flags_from_gdef(
   gdef : @ot_tables.GdefTable,
   infos : Array[GlyphInfo],
@@ -40,13 +43,17 @@ fn mark_flags_from_gdef(
   Ok(flags)
 }
 
+///|
 priv enum ZeroWidthMarks {
   Disabled
   ByGdefEarly
   ByGdefLate
 }
 
-fn collect_mark_fallback_data(infos : Array[GlyphInfo]) -> (Array[Bool], Array[Int]) {
+///|
+fn collect_mark_fallback_data(
+  infos : Array[GlyphInfo],
+) -> (Array[Bool], Array[Int]) {
   let marks = mark_flags_from_infos(infos)
   let combining_classes : Array[Int] = []
   for info in infos {
@@ -56,6 +63,7 @@ fn collect_mark_fallback_data(infos : Array[GlyphInfo]) -> (Array[Bool], Array[I
   (marks, combining_classes)
 }
 
+///|
 struct GlyphExtents {
   mut x_bearing : Int
   mut y_bearing : Int
@@ -63,55 +71,148 @@ struct GlyphExtents {
   mut height : Int
 } derive(Debug)
 
+///|
 let cc_attached_below_left : Int = 200
+
+///|
 let cc_attached_below : Int = 202
+
+///|
 let cc_attached_above : Int = 214
+
+///|
 let cc_attached_above_right : Int = 216
+
+///|
 let cc_below_left : Int = 218
+
+///|
 let cc_below : Int = 220
+
+///|
 let cc_below_right : Int = 222
+
+///|
 let cc_left : Int = 224
+
+///|
 let cc_right : Int = 226
+
+///|
 let cc_above_left : Int = 228
+
+///|
 let cc_above : Int = 230
+
+///|
 let cc_above_right : Int = 232
+
+///|
 let cc_double_below : Int = 233
+
+///|
 let cc_double_above : Int = 234
 
+///|
 let mcc_ccc10 : Int = 22
+
+///|
 let mcc_ccc11 : Int = 15
+
+///|
 let mcc_ccc12 : Int = 16
+
+///|
 let mcc_ccc13 : Int = 17
+
+///|
 let mcc_ccc14 : Int = 23
+
+///|
 let mcc_ccc15 : Int = 18
+
+///|
 let mcc_ccc16 : Int = 19
+
+///|
 let mcc_ccc17 : Int = 20
+
+///|
 let mcc_ccc18 : Int = 21
+
+///|
 let mcc_ccc19 : Int = 14
+
+///|
 let mcc_ccc20 : Int = 24
+
+///|
 let mcc_ccc22 : Int = 25
+
+///|
 let mcc_ccc23 : Int = 13
+
+///|
 let mcc_ccc24 : Int = 10
+
+///|
 let mcc_ccc25 : Int = 11
+
+///|
 let mcc_ccc26 : Int = 26
+
+///|
 let mcc_ccc27 : Int = 28
+
+///|
 let mcc_ccc28 : Int = 29
+
+///|
 let mcc_ccc29 : Int = 30
+
+///|
 let mcc_ccc30 : Int = 31
+
+///|
 let mcc_ccc31 : Int = 32
+
+///|
 let mcc_ccc32 : Int = 33
+
+///|
 let mcc_ccc33 : Int = 27
+
+///|
 let mcc_ccc34 : Int = 34
+
+///|
 let mcc_ccc35 : Int = 35
+
+///|
 let mcc_ccc36 : Int = 36
+
+///|
 let mcc_ccc103 : Int = 3
+
+///|
 let mcc_ccc107 : Int = 107
+
+///|
 let mcc_ccc118 : Int = 118
+
+///|
 let mcc_ccc122 : Int = 122
+
+///|
 let mcc_ccc129 : Int = 129
+
+///|
 let mcc_ccc130 : Int = 132
+
+///|
 let mcc_ccc132 : Int = 131
 
+///|
 fn recategorize_combining_class(u : UInt, klass : Int) -> Int {
   if klass >= 200 {
     return klass
@@ -119,23 +220,23 @@ fn recategorize_combining_class(u : UInt, klass : Int) -> Int {
   if (u & 0xFFFFFF00U) == 0x0E00U {
     if klass == 0 {
       match u {
-        0x0E31U |
-        0x0E34U |
-        0x0E35U |
-        0x0E36U |
-        0x0E37U |
-        0x0E47U |
-        0x0E4CU |
-        0x0E4DU |
-        0x0E4EU => return cc_above_right
-        0x0EB1U |
-        0x0EB4U |
-        0x0EB5U |
-        0x0EB6U |
-        0x0EB7U |
-        0x0EBBU |
-        0x0ECCU |
-        0x0ECDU => return cc_above
+        0x0E31U
+        | 0x0E34U
+        | 0x0E35U
+        | 0x0E36U
+        | 0x0E37U
+        | 0x0E47U
+        | 0x0E4CU
+        | 0x0E4DU
+        | 0x0E4EU => return cc_above_right
+        0x0EB1U
+        | 0x0EB4U
+        | 0x0EB5U
+        | 0x0EB6U
+        | 0x0EB7U
+        | 0x0EBBU
+        | 0x0ECCU
+        | 0x0ECDU => return cc_above
         0x0EBCU => return cc_below
         _ => ()
       }
@@ -205,13 +306,15 @@ fn recategorize_combining_class(u : UInt, klass : Int) -> Int {
   klass
 }
 
+///|
 fn scale_value(value : Int, scale : Int, upem : Int) -> Int {
   if upem == 0 {
     return value
   }
-  (value * scale) / upem
+  value * scale / upem
 }
 
+///|
 fn glyph_extents(
   font : @font.Font,
   glyph : UInt,
@@ -229,16 +332,19 @@ fn glyph_extents(
       let x_max = scale_value(bounds.x_max, scale_x, upem)
       let y_min = scale_value(bounds.y_min, scale_y, upem)
       let y_max = scale_value(bounds.y_max, scale_y, upem)
-      Ok(Some(GlyphExtents::{
-        x_bearing: x_min,
-        y_bearing: y_max,
-        width: x_max - x_min,
-        height: y_max - y_min,
-      }))
+      Ok(
+        Some(GlyphExtents::{
+          x_bearing: x_min,
+          y_bearing: y_max,
+          width: x_max - x_min,
+          height: y_max - y_min,
+        }),
+      )
     }
   }
 }
 
+///|
 fn position_mark_fallback(
   font : @font.Font,
   buffer : Buffer,
@@ -247,10 +353,13 @@ fn position_mark_fallback(
   combining_class : Int,
   y_gap : Int,
 ) -> Result[GlyphExtents, ShapeError] {
-  if combining_class == 0 || combining_class == cc_left || combining_class == cc_right {
+  if combining_class == 0 ||
+    combining_class == cc_left ||
+    combining_class == cc_right {
     return Ok(extents)
   }
-  let mark_extents = match glyph_extents(font, buffer.infos[mark_index].codepoint) {
+  let mark_extents = match
+    glyph_extents(font, buffer.infos[mark_index].codepoint) {
     Err(err) => return Err(err)
     Ok(None) => return Ok(extents)
     Ok(Some(value)) => value
@@ -259,13 +368,18 @@ fn position_mark_fallback(
   let mut x_offset = 0
   if combining_class == cc_double_below || combining_class == cc_double_above {
     if buffer.direction == @common.direction_ltr {
-      x_offset =
-        extents.x_bearing + extents.width - mark_extents.width / 2 - mark_extents.x_bearing
+      x_offset = extents.x_bearing +
+        extents.width -
+        mark_extents.width / 2 -
+        mark_extents.x_bearing
     } else if buffer.direction == @common.direction_rtl {
-      x_offset = extents.x_bearing - mark_extents.width / 2 - mark_extents.x_bearing
+      x_offset = extents.x_bearing -
+        mark_extents.width / 2 -
+        mark_extents.x_bearing
     } else {
-      x_offset =
-        extents.x_bearing + (extents.width - mark_extents.width) / 2 - mark_extents.x_bearing
+      x_offset = extents.x_bearing +
+        (extents.width - mark_extents.width) / 2 -
+        mark_extents.x_bearing
     }
   } else if combining_class == cc_attached_below_left ||
     combining_class == cc_below_left ||
@@ -274,9 +388,14 @@ fn position_mark_fallback(
   } else if combining_class == cc_attached_above_right ||
     combining_class == cc_below_right ||
     combining_class == cc_above_right {
-    x_offset = extents.x_bearing + extents.width - mark_extents.width - mark_extents.x_bearing
+    x_offset = extents.x_bearing +
+      extents.width -
+      mark_extents.width -
+      mark_extents.x_bearing
   } else {
-    x_offset = extents.x_bearing + (extents.width - mark_extents.width) / 2 - mark_extents.x_bearing
+    x_offset = extents.x_bearing +
+      (extents.width - mark_extents.width) / 2 -
+      mark_extents.x_bearing
   }
   let mut y_offset = 0
   if combining_class == cc_double_below ||
@@ -304,7 +423,8 @@ fn position_mark_fallback(
     combining_class == cc_above_right {
     extents.y_bearing = extents.y_bearing + y_gap
     extents.height = extents.height - y_gap
-    y_offset = extents.y_bearing - (mark_extents.y_bearing + mark_extents.height)
+    y_offset = extents.y_bearing -
+      (mark_extents.y_bearing + mark_extents.height)
     if (y_gap > 0) != (y_offset > 0) {
       let correction = -y_offset / 2
       extents.y_bearing = extents.y_bearing + correction
@@ -315,7 +435,8 @@ fn position_mark_fallback(
     extents.height = extents.height + mark_extents.height
   } else if combining_class == cc_attached_above ||
     combining_class == cc_attached_above_right {
-    y_offset = extents.y_bearing - (mark_extents.y_bearing + mark_extents.height)
+    y_offset = extents.y_bearing -
+      (mark_extents.y_bearing + mark_extents.height)
     if (y_gap > 0) != (y_offset > 0) {
       let correction = -y_offset / 2
       extents.y_bearing = extents.y_bearing + correction
@@ -334,6 +455,7 @@ fn position_mark_fallback(
   Ok(extents)
 }
 
+///|
 fn fallback_mark_position(
   font : @font.Font,
   buffer : Buffer,
@@ -364,7 +486,8 @@ fn fallback_mark_position(
       i = j
       continue
     }
-    let base_extents = match glyph_extents(font, buffer.infos[base_index].codepoint) {
+    let base_extents = match
+      glyph_extents(font, buffer.infos[base_index].codepoint) {
       Err(err) => return Err(err)
       Ok(None) => {
         i = j
@@ -390,14 +513,8 @@ fn fallback_mark_position(
         cluster_extents.width = buffer.positions[base_index].x_advance
         last_cc = cc
       }
-      cluster_extents = match position_mark_fallback(
-        font,
-        buffer,
-        cluster_extents,
-        k,
-        cc,
-        y_gap,
-      ) {
+      cluster_extents = match
+        position_mark_fallback(font, buffer, cluster_extents, k, cc, y_gap) {
         Err(err) => return Err(err)
         Ok(value) => value
       }
@@ -407,6 +524,7 @@ fn fallback_mark_position(
   Ok(())
 }
 
+///|
 fn zero_mark_advances_with_flags(
   buffer : Buffer,
   marks : Array[Bool],
@@ -419,8 +537,16 @@ fn zero_mark_advances_with_flags(
   for i in 0..<buffer.infos.length() {
     if marks[i] {
       let pos = buffer.positions[i]
-      let x_offset = if adjust_offsets { pos.x_offset - pos.x_advance } else { pos.x_offset }
-      let y_offset = if adjust_offsets { pos.y_offset - pos.y_advance } else { pos.y_offset }
+      let x_offset = if adjust_offsets {
+        pos.x_offset - pos.x_advance
+      } else {
+        pos.x_offset
+      }
+      let y_offset = if adjust_offsets {
+        pos.y_offset - pos.y_advance
+      } else {
+        pos.y_offset
+      }
       buffer.positions[i] = GlyphPosition::{
         x_advance: 0,
         y_advance: 0,
@@ -431,6 +557,7 @@ fn zero_mark_advances_with_flags(
   }
 }
 
+///|
 fn zero_marks_by_gdef_or_unicode(
   font : @font.Font,
   buffer : Buffer,
@@ -445,21 +572,18 @@ fn zero_marks_by_gdef_or_unicode(
   }
   match gdef {
     None => ()
-    Some(gdef) => {
+    Some(gdef) =>
       if gdef.header().glyph_class_def_offset is Some(_) {
         let flags = match mark_flags_from_gdef(gdef, buffer.infos) {
           Err(err) => return Err(err)
           Ok(value) => value
         }
-        zero_mark_advances_with_flags(buffer, flags, adjust_offsets=adjust_offsets)
+        zero_mark_advances_with_flags(buffer, flags, adjust_offsets~)
         zeroed = true
       }
-    }
   }
-  if !zeroed &&
-    !gpos_present &&
-    unicode_marks.length() == buffer.infos.length() {
-    zero_mark_advances_with_flags(buffer, unicode_marks, adjust_offsets=adjust_offsets)
+  if !zeroed && !gpos_present && unicode_marks.length() == buffer.infos.length() {
+    zero_mark_advances_with_flags(buffer, unicode_marks, adjust_offsets~)
   }
   Ok(())
 }

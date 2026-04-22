@@ -51,8 +51,8 @@ pub fn GsubTable::apply_single_with_lookups(
             lookup_flag,
             mark_filtering_set,
             None,
-            masks=masks,
-            lookup_mask=lookup_mask,
+            masks~,
+            lookup_mask~,
           )
           match res {
             Err(err) => return Err(err)
@@ -81,24 +81,23 @@ pub fn GsubTable::apply_with_lookups(
         glyphs,
         clusters,
         lookup_offsets,
-        masks=masks,
-        lookup_mask=lookup_mask,
+        masks~,
+        lookup_mask~,
       )
     Some(gdef) =>
       self.apply_with_lookups_and_masks(
         glyphs,
         clusters,
         lookup_offsets,
-        gdef=gdef,
-        masks=masks,
-        lookup_mask=lookup_mask,
+        gdef~,
+        masks~,
+        lookup_mask~,
       )
   }
   match result {
     Err(err) => Err(err)
-    Ok((next_glyphs, next_clusters, _, changed)) => {
+    Ok((next_glyphs, next_clusters, _, changed)) =>
       Ok((next_glyphs, next_clusters, changed))
-    }
   }
 }
 
@@ -130,18 +129,19 @@ pub fn GsubTable::apply_with_lookups_and_masks(
     let parsed = parse_lookup(data, lookup_offset, 7)
     match parsed {
       Err(err) => return Err(err)
-      Ok((lookup_type, lookup_flag, mark_filtering_set, subtable_offsets)) => {
+      Ok((lookup_type, lookup_flag, mark_filtering_set, subtable_offsets)) =>
         if lookup_type == 1 {
-          let did_change = match apply_single_subtable_list(
-            data,
-            subtable_offsets,
-            current_glyphs,
-            lookup_flag,
-            mark_filtering_set,
-            gdef,
-            masks=current_masks,
-            lookup_mask=lookup_mask,
-          ) {
+          let did_change = match
+            apply_single_subtable_list(
+              data,
+              subtable_offsets,
+              current_glyphs,
+              lookup_flag,
+              mark_filtering_set,
+              gdef,
+              masks=current_masks,
+              lookup_mask~,
+            ) {
             Err(err) => return Err(err)
             Ok(value) => value
           }
@@ -149,17 +149,18 @@ pub fn GsubTable::apply_with_lookups_and_masks(
             changed = true
           }
         } else if lookup_type == 2 {
-          let result = match apply_multiple_subtable_list(
-            data,
-            subtable_offsets,
-            current_glyphs,
-            current_clusters,
-            lookup_flag,
-            mark_filtering_set,
-            gdef,
-            masks=current_masks,
-            lookup_mask=lookup_mask,
-          ) {
+          let result = match
+            apply_multiple_subtable_list(
+              data,
+              subtable_offsets,
+              current_glyphs,
+              current_clusters,
+              lookup_flag,
+              mark_filtering_set,
+              gdef,
+              masks=current_masks,
+              lookup_mask~,
+            ) {
             Err(err) => return Err(err)
             Ok(value) => value
           }
@@ -171,17 +172,18 @@ pub fn GsubTable::apply_with_lookups_and_masks(
             changed = true
           }
         } else if lookup_type == 3 {
-          let did_change = match apply_alternate_subtable_list(
-            data,
-            subtable_offsets,
-            current_glyphs,
-            lookup_flag,
-            mark_filtering_set,
-            gdef,
-            masks=current_masks,
-            lookup_mask=lookup_mask,
-            alt_values=alt_values,
-          ) {
+          let did_change = match
+            apply_alternate_subtable_list(
+              data,
+              subtable_offsets,
+              current_glyphs,
+              lookup_flag,
+              mark_filtering_set,
+              gdef,
+              masks=current_masks,
+              lookup_mask~,
+              alt_values~,
+            ) {
             Err(err) => return Err(err)
             Ok(value) => value
           }
@@ -189,17 +191,18 @@ pub fn GsubTable::apply_with_lookups_and_masks(
             changed = true
           }
         } else if lookup_type == 4 {
-          let result = match apply_ligature_subtable_list(
-            data,
-            subtable_offsets,
-            current_glyphs,
-            current_clusters,
-            lookup_flag,
-            mark_filtering_set,
-            gdef,
-            masks=current_masks,
-            lookup_mask=lookup_mask,
-          ) {
+          let result = match
+            apply_ligature_subtable_list(
+              data,
+              subtable_offsets,
+              current_glyphs,
+              current_clusters,
+              lookup_flag,
+              mark_filtering_set,
+              gdef,
+              masks=current_masks,
+              lookup_mask~,
+            ) {
             Err(err) => return Err(err)
             Ok(value) => value
           }
@@ -211,18 +214,19 @@ pub fn GsubTable::apply_with_lookups_and_masks(
             changed = true
           }
         } else if lookup_type == 5 {
-          let did_change = match apply_context_subtable_list(
-            data,
-            subtable_offsets,
-            current_glyphs,
-            current_clusters,
-            lookup_list_offsets,
-            lookup_flag,
-            mark_filtering_set,
-            gdef,
-            masks=current_masks,
-            lookup_mask=lookup_mask,
-          ) {
+          let did_change = match
+            apply_context_subtable_list(
+              data,
+              subtable_offsets,
+              current_glyphs,
+              current_clusters,
+              lookup_list_offsets,
+              lookup_flag,
+              mark_filtering_set,
+              gdef,
+              masks=current_masks,
+              lookup_mask~,
+            ) {
             Err(err) => return Err(err)
             Ok(value) => value
           }
@@ -230,18 +234,19 @@ pub fn GsubTable::apply_with_lookups_and_masks(
             changed = true
           }
         } else if lookup_type == 6 {
-          let did_change = match apply_chain_subtable_list(
-            data,
-            subtable_offsets,
-            current_glyphs,
-            current_clusters,
-            lookup_list_offsets,
-            lookup_flag,
-            mark_filtering_set,
-            gdef,
-            masks=current_masks,
-            lookup_mask=lookup_mask,
-          ) {
+          let did_change = match
+            apply_chain_subtable_list(
+              data,
+              subtable_offsets,
+              current_glyphs,
+              current_clusters,
+              lookup_list_offsets,
+              lookup_flag,
+              mark_filtering_set,
+              gdef,
+              masks=current_masks,
+              lookup_mask~,
+            ) {
             Err(err) => return Err(err)
             Ok(value) => value
           }
@@ -249,16 +254,17 @@ pub fn GsubTable::apply_with_lookups_and_masks(
             changed = true
           }
         } else if lookup_type == 8 {
-          let did_change = match apply_reverse_chain_subtable_list(
-            data,
-            subtable_offsets,
-            current_glyphs,
-            lookup_flag,
-            mark_filtering_set,
-            gdef,
-            masks=current_masks,
-            lookup_mask=lookup_mask,
-          ) {
+          let did_change = match
+            apply_reverse_chain_subtable_list(
+              data,
+              subtable_offsets,
+              current_glyphs,
+              lookup_flag,
+              mark_filtering_set,
+              gdef,
+              masks=current_masks,
+              lookup_mask~,
+            ) {
             Err(err) => return Err(err)
             Ok(value) => value
           }
@@ -268,7 +274,6 @@ pub fn GsubTable::apply_with_lookups_and_masks(
         } else {
           continue
         }
-      }
     }
   }
   Ok((current_glyphs, current_clusters, current_masks, changed))
@@ -297,9 +302,9 @@ fn apply_single_subtable(
           lookup_flag,
           gdef,
           mark_filtering_set,
-          masks=masks,
+          masks~,
           index=i,
-          lookup_mask=lookup_mask,
+          lookup_mask~,
         )
         match ignored {
           Err(err) => return Err(err)
@@ -316,12 +321,11 @@ fn apply_single_subtable(
         match next {
           Err(err) => return Err(err)
           Ok(None) => ()
-          Ok(Some(value)) => {
+          Ok(Some(value)) =>
             if value != glyph {
               glyphs[i] = value
               changed = true
             }
-          }
         }
       }
       Ok(changed)
@@ -349,8 +353,8 @@ fn apply_single_subtable_list(
       lookup_flag,
       mark_filtering_set,
       gdef,
-      masks=masks,
-      lookup_mask=lookup_mask,
+      masks~,
+      lookup_mask~,
     )
     match result {
       Err(err) => return Err(err)
@@ -391,9 +395,9 @@ fn apply_ligature_subtable_list(
       lookup_flag,
       gdef,
       mark_filtering_set,
-      masks=masks,
+      masks~,
       index=i,
-      lookup_mask=lookup_mask,
+      lookup_mask~,
     )
     match ignored {
       Err(err) => return Err(err)
@@ -416,8 +420,8 @@ fn apply_ligature_subtable_list(
       lookup_flag,
       mark_filtering_set,
       gdef,
-      masks=masks,
-      lookup_mask=lookup_mask,
+      masks~,
+      lookup_mask~,
     )
     match match_result {
       Err(err) => return Err(err)
@@ -484,8 +488,8 @@ fn apply_context_subtable_list(
       lookup_flag,
       mark_filtering_set,
       gdef,
-      masks=masks,
-      lookup_mask=lookup_mask,
+      masks~,
+      lookup_mask~,
     )
     match result {
       Err(err) => return Err(err)
@@ -514,48 +518,49 @@ fn apply_context_subtable(
   let format = read_u16_int(data, offset)
   match format {
     Err(err) => Err(err)
-    Ok(format) => if format == 1 {
-      apply_context_subtable_format1(
-        data,
-        offset,
-        glyphs,
-        clusters,
-      lookup_list_offsets,
-      lookup_flag,
-      mark_filtering_set,
-      gdef,
-      masks=masks,
-      lookup_mask=lookup_mask,
-    )
-  } else if format == 2 {
-    apply_context_subtable_format2(
-      data,
-      offset,
-      glyphs,
-      clusters,
-      lookup_list_offsets,
-      lookup_flag,
-      mark_filtering_set,
-      gdef,
-      masks=masks,
-      lookup_mask=lookup_mask,
-    )
-  } else if format == 3 {
-    apply_context_subtable_format3(
-      data,
-      offset,
-      glyphs,
-      clusters,
-      lookup_list_offsets,
-      lookup_flag,
-      mark_filtering_set,
-      gdef,
-      masks=masks,
-      lookup_mask=lookup_mask,
-    )
-    } else {
-      Err(InvalidFormat)
-    }
+    Ok(format) =>
+      if format == 1 {
+        apply_context_subtable_format1(
+          data,
+          offset,
+          glyphs,
+          clusters,
+          lookup_list_offsets,
+          lookup_flag,
+          mark_filtering_set,
+          gdef,
+          masks~,
+          lookup_mask~,
+        )
+      } else if format == 2 {
+        apply_context_subtable_format2(
+          data,
+          offset,
+          glyphs,
+          clusters,
+          lookup_list_offsets,
+          lookup_flag,
+          mark_filtering_set,
+          gdef,
+          masks~,
+          lookup_mask~,
+        )
+      } else if format == 3 {
+        apply_context_subtable_format3(
+          data,
+          offset,
+          glyphs,
+          clusters,
+          lookup_list_offsets,
+          lookup_flag,
+          mark_filtering_set,
+          gdef,
+          masks~,
+          lookup_mask~,
+        )
+      } else {
+        Err(InvalidFormat)
+      }
   }
 }
 
@@ -598,9 +603,9 @@ fn apply_context_subtable_format1(
           lookup_flag,
           gdef,
           mark_filtering_set,
-          masks=masks,
+          masks~,
           index=i,
-          lookup_mask=lookup_mask,
+          lookup_mask~,
         )
         match ignored {
           Err(err) => return Err(err)
@@ -638,12 +643,15 @@ fn apply_context_subtable_format1(
                     }
                     let rule_list_base = rule_set_base + 2
                     if rule_list_base < 0 ||
-                        rule_list_base + rule_count * 2 > data.length() {
+                      rule_list_base + rule_count * 2 > data.length() {
                       return Err(UnexpectedEof)
                     }
                     let mut advance = i + 1
                     for r in 0..<rule_count {
-                      let rule_offset = read_u16_int(data, rule_list_base + r * 2)
+                      let rule_offset = read_u16_int(
+                        data,
+                        rule_list_base + r * 2,
+                      )
                       match rule_offset {
                         Err(err) => return Err(err)
                         Ok(rule_offset) => {
@@ -651,19 +659,20 @@ fn apply_context_subtable_format1(
                             return Err(InvalidFormat)
                           }
                           let rule_base = rule_set_base + rule_offset
-                          let result = match apply_context_rule(
-                            data,
-                            rule_base,
-                            glyphs,
-                            clusters,
-                            i,
-                            lookup_list_offsets,
-                            lookup_flag,
-                            mark_filtering_set,
-                            gdef,
-                            masks=masks,
-                            lookup_mask=lookup_mask,
-                          ) {
+                          let result = match
+                            apply_context_rule(
+                              data,
+                              rule_base,
+                              glyphs,
+                              clusters,
+                              i,
+                              lookup_list_offsets,
+                              lookup_flag,
+                              mark_filtering_set,
+                              gdef,
+                              masks~,
+                              lookup_mask~,
+                            ) {
                             Err(err) => return Err(err)
                             Ok(value) => value
                           }
@@ -729,7 +738,7 @@ fn apply_context_subtable_format2(
       let class_def_base = offset + class_def_offset
       let class_set_base = offset + 8
       if class_set_base < 0 ||
-          class_set_base + class_set_count * 2 > data.length() {
+        class_set_base + class_set_count * 2 > data.length() {
         return Err(UnexpectedEof)
       }
       let mut changed = false
@@ -741,9 +750,9 @@ fn apply_context_subtable_format2(
           lookup_flag,
           gdef,
           mark_filtering_set,
-          masks=masks,
+          masks~,
           index=i,
-          lookup_mask=lookup_mask,
+          lookup_mask~,
         )
         match ignored {
           Err(err) => return Err(err)
@@ -795,7 +804,7 @@ fn apply_context_subtable_format2(
                         }
                         let rule_list_base = rule_set_base + 2
                         if rule_list_base < 0 ||
-                            rule_list_base + rule_count * 2 > data.length() {
+                          rule_list_base + rule_count * 2 > data.length() {
                           return Err(UnexpectedEof)
                         }
                         let mut advance = i + 1
@@ -811,20 +820,21 @@ fn apply_context_subtable_format2(
                                 continue
                               }
                               let rule_base = rule_set_base + rule_offset
-                              let result = match apply_context_class_rule(
-                                data,
-                                rule_base,
-                                glyphs,
-                                clusters,
-                                i,
-                                class_def_base,
-                                lookup_list_offsets,
-                                lookup_flag,
-                                mark_filtering_set,
-                                gdef,
-                                masks=masks,
-                                lookup_mask=lookup_mask,
-                              ) {
+                              let result = match
+                                apply_context_class_rule(
+                                  data,
+                                  rule_base,
+                                  glyphs,
+                                  clusters,
+                                  i,
+                                  class_def_base,
+                                  lookup_list_offsets,
+                                  lookup_flag,
+                                  mark_filtering_set,
+                                  gdef,
+                                  masks~,
+                                  lookup_mask~,
+                                ) {
                                 Err(err) => return Err(err)
                                 Ok(value) => value
                               }
@@ -888,7 +898,7 @@ fn apply_context_subtable_format3(
       }
       let coverage_list_base = offset + 6
       if coverage_list_base < 0 ||
-          coverage_list_base + glyph_count * 2 > data.length() {
+        coverage_list_base + glyph_count * 2 > data.length() {
         return Err(UnexpectedEof)
       }
       let record_base = coverage_list_base + glyph_count * 2
@@ -902,8 +912,8 @@ fn apply_context_subtable_format3(
           lookup_flag,
           gdef,
           mark_filtering_set,
-          masks=masks,
-          lookup_mask=lookup_mask,
+          masks~,
+          lookup_mask~,
         )
         let indices = match input_indices {
           Err(err) => return Err(err)
@@ -937,22 +947,23 @@ fn apply_context_subtable_format3(
         }
         if matched {
           let len_before = glyphs.length()
-          let applied = match apply_subst_lookup_records(
-            data,
-            record_base,
-            subst_count,
-            glyph_count,
-            glyphs,
-            clusters,
-            i,
-            lookup_list_offsets,
-            Some(indices),
-            lookup_flag,
-            mark_filtering_set,
-            gdef,
-            masks=masks,
-            lookup_mask=lookup_mask,
-          ) {
+          let applied = match
+            apply_subst_lookup_records(
+              data,
+              record_base,
+              subst_count,
+              glyph_count,
+              glyphs,
+              clusters,
+              i,
+              lookup_list_offsets,
+              Some(indices),
+              lookup_flag,
+              mark_filtering_set,
+              gdef,
+              masks~,
+              lookup_mask~,
+            ) {
             Err(err) => return Err(err)
             Ok(value) => value
           }
@@ -1023,8 +1034,8 @@ fn apply_context_class_rule(
         lookup_flag,
         gdef,
         mark_filtering_set,
-        masks=masks,
-        lookup_mask=lookup_mask,
+        masks~,
+        lookup_mask~,
       )
       let indices = match input_indices {
         Err(err) => return Err(err)
@@ -1033,7 +1044,7 @@ fn apply_context_class_rule(
       }
       let class_list_base = offset + 4
       if class_list_base < 0 ||
-          class_list_base + (glyph_count - 1) * 2 > data.length() {
+        class_list_base + (glyph_count - 1) * 2 > data.length() {
         return Err(UnexpectedEof)
       }
       for i in 0..<(glyph_count - 1) {
@@ -1049,31 +1060,33 @@ fn apply_context_class_rule(
             match actual {
               Err(InvalidFormat) => return Ok(context_no_match(index))
               Err(err) => return Err(err)
-              Ok(actual) => if actual != expected {
-                return Ok(context_no_match(index))
-              }
+              Ok(actual) =>
+                if actual != expected {
+                  return Ok(context_no_match(index))
+                }
             }
           }
         }
       }
       let record_base = class_list_base + (glyph_count - 1) * 2
       let len_before = glyphs.length()
-      let changed = match apply_subst_lookup_records(
-        data,
-        record_base,
-        subst_count,
-        glyph_count,
-        glyphs,
-        clusters,
-        index,
-        lookup_list_offsets,
-        Some(indices),
-        lookup_flag,
-        mark_filtering_set,
-        gdef,
-        masks=masks,
-        lookup_mask=lookup_mask,
-      ) {
+      let changed = match
+        apply_subst_lookup_records(
+          data,
+          record_base,
+          subst_count,
+          glyph_count,
+          glyphs,
+          clusters,
+          index,
+          lookup_list_offsets,
+          Some(indices),
+          lookup_flag,
+          mark_filtering_set,
+          gdef,
+          masks~,
+          lookup_mask~,
+        ) {
         Err(InvalidFormat) => return Ok(context_no_match(index))
         Err(err) => return Err(err)
         Ok(value) => value
@@ -1155,16 +1168,17 @@ fn apply_subst_lookup_records(
           return Err(InvalidFormat)
         }
         let lookup_offset = lookup_list_offsets[lookup_index]
-        let (did_change, delta) = match apply_lookup_at(
-          data,
-          lookup_offset,
-          glyphs,
-          clusters,
-          target,
-          gdef,
-          masks=masks,
-          lookup_mask=lookup_mask,
-        ) {
+        let (did_change, delta) = match
+          apply_lookup_at(
+            data,
+            lookup_offset,
+            glyphs,
+            clusters,
+            target,
+            gdef,
+            masks~,
+            lookup_mask~,
+          ) {
           Err(err) => return Err(err)
           Ok(value) => value
         }
@@ -1179,8 +1193,8 @@ fn apply_subst_lookup_records(
             input_lookup_flag,
             gdef,
             input_mark_filtering_set,
-            masks=masks,
-            lookup_mask=lookup_mask,
+            masks~,
+            lookup_mask~,
           )
           match updated {
             Err(err) => return Err(err)
@@ -1227,8 +1241,8 @@ fn apply_context_rule(
         lookup_flag,
         gdef,
         mark_filtering_set,
-        masks=masks,
-        lookup_mask=lookup_mask,
+        masks~,
+        lookup_mask~,
       )
       let indices = match input_indices {
         Err(err) => return Err(err)
@@ -1253,22 +1267,23 @@ fn apply_context_rule(
       }
       let record_base = input_base + (glyph_count - 1) * 2
       let len_before = glyphs.length()
-      let changed = match apply_subst_lookup_records(
-        data,
-        record_base,
-        subst_count,
-        glyph_count,
-        glyphs,
-        clusters,
-        index,
-        lookup_list_offsets,
-        Some(indices),
-        lookup_flag,
-        mark_filtering_set,
-        gdef,
-        masks=masks,
-        lookup_mask=lookup_mask,
-      ) {
+      let changed = match
+        apply_subst_lookup_records(
+          data,
+          record_base,
+          subst_count,
+          glyph_count,
+          glyphs,
+          clusters,
+          index,
+          lookup_list_offsets,
+          Some(indices),
+          lookup_flag,
+          mark_filtering_set,
+          gdef,
+          masks~,
+          lookup_mask~,
+        ) {
         Err(err) => return Err(err)
         Ok(value) => value
       }
@@ -1299,19 +1314,20 @@ fn apply_lookup_at(
   let parsed = parse_lookup(data, lookup_offset, 7)
   match parsed {
     Err(err) => Err(err)
-    Ok((lookup_type, lookup_flag, mark_filtering_set, subtable_offsets)) => {
+    Ok((lookup_type, lookup_flag, mark_filtering_set, subtable_offsets)) =>
       if lookup_type == 1 {
-        let changed = match apply_single_at(
-          data,
-          subtable_offsets,
-          glyphs,
-          index,
-          lookup_flag,
-          mark_filtering_set,
-          gdef,
-          masks=masks,
-          lookup_mask=lookup_mask,
-        ) {
+        let changed = match
+          apply_single_at(
+            data,
+            subtable_offsets,
+            glyphs,
+            index,
+            lookup_flag,
+            mark_filtering_set,
+            gdef,
+            masks~,
+            lookup_mask~,
+          ) {
           Err(err) => return Err(err)
           Ok(value) => value
         }
@@ -1326,21 +1342,22 @@ fn apply_lookup_at(
           lookup_flag,
           mark_filtering_set,
           gdef,
-          masks=masks,
-          lookup_mask=lookup_mask,
+          masks~,
+          lookup_mask~,
         )
       } else if lookup_type == 3 {
-        let changed = match apply_alternate_at(
-          data,
-          subtable_offsets,
-          glyphs,
-          index,
-          lookup_flag,
-          mark_filtering_set,
-          gdef,
-          masks=masks,
-          lookup_mask=lookup_mask,
-        ) {
+        let changed = match
+          apply_alternate_at(
+            data,
+            subtable_offsets,
+            glyphs,
+            index,
+            lookup_flag,
+            mark_filtering_set,
+            gdef,
+            masks~,
+            lookup_mask~,
+          ) {
           Err(err) => return Err(err)
           Ok(value) => value
         }
@@ -1355,13 +1372,12 @@ fn apply_lookup_at(
           lookup_flag,
           mark_filtering_set,
           gdef,
-          masks=masks,
-          lookup_mask=lookup_mask,
+          masks~,
+          lookup_mask~,
         )
       } else {
         Ok((false, 0))
       }
-    }
   }
 }
 
@@ -1389,8 +1405,8 @@ fn apply_chain_subtable_list(
       lookup_flag,
       mark_filtering_set,
       gdef,
-      masks=masks,
-      lookup_mask=lookup_mask,
+      masks~,
+      lookup_mask~,
     )
     match result {
       Err(err) => return Err(err)
@@ -1419,48 +1435,49 @@ fn apply_chain_subtable(
   let format = read_u16_int(data, offset)
   match format {
     Err(err) => Err(err)
-    Ok(format) => if format == 1 {
-      apply_chain_subtable_format1(
-        data,
-        offset,
-        glyphs,
-        clusters,
-      lookup_list_offsets,
-      lookup_flag,
-      mark_filtering_set,
-      gdef,
-      masks=masks,
-      lookup_mask=lookup_mask,
-    )
-  } else if format == 2 {
-    apply_chain_subtable_format2(
-      data,
-      offset,
-      glyphs,
-      clusters,
-      lookup_list_offsets,
-      lookup_flag,
-      mark_filtering_set,
-      gdef,
-      masks=masks,
-      lookup_mask=lookup_mask,
-    )
-  } else if format == 3 {
-    apply_chain_subtable_format3(
-      data,
-      offset,
-      glyphs,
-      clusters,
-      lookup_list_offsets,
-      lookup_flag,
-      mark_filtering_set,
-      gdef,
-      masks=masks,
-      lookup_mask=lookup_mask,
-    )
-    } else {
-      Err(InvalidFormat)
-    }
+    Ok(format) =>
+      if format == 1 {
+        apply_chain_subtable_format1(
+          data,
+          offset,
+          glyphs,
+          clusters,
+          lookup_list_offsets,
+          lookup_flag,
+          mark_filtering_set,
+          gdef,
+          masks~,
+          lookup_mask~,
+        )
+      } else if format == 2 {
+        apply_chain_subtable_format2(
+          data,
+          offset,
+          glyphs,
+          clusters,
+          lookup_list_offsets,
+          lookup_flag,
+          mark_filtering_set,
+          gdef,
+          masks~,
+          lookup_mask~,
+        )
+      } else if format == 3 {
+        apply_chain_subtable_format3(
+          data,
+          offset,
+          glyphs,
+          clusters,
+          lookup_list_offsets,
+          lookup_flag,
+          mark_filtering_set,
+          gdef,
+          masks~,
+          lookup_mask~,
+        )
+      } else {
+        Err(InvalidFormat)
+      }
   }
 }
 
@@ -1503,9 +1520,9 @@ fn apply_chain_subtable_format1(
           lookup_flag,
           gdef,
           mark_filtering_set,
-          masks=masks,
+          masks~,
           index=i,
-          lookup_mask=lookup_mask,
+          lookup_mask~,
         )
         match ignored {
           Err(err) => return Err(err)
@@ -1543,11 +1560,14 @@ fn apply_chain_subtable_format1(
                     }
                     let rule_list_base = rule_set_base + 2
                     if rule_list_base < 0 ||
-                        rule_list_base + rule_count * 2 > data.length() {
+                      rule_list_base + rule_count * 2 > data.length() {
                       return Err(UnexpectedEof)
                     }
                     for r in 0..<rule_count {
-                      let rule_offset = read_u16_int(data, rule_list_base + r * 2)
+                      let rule_offset = read_u16_int(
+                        data,
+                        rule_list_base + r * 2,
+                      )
                       match rule_offset {
                         Err(err) => return Err(err)
                         Ok(rule_offset) => {
@@ -1555,19 +1575,20 @@ fn apply_chain_subtable_format1(
                             return Err(InvalidFormat)
                           }
                           let rule_base = rule_set_base + rule_offset
-                          let applied = match apply_chain_rule(
-                            data,
-                            rule_base,
-                            glyphs,
-                            clusters,
-                            i,
-                            lookup_list_offsets,
-                            lookup_flag,
-                            mark_filtering_set,
-                            gdef,
-                            masks=masks,
-                            lookup_mask=lookup_mask,
-                          ) {
+                          let applied = match
+                            apply_chain_rule(
+                              data,
+                              rule_base,
+                              glyphs,
+                              clusters,
+                              i,
+                              lookup_list_offsets,
+                              lookup_flag,
+                              mark_filtering_set,
+                              gdef,
+                              masks~,
+                              lookup_mask~,
+                            ) {
                             Err(err) => return Err(err)
                             Ok(value) => value
                           }
@@ -1612,13 +1633,11 @@ fn apply_chain_subtable_format2(
   let input_class_def_offset = read_u16_int(data, offset + 6)
   let lookahead_class_def_offset = read_u16_int(data, offset + 8)
   let class_set_count = read_u16_int(data, offset + 10)
-  match (
-    coverage_offset,
-    backtrack_class_def_offset,
-    input_class_def_offset,
-    lookahead_class_def_offset,
-    class_set_count,
-  ) {
+  match
+    (
+      coverage_offset, backtrack_class_def_offset, input_class_def_offset, lookahead_class_def_offset,
+      class_set_count,
+    ) {
     (Err(err), _, _, _, _) => Err(err)
     (_, Err(err), _, _, _) => Err(err)
     (_, _, Err(err), _, _) => Err(err)
@@ -1631,8 +1650,10 @@ fn apply_chain_subtable_format2(
       Ok(lookahead_class_def_offset),
       Ok(class_set_count),
     ) => {
-      if coverage_offset == 0 || backtrack_class_def_offset == 0 ||
-          input_class_def_offset == 0 || lookahead_class_def_offset == 0 {
+      if coverage_offset == 0 ||
+        backtrack_class_def_offset == 0 ||
+        input_class_def_offset == 0 ||
+        lookahead_class_def_offset == 0 {
         return Ok(false)
       }
       if class_set_count <= 0 {
@@ -1644,7 +1665,7 @@ fn apply_chain_subtable_format2(
       let lookahead_class_def_base = offset + lookahead_class_def_offset
       let class_set_base = offset + 12
       if class_set_base < 0 ||
-          class_set_base + class_set_count * 2 > data.length() {
+        class_set_base + class_set_count * 2 > data.length() {
         return Err(UnexpectedEof)
       }
       let mut changed = false
@@ -1656,9 +1677,9 @@ fn apply_chain_subtable_format2(
           lookup_flag,
           gdef,
           mark_filtering_set,
-          masks=masks,
+          masks~,
           index=i,
-          lookup_mask=lookup_mask,
+          lookup_mask~,
         )
         match ignored {
           Err(err) => return Err(err)
@@ -1706,7 +1727,7 @@ fn apply_chain_subtable_format2(
                         }
                         let rule_list_base = rule_set_base + 2
                         if rule_list_base < 0 ||
-                            rule_list_base + rule_count * 2 > data.length() {
+                          rule_list_base + rule_count * 2 > data.length() {
                           return Err(UnexpectedEof)
                         }
                         for r in 0..<rule_count {
@@ -1721,22 +1742,23 @@ fn apply_chain_subtable_format2(
                                 continue
                               }
                               let rule_base = rule_set_base + rule_offset
-                              let applied = match apply_chain_class_rule(
-                                data,
-                                rule_base,
-                                glyphs,
-                                clusters,
-                                i,
-                                backtrack_class_def_base,
-                                input_class_def_base,
-                                lookahead_class_def_base,
-                                lookup_list_offsets,
-                                lookup_flag,
-                                mark_filtering_set,
-                                gdef,
-                                masks=masks,
-                                lookup_mask=lookup_mask,
-                              ) {
+                              let applied = match
+                                apply_chain_class_rule(
+                                  data,
+                                  rule_base,
+                                  glyphs,
+                                  clusters,
+                                  i,
+                                  backtrack_class_def_base,
+                                  input_class_def_base,
+                                  lookahead_class_def_base,
+                                  lookup_list_offsets,
+                                  lookup_flag,
+                                  mark_filtering_set,
+                                  gdef,
+                                  masks~,
+                                  lookup_mask~,
+                                ) {
                                 Err(InvalidFormat) => false
                                 Err(err) => return Err(err)
                                 Ok(value) => value
@@ -1894,8 +1916,8 @@ fn apply_chain_subtable_format3(
                       lookup_flag,
                       gdef,
                       mark_filtering_set,
-                      masks=masks,
-                      lookup_mask=lookup_mask,
+                      masks~,
+                      lookup_mask~,
                     )
                     let indices = match input_indices {
                       Err(err) => return Err(err)
@@ -1912,8 +1934,8 @@ fn apply_chain_subtable_format3(
                       lookup_flag,
                       gdef,
                       mark_filtering_set,
-                      masks=masks,
-                      lookup_mask=lookup_mask,
+                      masks~,
+                      lookup_mask~,
                     )
                     let backtrack = match backtrack_indices {
                       Err(err) => return Err(err)
@@ -1933,8 +1955,8 @@ fn apply_chain_subtable_format3(
                         lookup_flag,
                         gdef,
                         mark_filtering_set,
-                        masks=masks,
-                        lookup_mask=lookup_mask,
+                        masks~,
+                        lookup_mask~,
                         allow_ignored_start=true,
                       )
                     }
@@ -1997,22 +2019,23 @@ fn apply_chain_subtable_format3(
                       }
                     }
                     if matched {
-                      let applied = match apply_subst_lookup_records(
-                        data,
-                        record_base,
-                        subst_count,
-                        input_count,
-                        glyphs,
-                        clusters,
-                        indices[0],
-                        lookup_list_offsets,
-                        Some(indices),
-                        lookup_flag,
-                        mark_filtering_set,
-                        gdef,
-                        masks=masks,
-                        lookup_mask=lookup_mask,
-                      ) {
+                      let applied = match
+                        apply_subst_lookup_records(
+                          data,
+                          record_base,
+                          subst_count,
+                          input_count,
+                          glyphs,
+                          clusters,
+                          indices[0],
+                          lookup_list_offsets,
+                          Some(indices),
+                          lookup_flag,
+                          mark_filtering_set,
+                          gdef,
+                          masks~,
+                          lookup_mask~,
+                        ) {
                         Err(err) => return Err(err)
                         Ok(value) => value
                       }
@@ -2140,8 +2163,8 @@ fn apply_chain_class_rule(
                     lookup_flag,
                     gdef,
                     mark_filtering_set,
-                    masks=masks,
-                    lookup_mask=lookup_mask,
+                    masks~,
+                    lookup_mask~,
                   )
                   let indices = match input_indices {
                     Err(err) => return Err(err)
@@ -2155,8 +2178,8 @@ fn apply_chain_class_rule(
                     lookup_flag,
                     gdef,
                     mark_filtering_set,
-                    masks=masks,
-                    lookup_mask=lookup_mask,
+                    masks~,
+                    lookup_mask~,
                   )
                   let backtrack_indices = match backtrack_indices {
                     Err(err) => return Err(err)
@@ -2173,8 +2196,8 @@ fn apply_chain_class_rule(
                       lookup_flag,
                       gdef,
                       mark_filtering_set,
-                      masks=masks,
-                      lookup_mask=lookup_mask,
+                      masks~,
+                      lookup_mask~,
                       allow_ignored_start=true,
                     )
                   }
@@ -2232,8 +2255,8 @@ fn apply_chain_class_rule(
                     lookup_flag,
                     mark_filtering_set,
                     gdef,
-                    masks=masks,
-                    lookup_mask=lookup_mask,
+                    masks~,
+                    lookup_mask~,
                   )
                 }
               }
@@ -2352,8 +2375,8 @@ fn apply_chain_rule(
                     lookup_flag,
                     gdef,
                     mark_filtering_set,
-                    masks=masks,
-                    lookup_mask=lookup_mask,
+                    masks~,
+                    lookup_mask~,
                   )
                   let indices = match input_indices {
                     Err(err) => return Err(err)
@@ -2367,8 +2390,8 @@ fn apply_chain_rule(
                     lookup_flag,
                     gdef,
                     mark_filtering_set,
-                    masks=masks,
-                    lookup_mask=lookup_mask,
+                    masks~,
+                    lookup_mask~,
                   )
                   let backtrack_indices = match backtrack_indices {
                     Err(err) => return Err(err)
@@ -2385,8 +2408,8 @@ fn apply_chain_rule(
                       lookup_flag,
                       gdef,
                       mark_filtering_set,
-                      masks=masks,
-                      lookup_mask=lookup_mask,
+                      masks~,
+                      lookup_mask~,
                       allow_ignored_start=true,
                     )
                   }
@@ -2429,8 +2452,8 @@ fn apply_chain_rule(
                     lookup_flag,
                     mark_filtering_set,
                     gdef,
-                    masks=masks,
-                    lookup_mask=lookup_mask,
+                    masks~,
+                    lookup_mask~,
                   )
                 }
               }
@@ -2462,9 +2485,9 @@ fn apply_single_at(
     lookup_flag,
     gdef,
     mark_filtering_set,
-    masks=masks,
-    index=index,
-    lookup_mask=lookup_mask,
+    masks~,
+    index~,
+    lookup_mask~,
   )
   match ignored {
     Err(err) => return Err(err)
@@ -2488,13 +2511,12 @@ fn apply_single_at(
         match next {
           Err(err) => return Err(err)
           Ok(None) => ()
-          Ok(Some(value)) => {
+          Ok(Some(value)) =>
             if value != glyph {
               glyph = value
               glyphs[index] = value
               changed = true
             }
-          }
         }
       }
     }
@@ -2522,9 +2544,9 @@ fn apply_alternate_at(
     lookup_flag,
     gdef,
     mark_filtering_set,
-    masks=masks,
-    index=index,
-    lookup_mask=lookup_mask,
+    masks~,
+    index~,
+    lookup_mask~,
   )
   match ignored {
     Err(err) => return Err(err)
@@ -2538,18 +2560,18 @@ fn apply_alternate_at(
     match next {
       Err(err) => return Err(err)
       Ok(None) => ()
-      Ok(Some(value)) => {
+      Ok(Some(value)) =>
         if value != glyph {
           glyph = value
           glyphs[index] = value
           changed = true
         }
-      }
     }
   }
   Ok(changed)
 }
 
+///|
 fn apply_multiple_at(
   data : BytesView,
   offsets : Array[Int],
@@ -2577,9 +2599,9 @@ fn apply_multiple_at(
     lookup_flag,
     gdef,
     mark_filtering_set,
-    masks=masks,
-    index=index,
-    lookup_mask=lookup_mask,
+    masks~,
+    index~,
+    lookup_mask~,
   )
   match ignored {
     Err(err) => return Err(err)
@@ -2619,6 +2641,7 @@ fn apply_multiple_at(
   }
 }
 
+///|
 fn apply_ligature_at(
   data : BytesView,
   offsets : Array[Int],
@@ -2646,9 +2669,9 @@ fn apply_ligature_at(
     lookup_flag,
     gdef,
     mark_filtering_set,
-    masks=masks,
-    index=index,
-    lookup_mask=lookup_mask,
+    masks~,
+    index~,
+    lookup_mask~,
   )
   match ignored {
     Err(err) => return Err(err)
@@ -2663,8 +2686,8 @@ fn apply_ligature_at(
     lookup_flag,
     mark_filtering_set,
     gdef,
-    masks=masks,
-    lookup_mask=lookup_mask,
+    masks~,
+    lookup_mask~,
   )
   match result {
     Err(err) => Err(err)
@@ -2703,6 +2726,7 @@ fn apply_ligature_at(
   }
 }
 
+///|
 fn apply_reverse_chain_subtable_list(
   data : BytesView,
   offsets : Array[Int],
@@ -2722,8 +2746,8 @@ fn apply_reverse_chain_subtable_list(
       lookup_flag,
       mark_filtering_set,
       gdef,
-      masks=masks,
-      lookup_mask=lookup_mask,
+      masks~,
+      lookup_mask~,
     )
     match result {
       Err(err) => return Err(err)
@@ -2856,8 +2880,8 @@ fn apply_reverse_chain_subtable(
                   lookup_flag,
                   gdef,
                   mark_filtering_set,
-                  masks=masks,
-                  lookup_mask=lookup_mask,
+                  masks~,
+                  lookup_mask~,
                 )
                 let indices = match input_indices {
                   Err(err) => return Err(err)
@@ -2889,8 +2913,8 @@ fn apply_reverse_chain_subtable(
                         lookup_flag,
                         gdef,
                         mark_filtering_set,
-                        masks=masks,
-                        lookup_mask=lookup_mask,
+                        masks~,
+                        lookup_mask~,
                       )
                       let backtrack = match backtrack_indices {
                         Err(err) => return Err(err)
@@ -2927,8 +2951,8 @@ fn apply_reverse_chain_subtable(
                         lookup_flag,
                         gdef,
                         mark_filtering_set,
-                        masks=masks,
-                        lookup_mask=lookup_mask,
+                        masks~,
+                        lookup_mask~,
                       )
                       let lookahead = match lookahead_indices {
                         Err(err) => return Err(err)
@@ -3007,9 +3031,9 @@ fn apply_multiple_subtable_list(
       lookup_flag,
       gdef,
       mark_filtering_set,
-      masks=masks,
+      masks~,
       index=i,
-      lookup_mask=lookup_mask,
+      lookup_mask~,
     )
     match ignored {
       Err(err) => return Err(err)
@@ -3074,9 +3098,9 @@ fn apply_alternate_subtable_list(
       lookup_flag,
       mark_filtering_set,
       gdef,
-      masks=masks,
-      lookup_mask=lookup_mask,
-      alt_values=alt_values,
+      masks~,
+      lookup_mask~,
+      alt_values~,
     )
     match result {
       Err(err) => return Err(err)
@@ -3107,9 +3131,9 @@ fn apply_alternate_subtable(
       lookup_flag,
       gdef,
       mark_filtering_set,
-      masks=masks,
+      masks~,
       index=i,
-      lookup_mask=lookup_mask,
+      lookup_mask~,
     )
     match ignored {
       Err(err) => return Err(err)
@@ -3124,16 +3148,20 @@ fn apply_alternate_subtable(
     if alt_value <= 0 {
       continue
     }
-    let next = alternate_substitute_format1(data, offset, glyph, alt_index=alt_value)
+    let next = alternate_substitute_format1(
+      data,
+      offset,
+      glyph,
+      alt_index=alt_value,
+    )
     match next {
       Err(err) => return Err(err)
       Ok(None) => ()
-      Ok(Some(value)) => {
+      Ok(Some(value)) =>
         if value != glyph {
           glyphs[i] = value
           changed = true
         }
-      }
     }
   }
   Ok(changed)
@@ -3201,14 +3229,13 @@ fn alternate_substitute_format1(
                   if alt_base < 0 || alt_base + glyph_count * 2 > data.length() {
                     return Err(UnexpectedEof)
                   }
-                  let chosen =
-                    if alt_index <= 1 {
-                      1
-                    } else if alt_index > glyph_count {
-                      glyph_count
-                    } else {
-                      alt_index
-                    }
+                  let chosen = if alt_index <= 1 {
+                    1
+                  } else if alt_index > glyph_count {
+                    glyph_count
+                  } else {
+                    alt_index
+                  }
                   let chosen_offset = alt_base + (chosen - 1) * 2
                   let chosen_value = read_u16_int(data, chosen_offset)
                   match chosen_value {
@@ -3296,7 +3323,8 @@ fn multiple_substitute_format1(
                     return Err(InvalidFormat)
                   }
                   let list_base = sequence_base + 2
-                  if list_base < 0 || list_base + glyph_count * 2 > data.length() {
+                  if list_base < 0 ||
+                    list_base + glyph_count * 2 > data.length() {
                     return Err(UnexpectedEof)
                   }
                   let sequence : Array[UInt] = []
@@ -3339,8 +3367,8 @@ fn find_ligature_match(
       lookup_flag,
       mark_filtering_set,
       gdef,
-      masks=masks,
-      lookup_mask=lookup_mask,
+      masks~,
+      lookup_mask~,
     )
     match result {
       Err(err) => return Err(err)
@@ -3372,9 +3400,9 @@ fn ligature_match_subtable(
     lookup_flag,
     gdef,
     mark_filtering_set,
-    masks=masks,
-    index=index,
-    lookup_mask=lookup_mask,
+    masks~,
+    index~,
+    lookup_mask~,
   )
   match ignored {
     Err(err) => return Err(err)
@@ -3407,10 +3435,7 @@ fn ligature_match_subtable(
           if coverage_index < 0 || coverage_index >= lig_set_count {
             return Err(InvalidFormat)
           }
-          let set_offset = read_u16_int(
-            data,
-            offset + 6 + coverage_index * 2,
-          )
+          let set_offset = read_u16_int(data, offset + 6 + coverage_index * 2)
           match set_offset {
             Err(err) => Err(err)
             Ok(set_offset) => {
@@ -3452,7 +3477,8 @@ fn ligature_match_subtable(
                             }
                             let comp_base = lig_base + 4
                             let comp_len = (comp_count - 1) * 2
-                            if comp_base < 0 || comp_base + comp_len > data.length() {
+                            if comp_base < 0 ||
+                              comp_base + comp_len > data.length() {
                               return Err(UnexpectedEof)
                             }
                             let input_indices = collect_forward_indices(
@@ -3462,8 +3488,8 @@ fn ligature_match_subtable(
                               lookup_flag,
                               gdef,
                               mark_filtering_set,
-                              masks=masks,
-                              lookup_mask=lookup_mask,
+                              masks~,
+                              lookup_mask~,
                             )
                             let indices = match input_indices {
                               Err(err) => return Err(err)
@@ -3472,7 +3498,10 @@ fn ligature_match_subtable(
                             }
                             let mut matches = true
                             for j in 0..<(comp_count - 1) {
-                              let component = read_u16_int(data, comp_base + j * 2)
+                              let component = read_u16_int(
+                                data,
+                                comp_base + j * 2,
+                              )
                               match component {
                                 Err(err) => return Err(err)
                                 Ok(component) => {

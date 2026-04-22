@@ -256,9 +256,7 @@ let emoji_presentation_ranges : Array[(UInt, UInt)] = [
 ]
 
 ///|
-let emoji_modifier_ranges : Array[(UInt, UInt)] = [
-  (0x1F3FBU, 0x1F3FFU),
-]
+let emoji_modifier_ranges : Array[(UInt, UInt)] = [(0x1F3FBU, 0x1F3FFU)]
 
 ///|
 let emoji_modifier_base_ranges : Array[(UInt, UInt)] = [

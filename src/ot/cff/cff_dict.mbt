@@ -56,7 +56,7 @@ pub fn parse_cff_dict(data : BytesView) -> Result[CffDict, CffError] {
       }
     }
   }
-  Ok(CffDict::{ entries })
+  Ok(CffDict::{ entries, })
 }
 
 ///|
@@ -67,9 +67,7 @@ pub fn CffDict::get_numbers(self : CffDict, op : Int) -> Array[CffNumber]? {
 ///|
 pub fn CffDict::entries_map(self : CffDict) -> Map[Int, Array[CffNumber]] {
   let next : Map[Int, Array[CffNumber]] = {}
-  self.entries.eachi((_, key, value) => {
-    next[key] = value.copy()
-  })
+  self.entries.eachi((_, key, value) => next[key] = value.copy())
   next
 }
 
@@ -105,6 +103,7 @@ pub fn CffDict::get_real(self : CffDict, op : Int, index? : Int = 0) -> Double? 
   }
 }
 
+///|
 fn parse_cff_number(
   data : BytesView,
   pos : Int,
@@ -159,6 +158,7 @@ fn parse_cff_number(
   Err(InvalidFormat)
 }
 
+///|
 fn parse_cff_real(
   data : BytesView,
   pos : Int,

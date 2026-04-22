@@ -14,7 +14,10 @@
 
 ///|
 test "shape available shapers" {
-  @debug.debug_inspect(available_shapers(), content="[\"ot\", \"aat\", \"fallback\"]")
+  @debug.debug_inspect(
+    available_shapers(),
+    content="[\"ot\", \"aat\", \"fallback\"]",
+  )
 }
 
 ///|

@@ -56,6 +56,7 @@ fn push_tag(bytes : Array[Byte], tag : @common.Tag) -> Unit {
 }
 
 ///|
+
 ///|
 fn write_u16_at(bytes : Array[Byte], offset : Int, value : Int) -> Unit {
   bytes[offset] = ((value >> 8) & 0xff).to_byte()
@@ -855,7 +856,10 @@ test "math table parse" {
   }
   @debug.debug_inspect(constants.percent_scale_down, content="[80, 60]")
   @debug.debug_inspect(constants.min_height, content="[500, 700]")
-  @debug.debug_inspect(constants.radical_degree_bottom_raise_percent, content="45")
+  @debug.debug_inspect(
+    constants.radical_degree_bottom_raise_percent,
+    content="45",
+  )
   let info = match math.glyph_info {
     None => fail("missing glyph info")
     Some(value) => value
