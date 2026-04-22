@@ -35,6 +35,7 @@ pub fn JustTable::has_data(self : JustTable) -> Bool {
   self.version != 0
 }
 
+///|
 fn parse_justification_header(
   data : BytesView,
   offset : Int,
@@ -53,7 +54,10 @@ fn parse_justification_header(
     (_, _, Err(err), _) => Err(err)
     (_, _, _, Err(err)) => Err(err)
     (Ok(class_offset), Ok(wdc_offset), Ok(pc_offset), Ok(lookup_offset)) => {
-      if class_offset < 0 || wdc_offset < 0 || pc_offset < 0 || lookup_offset < 0 {
+      if class_offset < 0 ||
+        wdc_offset < 0 ||
+        pc_offset < 0 ||
+        lookup_offset < 0 {
         return Err(InvalidFormat)
       }
       if class_offset != 0 && class_offset > data.length() {
@@ -76,14 +80,12 @@ fn parse_justification_header(
           Ok(value) => Some(value)
         }
       }
-      Ok(
-        JustificationHeader::{
-          class_table_offset: class_offset,
-          wdc_table_offset: wdc_offset,
-          pc_table_offset: pc_offset,
-          lookup,
-        },
-      )
+      Ok(JustificationHeader::{
+        class_table_offset: class_offset,
+        wdc_table_offset: wdc_offset,
+        pc_table_offset: pc_offset,
+        lookup,
+      })
     }
   }
 }
@@ -113,18 +115,22 @@ pub fn JustTable::parse(
       let horiz = if horiz_offset == 0 {
         None
       } else {
-        Some(match parse_justification_header(data, horiz_offset, num_glyphs) {
-          Err(err) => return Err(err)
-          Ok(value) => value
-        })
+        Some(
+          match parse_justification_header(data, horiz_offset, num_glyphs) {
+            Err(err) => return Err(err)
+            Ok(value) => value
+          },
+        )
       }
       let vert = if vert_offset == 0 {
         None
       } else {
-        Some(match parse_justification_header(data, vert_offset, num_glyphs) {
-          Err(err) => return Err(err)
-          Ok(value) => value
-        })
+        Some(
+          match parse_justification_header(data, vert_offset, num_glyphs) {
+            Err(err) => return Err(err)
+            Ok(value) => value
+          },
+        )
       }
       Ok(JustTable::{ version, format, horiz, vert })
     }

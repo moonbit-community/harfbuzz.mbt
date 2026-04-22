@@ -114,7 +114,8 @@ test "aat misc tables parse" {
   }
   assert_eq(bsln.format, 0)
   match bsln.data {
-    @aat.BslnData::Format0(deltas) => @debug.debug_inspect(deltas[0], content="0")
+    @aat.BslnData::Format0(deltas) =>
+      @debug.debug_inspect(deltas[0], content="0")
     _ => fail("unexpected bsln format")
   }
 

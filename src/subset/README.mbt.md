@@ -101,10 +101,15 @@ Current exclusions:
 ## Usage
 
 ```mbt nocheck
+///|
 let input = @subset.SubsetInput::from_codepoints([0x41U, 0x42U])
+
+///|
 let bytes = match @subset.subset(font, input) {
   Err(err) => fail("subset failed: \{err}")
   Ok(value) => value
 }
+
+///|
 let subset_font = @font.Font::from_bytes(bytes)
 ```

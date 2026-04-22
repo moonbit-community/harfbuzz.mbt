@@ -17,7 +17,9 @@ pub fn Buffer::shape_hebrew(
   self : Buffer,
   font : @font.Font,
 ) -> Result[Unit, ShapeError] {
-  let (unicode_mark_flags, combining_classes) = collect_mark_fallback_data(self.infos)
+  let (unicode_mark_flags, combining_classes) = collect_mark_fallback_data(
+    self.infos,
+  )
   match self.shape_basic(font) {
     Err(err) => return Err(err)
     Ok(_) => ()
@@ -28,14 +30,15 @@ pub fn Buffer::shape_hebrew(
   }
   let script_tag = self.script.to_tag()
   let lang_tag = language_to_ot_tag(self.language)
-  let map = match @ot_map.OtMap::new(
-    gsub,
-    None,
-    script_tag,
-    language_tag=lang_tag,
-    gsub_features=self.gsub_features,
-    gpos_features=self.gpos_features,
-  ) {
+  let map = match
+    @ot_map.OtMap::new(
+      gsub,
+      None,
+      script_tag,
+      language_tag=lang_tag,
+      gsub_features=self.gsub_features,
+      gpos_features=self.gpos_features,
+    ) {
     Err(err) => return Err(Layout(err))
     Ok(value) => value
   }
@@ -52,21 +55,13 @@ pub fn Buffer::shape_hebrew(
     }
     let result = match gdef {
       None =>
-        match gsub.apply_with_lookups(
-          glyphs,
-          clusters,
-          map.gsub_lookups(),
-        ) {
+        match gsub.apply_with_lookups(glyphs, clusters, map.gsub_lookups()) {
           Err(err) => return Err(Layout(err))
           Ok(value) => value
         }
       Some(gdef) =>
-        match gsub.apply_with_lookups(
-          glyphs,
-          clusters,
-          map.gsub_lookups(),
-          gdef=gdef,
-        ) {
+        match
+          gsub.apply_with_lookups(glyphs, clusters, map.gsub_lookups(), gdef~) {
           Err(err) => return Err(Layout(err))
           Ok(value) => value
         }
@@ -97,8 +92,8 @@ pub fn Buffer::shape_hebrew(
     self,
     zero_width_marks=ZeroWidthMarks::ByGdefLate,
     fallback_position=true,
-    unicode_mark_flags=unicode_mark_flags,
-    combining_classes=combining_classes,
+    unicode_mark_flags~,
+    combining_classes~,
     gpos_tag=Some(hebr_tag),
   )
 }

@@ -18,6 +18,7 @@ pub suberror AatError {
   InvalidFormat
 } derive(Eq, Debug, ToJson)
 
+///|
 fn read_u16(data : BytesView, offset : Int) -> Result[UInt, AatError] {
   if offset < 0 || offset + 2 > data.length() {
     return Err(UnexpectedEof)
@@ -27,6 +28,7 @@ fn read_u16(data : BytesView, offset : Int) -> Result[UInt, AatError] {
   Ok((b0 << 8) | b1)
 }
 
+///|
 fn read_u32(data : BytesView, offset : Int) -> Result[UInt, AatError] {
   if offset < 0 || offset + 4 > data.length() {
     return Err(UnexpectedEof)
@@ -38,11 +40,17 @@ fn read_u32(data : BytesView, offset : Int) -> Result[UInt, AatError] {
   Ok((b0 << 24) | (b1 << 16) | (b2 << 8) | b3)
 }
 
+///|
 fn u16_to_int(value : UInt) -> Int {
   let v = value.reinterpret_as_int()
-  if v < 0 { v + 0x10000 } else { v }
+  if v < 0 {
+    v + 0x10000
+  } else {
+    v
+  }
 }
 
+///|
 fn read_u16_int(data : BytesView, offset : Int) -> Result[Int, AatError] {
   match read_u16(data, offset) {
     Err(err) => Err(err)
@@ -50,6 +58,7 @@ fn read_u16_int(data : BytesView, offset : Int) -> Result[Int, AatError] {
   }
 }
 
+///|
 fn read_u32_int(data : BytesView, offset : Int) -> Result[Int, AatError] {
   match read_u32(data, offset) {
     Err(err) => Err(err)
@@ -57,13 +66,18 @@ fn read_u32_int(data : BytesView, offset : Int) -> Result[Int, AatError] {
   }
 }
 
-fn read_u32_non_negative(data : BytesView, offset : Int) -> Result[Int, AatError] {
+///|
+fn read_u32_non_negative(
+  data : BytesView,
+  offset : Int,
+) -> Result[Int, AatError] {
   match read_u32_int(data, offset) {
     Err(err) => Err(err)
     Ok(value) => if value < 0 { Err(InvalidFormat) } else { Ok(value) }
   }
 }
 
+///|
 fn read_i16(data : BytesView, offset : Int) -> Result[Int, AatError] {
   match read_u16_int(data, offset) {
     Err(err) => Err(err)
@@ -71,6 +85,7 @@ fn read_i16(data : BytesView, offset : Int) -> Result[Int, AatError] {
   }
 }
 
+///|
 fn read_i32(data : BytesView, offset : Int) -> Result[Int, AatError] {
   match read_u32(data, offset) {
     Err(err) => Err(err)

@@ -119,28 +119,26 @@ pub fn Cff2Table::parse(data : BytesView) -> Result[Cff2Table, CffError] {
         Err(err) => return Err(err)
         Ok(value) => value
       }
-      let fd_select =
-        if fdselect_offset == 0 || charstrings.count == 0 {
-          None
-        } else {
-          match parse_fdselect(data, fdselect_offset, charstrings.count) {
-            Err(err) => return Err(err)
-            Ok(value) => Some(value)
-          }
+      let fd_select = if fdselect_offset == 0 || charstrings.count == 0 {
+        None
+      } else {
+        match parse_fdselect(data, fdselect_offset, charstrings.count) {
+          Err(err) => return Err(err)
+          Ok(value) => Some(value)
         }
+      }
       let private_dicts = match parse_fd_array_private_dicts(data, fd_array) {
         Err(err) => return Err(err)
         Ok(value) => value
       }
-      let var_store =
-        if vstore_offset == 0 {
-          None
-        } else {
-          match parse_cff2_var_store(data, vstore_offset) {
-            Err(err) => return Err(err)
-            Ok(value) => Some(value)
-          }
+      let var_store = if vstore_offset == 0 {
+        None
+      } else {
+        match parse_cff2_var_store(data, vstore_offset) {
+          Err(err) => return Err(err)
+          Ok(value) => Some(value)
         }
+      }
       Ok(Cff2Table::{
         data: data.to_bytes(),
         top_dict,
@@ -168,16 +166,15 @@ pub fn Cff2Table::glyph_bounds(
   if glyph < 0 || glyph >= self.charstrings.count {
     return Err(InvalidFormat)
   }
-  let fd =
-    match self.fd_select {
-      None => 0
-      Some(values) => {
-        if glyph < 0 || glyph >= values.length() {
-          return Err(InvalidFormat)
-        }
-        values[glyph]
+  let fd = match self.fd_select {
+    None => 0
+    Some(values) => {
+      if glyph < 0 || glyph >= values.length() {
+        return Err(InvalidFormat)
       }
+      values[glyph]
     }
+  }
   if fd < 0 || fd >= self.private_dicts.length() {
     return Err(InvalidFormat)
   }
@@ -201,14 +198,16 @@ pub fn Cff2Table::glyph_count(self : Cff2Table) -> Int {
   self.charstrings.count
 }
 
-fn cff2_clone_entries(entries : Map[Int, Array[CffNumber]]) -> Map[Int, Array[CffNumber]] {
+///|
+fn cff2_clone_entries(
+  entries : Map[Int, Array[CffNumber]],
+) -> Map[Int, Array[CffNumber]] {
   let next : Map[Int, Array[CffNumber]] = {}
-  entries.eachi((_, key, value) => {
-    next[key] = value.copy()
-  })
+  entries.eachi((_, key, value) => next[key] = value.copy())
   next
 }
 
+///|
 fn cff2_build_index_items(index : CffIndex) -> Result[Array[Bytes], CffError] {
   let items : Array[Bytes] = []
   for i in 0..<index.count {
@@ -221,6 +220,7 @@ fn cff2_build_index_items(index : CffIndex) -> Result[Array[Bytes], CffError] {
   Ok(items)
 }
 
+///|
 fn cff2_replace_entry(
   entries : Map[Int, Array[CffNumber]],
   op : Int,
@@ -229,6 +229,7 @@ fn cff2_replace_entry(
   entries[op] = values
 }
 
+///|
 fn cff2_remove_entry(entries : Map[Int, Array[CffNumber]], op : Int) -> Unit {
   match entries.get(op) {
     None => ()
@@ -236,6 +237,7 @@ fn cff2_remove_entry(entries : Map[Int, Array[CffNumber]], op : Int) -> Unit {
   }
 }
 
+///|
 fn build_private_dict_cff2(
   private_dict : CffDict,
   local_subrs : CffIndex?,
@@ -287,6 +289,7 @@ fn build_private_dict_cff2(
   }
 }
 
+///|
 fn build_fdselect_format0(fds : Array[Int]) -> Result[Bytes, CffError] {
   let bytes : Array[Byte] = []
   bytes.push(0)
@@ -299,18 +302,19 @@ fn build_fdselect_format0(fds : Array[Int]) -> Result[Bytes, CffError] {
   Ok(Bytes::from_array(bytes))
 }
 
+///|
 fn parse_cff2_private_dict_entries(
   data : BytesView,
   fd_dict : CffDict,
 ) -> Result[(CffDict, CffIndex?), CffError] {
   let private_size_opt = fd_dict.get_int(op_private_cff2, index=0)
   let private_offset_opt = fd_dict.get_int(op_private_cff2, index=1)
-  let (private_size, private_offset) =
-    match (private_size_opt, private_offset_opt) {
-      (None, None) => (0, 0)
-      (Some(size), Some(offset)) => (size, offset)
-      _ => return Err(InvalidFormat)
-    }
+  let (private_size, private_offset) = match
+    (private_size_opt, private_offset_opt) {
+    (None, None) => (0, 0)
+    (Some(size), Some(offset)) => (size, offset)
+    _ => return Err(InvalidFormat)
+  }
   if private_size <= 0 {
     return Ok((CffDict::{ entries: {} }, None))
   }
@@ -322,23 +326,23 @@ fn parse_cff2_private_dict_entries(
     Err(err) => return Err(err)
     Ok(value) => value
   }
-  let local_subrs =
-    match priv_dict.get_int(op_subrs_cff2) {
-      None => None
-      Some(subrs_offset) => {
-        let subrs_base = private_offset + subrs_offset
-        if subrs_base < 0 || subrs_base > data.length() {
-          return Err(UnexpectedEof)
-        }
-        match parse_cff2_index(data, subrs_base) {
-          Err(err) => return Err(err)
-          Ok(value) => Some(value)
-        }
+  let local_subrs = match priv_dict.get_int(op_subrs_cff2) {
+    None => None
+    Some(subrs_offset) => {
+      let subrs_base = private_offset + subrs_offset
+      if subrs_base < 0 || subrs_base > data.length() {
+        return Err(UnexpectedEof)
+      }
+      match parse_cff2_index(data, subrs_base) {
+        Err(err) => return Err(err)
+        Ok(value) => Some(value)
       }
     }
+  }
   Ok((priv_dict, local_subrs))
 }
 
+///|
 fn build_top_dict_cff2(
   base : Map[Int, Array[CffNumber]],
   charstrings_offset : Int,
@@ -362,7 +366,11 @@ fn build_top_dict_cff2(
   write_cff_dict(entries)
 }
 
-fn cff2_var_store_bytes(data : BytesView, offset : Int) -> Result[Bytes?, CffError] {
+///|
+fn cff2_var_store_bytes(
+  data : BytesView,
+  offset : Int,
+) -> Result[Bytes?, CffError] {
   if offset <= 0 {
     return Ok(None)
   }
@@ -419,25 +427,23 @@ pub fn Cff2Table::subset(
     Ok(value) => value
   }
 
-  let fd_values =
-    match self.fd_select {
-      None => None
-      Some(values) => Some(values)
-    }
+  let fd_values = match self.fd_select {
+    None => None
+    Some(values) => Some(values)
+  }
   let unique_fds : Array[Int] = []
   let fd_seen : Array[Bool] = Array::make(self.fd_array.count, false)
   let glyph_fds : Array[Int] = []
   for gid in glyphs {
-    let fd =
-      match fd_values {
-        None => 0
-        Some(values) => {
-          if gid < 0 || gid >= values.length() {
-            return Err(InvalidFormat)
-          }
-          values[gid]
+    let fd = match fd_values {
+      None => 0
+      Some(values) => {
+        if gid < 0 || gid >= values.length() {
+          return Err(InvalidFormat)
         }
+        values[gid]
       }
+    }
     glyph_fds.push(fd)
     if fd >= 0 && fd < fd_seen.length() && !fd_seen[fd] {
       fd_seen[fd] = true
@@ -477,19 +483,21 @@ pub fn Cff2Table::subset(
       Err(err) => return Err(err)
       Ok(value) => value
     }
-    let (priv_dict, local_subrs) =
-      match parse_cff2_private_dict_entries(self.data[:], fd_dict) {
-        Err(err) => return Err(err)
-        Ok(value) => value
-      }
-    let (priv_bytes, subrs_bytes) = match build_private_dict_cff2(priv_dict, local_subrs) {
+    let (priv_dict, local_subrs) = match
+      parse_cff2_private_dict_entries(self.data[:], fd_dict) {
+      Err(err) => return Err(err)
+      Ok(value) => value
+    }
+    let (priv_bytes, subrs_bytes) = match
+      build_private_dict_cff2(priv_dict, local_subrs) {
       Err(err) => return Err(err)
       Ok(value) => value
     }
     fd_entries.push((fd_dict, priv_bytes, subrs_bytes))
   }
 
-  let vstore_bytes = match cff2_var_store_bytes(self.data[:], self.vstore_offset) {
+  let vstore_bytes = match
+    cff2_var_store_bytes(self.data[:], self.vstore_offset) {
     Err(err) => return Err(err)
     Ok(value) => value
   }
@@ -516,11 +524,10 @@ pub fn Cff2Table::subset(
       let (fd_dict, priv_bytes, subrs_bytes) = entry
       let dict_entries = cff2_clone_entries(fd_dict.entries_map())
       let priv_size = priv_bytes.length()
-      cff2_replace_entry(
-        dict_entries,
-        op_private_cff2,
-        [Int(priv_size), Int(private_offset)],
-      )
+      cff2_replace_entry(dict_entries, op_private_cff2, [
+        Int(priv_size),
+        Int(private_offset),
+      ])
       let dict_bytes = match write_cff_dict(dict_entries) {
         Err(err) => return Err(err)
         Ok(value) => value
@@ -540,13 +547,14 @@ pub fn Cff2Table::subset(
     if vstore_bytes is Some(_) {
       vstore_offset = private_offset
     }
-    let new_top_dict = match build_top_dict_cff2(
-      self.top_dict.entries_map(),
-      charstrings_offset,
-      fdarray_offset,
-      fdselect_offset,
-      vstore_offset,
-    ) {
+    let new_top_dict = match
+      build_top_dict_cff2(
+        self.top_dict.entries_map(),
+        charstrings_offset,
+        fdarray_offset,
+        fdselect_offset,
+        vstore_offset,
+      ) {
       Err(err) => return Err(err)
       Ok(value) => value
     }
@@ -572,28 +580,49 @@ pub fn Cff2Table::subset(
   push_u16(header, top_dict_bytes.length())
 
   let bytes : Array[Byte] = []
-  for b in header { bytes.push(b) }
-  for b in top_dict_bytes { bytes.push(b) }
-  for b in global_index { bytes.push(b) }
-  for b in charstrings_index { bytes.push(b) }
-  for b in fdselect_bytes { bytes.push(b) }
-  for b in fdarray_index { bytes.push(b) }
+  for b in header {
+    bytes.push(b)
+  }
+  for b in top_dict_bytes {
+    bytes.push(b)
+  }
+  for b in global_index {
+    bytes.push(b)
+  }
+  for b in charstrings_index {
+    bytes.push(b)
+  }
+  for b in fdselect_bytes {
+    bytes.push(b)
+  }
+  for b in fdarray_index {
+    bytes.push(b)
+  }
 
   for entry in fd_entries {
     let (_, priv_bytes, subrs_bytes) = entry
-    for b in priv_bytes { bytes.push(b) }
+    for b in priv_bytes {
+      bytes.push(b)
+    }
     match subrs_bytes {
       None => ()
-      Some(subrs) => for b in subrs { bytes.push(b) }
+      Some(subrs) =>
+        for b in subrs {
+          bytes.push(b)
+        }
     }
   }
   match vstore_bytes {
     None => ()
-    Some(vstore) => for b in vstore { bytes.push(b) }
+    Some(vstore) =>
+      for b in vstore {
+        bytes.push(b)
+      }
   }
   Ok(Bytes::from_array(bytes))
 }
 
+///|
 fn parse_fd_array_private_dicts(
   data : BytesView,
   fd_array : CffIndex,
@@ -613,13 +642,14 @@ fn parse_fd_array_private_dicts(
     }
     let private_size_opt = dict.get_int(op_private_cff2, index=0)
     let private_offset_opt = dict.get_int(op_private_cff2, index=1)
-    let (private_size, private_offset) =
-      match (private_size_opt, private_offset_opt) {
-        (None, None) => (0, 0)
-        (Some(size), Some(offset)) => (size, offset)
-        _ => return Err(InvalidFormat)
-      }
-    let priv_dict = match parse_cff2_private_dict(data, private_offset, private_size) {
+    let (private_size, private_offset) = match
+      (private_size_opt, private_offset_opt) {
+      (None, None) => (0, 0)
+      (Some(size), Some(offset)) => (size, offset)
+      _ => return Err(InvalidFormat)
+    }
+    let priv_dict = match
+      parse_cff2_private_dict(data, private_offset, private_size) {
       Err(err) => return Err(err)
       Ok(value) => value
     }
@@ -628,6 +658,7 @@ fn parse_fd_array_private_dicts(
   Ok(values)
 }
 
+///|
 fn parse_cff2_private_dict(
   data : BytesView,
   offset : Int,
@@ -648,23 +679,23 @@ fn parse_cff2_private_dict(
     None => 0
     Some(value) => value
   }
-  let local_subrs =
-    match dict.get_int(op_subrs_cff2) {
-      None => None
-      Some(subrs_offset) => {
-        let subrs_base = offset + subrs_offset
-        if subrs_base < 0 || subrs_base > data.length() {
-          return Err(UnexpectedEof)
-        }
-        match parse_cff2_index(data, subrs_base) {
-          Err(err) => return Err(err)
-          Ok(value) => Some(value)
-        }
+  let local_subrs = match dict.get_int(op_subrs_cff2) {
+    None => None
+    Some(subrs_offset) => {
+      let subrs_base = offset + subrs_offset
+      if subrs_base < 0 || subrs_base > data.length() {
+        return Err(UnexpectedEof)
+      }
+      match parse_cff2_index(data, subrs_base) {
+        Err(err) => return Err(err)
+        Ok(value) => Some(value)
       }
     }
+  }
   Ok(Cff2PrivateDict::{ local_subrs, ivs })
 }
 
+///|
 fn parse_cff2_var_store(
   data : BytesView,
   offset : Int,
@@ -687,6 +718,7 @@ fn parse_cff2_var_store(
   }
 }
 
+///|
 fn map_var_error(err : @ot_var.VarError) -> CffError {
   match err {
     @ot_var.VarError::UnexpectedEof => UnexpectedEof
@@ -694,6 +726,7 @@ fn map_var_error(err : @ot_var.VarError) -> CffError {
   }
 }
 
+///|
 fn parse_fdselect(
   data : BytesView,
   offset : Int,
@@ -747,8 +780,11 @@ fn parse_fdselect(
             let values : Array[Int] = Array::make(glyph_count, 0)
             for i in 0..<starts.length() {
               let start = starts[i]
-              let end =
-                if i + 1 < starts.length() { starts[i + 1] } else { sentinel }
+              let end = if i + 1 < starts.length() {
+                starts[i + 1]
+              } else {
+                sentinel
+              }
               if start < 0 || end < start {
                 return Err(InvalidFormat)
               }
@@ -793,8 +829,11 @@ fn parse_fdselect(
             let values : Array[Int] = Array::make(glyph_count, 0)
             for i in 0..<starts.length() {
               let start = starts[i]
-              let end =
-                if i + 1 < starts.length() { starts[i + 1] } else { sentinel }
+              let end = if i + 1 < starts.length() {
+                starts[i + 1]
+              } else {
+                sentinel
+              }
               if start < 0 || end < start {
                 return Err(InvalidFormat)
               }

@@ -12,18 +12,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+///|
 let flag_on_curve : Int = 0x01
+
+///|
 let flag_cubic : Int = 0x80
 
+///|
 priv struct DrawPoint {
   x : Double
   y : Double
 }
 
+///|
 fn mid_point(a : DrawPoint, b : DrawPoint) -> DrawPoint {
   DrawPoint::{ x: (a.x + b.x) * 0.5, y: (a.y + b.y) * 0.5 }
 }
 
+///|
 fn scale_coord(value : Double, scale : Int, upem : Int) -> Double {
   if upem == 0 {
     return value
@@ -31,13 +37,20 @@ fn scale_coord(value : Double, scale : Int, upem : Int) -> Double {
   value * scale.to_double() / upem.to_double()
 }
 
-fn scale_point(p : @sfnt.GlyphPoint, scale_x : Int, scale_y : Int, upem : Int) -> DrawPoint {
+///|
+fn scale_point(
+  p : @sfnt.GlyphPoint,
+  scale_x : Int,
+  scale_y : Int,
+  upem : Int,
+) -> DrawPoint {
   DrawPoint::{
     x: scale_coord(p.x, scale_x, upem),
     y: scale_coord(p.y, scale_y, upem),
   }
 }
 
+///|
 fn[T] draw_contour(
   points : Array[@sfnt.GlyphPoint],
   start : Int,
@@ -55,7 +68,7 @@ fn[T] draw_contour(
   let mut first_offcurve2 : DrawPoint? = None
   let mut last_offcurve : DrawPoint? = None
   let mut last_offcurve2 : DrawPoint? = None
-  for idx in start..=end {
+  for idx in start..<=end {
     let point = points[idx]
     let on_curve = (point.flag & flag_on_curve) != 0
     let is_cubic = !on_curve && (point.flag & flag_cubic) != 0
@@ -64,77 +77,55 @@ fn[T] draw_contour(
       if on_curve {
         first_oncurve = Some(p)
         session.move_to(p.x, p.y)
+      } else if is_cubic && first_offcurve2 is None {
+        first_offcurve2 = first_offcurve
+        first_offcurve = Some(p)
       } else {
-        if is_cubic && first_offcurve2 is None {
-          first_offcurve2 = first_offcurve
-          first_offcurve = Some(p)
-        } else {
-          match first_offcurve {
-            Some(ofc) => {
-              let mid = mid_point(ofc, p)
-              first_oncurve = Some(mid)
-              last_offcurve = Some(p)
-              session.move_to(mid.x, mid.y)
-            }
-            None => first_offcurve = Some(p)
+        match first_offcurve {
+          Some(ofc) => {
+            let mid = mid_point(ofc, p)
+            first_oncurve = Some(mid)
+            last_offcurve = Some(p)
+            session.move_to(mid.x, mid.y)
           }
+          None => first_offcurve = Some(p)
         }
       }
     } else {
       match last_offcurve {
-        Some(lof) => {
+        Some(lof) =>
           if on_curve {
             match last_offcurve2 {
               Some(lof2) => {
-                session.cubic_to(
-                  lof2.x,
-                  lof2.y,
-                  lof.x,
-                  lof.y,
-                  p.x,
-                  p.y,
-                )
+                session.cubic_to(lof2.x, lof2.y, lof.x, lof.y, p.x, p.y)
                 last_offcurve2 = None
               }
-              None => {
-                session.quadratic_to(lof.x, lof.y, p.x, p.y)
-              }
+              None => session.quadratic_to(lof.x, lof.y, p.x, p.y)
             }
             last_offcurve = None
+          } else if is_cubic && last_offcurve2 is None {
+            last_offcurve2 = Some(lof)
+            last_offcurve = Some(p)
           } else {
-            if is_cubic && last_offcurve2 is None {
-              last_offcurve2 = Some(lof)
-              last_offcurve = Some(p)
-            } else {
-              let mid = mid_point(lof, p)
-              if is_cubic {
-                match last_offcurve2 {
-                  Some(lof2) =>
-                    session.cubic_to(
-                      lof2.x,
-                      lof2.y,
-                      lof.x,
-                      lof.y,
-                      mid.x,
-                      mid.y,
-                    )
-                  None => session.quadratic_to(lof.x, lof.y, mid.x, mid.y)
-                }
-                last_offcurve2 = None
-              } else {
-                session.quadratic_to(lof.x, lof.y, mid.x, mid.y)
+            let mid = mid_point(lof, p)
+            if is_cubic {
+              match last_offcurve2 {
+                Some(lof2) =>
+                  session.cubic_to(lof2.x, lof2.y, lof.x, lof.y, mid.x, mid.y)
+                None => session.quadratic_to(lof.x, lof.y, mid.x, mid.y)
               }
-              last_offcurve = Some(p)
+              last_offcurve2 = None
+            } else {
+              session.quadratic_to(lof.x, lof.y, mid.x, mid.y)
             }
+            last_offcurve = Some(p)
           }
-        }
-        None => {
+        None =>
           if on_curve {
             session.line_to(p.x, p.y)
           } else {
             last_offcurve = Some(p)
           }
-        }
       }
     }
   }
@@ -145,15 +136,7 @@ fn[T] draw_contour(
     }
     let mid = mid_point(lof, first_for_mid)
     match last_offcurve2 {
-      Some(lof2) =>
-        session.cubic_to(
-          lof2.x,
-          lof2.y,
-          lof.x,
-          lof.y,
-          mid.x,
-          mid.y,
-        )
+      Some(lof2) => session.cubic_to(lof2.x, lof2.y, lof.x, lof.y, mid.x, mid.y)
       None => session.quadratic_to(lof.x, lof.y, mid.x, mid.y)
     }
     last_offcurve = None
@@ -161,28 +144,12 @@ fn[T] draw_contour(
   }
   if first_offcurve is Some(ofc) && first_oncurve is Some(onc) {
     match first_offcurve2 {
-      Some(ofc2) =>
-        session.cubic_to(
-          ofc2.x,
-          ofc2.y,
-          ofc.x,
-          ofc.y,
-          onc.x,
-          onc.y,
-        )
+      Some(ofc2) => session.cubic_to(ofc2.x, ofc2.y, ofc.x, ofc.y, onc.x, onc.y)
       None => session.quadratic_to(ofc.x, ofc.y, onc.x, onc.y)
     }
   } else if last_offcurve is Some(lof) && first_oncurve is Some(onc) {
     match last_offcurve2 {
-      Some(lof2) =>
-        session.cubic_to(
-          lof2.x,
-          lof2.y,
-          lof.x,
-          lof.y,
-          onc.x,
-          onc.y,
-        )
+      Some(lof2) => session.cubic_to(lof2.x, lof2.y, lof.x, lof.y, onc.x, onc.y)
       None => session.quadratic_to(lof.x, lof.y, onc.x, onc.y)
     }
   } else if first_oncurve is Some(onc) {
@@ -194,6 +161,7 @@ fn[T] draw_contour(
   session.close_path()
 }
 
+///|
 fn[T] draw_glyf_points(
   points : Array[@sfnt.GlyphPoint],
   session : @draw.DrawSession[T],
@@ -253,7 +221,13 @@ pub fn[T] Font::draw_glyph_or_fail(
         return Ok(true)
       }
       let session = @draw.DrawSession::new(funcs, draw_data)
-      draw_glyf_points(outline, session, self.scale_x, self.scale_y, head.units_per_em)
+      draw_glyf_points(
+        outline,
+        session,
+        self.scale_x,
+        self.scale_y,
+        head.units_per_em,
+      )
       Ok(true)
     }
   }

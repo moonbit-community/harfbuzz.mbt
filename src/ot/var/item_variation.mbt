@@ -41,6 +41,7 @@ pub struct ItemVariationStore {
   data_sets : Array[VarData]
 } derive(Eq, Debug, ToJson)
 
+///|
 fn VarRegionAxis::evaluate(self : VarRegionAxis, coord : Int) -> Double {
   let peak = self.peak_coord
   if peak == 0 || coord == peak {
@@ -67,7 +68,12 @@ fn VarRegionAxis::evaluate(self : VarRegionAxis, coord : Int) -> Double {
   }
 }
 
-fn VarRegionList::evaluate(self : VarRegionList, region_index : Int, coords : ArrayView[Int]) -> Double {
+///|
+fn VarRegionList::evaluate(
+  self : VarRegionList,
+  region_index : Int,
+  coords : ArrayView[Int],
+) -> Double {
   if region_index < 0 || region_index >= self.region_count {
     return 0.0
   }
@@ -85,30 +91,42 @@ fn VarRegionList::evaluate(self : VarRegionList, region_index : Int, coords : Ar
   scalar
 }
 
+///|
 fn VarData::row_size(self : VarData) -> Int {
   let count = self.region_indices.length()
   (self.word_count + count) * (if self.long_words { 2 } else { 1 })
 }
 
+///|
 fn read_i8(bytes : BytesView, offset : Int) -> Result[Int, VarError] {
   if offset < 0 || offset + 1 > bytes.length() {
     return Err(UnexpectedEof)
   }
   let v = bytes[offset].to_int()
-  if v >= 0x80 { Ok(v - 0x100) } else { Ok(v) }
+  if v >= 0x80 {
+    Ok(v - 0x100)
+  } else {
+    Ok(v)
+  }
 }
 
+///|
 fn read_i16_be(bytes : BytesView, offset : Int) -> Result[Int, VarError] {
   let hi = read_u16(bytes, offset)
   match hi {
     Err(err) => Err(err)
     Ok(value) => {
       let v = value.reinterpret_as_int()
-      if v >= 0x8000 { Ok(v - 0x10000) } else { Ok(v) }
+      if v >= 0x8000 {
+        Ok(v - 0x10000)
+      } else {
+        Ok(v)
+      }
     }
   }
 }
 
+///|
 fn read_i32_be(bytes : BytesView, offset : Int) -> Result[Int, VarError] {
   match read_u32(bytes, offset) {
     Err(err) => Err(err)
@@ -116,6 +134,7 @@ fn read_i32_be(bytes : BytesView, offset : Int) -> Result[Int, VarError] {
   }
 }
 
+///|
 fn VarData::get_delta(
   self : VarData,
   inner : Int,
@@ -188,7 +207,11 @@ fn VarData::get_delta(
   delta
 }
 
-fn parse_region_list(data : BytesView, offset : Int) -> Result[VarRegionList, VarError] {
+///|
+fn parse_region_list(
+  data : BytesView,
+  offset : Int,
+) -> Result[VarRegionList, VarError] {
   let axis_count = read_u16_int(data, offset)
   let region_count = read_u16_int(data, offset + 2)
   match (axis_count, region_count) {
@@ -209,11 +232,8 @@ fn parse_region_list(data : BytesView, offset : Int) -> Result[VarRegionList, Va
           (Err(err), _, _) => return Err(err)
           (_, Err(err), _) => return Err(err)
           (_, _, Err(err)) => return Err(err)
-          (Ok(start_coord), Ok(peak_coord), Ok(end_coord)) => axes.push(VarRegionAxis::{
-            start_coord,
-            peak_coord,
-            end_coord,
-          })
+          (Ok(start_coord), Ok(peak_coord), Ok(end_coord)) =>
+            axes.push(VarRegionAxis::{ start_coord, peak_coord, end_coord })
         }
         axis_offset = axis_offset + 6
       }
@@ -222,6 +242,7 @@ fn parse_region_list(data : BytesView, offset : Int) -> Result[VarRegionList, Va
   }
 }
 
+///|
 fn parse_var_data(data : BytesView, offset : Int) -> Result[VarData, VarError] {
   let item_count = read_u16_int(data, offset)
   let word_size_count = read_u16_int(data, offset + 2)
@@ -233,7 +254,9 @@ fn parse_var_data(data : BytesView, offset : Int) -> Result[VarData, VarError] {
     (Ok(item_count), Ok(word_size_count), Ok(region_index_count)) => {
       let long_words = (word_size_count & 0x8000) != 0
       let word_count = word_size_count & 0x7FFF
-      if region_index_count < 0 || word_count < 0 || word_count > region_index_count {
+      if region_index_count < 0 ||
+        word_count < 0 ||
+        word_count > region_index_count {
         return Err(InvalidFormat)
       }
       let region_indices : Array[Int] = []
@@ -246,26 +269,23 @@ fn parse_var_data(data : BytesView, offset : Int) -> Result[VarData, VarError] {
         }
         region_offset = region_offset + 2
       }
-      let row_size = (word_count + region_indices.length()) * (if long_words { 2 } else { 1 })
+      let row_size = (word_count + region_indices.length()) *
+        (if long_words { 2 } else { 1 })
       let total_bytes = item_count * row_size
       let data_offset = region_offset
       if data_offset < 0 || data_offset + total_bytes > data.length() {
         return Err(UnexpectedEof)
       }
       let deltas = data[data_offset:data_offset + total_bytes].to_bytes()
-      Ok(VarData::{
-        item_count,
-        word_count,
-        long_words,
-        region_indices,
-        deltas,
-      })
+      Ok(VarData::{ item_count, word_count, long_words, region_indices, deltas })
     }
   }
 }
 
 ///|
-pub fn ItemVariationStore::parse(data : BytesView) -> Result[ItemVariationStore, VarError] {
+pub fn ItemVariationStore::parse(
+  data : BytesView,
+) -> Result[ItemVariationStore, VarError] {
   let format = read_u16_int(data, 0)
   let region_offset = read_u32_int(data, 2)
   let data_count = read_u16_int(data, 6)
@@ -346,7 +366,10 @@ pub fn ItemVariationStore::region_scalars(
   let count = var_data.region_indices.length()
   let scalars : Array[Double] = Array::make(count, 0.0)
   for i in 0..<count {
-    scalars[i] = self.region_list.evaluate(var_data.region_indices[i], coords[:])
+    scalars[i] = self.region_list.evaluate(
+      var_data.region_indices[i],
+      coords[:],
+    )
   }
   Some(scalars)
 }

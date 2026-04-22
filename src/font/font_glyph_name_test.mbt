@@ -13,7 +13,10 @@
 // limitations under the License.
 
 ///|
-fn build_post_format2(indices : Array[Int], custom_names : Array[String]) -> Bytes {
+fn build_post_format2(
+  indices : Array[Int],
+  custom_names : Array[String],
+) -> Bytes {
   let bytes : Array[Byte] = []
   push_u32(bytes, 0x00020000)
   push_u32(bytes, 0)
@@ -43,10 +46,7 @@ test "font glyph names from post format2" {
   let tag_maxp = @common.Tag::from_chars('m', 'a', 'x', 'p')
   let tag_post = @common.Tag::from_chars('p', 'o', 's', 't')
   let post = build_post_format2([0, 3, 258], ["icon0"])
-  let sfnt = build_sfnt([
-    (tag_maxp, build_maxp(3)),
-    (tag_post, post),
-  ])
+  let sfnt = build_sfnt([(tag_maxp, build_maxp(3)), (tag_post, post)])
   let face = @face.Face::from_bytes(sfnt)
   let font = Font::new(face)
   let name0 = match font.glyph_name(0) {

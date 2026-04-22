@@ -24,7 +24,7 @@ fn clusters_monotone(
   for i in 1..<infos.length() {
     let prev = infos[i - 1].cluster
     let curr = infos[i].cluster
-    if prev != curr && ((prev < curr) != forward) {
+    if prev != curr && (prev < curr) != forward {
       return false
     }
   }

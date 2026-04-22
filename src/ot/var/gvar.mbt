@@ -24,6 +24,7 @@ pub struct GvarTable {
   data : Bytes
 } derive(Debug, ToJson)
 
+///|
 fn parse_offsets(
   data : BytesView,
   offset : Int,
@@ -73,15 +74,11 @@ pub fn GvarTable::parse(data : BytesView) -> Result[GvarTable, VarError] {
   let glyph_count = read_u16_int(data, 12)
   let flags = read_u16_int(data, 14)
   let data_offset = read_u32_int(data, 16)
-  match (
-    version,
-    axis_count,
-    shared_tuple_count,
-    shared_tuples_offset,
-    glyph_count,
-    flags,
-    data_offset,
-  ) {
+  match
+    (
+      version, axis_count, shared_tuple_count, shared_tuples_offset, glyph_count,
+      flags, data_offset,
+    ) {
     (Err(err), _, _, _, _, _, _) => Err(err)
     (_, Err(err), _, _, _, _, _) => Err(err)
     (_, _, Err(err), _, _, _, _) => Err(err)
@@ -89,7 +86,15 @@ pub fn GvarTable::parse(data : BytesView) -> Result[GvarTable, VarError] {
     (_, _, _, _, Err(err), _, _) => Err(err)
     (_, _, _, _, _, Err(err), _) => Err(err)
     (_, _, _, _, _, _, Err(err)) => Err(err)
-    (Ok(version), Ok(axis_count), Ok(shared_tuple_count), Ok(shared_tuples_offset), Ok(glyph_count), Ok(flags), Ok(data_offset)) => {
+    (
+      Ok(version),
+      Ok(axis_count),
+      Ok(shared_tuple_count),
+      Ok(shared_tuples_offset),
+      Ok(glyph_count),
+      Ok(flags),
+      Ok(data_offset),
+    ) => {
       let major = (version >> 16) & 0xFFFFU
       if major != 1U {
         return Err(InvalidFormat)
@@ -138,11 +143,14 @@ pub fn GvarTable::glyph_variation_data(self : GvarTable, glyph : Int) -> Bytes? 
 }
 
 ///|
-pub fn GvarTable::shared_tuples(self : GvarTable) -> Result[Array[Int], VarError] {
+pub fn GvarTable::shared_tuples(
+  self : GvarTable,
+) -> Result[Array[Int], VarError] {
   if self.shared_tuple_count <= 0 {
     return Ok([])
   }
-  if self.shared_tuples_offset <= 0 || self.shared_tuples_offset >= self.data.length() {
+  if self.shared_tuples_offset <= 0 ||
+    self.shared_tuples_offset >= self.data.length() {
     return Err(UnexpectedEof)
   }
   let total = self.shared_tuple_count * self.axis_count

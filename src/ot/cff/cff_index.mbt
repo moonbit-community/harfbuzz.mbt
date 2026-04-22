@@ -21,28 +21,34 @@ pub struct CffIndex {
 } derive(Eq, Debug, ToJson)
 
 ///|
-pub fn parse_cff1_index(data : BytesView, offset : Int) -> Result[CffIndex, CffError] {
+pub fn parse_cff1_index(
+  data : BytesView,
+  offset : Int,
+) -> Result[CffIndex, CffError] {
   parse_cff_index(data, offset, 2)
 }
 
 ///|
-pub fn parse_cff2_index(data : BytesView, offset : Int) -> Result[CffIndex, CffError] {
+pub fn parse_cff2_index(
+  data : BytesView,
+  offset : Int,
+) -> Result[CffIndex, CffError] {
   parse_cff_index(data, offset, 4)
 }
 
+///|
 fn parse_cff_index(
   data : BytesView,
   offset : Int,
   count_bytes : Int,
 ) -> Result[CffIndex, CffError] {
-  let count =
-    if count_bytes == 2 {
-      read_u16_int(data, offset)
-    } else if count_bytes == 4 {
-      read_u32_int(data, offset)
-    } else {
-      Err(InvalidFormat)
-    }
+  let count = if count_bytes == 2 {
+    read_u16_int(data, offset)
+  } else if count_bytes == 4 {
+    read_u32_int(data, offset)
+  } else {
+    Err(InvalidFormat)
+  }
   match count {
     Err(err) => Err(err)
     Ok(count) => {
@@ -50,7 +56,12 @@ fn parse_cff_index(
         return Err(InvalidFormat)
       }
       if count == 0 {
-        return Ok(CffIndex::{ count: 0, off_size: 0, offsets: [], data: Bytes::from_array([]) })
+        return Ok(CffIndex::{
+          count: 0,
+          off_size: 0,
+          offsets: [],
+          data: Bytes::from_array([]),
+        })
       }
       let off_size = read_u8_int(data, offset + count_bytes)
       match off_size {
@@ -87,7 +98,10 @@ fn parse_cff_index(
 }
 
 ///|
-pub fn CffIndex::item_bytes(self : CffIndex, index : Int) -> Result[Bytes, CffError] {
+pub fn CffIndex::item_bytes(
+  self : CffIndex,
+  index : Int,
+) -> Result[Bytes, CffError] {
   if index < 0 || index >= self.count {
     return Err(InvalidFormat)
   }

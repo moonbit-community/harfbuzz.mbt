@@ -88,9 +88,15 @@ fn build_hvar_bytes() -> Bytes {
   push_u32_hvar(bytes, 0) // adv map
   push_u32_hvar(bytes, lsb_offset)
   push_u32_hvar(bytes, rsb_offset)
-  for b in lsb_map { bytes.push(b) }
-  for b in rsb_map { bytes.push(b) }
-  for b in var_store { bytes.push(b) }
+  for b in lsb_map {
+    bytes.push(b)
+  }
+  for b in rsb_map {
+    bytes.push(b)
+  }
+  for b in var_store {
+    bytes.push(b)
+  }
   Bytes::from_array(bytes)
 }
 

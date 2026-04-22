@@ -1,0 +1,4 @@
+import {
+  "moonbit-community/harfbuzz/common" @common,
+  "moonbit-community/harfbuzz/ot/tables" @ot_tables,
+}

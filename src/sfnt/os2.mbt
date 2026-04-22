@@ -70,16 +70,11 @@ pub fn Os2Table::parse(data : BytesView) -> Result[Os2Table, SfntError] {
       let typo_line_gap = read_i16(data, 72)
       let win_ascent = read_u16_int(data, 74)
       let win_descent = read_u16_int(data, 76)
-      match (
-        weight_class,
-        width_class,
-        fs_type,
-        typo_ascender,
-        typo_descender,
-        typo_line_gap,
-        win_ascent,
-        win_descent,
-      ) {
+      match
+        (
+          weight_class, width_class, fs_type, typo_ascender, typo_descender, typo_line_gap,
+          win_ascent, win_descent,
+        ) {
         (Err(err), _, _, _, _, _, _, _) => Err(err)
         (_, Err(err), _, _, _, _, _, _) => Err(err)
         (_, _, Err(err), _, _, _, _, _) => Err(err)
@@ -123,13 +118,10 @@ pub fn Os2Table::parse(data : BytesView) -> Result[Os2Table, SfntError] {
             let default_char_val = read_u16_int(data, 90)
             let break_char_val = read_u16_int(data, 92)
             let max_context_val = read_u16_int(data, 94)
-            match (
-              x_height_val,
-              cap_height_val,
-              default_char_val,
-              break_char_val,
-              max_context_val,
-            ) {
+            match
+              (
+                x_height_val, cap_height_val, default_char_val, break_char_val, max_context_val,
+              ) {
               (Err(err), _, _, _, _) => return Err(err)
               (_, Err(err), _, _, _) => return Err(err)
               (_, _, Err(err), _, _) => return Err(err)

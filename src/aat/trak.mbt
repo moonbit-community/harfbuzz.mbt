@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+///|
 let f16dot16_scale : Double = 1.0 / 65536.0
 
 ///|
@@ -22,10 +23,12 @@ pub(all) struct TrackTableEntry {
   values : Array[Int]
 } derive(Eq, Debug, ToJson)
 
+///|
 fn TrackTableEntry::track_value(self : TrackTableEntry) -> Double {
   self.track.to_double() * f16dot16_scale
 }
 
+///|
 fn TrackTableEntry::value_for_size(
   self : TrackTableEntry,
   ptem : Double,
@@ -97,6 +100,7 @@ pub(all) struct TrackData {
   size_table : Array[Int]
 } derive(Eq, Debug, ToJson)
 
+///|
 fn TrackData::tracking(
   self : TrackData,
   ptem : Double,
@@ -197,6 +201,7 @@ pub fn TrakTable::tracking(
   }
 }
 
+///|
 fn parse_track_data(
   data : BytesView,
   offset : Int,
@@ -230,7 +235,8 @@ fn parse_track_data(
 
       let entry_size = 8
       let table_offset = offset + 8
-      if table_offset < 0 || table_offset + n_tracks * entry_size > data.length() {
+      if table_offset < 0 ||
+        table_offset + n_tracks * entry_size > data.length() {
         return Err(UnexpectedEof)
       }
       let track_table : Array[TrackTableEntry] = []

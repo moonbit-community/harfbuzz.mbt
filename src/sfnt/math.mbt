@@ -277,7 +277,10 @@ fn parse_math_top_accent_attachment(
 }
 
 ///|
-fn parse_math_kern(data : BytesView, offset : Int) -> Result[MathKern, SfntError] {
+fn parse_math_kern(
+  data : BytesView,
+  offset : Int,
+) -> Result[MathKern, SfntError] {
   let height_count = read_u16_int(data, offset)
   match height_count {
     Err(err) => Err(err)
@@ -356,7 +359,7 @@ fn parse_math_kern_info(
             }
           }
         }
-        records.push(MathKernInfoRecord::{ math_kerns })
+        records.push(MathKernInfoRecord::{ math_kerns, })
       }
       Ok(MathKernInfo::{ coverage_offset, records })
     }
@@ -378,26 +381,33 @@ fn parse_math_glyph_info(
     (_, _, Err(err), _) => Err(err)
     (_, _, _, Err(err)) => Err(err)
     (Ok(italics_offset), Ok(top_offset), Ok(extended_offset), Ok(kern_offset)) => {
-      if italics_offset < 0 || top_offset < 0 || extended_offset < 0 || kern_offset < 0 {
+      if italics_offset < 0 ||
+        top_offset < 0 ||
+        extended_offset < 0 ||
+        kern_offset < 0 {
         return Err(InvalidFormat)
       }
       let italics_correction = if italics_offset == 0 {
         None
       } else {
         let absolute = offset + italics_offset
-        Some(match parse_math_italics_correction(data, absolute) {
-          Err(err) => return Err(err)
-          Ok(value) => value
-        })
+        Some(
+          match parse_math_italics_correction(data, absolute) {
+            Err(err) => return Err(err)
+            Ok(value) => value
+          },
+        )
       }
       let top_accent_attachment = if top_offset == 0 {
         None
       } else {
         let absolute = offset + top_offset
-        Some(match parse_math_top_accent_attachment(data, absolute) {
-          Err(err) => return Err(err)
-          Ok(value) => value
-        })
+        Some(
+          match parse_math_top_accent_attachment(data, absolute) {
+            Err(err) => return Err(err)
+            Ok(value) => value
+          },
+        )
       }
       if extended_offset != 0 {
         let absolute = offset + extended_offset
@@ -409,10 +419,12 @@ fn parse_math_glyph_info(
         None
       } else {
         let absolute = offset + kern_offset
-        Some(match parse_math_kern_info(data, absolute) {
-          Err(err) => return Err(err)
-          Ok(value) => value
-        })
+        Some(
+          match parse_math_kern_info(data, absolute) {
+            Err(err) => return Err(err)
+            Ok(value) => value
+          },
+        )
       }
       Ok(MathGlyphInfo::{
         italics_correction,
@@ -452,13 +464,22 @@ fn parse_math_glyph_assembly(
         let end_connector_length = read_u16_int(data, base + 4)
         let full_advance = read_u16_int(data, base + 6)
         let flags = read_u16_int(data, base + 8)
-        match (glyph, start_connector_length, end_connector_length, full_advance, flags) {
+        match
+          (
+            glyph, start_connector_length, end_connector_length, full_advance, flags,
+          ) {
           (Err(err), _, _, _, _) => return Err(err)
           (_, Err(err), _, _, _) => return Err(err)
           (_, _, Err(err), _, _) => return Err(err)
           (_, _, _, Err(err), _) => return Err(err)
           (_, _, _, _, Err(err)) => return Err(err)
-          (Ok(glyph), Ok(start_connector_length), Ok(end_connector_length), Ok(full_advance), Ok(flags)) =>
+          (
+            Ok(glyph),
+            Ok(start_connector_length),
+            Ok(end_connector_length),
+            Ok(full_advance),
+            Ok(flags),
+          ) =>
             parts.push(MathGlyphPartRecord::{
               glyph,
               start_connector_length,
@@ -491,10 +512,12 @@ fn parse_math_glyph_construction(
         None
       } else {
         let absolute = offset + assembly_offset
-        Some(match parse_math_glyph_assembly(data, absolute) {
-          Err(err) => return Err(err)
-          Ok(value) => value
-        })
+        Some(
+          match parse_math_glyph_assembly(data, absolute) {
+            Err(err) => return Err(err)
+            Ok(value) => value
+          },
+        )
       }
       let variants : Array[MathGlyphVariantRecord] = []
       let record_base = offset + 4
@@ -509,7 +532,10 @@ fn parse_math_glyph_construction(
           (Err(err), _) => return Err(err)
           (_, Err(err)) => return Err(err)
           (Ok(glyph), Ok(advance)) =>
-            variants.push(MathGlyphVariantRecord::{ variant_glyph: glyph, advance })
+            variants.push(MathGlyphVariantRecord::{
+              variant_glyph: glyph,
+              advance,
+            })
         }
       }
       Ok(MathGlyphConstruction::{ glyph_assembly, variants })
@@ -527,13 +553,11 @@ fn parse_math_variants(
   let horiz_coverage_offset = read_u16_int(data, offset + 4)
   let vert_count = read_u16_int(data, offset + 6)
   let horiz_count = read_u16_int(data, offset + 8)
-  match (
-    min_connector_overlap,
-    vert_coverage_offset,
-    horiz_coverage_offset,
-    vert_count,
-    horiz_count,
-  ) {
+  match
+    (
+      min_connector_overlap, vert_coverage_offset, horiz_coverage_offset, vert_count,
+      horiz_count,
+    ) {
     (Err(err), _, _, _, _) => Err(err)
     (_, Err(err), _, _, _) => Err(err)
     (_, _, Err(err), _, _) => Err(err)
@@ -546,8 +570,10 @@ fn parse_math_variants(
       Ok(vert_count),
       Ok(horiz_count),
     ) => {
-      if vert_coverage_offset < 0 || horiz_coverage_offset < 0 ||
-          vert_count < 0 || horiz_count < 0 {
+      if vert_coverage_offset < 0 ||
+        horiz_coverage_offset < 0 ||
+        vert_count < 0 ||
+        horiz_count < 0 {
         return Err(InvalidFormat)
       }
       if vert_coverage_offset != 0 {
@@ -580,7 +606,8 @@ fn parse_math_variants(
               constructions.push(None)
             } else {
               let absolute = offset + construction_offset
-              let construction = match parse_math_glyph_construction(data, absolute) {
+              let construction = match
+                parse_math_glyph_construction(data, absolute) {
                 Err(err) => return Err(err)
                 Ok(value) => value
               }
@@ -616,37 +643,48 @@ pub fn MathTable::parse(data : BytesView) -> Result[MathTable, SfntError] {
     (_, Err(err), _, _) => Err(err)
     (_, _, Err(err), _) => Err(err)
     (_, _, _, Err(err)) => Err(err)
-    (Ok(version), Ok(constants_offset), Ok(glyph_info_offset), Ok(variants_offset)) => {
+    (
+      Ok(version),
+      Ok(constants_offset),
+      Ok(glyph_info_offset),
+      Ok(variants_offset),
+    ) => {
       if constants_offset < 0 || glyph_info_offset < 0 || variants_offset < 0 {
         return Err(InvalidFormat)
       }
-      let major = (version >> 16)
+      let major = version >> 16
       let minor = version & 0xffff
       let constants = if constants_offset == 0 {
         None
       } else {
-        Some(match parse_math_constants(data, constants_offset) {
-          Err(err) => return Err(err)
-          Ok(value) => value
-        })
+        Some(
+          match parse_math_constants(data, constants_offset) {
+            Err(err) => return Err(err)
+            Ok(value) => value
+          },
+        )
       }
       let glyph_info = if glyph_info_offset == 0 {
         None
       } else {
         let absolute = glyph_info_offset
-        Some(match parse_math_glyph_info(data, absolute) {
-          Err(err) => return Err(err)
-          Ok(value) => value
-        })
+        Some(
+          match parse_math_glyph_info(data, absolute) {
+            Err(err) => return Err(err)
+            Ok(value) => value
+          },
+        )
       }
       let variants = if variants_offset == 0 {
         None
       } else {
         let absolute = variants_offset
-        Some(match parse_math_variants(data, absolute) {
-          Err(err) => return Err(err)
-          Ok(value) => value
-        })
+        Some(
+          match parse_math_variants(data, absolute) {
+            Err(err) => return Err(err)
+            Ok(value) => value
+          },
+        )
       }
       Ok(MathTable::{
         major_version: major,

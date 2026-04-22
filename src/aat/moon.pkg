@@ -1,0 +1,10 @@
+import {
+  "moonbitlang/core/debug",
+}
+
+import {
+  "moonbit-community/harfbuzz/buffer" @buffer,
+  "moonbit-community/harfbuzz/font" @font,
+  "moonbit-community/harfbuzz/shape" @shape,
+  "moonbit-community/harfbuzz/sfnt" @sfnt,
+} for "test"

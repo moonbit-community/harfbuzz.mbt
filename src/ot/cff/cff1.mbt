@@ -104,49 +104,47 @@ pub fn Cff1Table::parse(data : BytesView) -> Result[Cff1Table, CffError] {
   }
   let private_size_opt = top_dict.get_int(op_private, index=0)
   let private_offset_opt = top_dict.get_int(op_private, index=1)
-  let (private_size, private_offset) =
-    match (private_size_opt, private_offset_opt) {
-      (None, None) => (0, 0)
-      (Some(size), Some(offset)) => (size, offset)
-      _ => return Err(InvalidFormat)
-    }
+  let (private_size, private_offset) = match
+    (private_size_opt, private_offset_opt) {
+    (None, None) => (0, 0)
+    (Some(size), Some(offset)) => (size, offset)
+    _ => return Err(InvalidFormat)
+  }
   let charstrings = match parse_cff1_index(data, charstrings_offset) {
     Err(err) => return Err(err)
     Ok(value) => value
   }
-  let charset_map =
-    if charset_offset > 2 {
-      match parse_cff1_charset(data, charset_offset, charstrings.count) {
-        Err(err) => return Err(err)
-        Ok(value) => Some(value)
-      }
-    } else {
-      None
+  let charset_map = if charset_offset > 2 {
+    match parse_cff1_charset(data, charset_offset, charstrings.count) {
+      Err(err) => return Err(err)
+      Ok(value) => Some(value)
     }
-  let (private_dict, local_subrs) =
-    if private_size > 0 {
-      if private_offset < 0 || private_offset + private_size > data.length() {
-        return Err(UnexpectedEof)
-      }
-      let priv_bytes = data[private_offset:private_offset + private_size]
-      let priv_dict = match parse_cff_dict(priv_bytes) {
-        Err(err) => return Err(err)
-        Ok(value) => value
-      }
-      let local_subrs = match priv_dict.get_int(op_subrs) {
-        None => None
-        Some(subrs_offset) => {
-          let subrs_base = private_offset + subrs_offset
-          match parse_cff1_index(data, subrs_base) {
-            Err(err) => return Err(err)
-            Ok(value) => Some(value)
-          }
+  } else {
+    None
+  }
+  let (private_dict, local_subrs) = if private_size > 0 {
+    if private_offset < 0 || private_offset + private_size > data.length() {
+      return Err(UnexpectedEof)
+    }
+    let priv_bytes = data[private_offset:private_offset + private_size]
+    let priv_dict = match parse_cff_dict(priv_bytes) {
+      Err(err) => return Err(err)
+      Ok(value) => value
+    }
+    let local_subrs = match priv_dict.get_int(op_subrs) {
+      None => None
+      Some(subrs_offset) => {
+        let subrs_base = private_offset + subrs_offset
+        match parse_cff1_index(data, subrs_base) {
+          Err(err) => return Err(err)
+          Ok(value) => Some(value)
         }
       }
-      (Some(priv_dict), local_subrs)
-    } else {
-      (None, None)
     }
+    (Some(priv_dict), local_subrs)
+  } else {
+    (None, None)
+  }
   Ok(Cff1Table::{
     data: data.to_bytes(),
     name_index,
@@ -182,7 +180,12 @@ pub fn Cff1Table::glyph_bounds(
     charset_map: self.charset_map,
     glyph_count: self.charstrings.count,
   }
-  cff1_charstring_bounds(bytes[:], Some(self.global_subrs), self.local_subrs, seac)
+  cff1_charstring_bounds(
+    bytes[:],
+    Some(self.global_subrs),
+    self.local_subrs,
+    seac,
+  )
 }
 
 ///|
@@ -198,11 +201,12 @@ pub fn Cff1Table::glyph_name(
   if glyph < 0 || glyph >= self.charstrings.count {
     return Ok(None)
   }
-  let gid_to_sid = match build_gid_to_sid_map(
-    self.charset_offset,
-    self.charset_map,
-    self.charstrings.count,
-  ) {
+  let gid_to_sid = match
+    build_gid_to_sid_map(
+      self.charset_offset,
+      self.charset_map,
+      self.charstrings.count,
+    ) {
     Err(err) => return Err(err)
     Ok(value) => value
   }
@@ -235,34 +239,35 @@ pub fn Cff1Table::glyph_from_name(
   if name == "" {
     return Ok(None)
   }
-  let sid =
-    match cff1_standard_sid_for(name) {
-      Some(value) => Some(value)
-      None => {
-        let standard_len = cff1_standard_strings_len()
-        let mut found : Int? = None
-        for i in 0..<self.string_index.count {
-          let bytes = match self.string_index.item_bytes(i) {
-            Err(err) => return Err(err)
-            Ok(value) => value
-          }
-          if @utf8.decode_lossy(bytes[:]) == name {
-            found = Some(i + standard_len)
-            break
-          }
+  let sid = match cff1_standard_sid_for(name) {
+    Some(value) => Some(value)
+    None => {
+      let standard_len = cff1_standard_strings_len()
+      let mut found : Int? = None
+      for i in 0..<self.string_index.count {
+        let bytes = match self.string_index.item_bytes(i) {
+          Err(err) => return Err(err)
+          Ok(value) => value
         }
-        found
+        if @utf8.decode_lossy(bytes[:]) == name {
+          found = Some(i + standard_len)
+          break
+        }
       }
+      found
     }
+  }
   match sid {
     None => Ok(None)
     Some(value) =>
-      Ok(cff1_sid_to_gid(
-        self.charset_offset,
-        self.charset_map,
-        value,
-        self.charstrings.count,
-      ))
+      Ok(
+        cff1_sid_to_gid(
+          self.charset_offset,
+          self.charset_map,
+          value,
+          self.charstrings.count,
+        ),
+      )
   }
 }
 
@@ -292,14 +297,16 @@ pub fn Cff1Table::seac_components(
   )
 }
 
-fn clone_entries(entries : Map[Int, Array[CffNumber]]) -> Map[Int, Array[CffNumber]] {
+///|
+fn clone_entries(
+  entries : Map[Int, Array[CffNumber]],
+) -> Map[Int, Array[CffNumber]] {
   let next : Map[Int, Array[CffNumber]] = {}
-  entries.eachi((_, key, value) => {
-    next[key] = value.copy()
-  })
+  entries.eachi((_, key, value) => next[key] = value.copy())
   next
 }
 
+///|
 fn replace_entry(
   entries : Map[Int, Array[CffNumber]],
   op : Int,
@@ -308,6 +315,7 @@ fn replace_entry(
   entries[op] = values
 }
 
+///|
 fn remove_entry(entries : Map[Int, Array[CffNumber]], op : Int) -> Unit {
   match entries.get(op) {
     None => ()
@@ -315,6 +323,7 @@ fn remove_entry(entries : Map[Int, Array[CffNumber]], op : Int) -> Unit {
   }
 }
 
+///|
 fn build_charset_bytes(
   glyphs : Array[Int],
   gid_to_sid : Array[Int],
@@ -339,6 +348,7 @@ fn build_charset_bytes(
   Ok(Bytes::from_array(bytes))
 }
 
+///|
 fn build_index_items(index : CffIndex) -> Result[Array[Bytes], CffError] {
   let items : Array[Bytes] = []
   for i in 0..<index.count {
@@ -351,6 +361,7 @@ fn build_index_items(index : CffIndex) -> Result[Array[Bytes], CffError] {
   Ok(items)
 }
 
+///|
 fn build_private_dict(
   private_dict : CffDict,
   local_subrs : CffIndex?,
@@ -402,6 +413,7 @@ fn build_private_dict(
   }
 }
 
+///|
 fn build_top_dict(
   base : Map[Int, Array[CffNumber]],
   charset_offset : Int,
@@ -415,11 +427,7 @@ fn build_top_dict(
   replace_entry(entries, op_charstrings, [Int(charstrings_offset)])
   match (private_bytes, private_offset) {
     (Some(bytes), Some(offset)) =>
-      replace_entry(
-        entries,
-        op_private,
-        [Int(bytes.length()), Int(offset)],
-      )
+      replace_entry(entries, op_private, [Int(bytes.length()), Int(offset)])
     _ => remove_entry(entries, op_private)
   }
   match encoding_value {
@@ -446,11 +454,12 @@ pub fn Cff1Table::subset(
   if glyphs[0] != 0 {
     return Err(InvalidFormat)
   }
-  let gid_to_sid = match build_gid_to_sid_map(
-    self.charset_offset,
-    self.charset_map,
-    self.charstrings.count,
-  ) {
+  let gid_to_sid = match
+    build_gid_to_sid_map(
+      self.charset_offset,
+      self.charset_map,
+      self.charstrings.count,
+    ) {
     Err(err) => return Err(err)
     Ok(value) => value
   }
@@ -494,16 +503,19 @@ pub fn Cff1Table::subset(
     Err(err) => return Err(err)
     Ok(value) => value
   }
-  let (private_bytes, local_subrs_index) =
-    match self.private_dict {
-      None => (None, None)
-      Some(private_dict) =>
-        match build_private_dict(private_dict, self.local_subrs) {
-          Err(err) => return Err(err)
-          Ok((priv_bytes, subrs_index)) => (Some(priv_bytes), subrs_index)
-        }
-    }
-  let header_size = if self.data.length() >= 3 { self.data[2].to_int() } else { 0 }
+  let (private_bytes, local_subrs_index) = match self.private_dict {
+    None => (None, None)
+    Some(private_dict) =>
+      match build_private_dict(private_dict, self.local_subrs) {
+        Err(err) => return Err(err)
+        Ok((priv_bytes, subrs_index)) => (Some(priv_bytes), subrs_index)
+      }
+  }
+  let header_size = if self.data.length() >= 3 {
+    self.data[2].to_int()
+  } else {
+    0
+  }
   if header_size < 4 || header_size > self.data.length() {
     return Err(InvalidFormat)
   }
@@ -516,17 +528,14 @@ pub fn Cff1Table::subset(
     Err(err) => return Err(err)
     Ok(value) => value
   }
-  let encoding_value =
-    match self.top_dict.get_int(op_encoding) {
-      None => None
-      Some(value) =>
-        if value == 0 || value == 1 { Some(value) } else { Some(0) }
-    }
+  let encoding_value = match self.top_dict.get_int(op_encoding) {
+    None => None
+    Some(value) => if value == 0 || value == 1 { Some(value) } else { Some(0) }
+  }
   let mut done = false
   let mut iter = 0
   while !done && iter < 5 {
-    let base_offset =
-      header_bytes.length() +
+    let base_offset = header_bytes.length() +
       name_index.length() +
       top_index.length() +
       string_index.length() +
@@ -537,14 +546,15 @@ pub fn Cff1Table::subset(
     if private_bytes is Some(_) {
       private_offset = Some(charstrings_offset + charstrings_index.length())
     }
-    let updated_top = match build_top_dict(
-      self.top_dict.entries_map(),
-      charset_offset,
-      charstrings_offset,
-      private_bytes,
-      private_offset,
-      encoding_value,
-    ) {
+    let updated_top = match
+      build_top_dict(
+        self.top_dict.entries_map(),
+        charset_offset,
+        charstrings_offset,
+        private_bytes,
+        private_offset,
+        encoding_value,
+      ) {
       Err(err) => return Err(err)
       Ok(value) => value
     }
@@ -605,6 +615,7 @@ pub fn Cff1Table::subset(
   Ok(Bytes::from_array(bytes))
 }
 
+///|
 fn parse_cff1_index_at(
   data : BytesView,
   offset : Int,

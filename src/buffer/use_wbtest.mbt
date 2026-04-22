@@ -18,11 +18,7 @@ test "use reorder repha before post-base" {
   buffer.add_codepoint(10U)
   buffer.add_codepoint(11U)
   buffer.add_codepoint(12U)
-  let categories : Array[Int] = [
-    use_cat_r,
-    1,
-    use_cat_vblw,
-  ]
+  let categories : Array[Int] = [use_cat_r, 1, use_cat_vblw]
   let syllables : Array[Int] = []
   let syllable = (1 << 4) | use_syllable_type_standard_cluster
   for _ in 0..<categories.length() {
@@ -43,12 +39,7 @@ test "use reorder vpre after halant" {
   buffer.add_codepoint(21U)
   buffer.add_codepoint(22U)
   buffer.add_codepoint(23U)
-  let categories : Array[Int] = [
-    1,
-    use_cat_h,
-    2,
-    use_cat_vpre,
-  ]
+  let categories : Array[Int] = [1, use_cat_h, 2, use_cat_vpre]
   let syllables : Array[Int] = []
   let syllable = (1 << 4) | use_syllable_type_standard_cluster
   for _ in 0..<categories.length() {
@@ -66,11 +57,9 @@ test "use reorder vpre after halant" {
 test "use feature masks apply arabic isol" {
   let categories : Array[Int] = [1]
   let syllables : Array[Int] = [(1 << 4) | use_syllable_type_standard_cluster]
-  let masks = build_use_feature_masks(
-    categories,
-    syllables,
-    arabic_actions=[arabic_action_isol],
-  )
+  let masks = build_use_feature_masks(categories, syllables, arabic_actions=[
+    arabic_action_isol,
+  ])
   let isol_bit = 1U << use_feature_isol
   @debug.debug_inspect((masks[0] & isol_bit) != 0U, content="true")
 }
@@ -80,16 +69,9 @@ test "use feature masks apply arabic init medi fina" {
   let categories : Array[Int] = [1, 1, 1, 1]
   let syllable = (1 << 4) | use_syllable_type_standard_cluster
   let syllables : Array[Int] = [syllable, syllable, syllable, syllable]
-  let masks = build_use_feature_masks(
-    categories,
-    syllables,
-    arabic_actions=[
-      arabic_action_isol,
-      arabic_action_init,
-      arabic_action_medi,
-      arabic_action_fina,
-    ],
-  )
+  let masks = build_use_feature_masks(categories, syllables, arabic_actions=[
+    arabic_action_isol, arabic_action_init, arabic_action_medi, arabic_action_fina,
+  ])
   let isol_bit = 1U << use_feature_isol
   let init_bit = 1U << use_feature_init
   let medi_bit = 1U << use_feature_medi

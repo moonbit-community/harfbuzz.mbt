@@ -20,6 +20,7 @@ pub struct DeltaSetIndexMap {
   map_data : Bytes
 } derive(Eq, Debug, ToJson)
 
+///|
 fn parse_format0(
   data : BytesView,
   offset : Int,
@@ -42,6 +43,7 @@ fn parse_format0(
   }
 }
 
+///|
 fn parse_format1(
   data : BytesView,
   offset : Int,
@@ -65,7 +67,10 @@ fn parse_format1(
 }
 
 ///|
-pub fn DeltaSetIndexMap::parse(data : BytesView, offset : Int) -> Result[DeltaSetIndexMap, VarError] {
+pub fn DeltaSetIndexMap::parse(
+  data : BytesView,
+  offset : Int,
+) -> Result[DeltaSetIndexMap, VarError] {
   let format = read_u8_int(data, offset)
   let entry_format = read_u8_int(data, offset + 1)
   match (format, entry_format) {

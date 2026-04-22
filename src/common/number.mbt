@@ -23,6 +23,7 @@ fn clamp_range(start : Int, end : Int, len : Int) -> (Int, Int) {
   (s2, e)
 }
 
+///|
 fn digit_value(c : Char) -> Int? {
   let lower = c.to_ascii_lowercase()
   if lower.is_ascii_digit() {
@@ -34,6 +35,7 @@ fn digit_value(c : Char) -> Int? {
   }
 }
 
+///|
 fn parse_unsigned(
   s : StringView,
   start : Int,
@@ -56,7 +58,8 @@ fn parse_unsigned(
             if digit >= base {
               break
             }
-            value = value * base.reinterpret_as_uint() + digit.reinterpret_as_uint()
+            value = value * base.reinterpret_as_uint() +
+              digit.reinterpret_as_uint()
             idx = idx + 1
             count = count + 1
           }
@@ -95,13 +98,12 @@ pub fn parse_int(
   let parsed = parse_unsigned(s, idx, end, 10)
   match parsed {
     None => None
-    Some((value, next_idx, _)) => {
+    Some((value, next_idx, _)) =>
       if whole && next_idx != end {
         None
       } else {
         Some((value.reinterpret_as_int() * sign, next_idx))
       }
-    }
   }
 }
 
@@ -127,16 +129,16 @@ pub fn parse_uint(
   let parsed = parse_unsigned(s, idx, end, base)
   match parsed {
     None => None
-    Some((value, next_idx, _)) => {
+    Some((value, next_idx, _)) =>
       if whole && next_idx != end {
         None
       } else {
         Some((value, next_idx))
       }
-    }
   }
 }
 
+///|
 fn parse_exponent(s : StringView, start : Int, end : Int) -> (Int, Int)? {
   let mut idx = start
   if idx >= end {
@@ -154,13 +156,12 @@ fn parse_exponent(s : StringView, start : Int, end : Int) -> (Int, Int)? {
   let parsed = parse_unsigned(s, idx, end, 10)
   match parsed {
     None => None
-    Some((value, next_idx, count)) => {
+    Some((value, next_idx, count)) =>
       if count == 0 {
         None
       } else {
         Some((value.reinterpret_as_int() * sign, next_idx))
       }
-    }
   }
 }
 

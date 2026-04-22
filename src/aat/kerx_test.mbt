@@ -334,7 +334,7 @@ test "aat kerx format4 control points" {
     1,
     1,
     None,
-    contour_point=contour_point,
+    contour_point~,
   )
   @debug.debug_inspect(adjustments[1].x_offset, content="-10")
   @debug.debug_inspect(adjustments[1].y_offset, content="-5")

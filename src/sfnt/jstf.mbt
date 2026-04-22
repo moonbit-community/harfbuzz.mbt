@@ -76,7 +76,10 @@ pub struct JstfTable {
 } derive(Debug, ToJson)
 
 ///|
-fn parse_jstf_mod_list(data : BytesView, offset : Int) -> Result[JstfModList, SfntError] {
+fn parse_jstf_mod_list(
+  data : BytesView,
+  offset : Int,
+) -> Result[JstfModList, SfntError] {
   let count = read_u16_int(data, offset)
   match count {
     Err(err) => Err(err)
@@ -96,7 +99,7 @@ fn parse_jstf_mod_list(data : BytesView, offset : Int) -> Result[JstfModList, Sf
           Ok(index) => indices.push(index)
         }
       }
-      Ok(JstfModList::{ indices })
+      Ok(JstfModList::{ indices, })
     }
   }
 }
@@ -166,7 +169,10 @@ fn parse_jstf_max_optional(
 }
 
 ///|
-fn parse_jstf_priority(data : BytesView, offset : Int) -> Result[JstfPriority, SfntError] {
+fn parse_jstf_priority(
+  data : BytesView,
+  offset : Int,
+) -> Result[JstfPriority, SfntError] {
   let offsets : Array[Int] = []
   for i in 0..<10 {
     let value = read_u16_int(data, offset + i * 2)
@@ -175,43 +181,53 @@ fn parse_jstf_priority(data : BytesView, offset : Int) -> Result[JstfPriority, S
       Ok(value) => offsets.push(value)
     }
   }
-  let shrinkage_enable_gsub = match parse_jstf_mod_optional(data, offset, offsets[0]) {
+  let shrinkage_enable_gsub = match
+    parse_jstf_mod_optional(data, offset, offsets[0]) {
     Err(err) => return Err(err)
     Ok(value) => value
   }
-  let shrinkage_disable_gsub = match parse_jstf_mod_optional(data, offset, offsets[1]) {
+  let shrinkage_disable_gsub = match
+    parse_jstf_mod_optional(data, offset, offsets[1]) {
     Err(err) => return Err(err)
     Ok(value) => value
   }
-  let shrinkage_enable_gpos = match parse_jstf_mod_optional(data, offset, offsets[2]) {
+  let shrinkage_enable_gpos = match
+    parse_jstf_mod_optional(data, offset, offsets[2]) {
     Err(err) => return Err(err)
     Ok(value) => value
   }
-  let shrinkage_disable_gpos = match parse_jstf_mod_optional(data, offset, offsets[3]) {
+  let shrinkage_disable_gpos = match
+    parse_jstf_mod_optional(data, offset, offsets[3]) {
     Err(err) => return Err(err)
     Ok(value) => value
   }
-  let shrinkage_jstf_max = match parse_jstf_max_optional(data, offset, offsets[4]) {
+  let shrinkage_jstf_max = match
+    parse_jstf_max_optional(data, offset, offsets[4]) {
     Err(err) => return Err(err)
     Ok(value) => value
   }
-  let extension_enable_gsub = match parse_jstf_mod_optional(data, offset, offsets[5]) {
+  let extension_enable_gsub = match
+    parse_jstf_mod_optional(data, offset, offsets[5]) {
     Err(err) => return Err(err)
     Ok(value) => value
   }
-  let extension_disable_gsub = match parse_jstf_mod_optional(data, offset, offsets[6]) {
+  let extension_disable_gsub = match
+    parse_jstf_mod_optional(data, offset, offsets[6]) {
     Err(err) => return Err(err)
     Ok(value) => value
   }
-  let extension_enable_gpos = match parse_jstf_mod_optional(data, offset, offsets[7]) {
+  let extension_enable_gpos = match
+    parse_jstf_mod_optional(data, offset, offsets[7]) {
     Err(err) => return Err(err)
     Ok(value) => value
   }
-  let extension_disable_gpos = match parse_jstf_mod_optional(data, offset, offsets[8]) {
+  let extension_disable_gpos = match
+    parse_jstf_mod_optional(data, offset, offsets[8]) {
     Err(err) => return Err(err)
     Ok(value) => value
   }
-  let extension_jstf_max = match parse_jstf_max_optional(data, offset, offsets[9]) {
+  let extension_jstf_max = match
+    parse_jstf_max_optional(data, offset, offsets[9]) {
     Err(err) => return Err(err)
     Ok(value) => value
   }
@@ -231,7 +247,10 @@ fn parse_jstf_priority(data : BytesView, offset : Int) -> Result[JstfPriority, S
 }
 
 ///|
-fn parse_jstf_lang_sys(data : BytesView, offset : Int) -> Result[JstfLangSys, SfntError] {
+fn parse_jstf_lang_sys(
+  data : BytesView,
+  offset : Int,
+) -> Result[JstfLangSys, SfntError] {
   let count = read_u16_int(data, offset)
   match count {
     Err(err) => Err(err)
@@ -264,13 +283,16 @@ fn parse_jstf_lang_sys(data : BytesView, offset : Int) -> Result[JstfLangSys, Sf
           }
         }
       }
-      Ok(JstfLangSys::{ priorities })
+      Ok(JstfLangSys::{ priorities, })
     }
   }
 }
 
 ///|
-fn parse_extender_glyphs(data : BytesView, offset : Int) -> Result[Array[Int], SfntError] {
+fn parse_extender_glyphs(
+  data : BytesView,
+  offset : Int,
+) -> Result[Array[Int], SfntError] {
   let count = read_u16_int(data, offset)
   match count {
     Err(err) => Err(err)
@@ -320,10 +342,12 @@ fn parse_jstf_lang_sys_record(
       let lang_sys = if lang_sys_offset == 0 {
         None
       } else {
-        Some(match parse_jstf_lang_sys(data, base + lang_sys_offset) {
-          Err(err) => return Err(err)
-          Ok(value) => value
-        })
+        Some(
+          match parse_jstf_lang_sys(data, base + lang_sys_offset) {
+            Err(err) => return Err(err)
+            Ok(value) => value
+          },
+        )
       }
       Ok(JstfLangSysRecord::{ tag, lang_sys })
     }
@@ -331,7 +355,10 @@ fn parse_jstf_lang_sys_record(
 }
 
 ///|
-fn parse_jstf_script(data : BytesView, offset : Int) -> Result[JstfScript, SfntError] {
+fn parse_jstf_script(
+  data : BytesView,
+  offset : Int,
+) -> Result[JstfScript, SfntError] {
   let extender_offset = read_u16_int(data, offset)
   let default_lang_sys_offset = read_u16_int(data, offset + 2)
   let count = read_u16_int(data, offset + 4)
@@ -354,10 +381,12 @@ fn parse_jstf_script(data : BytesView, offset : Int) -> Result[JstfScript, SfntE
       let default_lang_sys = if default_lang_sys_offset == 0 {
         None
       } else {
-        Some(match parse_jstf_lang_sys(data, offset + default_lang_sys_offset) {
-          Err(err) => return Err(err)
-          Ok(value) => value
-        })
+        Some(
+          match parse_jstf_lang_sys(data, offset + default_lang_sys_offset) {
+            Err(err) => return Err(err)
+            Ok(value) => value
+          },
+        )
       }
       let lang_sys_records : Array[JstfLangSysRecord] = []
       let record_base = offset + 6
@@ -366,7 +395,8 @@ fn parse_jstf_script(data : BytesView, offset : Int) -> Result[JstfScript, SfntE
       }
       for i in 0..<count {
         let record_offset = record_base + i * 6
-        let record = match parse_jstf_lang_sys_record(data, record_offset, offset) {
+        let record = match
+          parse_jstf_lang_sys_record(data, record_offset, offset) {
           Err(err) => return Err(err)
           Ok(value) => value
         }
@@ -417,10 +447,12 @@ pub fn JstfTable::parse(data : BytesView) -> Result[JstfTable, SfntError] {
             let script = if script_offset == 0 {
               None
             } else {
-              Some(match parse_jstf_script(data, script_offset) {
-                Err(err) => return Err(err)
-                Ok(value) => value
-              })
+              Some(
+                match parse_jstf_script(data, script_offset) {
+                  Err(err) => return Err(err)
+                  Ok(value) => value
+                },
+              )
             }
             scripts.push(JstfScriptRecord::{ tag, script })
           }

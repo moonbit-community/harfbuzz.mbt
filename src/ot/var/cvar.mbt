@@ -34,14 +34,12 @@ pub fn CvarTable::parse(
       if data.length() < 4 {
         return Err(UnexpectedEof)
       }
-      let tuple_data = match TupleVariationData::parse(data[4:], axis_count, []) {
+      let tuple_data = match
+        TupleVariationData::parse(data[4:], axis_count, []) {
         Err(err) => return Err(err)
         Ok(value) => value
       }
-      Ok(CvarTable::{
-        version: value.reinterpret_as_int(),
-        tuple_data,
-      })
+      Ok(CvarTable::{ version: value.reinterpret_as_int(), tuple_data })
     }
   }
 }

@@ -80,7 +80,9 @@ pub fn BufferSerializeFormat::from_string(
 }
 
 ///|
-pub fn BufferSerializeFormat::to_string(self : BufferSerializeFormat) -> String? {
+pub fn BufferSerializeFormat::to_string(
+  self : BufferSerializeFormat,
+) -> String? {
   match self {
     BufferSerializeFormat::Text => Some("text")
     BufferSerializeFormat::Json => Some("json")
@@ -88,11 +90,13 @@ pub fn BufferSerializeFormat::to_string(self : BufferSerializeFormat) -> String?
   }
 }
 
+///|
 fn hex_digit(value : Int) -> Char {
   let code = if value < 10 { 48 + value } else { 55 + value }
   code.unsafe_to_char()
 }
 
+///|
 fn format_hex(value : UInt, min_width : Int) -> String {
   let digits : Array[Char] = []
   let mut v = value
@@ -117,14 +121,17 @@ fn format_hex(value : UInt, min_width : Int) -> String {
   sb.to_string()
 }
 
+///|
 fn append_int(sb : StringBuilder, value : Int) -> Unit {
   sb.write_string("\{value}")
 }
 
+///|
 fn append_uint(sb : StringBuilder, value : UInt) -> Unit {
   sb.write_string("\{value}")
 }
 
+///|
 fn serialize_text(
   buffer : Buffer,
   mode : BufferSerializeMode,
@@ -182,6 +189,7 @@ fn serialize_text(
   sb.to_string()
 }
 
+///|
 fn serialize_json(
   buffer : Buffer,
   mode : BufferSerializeMode,
@@ -265,23 +273,11 @@ pub fn Buffer::serialize(
   match format {
     BufferSerializeFormat::Text =>
       serialize_text(
-        self,
-        mode,
-        start,
-        end,
-        include_clusters,
-        include_positions,
-        include_advances,
+        self, mode, start, end, include_clusters, include_positions, include_advances,
       )
     BufferSerializeFormat::Json =>
       serialize_json(
-        self,
-        mode,
-        start,
-        end,
-        include_clusters,
-        include_positions,
-        include_advances,
+        self, mode, start, end, include_clusters, include_positions, include_advances,
       )
     BufferSerializeFormat::Invalid => ""
   }

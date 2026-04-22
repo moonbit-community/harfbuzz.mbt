@@ -21,11 +21,7 @@ test "khmer reorder coeng ro and vpre" {
   buffer.add_codepoint(13U)
   buffer.add_codepoint(14U)
   let categories : Array[Int] = [
-    1,
-    khmer_cat_h,
-    khmer_cat_ra,
-    khmer_cat_vpre,
-    1,
+    1, khmer_cat_h, khmer_cat_ra, khmer_cat_vpre, 1,
   ]
   let syllables : Array[Int] = []
   let syllable = (1 << 4) | khmer_syllable_type_consonant

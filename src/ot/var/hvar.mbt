@@ -20,7 +20,11 @@ pub struct HvarTable {
   rsb_map : DeltaSetIndexMap?
 } derive(Debug, ToJson)
 
-fn parse_map_optional(data : BytesView, offset : Int) -> Result[DeltaSetIndexMap?, VarError] {
+///|
+fn parse_map_optional(
+  data : BytesView,
+  offset : Int,
+) -> Result[DeltaSetIndexMap?, VarError] {
   if offset == 0 {
     return Ok(None)
   }
@@ -44,7 +48,13 @@ pub fn HvarTable::parse(data : BytesView) -> Result[HvarTable, VarError] {
     (_, _, Err(err), _, _) => Err(err)
     (_, _, _, Err(err), _) => Err(err)
     (_, _, _, _, Err(err)) => Err(err)
-    (Ok(version), Ok(var_store_offset), Ok(adv_offset), Ok(lsb_offset), Ok(rsb_offset)) => {
+    (
+      Ok(version),
+      Ok(var_store_offset),
+      Ok(adv_offset),
+      Ok(lsb_offset),
+      Ok(rsb_offset),
+    ) => {
       let major = (version >> 16) & 0xFFFFU
       if major != 1U {
         return Err(InvalidFormat)

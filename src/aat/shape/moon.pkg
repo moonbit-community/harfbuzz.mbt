@@ -1,0 +1,4 @@
+import {
+  "moonbit-community/harfbuzz/buffer" @buffer,
+  "moonbit-community/harfbuzz/font" @font,
+}

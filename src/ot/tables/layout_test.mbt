@@ -37,33 +37,35 @@ test "layout table header and lists" {
   let lookups = layout.lookup_list().offsets()
   @debug.debug_inspect(lookups.length(), content="1")
   @debug.debug_inspect(lookups[0], content="48")
-  let selected = match layout.select_lookup_offsets(
-    @common.Tag::from_chars('l', 'a', 't', 'n'),
-  ) {
+  let selected = match
+    layout.select_lookup_offsets(@common.Tag::from_chars('l', 'a', 't', 'n')) {
     Err(err) => fail("select error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   @debug.debug_inspect(selected, content="[48]")
-  let filtered = match layout.select_lookup_offsets_with_features(
-    @common.Tag::from_chars('l', 'a', 't', 'n'),
-    feature_tags=[@common.Tag::from_chars('k', 'e', 'r', 'n')],
-  ) {
+  let filtered = match
+    layout.select_lookup_offsets_with_features(
+      @common.Tag::from_chars('l', 'a', 't', 'n'),
+      feature_tags=[@common.Tag::from_chars('k', 'e', 'r', 'n')],
+    ) {
     Err(err) => fail("select error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   @debug.debug_inspect(filtered.is_empty(), content="true")
-  let single = match layout.select_lookup_offsets_for_feature(
-    @common.Tag::from_chars('l', 'a', 't', 'n'),
-    @common.Tag::from_chars('l', 'i', 'g', 'a'),
-  ) {
+  let single = match
+    layout.select_lookup_offsets_for_feature(
+      @common.Tag::from_chars('l', 'a', 't', 'n'),
+      @common.Tag::from_chars('l', 'i', 'g', 'a'),
+    ) {
     Err(err) => fail("select error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   @debug.debug_inspect(single, content="[48]")
-  let missing = match layout.select_lookup_offsets_for_feature(
-    @common.Tag::from_chars('l', 'a', 't', 'n'),
-    @common.Tag::from_chars('k', 'e', 'r', 'n'),
-  ) {
+  let missing = match
+    layout.select_lookup_offsets_for_feature(
+      @common.Tag::from_chars('l', 'a', 't', 'n'),
+      @common.Tag::from_chars('k', 'e', 'r', 'n'),
+    ) {
     Err(err) => fail("select error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -72,20 +74,36 @@ test "layout table header and lists" {
 
 ///|
 test "gsub/gpos wrappers" {
-  let gsub = match GsubTable::parse(@blob.Blob::from_bytes(build_layout_table(
-    build_gsub_lookup(),
-    @common.Tag::from_chars('l', 'i', 'g', 'a'),
-  ))) {
+  let gsub = match
+    GsubTable::parse(
+      @blob.Blob::from_bytes(
+        build_layout_table(
+          build_gsub_lookup(),
+          @common.Tag::from_chars('l', 'i', 'g', 'a'),
+        ),
+      ),
+    ) {
     Err(err) => fail("gsub parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  let gpos = match GposTable::parse(@blob.Blob::from_bytes(build_layout_table(
-    build_gpos_lookup(),
-    @common.Tag::from_chars('k', 'e', 'r', 'n'),
-  ))) {
+  let gpos = match
+    GposTable::parse(
+      @blob.Blob::from_bytes(
+        build_layout_table(
+          build_gpos_lookup(),
+          @common.Tag::from_chars('k', 'e', 'r', 'n'),
+        ),
+      ),
+    ) {
     Err(err) => fail("gpos parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  @debug.debug_inspect(gsub.layout().script_list().records().length(), content="1")
-  @debug.debug_inspect(gpos.layout().feature_list().records().length(), content="1")
+  @debug.debug_inspect(
+    gsub.layout().script_list().records().length(),
+    content="1",
+  )
+  @debug.debug_inspect(
+    gpos.layout().feature_list().records().length(),
+    content="1",
+  )
 }

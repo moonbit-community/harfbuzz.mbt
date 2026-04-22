@@ -94,7 +94,7 @@ pub fn NameTable::parse(data : BytesView) -> Result[NameTable, SfntError] {
           }
         }
       }
-      Ok(NameTable::{ records })
+      Ok(NameTable::{ records, })
     }
   }
 }
@@ -110,9 +110,9 @@ pub fn NameTable::find_name(
 ) -> NameRecord? {
   for record in self.records {
     if record.platform_id == platform_id &&
-       record.encoding_id == encoding_id &&
-       record.language_id == language_id &&
-       record.name_id == name_id {
+      record.encoding_id == encoding_id &&
+      record.language_id == language_id &&
+      record.name_id == name_id {
       return Some(record)
     }
   }

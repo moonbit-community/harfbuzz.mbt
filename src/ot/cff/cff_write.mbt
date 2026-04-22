@@ -18,6 +18,7 @@ fn push_u16(bytes : Array[Byte], value : Int) -> Unit {
   bytes.push((value & 0xff).to_byte())
 }
 
+///|
 fn push_u32(bytes : Array[Byte], value : Int) -> Unit {
   bytes.push(((value >> 24) & 0xff).to_byte())
   bytes.push(((value >> 16) & 0xff).to_byte())
@@ -25,7 +26,12 @@ fn push_u32(bytes : Array[Byte], value : Int) -> Unit {
   bytes.push((value & 0xff).to_byte())
 }
 
-fn push_count(bytes : Array[Byte], count : Int, count_bytes : Int) -> Result[Unit, CffError] {
+///|
+fn push_count(
+  bytes : Array[Byte],
+  count : Int,
+  count_bytes : Int,
+) -> Result[Unit, CffError] {
   if count < 0 {
     return Err(InvalidFormat)
   }
@@ -43,6 +49,7 @@ fn push_count(bytes : Array[Byte], count : Int, count_bytes : Int) -> Result[Uni
   Err(InvalidFormat)
 }
 
+///|
 fn offset_size_for(value : Int) -> Result[Int, CffError] {
   if value <= 0 {
     return Err(InvalidFormat)
@@ -62,7 +69,12 @@ fn offset_size_for(value : Int) -> Result[Int, CffError] {
   Err(InvalidFormat)
 }
 
-fn push_offset(bytes : Array[Byte], value : Int, size : Int) -> Result[Unit, CffError] {
+///|
+fn push_offset(
+  bytes : Array[Byte],
+  value : Int,
+  size : Int,
+) -> Result[Unit, CffError] {
   if value < 0 {
     return Err(InvalidFormat)
   }
@@ -76,7 +88,11 @@ fn push_offset(bytes : Array[Byte], value : Int, size : Int) -> Result[Unit, Cff
   Ok(())
 }
 
-fn write_cff_index(items : Array[Bytes], count_bytes : Int) -> Result[Bytes, CffError] {
+///|
+fn write_cff_index(
+  items : Array[Bytes],
+  count_bytes : Int,
+) -> Result[Bytes, CffError] {
   let bytes : Array[Byte] = []
   let count = items.length()
   match push_count(bytes, count, count_bytes) {
@@ -112,6 +128,7 @@ fn write_cff_index(items : Array[Bytes], count_bytes : Int) -> Result[Bytes, Cff
   Ok(Bytes::from_array(bytes))
 }
 
+///|
 fn write_cff_int(bytes : Array[Byte], value : Int) -> Unit {
   if value >= -107 && value <= 107 {
     bytes.push((value + 139).to_byte())
@@ -119,13 +136,13 @@ fn write_cff_int(bytes : Array[Byte], value : Int) -> Unit {
   }
   if value >= 108 && value <= 1131 {
     let v = value - 108
-    bytes.push(((v / 256) + 247).to_byte())
+    bytes.push((v / 256 + 247).to_byte())
     bytes.push((v % 256).to_byte())
     return
   }
   if value <= -108 && value >= -1131 {
     let v = -value - 108
-    bytes.push(((v / 256) + 251).to_byte())
+    bytes.push((v / 256 + 251).to_byte())
     bytes.push((v % 256).to_byte())
     return
   }
@@ -143,7 +160,11 @@ fn write_cff_int(bytes : Array[Byte], value : Int) -> Unit {
   bytes.push((value & 0xff).to_byte())
 }
 
-fn write_cff_real(bytes : Array[Byte], value : Double) -> Result[Unit, CffError] {
+///|
+fn write_cff_real(
+  bytes : Array[Byte],
+  value : Double,
+) -> Result[Unit, CffError] {
   if value.is_nan() || value.is_inf() {
     return Err(InvalidFormat)
   }
@@ -164,7 +185,7 @@ fn write_cff_real(bytes : Array[Byte], value : Double) -> Result[Unit, CffError]
     match ch {
       '.' => nibbles.push(0xA)
       '-' => nibbles.push(0xE)
-      'e' | 'E' => {
+      'e' | 'E' =>
         if i + 1 < chars.length() && chars[i + 1] == '-' {
           nibbles.push(0xC)
           i = i + 1
@@ -174,14 +195,13 @@ fn write_cff_real(bytes : Array[Byte], value : Double) -> Result[Unit, CffError]
             i = i + 1
           }
         }
-      }
       '+' => ()
       _ => return Err(InvalidFormat)
     }
     i = i + 1
   }
   nibbles.push(0xF)
-  if (nibbles.length() % 2) != 0 {
+  if nibbles.length() % 2 != 0 {
     nibbles.push(0xF)
   }
   bytes.push(30)
@@ -194,7 +214,11 @@ fn write_cff_real(bytes : Array[Byte], value : Double) -> Result[Unit, CffError]
   Ok(())
 }
 
-fn write_cff_number(bytes : Array[Byte], value : CffNumber) -> Result[Unit, CffError] {
+///|
+fn write_cff_number(
+  bytes : Array[Byte],
+  value : CffNumber,
+) -> Result[Unit, CffError] {
   match value {
     Int(value) => {
       write_cff_int(bytes, value)
@@ -204,6 +228,7 @@ fn write_cff_number(bytes : Array[Byte], value : CffNumber) -> Result[Unit, CffE
   }
 }
 
+///|
 fn sort_ints(values : Array[Int]) -> Array[Int] {
   let sorted = values.copy()
   let n = sorted.length()
@@ -219,7 +244,10 @@ fn sort_ints(values : Array[Int]) -> Array[Int] {
   sorted
 }
 
-fn write_cff_dict(entries : Map[Int, Array[CffNumber]]) -> Result[Bytes, CffError] {
+///|
+fn write_cff_dict(
+  entries : Map[Int, Array[CffNumber]],
+) -> Result[Bytes, CffError] {
   let ops = sort_ints(entries.keys().to_array())
   let bytes : Array[Byte] = []
   for op in ops {

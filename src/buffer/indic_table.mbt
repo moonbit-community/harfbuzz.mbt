@@ -164,12 +164,14 @@ let indic_table : Array[UInt] = [
   1034U, 1034U, 1034U, 1034U, 1034U, 1034U, 1034U, 1034U, 3584U, 3584U, 3584U, 3584U,
 ]
 
+///|
 priv struct IndicRange {
   start : UInt
   end : UInt
   offset : Int
 }
 
+///|
 let indic_ranges : Array[IndicRange] = [
   IndicRange::{ start: 0x0028U, end: 0x003FU, offset: 0 },
   IndicRange::{ start: 0x00B0U, end: 0x00D7U, offset: 24 },
@@ -189,11 +191,16 @@ let indic_ranges : Array[IndicRange] = [
   IndicRange::{ start: 0x116D0U, end: 0x116E7U, offset: 1728 },
 ]
 
+///|
 let indic_special_00a0 : UInt = 1034U
+
+///|
 let indic_special_25cc : UInt = 1035U
 
+///|
 let indic_default : UInt = 3584U
 
+///|
 fn indic_get_categories(u : UInt) -> UInt {
   if u == 0x00A0U {
     return indic_special_00a0
@@ -210,10 +217,12 @@ fn indic_get_categories(u : UInt) -> UInt {
   indic_default
 }
 
+///|
 fn indic_category(value : UInt) -> UInt {
   value & 0xffU
 }
 
+///|
 fn indic_position(value : UInt) -> Int {
   (value >> 8).reinterpret_as_int()
 }

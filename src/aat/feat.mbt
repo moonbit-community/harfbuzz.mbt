@@ -12,8 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+///|
 let feat_flag_exclusive = 0x8000
+
+///|
 let feat_flag_not_default = 0x4000
+
+///|
 let feat_flag_index_mask = 0x00ff
 
 ///|
@@ -72,9 +77,7 @@ pub fn FeatFeatureName::is_exclusive(self : FeatFeatureName) -> Bool {
 }
 
 ///|
-pub fn FeatFeatureName::default_setting_index(
-  self : FeatFeatureName,
-) -> Int? {
+pub fn FeatFeatureName::default_setting_index(self : FeatFeatureName) -> Int? {
   if !self.is_exclusive() {
     return None
   }
@@ -135,7 +138,13 @@ pub fn FeatTable::parse(data : BytesView) -> Result[FeatTable, AatError] {
           (_, _, Err(err), _, _) => return Err(err)
           (_, _, _, Err(err), _) => return Err(err)
           (_, _, _, _, Err(err)) => return Err(err)
-          (Ok(feature), Ok(n_settings), Ok(settings_offset), Ok(flags), Ok(name_id)) => {
+          (
+            Ok(feature),
+            Ok(n_settings),
+            Ok(settings_offset),
+            Ok(flags),
+            Ok(name_id),
+          ) => {
             if n_settings < 0 || settings_offset < 0 {
               return Err(InvalidFormat)
             }
@@ -150,16 +159,14 @@ pub fn FeatTable::parse(data : BytesView) -> Result[FeatTable, AatError] {
               match (setting, setting_name) {
                 (Err(err), _) => return Err(err)
                 (_, Err(err)) => return Err(err)
-                (Ok(setting), Ok(setting_name)) => {
-                  settings.push(
-                    FeatSettingName::{ setting, name_id: setting_name },
-                  )
-                }
+                (Ok(setting), Ok(setting_name)) =>
+                  settings.push(FeatSettingName::{
+                    setting,
+                    name_id: setting_name,
+                  })
               }
             }
-            features.push(
-              FeatFeatureName::{ feature, name_id, flags, settings },
-            )
+            features.push(FeatFeatureName::{ feature, name_id, flags, settings })
           }
         }
       }

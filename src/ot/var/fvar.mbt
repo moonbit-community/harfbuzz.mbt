@@ -56,10 +56,18 @@ pub fn AxisRecord::normalize_value(self : AxisRecord, value : Double) -> Double 
     0.0
   } else if v < default_value {
     let denom = default_value - min_value
-    if denom == 0.0 { 0.0 } else { (v - default_value) / denom }
+    if denom == 0.0 {
+      0.0
+    } else {
+      (v - default_value) / denom
+    }
   } else {
     let denom = max_value - default_value
-    if denom == 0.0 { 0.0 } else { (v - default_value) / denom }
+    if denom == 0.0 {
+      0.0
+    } else {
+      (v - default_value) / denom
+    }
   }
 }
 
@@ -76,10 +84,7 @@ pub fn FvarTable::normalize_axis_value(
 }
 
 ///|
-pub fn FvarTable::axis_index(
-  self : FvarTable,
-  tag : @common.Tag,
-) -> Int? {
+pub fn FvarTable::axis_index(self : FvarTable, tag : @common.Tag) -> Int? {
   for i in 0..<self.axes.length() {
     if self.axes[i].tag == tag {
       return Some(i)
@@ -112,14 +117,22 @@ pub fn FvarTable::parse(data : BytesView) -> Result[FvarTable, VarError] {
   let axis_size = read_u16_int(data, 10)
   let instance_count = read_u16_int(data, 12)
   let instance_size = read_u16_int(data, 14)
-  match (version, axis_offset, axis_count, axis_size, instance_count, instance_size) {
+  match
+    (version, axis_offset, axis_count, axis_size, instance_count, instance_size) {
     (Err(err), _, _, _, _, _) => Err(err)
     (_, Err(err), _, _, _, _) => Err(err)
     (_, _, Err(err), _, _, _) => Err(err)
     (_, _, _, Err(err), _, _) => Err(err)
     (_, _, _, _, Err(err), _) => Err(err)
     (_, _, _, _, _, Err(err)) => Err(err)
-    (Ok(version), Ok(axis_offset), Ok(axis_count), Ok(axis_size), Ok(instance_count), Ok(instance_size)) => {
+    (
+      Ok(version),
+      Ok(axis_offset),
+      Ok(axis_count),
+      Ok(axis_size),
+      Ok(instance_count),
+      Ok(instance_size),
+    ) => {
       let major = (version >> 16) & 0xFFFFU
       if major != 1U {
         return Err(InvalidFormat)
@@ -153,12 +166,27 @@ pub fn FvarTable::parse(data : BytesView) -> Result[FvarTable, VarError] {
           (_, _, _, Err(err), _, _) => return Err(err)
           (_, _, _, _, Err(err), _) => return Err(err)
           (_, _, _, _, _, Err(err)) => return Err(err)
-          (Ok(tag), Ok(min_raw), Ok(default_raw), Ok(max_raw), Ok(flags), Ok(name_id)) => {
+          (
+            Ok(tag),
+            Ok(min_raw),
+            Ok(default_raw),
+            Ok(max_raw),
+            Ok(flags),
+            Ok(name_id),
+          ) => {
             let min_value = fixed16_to_double(min_raw)
             let default_value = fixed16_to_double(default_raw)
             let max_value = fixed16_to_double(max_raw)
-            let min_value = if min_value > default_value { default_value } else { min_value }
-            let max_value = if max_value < default_value { default_value } else { max_value }
+            let min_value = if min_value > default_value {
+              default_value
+            } else {
+              min_value
+            }
+            let max_value = if max_value < default_value {
+              default_value
+            } else {
+              max_value
+            }
             axes.push(AxisRecord::{
               tag,
               min_value,

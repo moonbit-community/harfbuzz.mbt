@@ -56,9 +56,7 @@ test "tuple variation decode" {
     Err(err) => fail("decode failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  guard tuples.length() == 1 else {
-    fail("expected 1 tuple")
-  }
+  guard tuples.length() == 1 else { fail("expected 1 tuple") }
   let tuple = tuples[0]
   @debug.debug_inspect(tuple.indices, content="Some([1, 3])")
   @debug.debug_inspect(tuple.deltas_x, content="[50, -20]")

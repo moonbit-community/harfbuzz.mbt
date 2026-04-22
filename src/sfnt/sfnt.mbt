@@ -110,10 +110,7 @@ fn read_i16(data : BytesView, offset : Int) -> Result[Int, SfntError] {
 
 ///|
 /// Parse a SFNT directory from a blob at a byte offset.
-pub fn Sfnt::parse_at(
-  blob : @blob.Blob,
-  base : Int,
-) -> Result[Sfnt, SfntError] {
+pub fn Sfnt::parse_at(blob : @blob.Blob, base : Int) -> Result[Sfnt, SfntError] {
   if base < 0 {
     return Err(InvalidFormat)
   }

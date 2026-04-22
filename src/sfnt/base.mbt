@@ -95,7 +95,10 @@ pub struct BaseTable {
 } derive(Debug, ToJson)
 
 ///|
-fn parse_base_coord(data : BytesView, offset : Int) -> Result[BaseCoord, SfntError] {
+fn parse_base_coord(
+  data : BytesView,
+  offset : Int,
+) -> Result[BaseCoord, SfntError] {
   let format = read_u16_int(data, offset)
   match format {
     Err(err) => Err(err)
@@ -168,18 +171,22 @@ fn parse_feat_min_max_record(
       let min_coord = if min_offset == 0 {
         None
       } else {
-        Some(match parse_base_coord(data, base + min_offset) {
-          Err(err) => return Err(err)
-          Ok(value) => value
-        })
+        Some(
+          match parse_base_coord(data, base + min_offset) {
+            Err(err) => return Err(err)
+            Ok(value) => value
+          },
+        )
       }
       let max_coord = if max_offset == 0 {
         None
       } else {
-        Some(match parse_base_coord(data, base + max_offset) {
-          Err(err) => return Err(err)
-          Ok(value) => value
-        })
+        Some(
+          match parse_base_coord(data, base + max_offset) {
+            Err(err) => return Err(err)
+            Ok(value) => value
+          },
+        )
       }
       Ok(FeatMinMaxRecord::{ tag, min_coord, max_coord })
     }
@@ -202,18 +209,22 @@ fn parse_min_max(data : BytesView, offset : Int) -> Result[MinMax, SfntError] {
       let min_coord = if min_offset == 0 {
         None
       } else {
-        Some(match parse_base_coord(data, offset + min_offset) {
-          Err(err) => return Err(err)
-          Ok(value) => value
-        })
+        Some(
+          match parse_base_coord(data, offset + min_offset) {
+            Err(err) => return Err(err)
+            Ok(value) => value
+          },
+        )
       }
       let max_coord = if max_offset == 0 {
         None
       } else {
-        Some(match parse_base_coord(data, offset + max_offset) {
-          Err(err) => return Err(err)
-          Ok(value) => value
-        })
+        Some(
+          match parse_base_coord(data, offset + max_offset) {
+            Err(err) => return Err(err)
+            Ok(value) => value
+          },
+        )
       }
       let records : Array[FeatMinMaxRecord] = []
       let record_base = offset + 6
@@ -222,7 +233,8 @@ fn parse_min_max(data : BytesView, offset : Int) -> Result[MinMax, SfntError] {
       }
       for i in 0..<count {
         let record_offset = record_base + i * 8
-        let record = match parse_feat_min_max_record(data, record_offset, offset) {
+        let record = match
+          parse_feat_min_max_record(data, record_offset, offset) {
           Err(err) => return Err(err)
           Ok(value) => value
         }
@@ -234,7 +246,10 @@ fn parse_min_max(data : BytesView, offset : Int) -> Result[MinMax, SfntError] {
 }
 
 ///|
-fn parse_base_values(data : BytesView, offset : Int) -> Result[BaseValues, SfntError] {
+fn parse_base_values(
+  data : BytesView,
+  offset : Int,
+) -> Result[BaseValues, SfntError] {
   let default_index = read_u16_int(data, offset)
   let count = read_u16_int(data, offset + 2)
   match (default_index, count) {
@@ -299,10 +314,12 @@ fn parse_base_lang_sys_record(
       let min_max = if min_max_offset == 0 {
         None
       } else {
-        Some(match parse_min_max(data, base + min_max_offset) {
-          Err(err) => return Err(err)
-          Ok(value) => value
-        })
+        Some(
+          match parse_min_max(data, base + min_max_offset) {
+            Err(err) => return Err(err)
+            Ok(value) => value
+          },
+        )
       }
       Ok(BaseLangSysRecord::{ tag, min_max })
     }
@@ -310,7 +327,10 @@ fn parse_base_lang_sys_record(
 }
 
 ///|
-fn parse_base_script(data : BytesView, offset : Int) -> Result[BaseScript, SfntError] {
+fn parse_base_script(
+  data : BytesView,
+  offset : Int,
+) -> Result[BaseScript, SfntError] {
   let base_values_offset = read_u16_int(data, offset)
   let default_minmax_offset = read_u16_int(data, offset + 2)
   let count = read_u16_int(data, offset + 4)
@@ -325,18 +345,22 @@ fn parse_base_script(data : BytesView, offset : Int) -> Result[BaseScript, SfntE
       let base_values = if base_values_offset == 0 {
         None
       } else {
-        Some(match parse_base_values(data, offset + base_values_offset) {
-          Err(err) => return Err(err)
-          Ok(value) => value
-        })
+        Some(
+          match parse_base_values(data, offset + base_values_offset) {
+            Err(err) => return Err(err)
+            Ok(value) => value
+          },
+        )
       }
       let default_min_max = if default_minmax_offset == 0 {
         None
       } else {
-        Some(match parse_min_max(data, offset + default_minmax_offset) {
-          Err(err) => return Err(err)
-          Ok(value) => value
-        })
+        Some(
+          match parse_min_max(data, offset + default_minmax_offset) {
+            Err(err) => return Err(err)
+            Ok(value) => value
+          },
+        )
       }
       let lang_sys_records : Array[BaseLangSysRecord] = []
       let record_base = offset + 6
@@ -345,7 +369,8 @@ fn parse_base_script(data : BytesView, offset : Int) -> Result[BaseScript, SfntE
       }
       for i in 0..<count {
         let record_offset = record_base + i * 6
-        let record = match parse_base_lang_sys_record(data, record_offset, offset) {
+        let record = match
+          parse_base_lang_sys_record(data, record_offset, offset) {
           Err(err) => return Err(err)
           Ok(value) => value
         }
@@ -357,7 +382,10 @@ fn parse_base_script(data : BytesView, offset : Int) -> Result[BaseScript, SfntE
 }
 
 ///|
-fn parse_base_script_list(data : BytesView, offset : Int) -> Result[BaseScriptList, SfntError] {
+fn parse_base_script_list(
+  data : BytesView,
+  offset : Int,
+) -> Result[BaseScriptList, SfntError] {
   let count = read_u16_int(data, offset)
   match count {
     Err(err) => Err(err)
@@ -388,22 +416,27 @@ fn parse_base_script_list(data : BytesView, offset : Int) -> Result[BaseScriptLi
             let base_script = if script_offset == 0 {
               None
             } else {
-              Some(match parse_base_script(data, offset + script_offset) {
-                Err(err) => return Err(err)
-                Ok(value) => value
-              })
+              Some(
+                match parse_base_script(data, offset + script_offset) {
+                  Err(err) => return Err(err)
+                  Ok(value) => value
+                },
+              )
             }
             records.push(BaseScriptRecord::{ tag, base_script })
           }
         }
       }
-      Ok(BaseScriptList::{ records })
+      Ok(BaseScriptList::{ records, })
     }
   }
 }
 
 ///|
-fn parse_base_tag_list(data : BytesView, offset : Int) -> Result[BaseTagList, SfntError] {
+fn parse_base_tag_list(
+  data : BytesView,
+  offset : Int,
+) -> Result[BaseTagList, SfntError] {
   let count = read_u16_int(data, offset)
   match count {
     Err(err) => Err(err)
@@ -426,7 +459,7 @@ fn parse_base_tag_list(data : BytesView, offset : Int) -> Result[BaseTagList, Sf
         )
         tags.push(tag)
       }
-      Ok(BaseTagList::{ tags })
+      Ok(BaseTagList::{ tags, })
     }
   }
 }
@@ -445,18 +478,22 @@ fn parse_axis(data : BytesView, offset : Int) -> Result[Axis, SfntError] {
       let base_tags = if base_tag_offset == 0 {
         None
       } else {
-        Some(match parse_base_tag_list(data, offset + base_tag_offset) {
-          Err(err) => return Err(err)
-          Ok(value) => value
-        })
+        Some(
+          match parse_base_tag_list(data, offset + base_tag_offset) {
+            Err(err) => return Err(err)
+            Ok(value) => value
+          },
+        )
       }
       let base_scripts = if base_script_offset == 0 {
         None
       } else {
-        Some(match parse_base_script_list(data, offset + base_script_offset) {
-          Err(err) => return Err(err)
-          Ok(value) => value
-        })
+        Some(
+          match parse_base_script_list(data, offset + base_script_offset) {
+            Err(err) => return Err(err)
+            Ok(value) => value
+          },
+        )
       }
       Ok(Axis::{ base_tags, base_scripts })
     }
@@ -494,18 +531,22 @@ pub fn BaseTable::parse(data : BytesView) -> Result[BaseTable, SfntError] {
       let h_axis = if h_axis_offset == 0 {
         None
       } else {
-        Some(match parse_axis(data, h_axis_offset) {
-          Err(err) => return Err(err)
-          Ok(value) => value
-        })
+        Some(
+          match parse_axis(data, h_axis_offset) {
+            Err(err) => return Err(err)
+            Ok(value) => value
+          },
+        )
       }
       let v_axis = if v_axis_offset == 0 {
         None
       } else {
-        Some(match parse_axis(data, v_axis_offset) {
-          Err(err) => return Err(err)
-          Ok(value) => value
-        })
+        Some(
+          match parse_axis(data, v_axis_offset) {
+            Err(err) => return Err(err)
+            Ok(value) => value
+          },
+        )
       }
       Ok(BaseTable::{
         major_version: major,

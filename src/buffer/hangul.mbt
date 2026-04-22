@@ -33,7 +33,10 @@ let hangul_feature_tags : Array[@common.Tag] = [
 
 ///|
 fn hangul_actions(buffer : Buffer) -> Array[Int] {
-  let actions : Array[Int] = Array::make(buffer.infos.length(), hangul_action_none)
+  let actions : Array[Int] = Array::make(
+    buffer.infos.length(),
+    hangul_action_none,
+  )
   for i in 0..<buffer.infos.length() {
     let value = buffer.infos[i].codepoint
     if is_hangul_l(value) {
@@ -61,13 +64,7 @@ fn decompose_hangul_syllable(u : UInt) -> Array[UInt] {
       if is_hangul_lv(a) {
         match @unicode.decompose(a) {
           None => [a, b]
-          Some((l, v)) => {
-            if v == 0U {
-              [a, b]
-            } else {
-              [l, v, b]
-            }
-          }
+          Some((l, v)) => if v == 0U { [a, b] } else { [l, v, b] }
         }
       } else {
         [a, b]
@@ -118,7 +115,11 @@ fn preprocess_hangul_for_font(
             Ok(true) => {
               changed = true
               for component in components {
-                next_infos.push(GlyphInfo::{ codepoint: component, cluster: info.cluster, unicode: component })
+                next_infos.push(GlyphInfo::{
+                  codepoint: component,
+                  cluster: info.cluster,
+                  unicode: component,
+                })
               }
               continue
             }
@@ -143,7 +144,9 @@ pub fn Buffer::shape_hangul(
     Err(err) => return Err(err)
     Ok(_) => ()
   }
-  let (unicode_mark_flags, combining_classes) = collect_mark_fallback_data(self.infos)
+  let (unicode_mark_flags, combining_classes) = collect_mark_fallback_data(
+    self.infos,
+  )
   let actions = hangul_actions(self)
   match self.shape_basic(font) {
     Err(err) => return Err(err)
@@ -171,12 +174,15 @@ pub fn Buffer::shape_hangul(
     let lang_tag = language_to_ot_tag(self.language)
     for feature_index in 0..<hangul_feature_tags.length() {
       let feature_tag = hangul_feature_tags[feature_index]
-      let lookup_offsets = match gsub.layout().select_lookup_offsets_for_feature(
-        script_tag,
-        feature_tag,
-        language_tag=lang_tag,
-        include_required=false,
-      ) {
+      let lookup_offsets = match
+        gsub
+        .layout()
+        .select_lookup_offsets_for_feature(
+          script_tag,
+          feature_tag,
+          language_tag=lang_tag,
+          include_required=false,
+        ) {
         Err(err) => return Err(Layout(err))
         Ok(value) => value
       }
@@ -186,25 +192,27 @@ pub fn Buffer::shape_hangul(
       let masks = build_action_mask(actions, feature_index)
       let result = match gdef {
         None =>
-          match gsub.apply_with_lookups(
-            current_glyphs,
-            current_clusters,
-            lookup_offsets[:],
-            masks=masks,
-            lookup_mask=1U,
-          ) {
+          match
+            gsub.apply_with_lookups(
+              current_glyphs,
+              current_clusters,
+              lookup_offsets[:],
+              masks~,
+              lookup_mask=1U,
+            ) {
             Err(err) => return Err(Layout(err))
             Ok(value) => value
           }
         Some(gdef) =>
-          match gsub.apply_with_lookups(
-            current_glyphs,
-            current_clusters,
-            lookup_offsets[:],
-            gdef=gdef,
-            masks=masks,
-            lookup_mask=1U,
-          ) {
+          match
+            gsub.apply_with_lookups(
+              current_glyphs,
+              current_clusters,
+              lookup_offsets[:],
+              gdef~,
+              masks~,
+              lookup_mask=1U,
+            ) {
             Err(err) => return Err(Layout(err))
             Ok(value) => value
           }
@@ -234,7 +242,11 @@ pub fn Buffer::shape_hangul(
       } else {
         0U
       }
-      infos.push(GlyphInfo::{ codepoint: glyph, cluster: current_clusters[i], unicode })
+      infos.push(GlyphInfo::{
+        codepoint: glyph,
+        cluster: current_clusters[i],
+        unicode,
+      })
       positions.push(pos)
     }
     self.infos = infos
@@ -245,7 +257,7 @@ pub fn Buffer::shape_hangul(
     self,
     zero_width_marks=ZeroWidthMarks::Disabled,
     fallback_position=true,
-    unicode_mark_flags=unicode_mark_flags,
-    combining_classes=combining_classes,
+    unicode_mark_flags~,
+    combining_classes~,
   )
 }

@@ -134,6 +134,7 @@ fn arabic_test_build_hmtx() -> Bytes {
   Bytes::from_array(bytes)
 }
 
+///|
 fn arabic_test_build_hmtx_n(count : Int, advance : Int) -> Bytes {
   let bytes : Array[Byte] = []
   let mut i = 0
@@ -170,7 +171,11 @@ fn arabic_test_build_cmap_table(subtable : Bytes) -> Bytes {
 }
 
 ///|
-fn arabic_test_build_cmap_format12(start : UInt, end : UInt, start_gid : UInt) -> Bytes {
+fn arabic_test_build_cmap_format12(
+  start : UInt,
+  end : UInt,
+  start_gid : UInt,
+) -> Bytes {
   let bytes : Array[Byte] = []
   arabic_test_push_u16(bytes, 12)
   arabic_test_push_u16(bytes, 0)
@@ -183,7 +188,10 @@ fn arabic_test_build_cmap_format12(start : UInt, end : UInt, start_gid : UInt) -
   Bytes::from_array(bytes)
 }
 
-fn arabic_test_build_cmap_format12_groups(groups : Array[(UInt, UInt, UInt)]) -> Bytes {
+///|
+fn arabic_test_build_cmap_format12_groups(
+  groups : Array[(UInt, UInt, UInt)],
+) -> Bytes {
   let bytes : Array[Byte] = []
   let length = 16 + groups.length() * 12
   arabic_test_push_u16(bytes, 12)
@@ -203,7 +211,10 @@ fn arabic_test_build_cmap_format12_groups(groups : Array[(UInt, UInt, UInt)]) ->
 ///|
 fn build_font_bytes_arabic_base() -> Bytes {
   let tables : Array[(@common.Tag, Bytes)] = [
-    (@common.Tag::from_chars('h', 'e', 'a', 'd'), arabic_test_build_head(1000, 0)),
+    (
+      @common.Tag::from_chars('h', 'e', 'a', 'd'),
+      arabic_test_build_head(1000, 0),
+    ),
     (@common.Tag::from_chars('m', 'a', 'x', 'p'), arabic_test_build_maxp(2)),
     (@common.Tag::from_chars('h', 'h', 'e', 'a'), arabic_test_build_hhea(2)),
     (@common.Tag::from_chars('v', 'h', 'e', 'a'), arabic_test_build_vhea(2)),
@@ -219,6 +230,7 @@ fn build_font_bytes_arabic_base() -> Bytes {
   arabic_test_build_sfnt(tables)
 }
 
+///|
 fn build_font_bytes_arabic_fallback() -> Bytes {
   let base = 0x0628U
   let init = match @unicode.arabic_shaping_form(base, 0) {
@@ -247,10 +259,16 @@ fn build_font_bytes_arabic_fallback() -> Bytes {
     ]),
   )
   let tables : Array[(@common.Tag, Bytes)] = [
-    (@common.Tag::from_chars('h', 'e', 'a', 'd'), arabic_test_build_head(1000, 0)),
+    (
+      @common.Tag::from_chars('h', 'e', 'a', 'd'),
+      arabic_test_build_head(1000, 0),
+    ),
     (@common.Tag::from_chars('m', 'a', 'x', 'p'), arabic_test_build_maxp(6)),
     (@common.Tag::from_chars('h', 'h', 'e', 'a'), arabic_test_build_hhea(6)),
-    (@common.Tag::from_chars('h', 'm', 't', 'x'), arabic_test_build_hmtx_n(6, 500)),
+    (
+      @common.Tag::from_chars('h', 'm', 't', 'x'),
+      arabic_test_build_hmtx_n(6, 500),
+    ),
     (@common.Tag::from_chars('c', 'm', 'a', 'p'), cmap),
   ]
   arabic_test_build_sfnt(tables)
@@ -287,13 +305,15 @@ test "arabic fallback snapshot" {
   let positions = buffer.positions()
   let snapshot : Array[(UInt, Int, Int, Int, Int)] = []
   for i in 0..<infos.length() {
-    snapshot.push((
-      infos[i].codepoint,
-      infos[i].cluster,
-      positions[i].x_advance,
-      positions[i].x_offset,
-      positions[i].y_offset,
-    ))
+    snapshot.push(
+      (
+        infos[i].codepoint,
+        infos[i].cluster,
+        positions[i].x_advance,
+        positions[i].x_offset,
+        positions[i].y_offset,
+      ),
+    )
   }
-  json_inspect(snapshot, content=[[2,0,500,0,0],[4,1,500,0,0]])
+  json_inspect(snapshot, content=[[2, 0, 500, 0, 0], [4, 1, 500, 0, 0]])
 }

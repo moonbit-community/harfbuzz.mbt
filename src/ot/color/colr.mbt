@@ -34,13 +34,20 @@ pub fn ColrTable::parse(data : BytesView) -> Result[ColrTable, ColorError] {
   let base_glyphs_offset = read_u32_int(data, 4)
   let layers_offset = read_u32_int(data, 8)
   let num_layers = read_u16_int(data, 12)
-  match (version, num_base_glyphs, base_glyphs_offset, layers_offset, num_layers) {
+  match
+    (version, num_base_glyphs, base_glyphs_offset, layers_offset, num_layers) {
     (Err(err), _, _, _, _) => Err(err)
     (_, Err(err), _, _, _) => Err(err)
     (_, _, Err(err), _, _) => Err(err)
     (_, _, _, Err(err), _) => Err(err)
     (_, _, _, _, Err(err)) => Err(err)
-    (Ok(version), Ok(num_base_glyphs), Ok(base_glyphs_offset), Ok(layers_offset), Ok(num_layers)) => {
+    (
+      Ok(version),
+      Ok(num_base_glyphs),
+      Ok(base_glyphs_offset),
+      Ok(layers_offset),
+      Ok(num_layers),
+    ) => {
       if version < 0 || num_base_glyphs < 0 || num_layers < 0 {
         return Err(InvalidFormat)
       }
@@ -105,13 +112,11 @@ pub fn ColrTable::parse(data : BytesView) -> Result[ColrTable, ColorError] {
         let clip_list_offset = read_u32_int(data, 22)
         let var_idx_map_offset = read_u32_int(data, 26)
         let var_store_offset = read_u32_int(data, 30)
-        match (
-          base_glyph_list_offset,
-          layer_list_offset,
-          clip_list_offset,
-          var_idx_map_offset,
-          var_store_offset,
-        ) {
+        match
+          (
+            base_glyph_list_offset, layer_list_offset, clip_list_offset, var_idx_map_offset,
+            var_store_offset,
+          ) {
           (Err(err), _, _, _, _) => return Err(err)
           (_, Err(err), _, _, _) => return Err(err)
           (_, _, Err(err), _, _) => return Err(err)
@@ -125,7 +130,8 @@ pub fn ColrTable::parse(data : BytesView) -> Result[ColrTable, ColorError] {
             Ok(var_store_offset),
           ) => {
             if base_glyph_list_offset != 0 {
-              if base_glyph_list_offset < 0 || base_glyph_list_offset + 4 > data.length() {
+              if base_glyph_list_offset < 0 ||
+                base_glyph_list_offset + 4 > data.length() {
                 return Err(UnexpectedEof)
               }
               let count = read_u32_int(data, base_glyph_list_offset)
@@ -214,7 +220,9 @@ pub fn ColrTable::parse(data : BytesView) -> Result[ColrTable, ColorError] {
               if var_idx_map_offset < 0 {
                 return Err(InvalidFormat)
               }
-              let parsed = @ot_var.DeltaSetIndexMap::parse(data, var_idx_map_offset)
+              let parsed = @ot_var.DeltaSetIndexMap::parse(
+                data, var_idx_map_offset,
+              )
               match parsed {
                 Err(err) => return Err(ColorError::Var(err))
                 Ok(value) => var_idx_map = Some(value)
@@ -383,7 +391,11 @@ pub fn ColrTable::clip_extents_for_glyph(
   }
 }
 
-fn parse_clip_box(data : BytesView, offset : Int) -> Result[ClipBox, ColorError] {
+///|
+fn parse_clip_box(
+  data : BytesView,
+  offset : Int,
+) -> Result[ClipBox, ColorError] {
   let format = read_u8_int(data, offset)
   match format {
     Err(err) => Err(err)
@@ -438,7 +450,11 @@ fn parse_clip_box(data : BytesView, offset : Int) -> Result[ClipBox, ColorError]
   }
 }
 
-fn parse_clip_list(data : BytesView, offset : Int) -> Result[ClipList, ColorError] {
+///|
+fn parse_clip_list(
+  data : BytesView,
+  offset : Int,
+) -> Result[ClipList, ColorError] {
   let format = read_u8_int(data, offset)
   let count = read_u32_int(data, offset + 1)
   match (format, count) {

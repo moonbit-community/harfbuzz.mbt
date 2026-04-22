@@ -1,0 +1,10 @@
+import {
+  "moonbitlang/core/debug",
+  "moonbit-community/harfbuzz/blob" @blob,
+  "moonbit-community/harfbuzz/common" @common,
+  "moonbit-community/harfbuzz/face" @face,
+  "moonbit-community/harfbuzz/font" @font,
+  "moonbit-community/harfbuzz/ot/cff" @ot_cff,
+  "moonbit-community/harfbuzz/sfnt" @sfnt,
+  "moonbit-community/harfbuzz/unicode" @unicode,
+}

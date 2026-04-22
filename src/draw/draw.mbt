@@ -44,15 +44,41 @@ pub type DrawLineToFunc[T] = (T, DrawState, Double, Double) -> Unit
 pub type DrawQuadraticToFunc[T] = (T, DrawState, Double, Double, Double, Double) -> Unit
 
 ///|
-pub type DrawCubicToFunc[T] = (T, DrawState, Double, Double, Double, Double, Double, Double) -> Unit
+pub type DrawCubicToFunc[T] = (
+  T,
+  DrawState,
+  Double,
+  Double,
+  Double,
+  Double,
+  Double,
+  Double,
+) -> Unit
 
 ///|
 pub type DrawClosePathFunc[T] = (T, DrawState) -> Unit
 
-fn[T] draw_move_to_nil(_data : T, _st : DrawState, _x : Double, _y : Double) -> Unit {}
+///|
+fn[T] draw_move_to_nil(
+  _data : T,
+  _st : DrawState,
+  _x : Double,
+  _y : Double,
+) -> Unit {
 
-fn[T] draw_line_to_nil(_data : T, _st : DrawState, _x : Double, _y : Double) -> Unit {}
+}
 
+///|
+fn[T] draw_line_to_nil(
+  _data : T,
+  _st : DrawState,
+  _x : Double,
+  _y : Double,
+) -> Unit {
+
+}
+
+///|
 fn[T] draw_cubic_to_nil(
   _data : T,
   _st : DrawState,
@@ -63,9 +89,13 @@ fn[T] draw_cubic_to_nil(
   _x : Double,
   _y : Double,
 ) -> Unit {
+
 }
 
-fn[T] draw_close_path_nil(_data : T, _st : DrawState) -> Unit {}
+///|
+fn[T] draw_close_path_nil(_data : T, _st : DrawState) -> Unit {
+
+}
 
 ///|
 /// Draw callbacks container.
@@ -108,7 +138,10 @@ pub fn[T] DrawFuncs::is_immutable(self : DrawFuncs[T]) -> Bool {
 }
 
 ///|
-pub fn[T] DrawFuncs::set_move_to(self : DrawFuncs[T], func : DrawMoveToFunc[T]?) -> Unit {
+pub fn[T] DrawFuncs::set_move_to(
+  self : DrawFuncs[T],
+  func : DrawMoveToFunc[T]?,
+) -> Unit {
   if self.immutable {
     return
   }
@@ -119,7 +152,10 @@ pub fn[T] DrawFuncs::set_move_to(self : DrawFuncs[T], func : DrawMoveToFunc[T]?)
 }
 
 ///|
-pub fn[T] DrawFuncs::set_line_to(self : DrawFuncs[T], func : DrawLineToFunc[T]?) -> Unit {
+pub fn[T] DrawFuncs::set_line_to(
+  self : DrawFuncs[T],
+  func : DrawLineToFunc[T]?,
+) -> Unit {
   if self.immutable {
     return
   }
@@ -141,7 +177,10 @@ pub fn[T] DrawFuncs::set_quadratic_to(
 }
 
 ///|
-pub fn[T] DrawFuncs::set_cubic_to(self : DrawFuncs[T], func : DrawCubicToFunc[T]?) -> Unit {
+pub fn[T] DrawFuncs::set_cubic_to(
+  self : DrawFuncs[T],
+  func : DrawCubicToFunc[T]?,
+) -> Unit {
   if self.immutable {
     return
   }
@@ -152,7 +191,10 @@ pub fn[T] DrawFuncs::set_cubic_to(self : DrawFuncs[T], func : DrawCubicToFunc[T]
 }
 
 ///|
-pub fn[T] DrawFuncs::set_close_path(self : DrawFuncs[T], func : DrawClosePathFunc[T]?) -> Unit {
+pub fn[T] DrawFuncs::set_close_path(
+  self : DrawFuncs[T],
+  func : DrawClosePathFunc[T]?,
+) -> Unit {
   if self.immutable {
     return
   }
@@ -220,19 +262,16 @@ pub fn[T] DrawFuncs::emit_cubic_to(
   to_y : Double,
 ) -> Unit {
   (self.cubic_to_cb)(
-    draw_data,
-    st,
-    control1_x,
-    control1_y,
-    control2_x,
-    control2_y,
-    to_x,
-    to_y,
+    draw_data, st, control1_x, control1_y, control2_x, control2_y, to_x, to_y,
   )
 }
 
 ///|
-pub fn[T] DrawFuncs::emit_close_path(self : DrawFuncs[T], draw_data : T, st : DrawState) -> Unit {
+pub fn[T] DrawFuncs::emit_close_path(
+  self : DrawFuncs[T],
+  draw_data : T,
+  st : DrawState,
+) -> Unit {
   (self.close_path_cb)(draw_data, st)
 }
 
@@ -301,21 +340,18 @@ pub fn[T] DrawFuncs::cubic_to(
     self.start_path(draw_data, st)
   }
   self.emit_cubic_to(
-    draw_data,
-    st,
-    control1_x,
-    control1_y,
-    control2_x,
-    control2_y,
-    to_x,
-    to_y,
+    draw_data, st, control1_x, control1_y, control2_x, control2_y, to_x, to_y,
   )
   st.current_x = to_x
   st.current_y = to_y
 }
 
 ///|
-pub fn[T] DrawFuncs::close_path(self : DrawFuncs[T], draw_data : T, st : DrawState) -> Unit {
+pub fn[T] DrawFuncs::close_path(
+  self : DrawFuncs[T],
+  draw_data : T,
+  st : DrawState,
+) -> Unit {
   if st.path_open {
     if st.path_start_x != st.current_x || st.path_start_y != st.current_y {
       self.emit_line_to(draw_data, st, st.path_start_x, st.path_start_y)
@@ -329,7 +365,12 @@ pub fn[T] DrawFuncs::close_path(self : DrawFuncs[T], draw_data : T, st : DrawSta
   st.current_y = 0.0
 }
 
-fn[T] DrawFuncs::start_path(self : DrawFuncs[T], draw_data : T, st : DrawState) -> Unit {
+///|
+fn[T] DrawFuncs::start_path(
+  self : DrawFuncs[T],
+  draw_data : T,
+  st : DrawState,
+) -> Unit {
   if st.path_open {
     return
   }
@@ -348,21 +389,28 @@ pub struct DrawSession[T] {
 }
 
 ///|
-pub fn[T] DrawSession::new(funcs : DrawFuncs[T], draw_data : T) -> DrawSession[T] {
-  DrawSession::{
-    funcs,
-    draw_data,
-    st: DrawState::new(),
-  }
+pub fn[T] DrawSession::new(
+  funcs : DrawFuncs[T],
+  draw_data : T,
+) -> DrawSession[T] {
+  DrawSession::{ funcs, draw_data, st: DrawState::new() }
 }
 
 ///|
-pub fn[T] DrawSession::move_to(self : DrawSession[T], to_x : Double, to_y : Double) -> Unit {
+pub fn[T] DrawSession::move_to(
+  self : DrawSession[T],
+  to_x : Double,
+  to_y : Double,
+) -> Unit {
   self.funcs.move_to(self.draw_data, self.st, to_x, to_y)
 }
 
 ///|
-pub fn[T] DrawSession::line_to(self : DrawSession[T], to_x : Double, to_y : Double) -> Unit {
+pub fn[T] DrawSession::line_to(
+  self : DrawSession[T],
+  to_x : Double,
+  to_y : Double,
+) -> Unit {
   self.funcs.line_to(self.draw_data, self.st, to_x, to_y)
 }
 
@@ -374,7 +422,14 @@ pub fn[T] DrawSession::quadratic_to(
   to_x : Double,
   to_y : Double,
 ) -> Unit {
-  self.funcs.quadratic_to(self.draw_data, self.st, control_x, control_y, to_x, to_y)
+  self.funcs.quadratic_to(
+    self.draw_data,
+    self.st,
+    control_x,
+    control_y,
+    to_x,
+    to_y,
+  )
 }
 
 ///|
@@ -429,7 +484,11 @@ pub fn DrawExtents::is_void(self : DrawExtents) -> Bool {
 }
 
 ///|
-pub fn DrawExtents::add_point(self : DrawExtents, x : Double, y : Double) -> Unit {
+pub fn DrawExtents::add_point(
+  self : DrawExtents,
+  x : Double,
+  y : Double,
+) -> Unit {
   if self.is_void() {
     self.xmin = x
     self.xmax = x
@@ -451,14 +510,27 @@ pub fn DrawExtents::add_point(self : DrawExtents, x : Double, y : Double) -> Uni
   }
 }
 
-fn draw_extents_move_to(data : DrawExtents, _st : DrawState, to_x : Double, to_y : Double) -> Unit {
+///|
+fn draw_extents_move_to(
+  data : DrawExtents,
+  _st : DrawState,
+  to_x : Double,
+  to_y : Double,
+) -> Unit {
   data.add_point(to_x, to_y)
 }
 
-fn draw_extents_line_to(data : DrawExtents, _st : DrawState, to_x : Double, to_y : Double) -> Unit {
+///|
+fn draw_extents_line_to(
+  data : DrawExtents,
+  _st : DrawState,
+  to_x : Double,
+  to_y : Double,
+) -> Unit {
   data.add_point(to_x, to_y)
 }
 
+///|
 fn draw_extents_quadratic_to(
   data : DrawExtents,
   _st : DrawState,
@@ -471,6 +543,7 @@ fn draw_extents_quadratic_to(
   data.add_point(to_x, to_y)
 }
 
+///|
 fn draw_extents_cubic_to(
   data : DrawExtents,
   _st : DrawState,

@@ -15,21 +15,8 @@
 ///|
 test "cff2 fdselect format4" {
   let bytes : Bytes = [
-    0x04,
-    0x00,
-    0x00,
-    0x00,
-    0x01,
-    0x00,
-    0x00,
-    0x00,
-    0x00,
-    0x00,
-    0x02,
-    0x00,
-    0x00,
-    0x00,
-    0x03,
+    0x04, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0x00, 0x00,
+    0x00, 0x03,
   ]
   let values = match parse_fdselect(bytes[:], 0, 3) {
     Err(err) => fail("fdselect parse error: \{@debug.to_string(err)}")
@@ -41,32 +28,8 @@ test "cff2 fdselect format4" {
 ///|
 test "cff1 seac bounds" {
   let data : Bytes = [
-    14,
-    139,
-    139,
-    21,
-    149,
-    139,
-    5,
-    14,
-    139,
-    139,
-    21,
-    139,
-    144,
-    5,
-    14,
-    159,
-    169,
-    171,
-    172,
-    14,
-    149,
-    159,
-    169,
-    171,
-    172,
-    14,
+    14, 139, 139, 21, 149, 139, 5, 14, 139, 139, 21, 139, 144, 5, 14, 159, 169, 171,
+    172, 14, 149, 159, 169, 171, 172, 14,
   ]
   let charstrings = CffIndex::{
     count: 5,
@@ -74,7 +37,12 @@ test "cff1 seac bounds" {
     offsets: [1, 2, 9, 16, 21, 27],
     data,
   }
-  let empty_index = CffIndex::{ count: 0, off_size: 0, offsets: [], data: Bytes::from_array([]) }
+  let empty_index = CffIndex::{
+    count: 0,
+    off_size: 0,
+    offsets: [],
+    data: Bytes::from_array([]),
+  }
   let empty_dict = CffDict::{ entries: {} }
   let cff1 = Cff1Table::{
     data: Bytes::from_array([]),
@@ -102,7 +70,10 @@ test "cff1 seac bounds" {
       let y_min = bounds.y_min.round().to_int()
       let x_max = bounds.x_max.round().to_int()
       let y_max = bounds.y_max.round().to_int()
-      @debug.debug_inspect((x_min, y_min, x_max, y_max), content="(0, 0, 20, 35)")
+      @debug.debug_inspect(
+        (x_min, y_min, x_max, y_max),
+        content="(0, 0, 20, 35)",
+      )
     }
   }
 
@@ -117,7 +88,10 @@ test "cff1 seac bounds" {
       let y_min = bounds.y_min.round().to_int()
       let x_max = bounds.x_max.round().to_int()
       let y_max = bounds.y_max.round().to_int()
-      @debug.debug_inspect((x_min, y_min, x_max, y_max), content="(0, 0, 20, 35)")
+      @debug.debug_inspect(
+        (x_min, y_min, x_max, y_max),
+        content="(0, 0, 20, 35)",
+      )
     }
   }
 
@@ -161,7 +135,12 @@ fn build_string_index(names : Array[String]) -> CffIndex {
     cursor = cursor + name_bytes.length()
     offsets.push(cursor)
   }
-  CffIndex::{ count: names.length(), off_size: 1, offsets, data: Bytes::from_array(bytes) }
+  CffIndex::{
+    count: names.length(),
+    off_size: 1,
+    offsets,
+    data: Bytes::from_array(bytes),
+  }
 }
 
 ///|

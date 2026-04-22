@@ -104,7 +104,10 @@ test "varc parse" {
     Err(err) => fail("parse failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  @debug.debug_inspect((varc.coverage_offset, varc.glyph_records_offset), content="(24, 24)")
+  @debug.debug_inspect(
+    (varc.coverage_offset, varc.glyph_records_offset),
+    content="(24, 24)",
+  )
 }
 
 ///|
@@ -146,7 +149,10 @@ test "varc glyph record" {
     Err(err) => fail("glyph record failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  @debug.debug_inspect(record.map(bytes => bytes.to_array().map(b => b.to_int())), content="Some([170])")
+  @debug.debug_inspect(
+    record.map(bytes => bytes.to_array().map(b => b.to_int())),
+    content="Some([170])",
+  )
   let missing = match varc.glyph_record(6) {
     Err(err) => fail("glyph record missing failed: \{@debug.to_string(err)}")
     Ok(value) => value

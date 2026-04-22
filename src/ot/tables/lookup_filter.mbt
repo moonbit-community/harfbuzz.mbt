@@ -52,7 +52,10 @@ fn should_ignore_glyph(
               let mark_class = gdef.mark_attach_class(glyph)
               match mark_class {
                 Err(err) => return Err(err)
-                Ok(mark_class) => if mark_class != attach_type { return Ok(true) }
+                Ok(mark_class) =>
+                  if mark_class != attach_type {
+                    return Ok(true)
+                  }
               }
             }
             if (lookup_flag & 0x0010) != 0 {
@@ -102,9 +105,9 @@ fn collect_forward_indices(
         lookup_flag,
         gdef,
         mark_filtering_set,
-        masks=masks,
+        masks~,
         index=cursor,
-        lookup_mask=lookup_mask,
+        lookup_mask~,
       )
       match ignored {
         Err(err) => return Err(err)
@@ -121,9 +124,9 @@ fn collect_forward_indices(
     lookup_flag,
     gdef,
     mark_filtering_set,
-    masks=masks,
+    masks~,
     index=cursor,
-    lookup_mask=lookup_mask,
+    lookup_mask~,
   )
   match first_ignored {
     Err(err) => Err(err)
@@ -141,9 +144,9 @@ fn collect_forward_indices(
           lookup_flag,
           gdef,
           mark_filtering_set,
-          masks=masks,
+          masks~,
           index=cursor,
-          lookup_mask=lookup_mask,
+          lookup_mask~,
         )
         match ignored {
           Err(err) => return Err(err)
@@ -187,9 +190,9 @@ fn collect_backward_indices(
       lookup_flag,
       gdef,
       mark_filtering_set,
-      masks=masks,
+      masks~,
       index=cursor,
-      lookup_mask=lookup_mask,
+      lookup_mask~,
     )
     match ignored {
       Err(err) => return Err(err)

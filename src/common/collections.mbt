@@ -46,13 +46,21 @@ pub fn CodepointSet::population(self : CodepointSet) -> Int {
 ///|
 pub fn CodepointSet::get_min(self : CodepointSet) -> UInt {
   let values = sorted_values(self)
-  if values.is_empty() { map_value_invalid } else { values[0] }
+  if values.is_empty() {
+    map_value_invalid
+  } else {
+    values[0]
+  }
 }
 
 ///|
 pub fn CodepointSet::get_max(self : CodepointSet) -> UInt {
   let values = sorted_values(self)
-  if values.is_empty() { map_value_invalid } else { values[values.length() - 1] }
+  if values.is_empty() {
+    map_value_invalid
+  } else {
+    values[values.length() - 1]
+  }
 }
 
 ///|
@@ -61,7 +69,10 @@ pub fn CodepointSet::add(self : CodepointSet, value : UInt) -> Unit {
 }
 
 ///|
-pub fn CodepointSet::add_array(self : CodepointSet, values : ArrayView[UInt]) -> Unit {
+pub fn CodepointSet::add_array(
+  self : CodepointSet,
+  values : ArrayView[UInt],
+) -> Unit {
   for value in values {
     self.set.add(value)
   }
@@ -146,7 +157,10 @@ pub fn CodepointSet::to_sorted_array(self : CodepointSet) -> Array[UInt] {
 }
 
 ///|
-pub fn CodepointSet::union(self : CodepointSet, other : CodepointSet) -> CodepointSet {
+pub fn CodepointSet::union(
+  self : CodepointSet,
+  other : CodepointSet,
+) -> CodepointSet {
   let merged = CodepointSet::new()
   for value in self.set.iter() {
     merged.set.add(value)
@@ -158,7 +172,10 @@ pub fn CodepointSet::union(self : CodepointSet, other : CodepointSet) -> Codepoi
 }
 
 ///|
-pub fn CodepointSet::set_from(self : CodepointSet, other : CodepointSet) -> Unit {
+pub fn CodepointSet::set_from(
+  self : CodepointSet,
+  other : CodepointSet,
+) -> Unit {
   self.set.clear()
   for value in other.set.iter() {
     self.set.add(value)
@@ -166,14 +183,20 @@ pub fn CodepointSet::set_from(self : CodepointSet, other : CodepointSet) -> Unit
 }
 
 ///|
-pub fn CodepointSet::union_in_place(self : CodepointSet, other : CodepointSet) -> Unit {
+pub fn CodepointSet::union_in_place(
+  self : CodepointSet,
+  other : CodepointSet,
+) -> Unit {
   for value in other.set.iter() {
     self.set.add(value)
   }
 }
 
 ///|
-pub fn CodepointSet::intersect_in_place(self : CodepointSet, other : CodepointSet) -> Unit {
+pub fn CodepointSet::intersect_in_place(
+  self : CodepointSet,
+  other : CodepointSet,
+) -> Unit {
   let to_remove : Array[UInt] = []
   for value in self.set.iter() {
     if !other.set.contains(value) {
@@ -186,7 +209,10 @@ pub fn CodepointSet::intersect_in_place(self : CodepointSet, other : CodepointSe
 }
 
 ///|
-pub fn CodepointSet::subtract_in_place(self : CodepointSet, other : CodepointSet) -> Unit {
+pub fn CodepointSet::subtract_in_place(
+  self : CodepointSet,
+  other : CodepointSet,
+) -> Unit {
   for value in other.set.iter() {
     self.set.remove(value)
   }
@@ -211,7 +237,10 @@ pub fn CodepointSet::symmetric_difference_in_place(
 }
 
 ///|
-pub fn CodepointSet::intersect(self : CodepointSet, other : CodepointSet) -> CodepointSet {
+pub fn CodepointSet::intersect(
+  self : CodepointSet,
+  other : CodepointSet,
+) -> CodepointSet {
   let out = CodepointSet::new()
   for value in self.set.iter() {
     if other.set.contains(value) {
@@ -222,7 +251,10 @@ pub fn CodepointSet::intersect(self : CodepointSet, other : CodepointSet) -> Cod
 }
 
 ///|
-pub fn CodepointSet::subtract(self : CodepointSet, other : CodepointSet) -> CodepointSet {
+pub fn CodepointSet::subtract(
+  self : CodepointSet,
+  other : CodepointSet,
+) -> CodepointSet {
   let out = CodepointSet::new()
   for value in self.set.iter() {
     if !other.set.contains(value) {
@@ -233,12 +265,18 @@ pub fn CodepointSet::subtract(self : CodepointSet, other : CodepointSet) -> Code
 }
 
 ///|
-pub fn CodepointSet::is_equal(self : CodepointSet, other : CodepointSet) -> Bool {
+pub fn CodepointSet::is_equal(
+  self : CodepointSet,
+  other : CodepointSet,
+) -> Bool {
   self.set.equal(other.set)
 }
 
 ///|
-pub fn CodepointSet::is_subset(self : CodepointSet, other : CodepointSet) -> Bool {
+pub fn CodepointSet::is_subset(
+  self : CodepointSet,
+  other : CodepointSet,
+) -> Bool {
   for value in self.set.iter() {
     if !other.set.contains(value) {
       return false
@@ -248,7 +286,10 @@ pub fn CodepointSet::is_subset(self : CodepointSet, other : CodepointSet) -> Boo
 }
 
 ///|
-pub fn CodepointSet::may_intersect(self : CodepointSet, other : CodepointSet) -> Bool {
+pub fn CodepointSet::may_intersect(
+  self : CodepointSet,
+  other : CodepointSet,
+) -> Bool {
   for value in self.set.iter() {
     if other.set.contains(value) {
       return true
@@ -258,7 +299,11 @@ pub fn CodepointSet::may_intersect(self : CodepointSet, other : CodepointSet) ->
 }
 
 ///|
-pub fn CodepointSet::intersects(self : CodepointSet, first : UInt, last : UInt) -> Bool {
+pub fn CodepointSet::intersects(
+  self : CodepointSet,
+  first : UInt,
+  last : UInt,
+) -> Bool {
   if first > last {
     return false
   }
@@ -285,13 +330,17 @@ pub fn CodepointSet::hash(self : CodepointSet) -> Int {
   hasher.finalize()
 }
 
+///|
 fn sorted_values(set : CodepointSet) -> Array[UInt] {
   set.to_sorted_array()
 }
 
 ///|
 /// Return the next value after `after` (exclusive). Use `codepoint_invalid` to start.
-pub fn CodepointSet::next(self : CodepointSet, after? : UInt = codepoint_invalid) -> UInt? {
+pub fn CodepointSet::next(
+  self : CodepointSet,
+  after? : UInt = codepoint_invalid,
+) -> UInt? {
   let values = sorted_values(self)
   if values.is_empty() {
     return None
@@ -340,7 +389,10 @@ pub fn CodepointSet::next_many(
 
 ///|
 /// Return the previous value before `before` (exclusive). Use `codepoint_invalid` to start.
-pub fn CodepointSet::previous(self : CodepointSet, before? : UInt = codepoint_invalid) -> UInt? {
+pub fn CodepointSet::previous(
+  self : CodepointSet,
+  before? : UInt = codepoint_invalid,
+) -> UInt? {
   let values = sorted_values(self)
   if values.is_empty() {
     return None
@@ -449,7 +501,10 @@ pub fn CodepointMap::population(self : CodepointMap) -> Int {
 }
 
 ///|
-pub fn CodepointMap::is_equal(self : CodepointMap, other : CodepointMap) -> Bool {
+pub fn CodepointMap::is_equal(
+  self : CodepointMap,
+  other : CodepointMap,
+) -> Bool {
   self.map.equal(other.map)
 }
 
@@ -596,7 +651,10 @@ pub struct CodepointBiMap {
 
 ///|
 pub fn CodepointBiMap::new() -> CodepointBiMap {
-  CodepointBiMap::{ forward: CodepointMap::new(), backward: CodepointMap::new() }
+  CodepointBiMap::{
+    forward: CodepointMap::new(),
+    backward: CodepointMap::new(),
+  }
 }
 
 ///|
@@ -616,7 +674,11 @@ pub fn CodepointBiMap::population(self : CodepointBiMap) -> Int {
 }
 
 ///|
-pub fn CodepointBiMap::set(self : CodepointBiMap, lhs : UInt, rhs : UInt) -> Unit {
+pub fn CodepointBiMap::set(
+  self : CodepointBiMap,
+  lhs : UInt,
+  rhs : UInt,
+) -> Unit {
   if lhs == map_value_invalid {
     return ()
   }
@@ -702,7 +764,10 @@ pub fn CodepointIncBiMap::add(self : CodepointIncBiMap, lhs : UInt) -> UInt {
 }
 
 ///|
-pub fn CodepointIncBiMap::skip(self : CodepointIncBiMap, count? : Int = 1) -> UInt {
+pub fn CodepointIncBiMap::skip(
+  self : CodepointIncBiMap,
+  count? : Int = 1,
+) -> UInt {
   let start = self.back.length().reinterpret_as_uint()
   if count <= 0 {
     return start
@@ -719,7 +784,10 @@ pub fn CodepointIncBiMap::get(self : CodepointIncBiMap, lhs : UInt) -> UInt {
 }
 
 ///|
-pub fn CodepointIncBiMap::backward(self : CodepointIncBiMap, rhs : UInt) -> UInt {
+pub fn CodepointIncBiMap::backward(
+  self : CodepointIncBiMap,
+  rhs : UInt,
+) -> UInt {
   let idx = rhs.reinterpret_as_int()
   if idx < 0 || idx >= self.back.length() {
     map_value_invalid
@@ -734,14 +802,20 @@ pub fn CodepointIncBiMap::has(self : CodepointIncBiMap, lhs : UInt) -> Bool {
 }
 
 ///|
-pub fn CodepointIncBiMap::add_set(self : CodepointIncBiMap, set : CodepointSet) -> Unit {
+pub fn CodepointIncBiMap::add_set(
+  self : CodepointIncBiMap,
+  set : CodepointSet,
+) -> Unit {
   for value in set.to_sorted_array() {
     ignore(self.add(value))
   }
 }
 
 ///|
-pub fn CodepointIncBiMap::identity(self : CodepointIncBiMap, size : Int) -> Bool {
+pub fn CodepointIncBiMap::identity(
+  self : CodepointIncBiMap,
+  size : Int,
+) -> Bool {
   self.clear()
   if size < 0 {
     return false

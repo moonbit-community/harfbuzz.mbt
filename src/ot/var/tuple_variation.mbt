@@ -38,11 +38,18 @@ pub struct TupleVariation {
 
 ///|
 fn coord_at(coords : Array[Int], index : Int) -> Int {
-  if index < 0 || index >= coords.length() { 0 } else { coords[index] }
+  if index < 0 || index >= coords.length() {
+    0
+  } else {
+    coords[index]
+  }
 }
 
 ///|
-pub fn TupleVariation::scalar(self : TupleVariation, coords : Array[Int]) -> Double {
+pub fn TupleVariation::scalar(
+  self : TupleVariation,
+  coords : Array[Int],
+) -> Double {
   let axis_count = self.peak.length()
   let mut scalar = 1.0
   let has_interm = self.start is Some(_) && self.end is Some(_)
@@ -202,7 +209,18 @@ fn parse_tuple_header(
       } else {
         None
       }
-      Ok((TupleHeader::{ data_size, tuple_index, peak, start: start_tuple, end: end_tuple }, pos))
+      Ok(
+        (
+          TupleHeader::{
+            data_size,
+            tuple_index,
+            peak,
+            start: start_tuple,
+            end: end_tuple,
+          },
+          pos,
+        ),
+      )
     }
   }
 }
@@ -275,7 +293,11 @@ fn decode_point_numbers(
 ///|
 fn int8_from_byte(value : Byte) -> Int {
   let v = value.to_int()
-  if v >= 0x80 { v - 0x100 } else { v }
+  if v >= 0x80 {
+    v - 0x100
+  } else {
+    v
+  }
 }
 
 ///|
@@ -512,11 +534,10 @@ pub fn TupleVariationData::apply(
       if is_gvar {
         match tuple.deltas_y {
           None => ()
-          Some(values) => {
+          Some(values) =>
             for i in 0..<point_count {
               deltas_y[i] = deltas_y[i] + values[i].to_double() * scalar
             }
-          }
         }
       }
     } else {
@@ -530,9 +551,8 @@ pub fn TupleVariationData::apply(
         if is_gvar {
           match tuple.deltas_y {
             None => ()
-            Some(deltas) => {
+            Some(deltas) =>
               deltas_y[idx] = deltas_y[idx] + deltas[i].to_double() * scalar
-            }
           }
         }
       }

@@ -12,9 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+///|
 let bsln_format0 = 0
+
+///|
 let bsln_format1 = 1
+
+///|
 let bsln_format2 = 2
+
+///|
 let bsln_format3 = 3
 
 ///|
@@ -40,6 +47,7 @@ pub fn BslnTable::has_data(self : BslnTable) -> Bool {
   self.version != 0
 }
 
+///|
 fn parse_deltas(data : BytesView, offset : Int) -> Result[Array[Int], AatError] {
   if offset < 0 || offset + 64 > data.length() {
     return Err(UnexpectedEof)
@@ -55,6 +63,7 @@ fn parse_deltas(data : BytesView, offset : Int) -> Result[Array[Int], AatError] 
   Ok(deltas)
 }
 
+///|
 fn parse_ctl_points(
   data : BytesView,
   offset : Int,
@@ -67,13 +76,12 @@ fn parse_ctl_points(
     let value = read_u16_int(data, offset + i * 2)
     match value {
       Err(err) => return Err(err)
-      Ok(value) => {
+      Ok(value) =>
         if value == 0xffff {
           points.push(-1)
         } else {
           points.push(value)
         }
-      }
     }
   }
   Ok(points)

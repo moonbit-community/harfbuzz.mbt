@@ -63,6 +63,7 @@ pub fn SerializeLink::new(
   SerializeLink::{ width, position, objidx, is_signed, whence, bias }
 }
 
+///|
 fn max_value_for_width(width : Int) -> UInt? {
   if width == 1 {
     Some(0xFFU)
@@ -77,6 +78,7 @@ fn max_value_for_width(width : Int) -> UInt? {
   }
 }
 
+///|
 fn write_offset(
   data : Array[Byte],
   position : Int,
@@ -101,6 +103,7 @@ fn write_offset(
   Ok(())
 }
 
+///|
 fn signed_limits(width : Int) -> (Int, Int)? {
   if width <= 0 {
     return None
@@ -184,12 +187,7 @@ fn serialize_objects_with_starts(
       } else {
         offset.reinterpret_as_uint()
       }
-      let result = write_offset(
-        patched[i],
-        link.position,
-        link.width,
-        value,
-      )
+      let result = write_offset(patched[i], link.position, link.width, value)
       match result {
         Ok(_) => ()
         Err(err) => return Err(err)
@@ -222,7 +220,10 @@ pub fn serialize_objects_with_offsets(
   serialize_objects_with_starts(objects)
 }
 
-fn order_objects(objects : ArrayView[SerializeObject]) -> Result[Array[Int], SerializeError] {
+///|
+fn order_objects(
+  objects : ArrayView[SerializeObject],
+) -> Result[Array[Int], SerializeError] {
   let count = objects.length()
   let edges : Array[Array[Int]] = []
   let indegree : Array[Int] = Array::make(count, 0)
@@ -280,6 +281,7 @@ pub fn pack_object_order(
   order_objects(objects)
 }
 
+///|
 fn remap_objects(
   objects : ArrayView[SerializeObject],
   order : ArrayView[Int],

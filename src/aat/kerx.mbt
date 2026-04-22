@@ -12,9 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+///|
 let coverage_vertical = 0x80000000U
+
+///|
 let coverage_cross_stream = 0x40000000U
+
+///|
 let coverage_backwards = 0x10000000U
+
+///|
 let coverage_type_mask = 0xffU
 
 ///|
@@ -82,22 +89,27 @@ pub struct KerxTable {
   subtables : Array[KerxSubtable]
 } derive(Debug, ToJson)
 
+///|
 fn coverage_type(coverage : UInt) -> Int {
   (coverage & coverage_type_mask).reinterpret_as_int()
 }
 
+///|
 fn coverage_is_horizontal(coverage : UInt) -> Bool {
   (coverage & coverage_vertical) == 0U
 }
 
+///|
 fn coverage_is_cross_stream(coverage : UInt) -> Bool {
   (coverage & coverage_cross_stream) != 0U
 }
 
+///|
 fn coverage_is_backwards(coverage : UInt) -> Bool {
   (coverage & coverage_backwards) != 0U
 }
 
+///|
 fn resolve_tuple_value(
   data : BytesView,
   base : Int,
@@ -120,25 +132,30 @@ fn resolve_tuple_value(
   }
 }
 
+///|
 fn scale_value(value : Int, scale : Int, upem : Int) -> Int {
-  if upem == 0 { value } else { (value * scale) / upem }
+  if upem == 0 {
+    value
+  } else {
+    value * scale / upem
+  }
 }
 
+///|
 fn make_adjustments(len : Int) -> Array[KerxAdjustment] {
   let adjustments : Array[KerxAdjustment] = []
   for _ in 0..<len {
-    adjustments.push(
-      KerxAdjustment::{
-        x_advance: 0,
-        y_advance: 0,
-        x_offset: 0,
-        y_offset: 0,
-      },
-    )
+    adjustments.push(KerxAdjustment::{
+      x_advance: 0,
+      y_advance: 0,
+      x_offset: 0,
+      y_offset: 0,
+    })
   }
   adjustments
 }
 
+///|
 fn parse_kerx_format0(
   data : BytesView,
   offset : Int,
@@ -164,7 +181,12 @@ fn parse_kerx_format0(
           (_, Err(err), _) => return Err(err)
           (_, _, Err(err)) => return Err(err)
           (Ok(left), Ok(right), Ok(value)) => {
-            let resolved = resolve_tuple_value(data, offset, header.tuple_count, value)
+            let resolved = resolve_tuple_value(
+              data,
+              offset,
+              header.tuple_count,
+              value,
+            )
             pairs.push(KerxPair::{ left, right, value: resolved })
           }
         }
@@ -174,6 +196,7 @@ fn parse_kerx_format0(
   }
 }
 
+///|
 fn parse_kerx_format1(
   data : BytesView,
   offset : Int,
@@ -216,6 +239,7 @@ fn parse_kerx_format1(
   Ok(KerxSubtable::Format1(header, KerxFormat1::{ table, actions }))
 }
 
+///|
 fn parse_kerx_format2(
   data : BytesView,
   offset : Int,
@@ -236,11 +260,13 @@ fn parse_kerx_format2(
       if row_width <= 0 || (row_width & 1) != 0 {
         return Err(InvalidFormat)
       }
-      let left_table = match parse_lookup(data, offset + left_offset, num_glyphs) {
+      let left_table = match
+        parse_lookup(data, offset + left_offset, num_glyphs) {
         Err(err) => return Err(err)
         Ok(value) => value
       }
-      let right_table = match parse_lookup(data, offset + right_offset, num_glyphs) {
+      let right_table = match
+        parse_lookup(data, offset + right_offset, num_glyphs) {
         Err(err) => return Err(err)
         Ok(value) => value
       }
@@ -259,26 +285,29 @@ fn parse_kerx_format2(
         match value {
           Err(err) => return Err(err)
           Ok(value) => {
-            let resolved = resolve_tuple_value(data, offset, header.tuple_count, value)
+            let resolved = resolve_tuple_value(
+              data,
+              offset,
+              header.tuple_count,
+              value,
+            )
             values.push(resolved)
           }
         }
       }
       Ok(
-        KerxSubtable::Format2(
-          header,
-          KerxFormat2::{
-            row_width,
-            left: left_table,
-            right: right_table,
-            values,
-          },
-        ),
+        KerxSubtable::Format2(header, KerxFormat2::{
+          row_width,
+          left: left_table,
+          right: right_table,
+          values,
+        }),
       )
     }
   }
 }
 
+///|
 fn parse_kerx_format4(
   data : BytesView,
   offset : Int,
@@ -322,6 +351,7 @@ fn parse_kerx_format4(
   Ok(KerxSubtable::Format4(header, KerxFormat4::{ table, flags, actions }))
 }
 
+///|
 fn parse_kerx_format6(
   data : BytesView,
   offset : Int,
@@ -336,15 +366,11 @@ fn parse_kerx_format6(
   let column_index_offset = read_u32_non_negative(data, offset + 24)
   let array_offset = read_u32_non_negative(data, offset + 28)
   let vector_offset = read_u32_non_negative(data, offset + 32)
-  match (
-    flags,
-    row_count,
-    column_count,
-    row_index_offset,
-    column_index_offset,
-    array_offset,
-    vector_offset,
-  ) {
+  match
+    (
+      flags, row_count, column_count, row_index_offset, column_index_offset, array_offset,
+      vector_offset,
+    ) {
     (Err(err), _, _, _, _, _, _) => Err(err)
     (_, Err(err), _, _, _, _, _) => Err(err)
     (_, _, Err(err), _, _, _, _) => Err(err)
@@ -363,27 +389,31 @@ fn parse_kerx_format6(
     ) => {
       let long_values = (flags & 1) != 0
       let index_value_size = if long_values { 4 } else { 2 }
-      let row_table = match parse_lookup_with_value_size(
-        data,
-        offset + row_index_offset,
-        num_glyphs,
-        index_value_size,
-      ) {
+      let row_table = match
+        parse_lookup_with_value_size(
+          data,
+          offset + row_index_offset,
+          num_glyphs,
+          index_value_size,
+        ) {
         Err(err) => return Err(err)
         Ok(value) => value
       }
-      let column_table = match parse_lookup_with_value_size(
-        data,
-        offset + column_index_offset,
-        num_glyphs,
-        index_value_size,
-      ) {
+      let column_table = match
+        parse_lookup_with_value_size(
+          data,
+          offset + column_index_offset,
+          num_glyphs,
+          index_value_size,
+        ) {
         Err(err) => return Err(err)
         Ok(value) => value
       }
       let array_base = offset + array_offset
       let mut array_end = offset + length
-      if vector_offset > 0 && offset + vector_offset < array_end && offset + vector_offset > array_base {
+      if vector_offset > 0 &&
+        offset + vector_offset < array_end &&
+        offset + vector_offset > array_base {
         array_end = offset + vector_offset
       }
       if array_base < 0 || array_base > array_end || array_end > offset + length {
@@ -391,11 +421,15 @@ fn parse_kerx_format6(
       }
       let bytes_len = array_end - array_base
       let value_size = if long_values { 4 } else { 2 }
-      if bytes_len < 0 || (bytes_len % value_size) != 0 {
+      if bytes_len < 0 || bytes_len % value_size != 0 {
         return Err(InvalidFormat)
       }
       let value_count = bytes_len / value_size
-      let vector_base = if vector_offset > 0 { offset + vector_offset } else { -1 }
+      let vector_base = if vector_offset > 0 {
+        offset + vector_offset
+      } else {
+        -1
+      }
       let values : Array[Int] = []
       for i in 0..<value_count {
         let value = if long_values {
@@ -406,31 +440,28 @@ fn parse_kerx_format6(
         match value {
           Err(err) => return Err(err)
           Ok(value) => {
-            let resolved =
-              if header.tuple_count > 0 && vector_base >= 0 {
-                resolve_tuple_value(data, vector_base, header.tuple_count, value)
-              } else {
-                value
-              }
+            let resolved = if header.tuple_count > 0 && vector_base >= 0 {
+              resolve_tuple_value(data, vector_base, header.tuple_count, value)
+            } else {
+              value
+            }
             values.push(resolved)
           }
         }
       }
       Ok(
-        KerxSubtable::Format6(
-          header,
-          KerxFormat6::{
-            row_index: row_table,
-            column_index: column_table,
-            values,
-            long_values,
-          },
-        ),
+        KerxSubtable::Format6(header, KerxFormat6::{
+          row_index: row_table,
+          column_index: column_table,
+          values,
+          long_values,
+        }),
       )
     }
   }
 }
 
+///|
 fn lookup_value(lookup : LookupTable, glyph : UInt) -> Int {
   match lookup.value_for(glyph) {
     None => 0
@@ -438,6 +469,7 @@ fn lookup_value(lookup : LookupTable, glyph : UInt) -> Int {
   }
 }
 
+///|
 fn KerxSubtable::value_for(
   self : KerxSubtable,
   left : UInt,
@@ -477,6 +509,7 @@ fn KerxSubtable::value_for(
   }
 }
 
+///|
 fn KerxSubtable::header(self : KerxSubtable) -> KerxSubtableHeader {
   match self {
     Format0(header, _) => header
@@ -515,43 +548,36 @@ pub fn KerxTable::parse(
             let header = KerxSubtableHeader::{ coverage, tuple_count }
             let sub_type = coverage_type(coverage)
             if sub_type == 0 {
-              let subtable = match parse_kerx_format0(data, offset, length, header) {
+              let subtable = match
+                parse_kerx_format0(data, offset, length, header) {
                 Err(err) => return Err(err)
                 Ok(value) => value
               }
               subtables.push(subtable)
             } else if sub_type == 1 {
-              let subtable = match parse_kerx_format1(
-                data,
-                offset,
-                length,
-                header,
-                num_glyphs,
-              ) {
+              let subtable = match
+                parse_kerx_format1(data, offset, length, header, num_glyphs) {
                 Err(err) => return Err(err)
                 Ok(value) => value
               }
               subtables.push(subtable)
             } else if sub_type == 2 {
-              let subtable = match parse_kerx_format2(data, offset, length, header, num_glyphs) {
+              let subtable = match
+                parse_kerx_format2(data, offset, length, header, num_glyphs) {
                 Err(err) => return Err(err)
                 Ok(value) => value
               }
               subtables.push(subtable)
             } else if sub_type == 4 {
-              let subtable = match parse_kerx_format4(
-                data,
-                offset,
-                length,
-                header,
-                num_glyphs,
-              ) {
+              let subtable = match
+                parse_kerx_format4(data, offset, length, header, num_glyphs) {
                 Err(err) => return Err(err)
                 Ok(value) => value
               }
               subtables.push(subtable)
             } else if sub_type == 6 {
-              let subtable = match parse_kerx_format6(data, offset, length, header, num_glyphs) {
+              let subtable = match
+                parse_kerx_format6(data, offset, length, header, num_glyphs) {
                 Err(err) => return Err(err)
                 Ok(value) => value
               }
@@ -581,7 +607,8 @@ pub fn KerxTable::kern_value(
   let mut value = 0
   for subtable in self.subtables {
     let header = subtable.header()
-    if coverage_is_cross_stream(header.coverage) || coverage_is_backwards(header.coverage) {
+    if coverage_is_cross_stream(header.coverage) ||
+      coverage_is_backwards(header.coverage) {
       continue
     }
     if horizontal != coverage_is_horizontal(header.coverage) {
@@ -595,10 +622,16 @@ pub fn KerxTable::kern_value(
   value
 }
 
+///|
 fn map_index(idx : Int, len : Int, backwards : Bool) -> Int {
-  if backwards { len - 1 - idx } else { idx }
+  if backwards {
+    len - 1 - idx
+  } else {
+    idx
+  }
 }
 
+///|
 fn apply_pair_kerning(
   subtable : KerxSubtable,
   header : KerxSubtableHeader,
@@ -677,10 +710,16 @@ fn apply_pair_kerning(
   changed
 }
 
+///|
 let format1_push = 0x8000
+
+///|
 let format1_dont_advance = 0x4000
+
+///|
 let format1_reset = 0x2000
 
+///|
 fn apply_format1(
   header : KerxSubtableHeader,
   format1 : KerxFormat1,
@@ -703,13 +742,12 @@ fn apply_format1(
   let stack : Array[Int] = [0, 0, 0, 0, 0, 0, 0, 0]
   let mut depth = 0
   while true {
-    let klass =
-      if idx < len {
-        let actual = map_index(idx, len, backwards)
-        format1.table.class_for(glyphs[actual])
-      } else {
-        0
-      }
+    let klass = if idx < len {
+      let actual = map_index(idx, len, backwards)
+      format1.table.class_for(glyphs[actual])
+    } else {
+      0
+    }
     let entry = format1.table.entry_for(state, klass)
     let flags = entry.flags
     if (flags & format1_reset) != 0 {
@@ -789,9 +827,13 @@ fn apply_format1(
   changed
 }
 
+///|
 let format4_mark = 0x8000
+
+///|
 let format4_dont_advance = 0x4000
 
+///|
 fn apply_format4(
   header : KerxSubtableHeader,
   format4 : KerxFormat4,
@@ -815,13 +857,12 @@ fn apply_format4(
   let mut mark_set = false
   let mut mark_index = 0
   while true {
-    let klass =
-      if idx < len {
-        let actual = map_index(idx, len, backwards)
-        format4.table.class_for(glyphs[actual])
-      } else {
-        0
-      }
+    let klass = if idx < len {
+      let actual = map_index(idx, len, backwards)
+      format4.table.class_for(glyphs[actual])
+    } else {
+      0
+    }
     let entry = format4.table.entry_for(state, klass)
     if mark_set && entry.data1 != 0xffff && idx < len {
       let actual = map_index(idx, len, backwards)
@@ -951,40 +992,20 @@ pub fn KerxTable::apply_scaled(
         }
         ignore(
           apply_pair_kerning(
-            subtable,
-            header,
-            glyphs,
-            horizontal,
-            primary_scale,
-            upem,
-            adjustments,
+            subtable, header, glyphs, horizontal, primary_scale, upem, adjustments,
           ),
         )
       }
       Format1(_, format1) =>
         ignore(
           apply_format1(
-            header,
-            format1,
-            glyphs,
-            horizontal,
-            primary_scale,
-            upem,
-            adjustments,
+            header, format1, glyphs, horizontal, primary_scale, upem, adjustments,
           ),
         )
       Format4(_, format4) =>
         ignore(
           apply_format4(
-            header,
-            format4,
-            glyphs,
-            scale_x,
-            scale_y,
-            upem,
-            adjustments,
-            ankr,
-            contour_point,
+            header, format4, glyphs, scale_x, scale_y, upem, adjustments, ankr, contour_point,
           ),
         )
     }

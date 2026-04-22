@@ -29,9 +29,13 @@ pub struct OverflowRecord {
   is_signed : Bool
 } derive(Eq, Debug)
 
+///|
 let inf_distance : Int64 = Int64::from_int(1) << 60
+
+///|
 let space_stride : Int64 = Int64::from_int(1) << 32
 
+///|
 fn edge_weight(width : Int, child_size : Int) -> Int64 {
   let size = Int64::from_int(child_size)
   if width <= 0 {
@@ -41,6 +45,7 @@ fn edge_weight(width : Int, child_size : Int) -> Int64 {
   size + limit
 }
 
+///|
 fn collect_order_edges(
   objects : ArrayView[SerializeObject],
 ) -> Result[(Array[Array[OrderEdge]], Array[Int]), SerializeError] {
@@ -81,6 +86,7 @@ fn collect_order_edges(
   Ok((edges, indegree))
 }
 
+///|
 fn assign_spaces(edges : Array[Array[OrderEdge]]) -> Array[Int] {
   let count = edges.length()
   let spaces : Array[Int] = Array::make(count, 0)
@@ -144,6 +150,7 @@ fn assign_spaces(edges : Array[Array[OrderEdge]]) -> Array[Int] {
   spaces
 }
 
+///|
 fn compute_shortest_dist(
   objects : ArrayView[SerializeObject],
   edges : Array[Array[OrderEdge]],
@@ -181,6 +188,7 @@ fn compute_shortest_dist(
   dist
 }
 
+///|
 fn topo_sort(
   edges : Array[Array[OrderEdge]],
   indegree : Array[Int],
@@ -200,7 +208,8 @@ fn topo_sort(
     let mut best_node = ready[0]
     for i in 1..<ready.length() {
       let node = ready[i]
-      if scores[node] < scores[best_node] || (scores[node] == scores[best_node] && node < best_node) {
+      if scores[node] < scores[best_node] ||
+        (scores[node] == scores[best_node] && node < best_node) {
         best_idx = i
         best_node = node
       }
@@ -222,6 +231,7 @@ fn topo_sort(
   Ok(order)
 }
 
+///|
 fn compute_starts(
   objects : ArrayView[SerializeObject],
   order : ArrayView[Int],
@@ -247,6 +257,7 @@ fn compute_starts(
   Ok(starts)
 }
 
+///|
 fn collect_overflows(
   objects : ArrayView[SerializeObject],
   order : ArrayView[Int],
@@ -315,6 +326,7 @@ fn collect_overflows(
   Ok(overflows)
 }
 
+///|
 fn priority_delta(width : Int, child_size : Int) -> Int64 {
   if width <= 0 {
     return Int64::from_int(1)
@@ -371,7 +383,7 @@ pub fn serialize_objects_repacked(
   objects : ArrayView[SerializeObject],
   max_iterations? : Int = 32,
 ) -> Result[Bytes, SerializeError] {
-  let order = match repack_object_order(objects, max_iterations=max_iterations) {
+  let order = match repack_object_order(objects, max_iterations~) {
     Ok(value) => value
     Err(err) => return Err(err)
   }
@@ -383,7 +395,7 @@ pub fn serialize_objects_repacked_with_order(
   objects : ArrayView[SerializeObject],
   max_iterations? : Int = 32,
 ) -> Result[(Bytes, Array[Int]), SerializeError] {
-  let order = match repack_object_order(objects, max_iterations=max_iterations) {
+  let order = match repack_object_order(objects, max_iterations~) {
     Ok(value) => value
     Err(err) => return Err(err)
   }

@@ -99,7 +99,10 @@ fn parse_suite(definition : String) -> ParsedSuite {
 }
 
 ///|
-fn build_cases(suite_name : String, suite : ParsedSuite) -> Array[SubsetDataCase] {
+fn build_cases(
+  suite_name : String,
+  suite : ParsedSuite,
+) -> Array[SubsetDataCase] {
   let cases : Array[SubsetDataCase] = []
   for font in suite.fonts {
     for profile in suite.profiles {
@@ -237,6 +240,7 @@ fn expected_unicode_label(spec : String, codepoints : Array[UInt]) -> String {
   codepoints_hex(codepoints)
 }
 
+///|
 fn instance_suffix(instance : String, iup_optimize : Bool) -> String {
   if instance.is_empty() {
     return ""
@@ -271,6 +275,7 @@ fn expected_key(case : SubsetDataCase, codepoints : Array[UInt]) -> String {
   "\{suite_base}/\{font_base}.\{profile_base}.\{unicode}\{suffix}\{font_ext}"
 }
 
+///|
 fn read_u16_dbg(data : BytesView, offset : Int) -> Int? {
   if offset < 0 || offset + 2 > data.length() {
     return None
@@ -280,6 +285,7 @@ fn read_u16_dbg(data : BytesView, offset : Int) -> Int? {
   Some((b0 << 8) | b1)
 }
 
+///|
 fn read_u32_dbg(data : BytesView, offset : Int) -> Int? {
   if offset < 0 || offset + 4 > data.length() {
     return None
@@ -291,6 +297,7 @@ fn read_u32_dbg(data : BytesView, offset : Int) -> Int? {
   Some((b0 << 24) | (b1 << 16) | (b2 << 8) | b3)
 }
 
+///|
 fn read_tag_dbg(data : BytesView, offset : Int) -> String? {
   if offset < 0 || offset + 4 > data.length() {
     return None
@@ -302,6 +309,7 @@ fn read_tag_dbg(data : BytesView, offset : Int) -> String? {
   Some(sb.to_string())
 }
 
+///|
 fn table_slice(data : Bytes, tag : String) -> Bytes? {
   let num_tables = read_u16_dbg(data[:], 4)
   match num_tables {
@@ -314,8 +322,10 @@ fn table_slice(data : Bytes, tag : String) -> Bytes? {
         let length = read_u32_dbg(data[:], base + 12)
         match (rec_tag, offset, length) {
           (Some(rec_tag), Some(offset), Some(length)) =>
-            if rec_tag == tag && offset >= 0 && length >= 0 &&
-               offset + length <= data.length() {
+            if rec_tag == tag &&
+              offset >= 0 &&
+              length >= 0 &&
+              offset + length <= data.length() {
               return Some(data[offset:offset + length].to_bytes())
             }
           _ => ()
@@ -326,11 +336,12 @@ fn table_slice(data : Bytes, tag : String) -> Bytes? {
   }
 }
 
+///|
 fn dump_table_diff(expected : Bytes, actual : Bytes) -> Unit {
   let num_tables = read_u16_dbg(expected[:], 4)
   match num_tables {
     None => ()
-    Some(num_tables) => {
+    Some(num_tables) =>
       for i in 0..<num_tables {
         let base = 12 + i * 16
         let tag = read_tag_dbg(expected[:], base)
@@ -342,7 +353,9 @@ fn dump_table_diff(expected : Bytes, actual : Bytes) -> Unit {
             match (exp, act) {
               (Some(exp), Some(act)) =>
                 if exp != act {
-                  println("  table diff \{tag} len exp=\{exp.length()} act=\{act.length()}")
+                  println(
+                    "  table diff \{tag} len exp=\{exp.length()} act=\{act.length()}",
+                  )
                 }
               (Some(exp), None) =>
                 println("  table missing \{tag} exp len=\{exp.length()}")
@@ -353,16 +366,16 @@ fn dump_table_diff(expected : Bytes, actual : Bytes) -> Unit {
           }
         }
       }
-    }
   }
 }
 
+///|
 fn table_tags_string(data : Bytes) -> String {
   let num_tables = read_u16_dbg(data[:], 4)
   let tags : Array[String] = []
   match num_tables {
     None => ()
-    Some(num_tables) => {
+    Some(num_tables) =>
       for i in 0..<num_tables {
         let base = 12 + i * 16
         let tag = read_tag_dbg(data[:], base)
@@ -371,18 +384,18 @@ fn table_tags_string(data : Bytes) -> String {
           Some(tag) => tags.push(tag)
         }
       }
-    }
   }
   tags.sort()
   tags.join(",")
 }
 
+///|
 fn table_diff_tags(expected : Bytes, actual : Bytes) -> String {
   let num_tables = read_u16_dbg(expected[:], 4)
   let diffs : Array[String] = []
   match num_tables {
     None => ()
-    Some(num_tables) => {
+    Some(num_tables) =>
       for i in 0..<num_tables {
         let base = 12 + i * 16
         let tag = read_tag_dbg(expected[:], base)
@@ -392,10 +405,7 @@ fn table_diff_tags(expected : Bytes, actual : Bytes) -> String {
             let exp = table_slice(expected, tag)
             let act = table_slice(actual, tag)
             match (exp, act) {
-              (Some(exp), Some(act)) =>
-                if exp != act {
-                  diffs.push(tag)
-                }
+              (Some(exp), Some(act)) => if exp != act { diffs.push(tag) }
               (Some(_), None) => diffs.push(tag)
               (None, Some(_)) => diffs.push(tag)
               _ => ()
@@ -403,12 +413,12 @@ fn table_diff_tags(expected : Bytes, actual : Bytes) -> String {
           }
         }
       }
-    }
   }
   diffs.sort()
   diffs.join(",")
 }
 
+///|
 fn cmap_summary(data : Bytes) -> String {
   let cmap = table_slice(data, "cmap")
   match cmap {
@@ -419,7 +429,7 @@ fn cmap_summary(data : Bytes) -> String {
       let entries : Array[String] = []
       match num_tables {
         None => ()
-        Some(num_tables) => {
+        Some(num_tables) =>
           for i in 0..<num_tables {
             let rec_base = 4 + i * 8
             let platform = read_u16_dbg(view, rec_base)
@@ -430,15 +440,13 @@ fn cmap_summary(data : Bytes) -> String {
                 let format = read_u16_dbg(view, offset)
                 match format {
                   None => ()
-                  Some(format) => {
+                  Some(format) =>
                     entries.push("\{platform}/\{encoding}:\{format}")
-                  }
                 }
               }
               _ => ()
             }
           }
-        }
       }
       entries.sort()
       entries.join(",")
@@ -446,6 +454,7 @@ fn cmap_summary(data : Bytes) -> String {
   }
 }
 
+///|
 fn cmap_record_order(data : Bytes) -> String {
   let cmap = table_slice(data, "cmap")
   match cmap {
@@ -456,7 +465,7 @@ fn cmap_record_order(data : Bytes) -> String {
       let entries : Array[String] = []
       match num_tables {
         None => ()
-        Some(num_tables) => {
+        Some(num_tables) =>
           for i in 0..<num_tables {
             let rec_base = 4 + i * 8
             let platform = read_u16_dbg(view, rec_base)
@@ -467,18 +476,20 @@ fn cmap_record_order(data : Bytes) -> String {
                 let format = read_u16_dbg(view, offset)
                 match format {
                   None => ()
-                  Some(format) => entries.push("\{platform}/\{encoding}:\{format}")
+                  Some(format) =>
+                    entries.push("\{platform}/\{encoding}:\{format}")
                 }
               }
               _ => ()
             }
           }
-        }
       }
       entries.join(",")
     }
   }
 }
+
+///|
 fn cmap_length_summary(data : Bytes) -> String {
   let cmap = table_slice(data, "cmap")
   match cmap {
@@ -489,7 +500,7 @@ fn cmap_length_summary(data : Bytes) -> String {
       let entries : Array[String] = []
       match num_tables {
         None => ()
-        Some(num_tables) => {
+        Some(num_tables) =>
           for i in 0..<num_tables {
             let rec_base = 4 + i * 8
             let platform = read_u16_dbg(view, rec_base)
@@ -514,7 +525,9 @@ fn cmap_length_summary(data : Bytes) -> String {
                     match length {
                       None => ()
                       Some(length) =>
-                        entries.push("\{platform}/\{encoding}:\{format}:\{length}")
+                        entries.push(
+                          "\{platform}/\{encoding}:\{format}:\{length}",
+                        )
                     }
                   }
                 }
@@ -522,7 +535,6 @@ fn cmap_length_summary(data : Bytes) -> String {
               _ => ()
             }
           }
-        }
       }
       entries.sort()
       entries.join(",")
@@ -530,6 +542,7 @@ fn cmap_length_summary(data : Bytes) -> String {
   }
 }
 
+///|
 fn cmap_header_summary(data : Bytes) -> String {
   let cmap = table_slice(data, "cmap")
   match cmap {
@@ -541,7 +554,7 @@ fn cmap_header_summary(data : Bytes) -> String {
       let entries : Array[String] = []
       match num_tables {
         None => ()
-        Some(num_tables) => {
+        Some(num_tables) =>
           for i in 0..<num_tables {
             let rec_base = 4 + i * 8
             let platform = read_u16_dbg(view, rec_base)
@@ -553,7 +566,6 @@ fn cmap_header_summary(data : Bytes) -> String {
               _ => ()
             }
           }
-        }
       }
       let ver = match version {
         None => "?"
@@ -568,6 +580,8 @@ fn cmap_header_summary(data : Bytes) -> String {
     }
   }
 }
+
+///|
 fn cmap_records(data : Bytes) -> Array[(Int, Int, Int, Bytes)] {
   let cmap = table_slice(data, "cmap")
   let records : Array[(Int, Int, Int, Bytes)] = []
@@ -578,7 +592,7 @@ fn cmap_records(data : Bytes) -> Array[(Int, Int, Int, Bytes)] {
       let num_tables = read_u16_dbg(view, 2)
       match num_tables {
         None => ()
-        Some(num_tables) => {
+        Some(num_tables) =>
           for i in 0..<num_tables {
             let rec_base = 4 + i * 8
             let platform = read_u16_dbg(view, rec_base)
@@ -613,13 +627,13 @@ fn cmap_records(data : Bytes) -> Array[(Int, Int, Int, Bytes)] {
               _ => ()
             }
           }
-        }
       }
     }
   }
   records
 }
 
+///|
 fn cmap_diff_records(expected : Bytes, actual : Bytes) -> String {
   let actual_map : Map[String, Bytes] = {}
   for entry in cmap_records(actual) {
@@ -633,16 +647,14 @@ fn cmap_diff_records(expected : Bytes, actual : Bytes) -> String {
     let key = "\{platform}/\{encoding}:\{format}"
     match actual_map.get(key) {
       None => diffs.push(key)
-      Some(act_bytes) =>
-        if act_bytes != bytes {
-          diffs.push(key)
-        }
+      Some(act_bytes) => if act_bytes != bytes { diffs.push(key) }
     }
   }
   diffs.sort()
   diffs.join(",")
 }
 
+///|
 fn cblc_summary(data : Bytes) -> String {
   let cblc = table_slice(data, "CBLC")
   match cblc {
@@ -724,11 +736,13 @@ fn cblc_summary(data : Bytes) -> String {
     }
   }
 }
+
+///|
 fn dump_dir_checksum_diff(expected : Bytes, actual : Bytes) -> Unit {
   let num_tables = read_u16_dbg(expected[:], 4)
   match num_tables {
     None => ()
-    Some(num_tables) => {
+    Some(num_tables) =>
       for i in 0..<num_tables {
         let base = 12 + i * 16
         let tag = read_tag_dbg(expected[:], base)
@@ -739,7 +753,7 @@ fn dump_dir_checksum_diff(expected : Bytes, actual : Bytes) -> Unit {
             let act_num_tables = read_u16_dbg(actual[:], 4)
             match act_num_tables {
               None => ()
-              Some(act_num_tables) => {
+              Some(act_num_tables) =>
                 for j in 0..<act_num_tables {
                   let act_base = 12 + j * 16
                   let act_tag = read_tag_dbg(actual[:], act_base)
@@ -753,20 +767,19 @@ fn dump_dir_checksum_diff(expected : Bytes, actual : Bytes) -> Unit {
                     break
                   }
                 }
-              }
             }
           }
         }
       }
-    }
   }
 }
 
+///|
 fn dump_dir_offset_diff(expected : Bytes, actual : Bytes) -> Unit {
   let num_tables = read_u16_dbg(expected[:], 4)
   match num_tables {
     None => ()
-    Some(num_tables) => {
+    Some(num_tables) =>
       for i in 0..<num_tables {
         let base = 12 + i * 16
         let tag = read_tag_dbg(expected[:], base)
@@ -778,7 +791,7 @@ fn dump_dir_offset_diff(expected : Bytes, actual : Bytes) -> Unit {
             let act_num_tables = read_u16_dbg(actual[:], 4)
             match act_num_tables {
               None => ()
-              Some(act_num_tables) => {
+              Some(act_num_tables) =>
                 for j in 0..<act_num_tables {
                   let act_base = 12 + j * 16
                   let act_tag = read_tag_dbg(actual[:], act_base)
@@ -793,21 +806,20 @@ fn dump_dir_offset_diff(expected : Bytes, actual : Bytes) -> Unit {
                     break
                   }
                 }
-              }
             }
           }
         }
       }
-    }
   }
 }
 
+///|
 fn dump_tag_diff(expected : Bytes, actual : Bytes) -> Unit {
   let exp_tags : Map[String, Bool] = {}
   let exp_count = read_u16_dbg(expected[:], 4)
   match exp_count {
     None => ()
-    Some(exp_count) => {
+    Some(exp_count) =>
       for i in 0..<exp_count {
         let base = 12 + i * 16
         let tag = read_tag_dbg(expected[:], base)
@@ -816,12 +828,11 @@ fn dump_tag_diff(expected : Bytes, actual : Bytes) -> Unit {
           Some(tag) => exp_tags[tag] = true
         }
       }
-    }
   }
   let act_count = read_u16_dbg(actual[:], 4)
   match act_count {
     None => ()
-    Some(act_count) => {
+    Some(act_count) =>
       for i in 0..<act_count {
         let base = 12 + i * 16
         let tag = read_tag_dbg(actual[:], base)
@@ -833,7 +844,6 @@ fn dump_tag_diff(expected : Bytes, actual : Bytes) -> Unit {
             }
         }
       }
-    }
   }
 }
 

@@ -57,60 +57,228 @@ priv struct ArabicStateEntry {
 ///|
 let arabic_state_table : Array[Array[ArabicStateEntry]] = [
   [
-    ArabicStateEntry::{ prev_action: arabic_action_none, curr_action: arabic_action_none, next_state: 0 },
-    ArabicStateEntry::{ prev_action: arabic_action_none, curr_action: arabic_action_isol, next_state: 2 },
-    ArabicStateEntry::{ prev_action: arabic_action_none, curr_action: arabic_action_isol, next_state: 1 },
-    ArabicStateEntry::{ prev_action: arabic_action_none, curr_action: arabic_action_isol, next_state: 2 },
-    ArabicStateEntry::{ prev_action: arabic_action_none, curr_action: arabic_action_isol, next_state: 1 },
-    ArabicStateEntry::{ prev_action: arabic_action_none, curr_action: arabic_action_isol, next_state: 6 },
+    ArabicStateEntry::{
+      prev_action: arabic_action_none,
+      curr_action: arabic_action_none,
+      next_state: 0,
+    },
+    ArabicStateEntry::{
+      prev_action: arabic_action_none,
+      curr_action: arabic_action_isol,
+      next_state: 2,
+    },
+    ArabicStateEntry::{
+      prev_action: arabic_action_none,
+      curr_action: arabic_action_isol,
+      next_state: 1,
+    },
+    ArabicStateEntry::{
+      prev_action: arabic_action_none,
+      curr_action: arabic_action_isol,
+      next_state: 2,
+    },
+    ArabicStateEntry::{
+      prev_action: arabic_action_none,
+      curr_action: arabic_action_isol,
+      next_state: 1,
+    },
+    ArabicStateEntry::{
+      prev_action: arabic_action_none,
+      curr_action: arabic_action_isol,
+      next_state: 6,
+    },
   ],
   [
-    ArabicStateEntry::{ prev_action: arabic_action_none, curr_action: arabic_action_none, next_state: 0 },
-    ArabicStateEntry::{ prev_action: arabic_action_none, curr_action: arabic_action_isol, next_state: 2 },
-    ArabicStateEntry::{ prev_action: arabic_action_none, curr_action: arabic_action_isol, next_state: 1 },
-    ArabicStateEntry::{ prev_action: arabic_action_none, curr_action: arabic_action_isol, next_state: 2 },
-    ArabicStateEntry::{ prev_action: arabic_action_none, curr_action: arabic_action_fin2, next_state: 5 },
-    ArabicStateEntry::{ prev_action: arabic_action_none, curr_action: arabic_action_isol, next_state: 6 },
+    ArabicStateEntry::{
+      prev_action: arabic_action_none,
+      curr_action: arabic_action_none,
+      next_state: 0,
+    },
+    ArabicStateEntry::{
+      prev_action: arabic_action_none,
+      curr_action: arabic_action_isol,
+      next_state: 2,
+    },
+    ArabicStateEntry::{
+      prev_action: arabic_action_none,
+      curr_action: arabic_action_isol,
+      next_state: 1,
+    },
+    ArabicStateEntry::{
+      prev_action: arabic_action_none,
+      curr_action: arabic_action_isol,
+      next_state: 2,
+    },
+    ArabicStateEntry::{
+      prev_action: arabic_action_none,
+      curr_action: arabic_action_fin2,
+      next_state: 5,
+    },
+    ArabicStateEntry::{
+      prev_action: arabic_action_none,
+      curr_action: arabic_action_isol,
+      next_state: 6,
+    },
   ],
   [
-    ArabicStateEntry::{ prev_action: arabic_action_none, curr_action: arabic_action_none, next_state: 0 },
-    ArabicStateEntry::{ prev_action: arabic_action_none, curr_action: arabic_action_isol, next_state: 2 },
-    ArabicStateEntry::{ prev_action: arabic_action_init, curr_action: arabic_action_fina, next_state: 1 },
-    ArabicStateEntry::{ prev_action: arabic_action_init, curr_action: arabic_action_fina, next_state: 3 },
-    ArabicStateEntry::{ prev_action: arabic_action_init, curr_action: arabic_action_fina, next_state: 4 },
-    ArabicStateEntry::{ prev_action: arabic_action_init, curr_action: arabic_action_fina, next_state: 6 },
+    ArabicStateEntry::{
+      prev_action: arabic_action_none,
+      curr_action: arabic_action_none,
+      next_state: 0,
+    },
+    ArabicStateEntry::{
+      prev_action: arabic_action_none,
+      curr_action: arabic_action_isol,
+      next_state: 2,
+    },
+    ArabicStateEntry::{
+      prev_action: arabic_action_init,
+      curr_action: arabic_action_fina,
+      next_state: 1,
+    },
+    ArabicStateEntry::{
+      prev_action: arabic_action_init,
+      curr_action: arabic_action_fina,
+      next_state: 3,
+    },
+    ArabicStateEntry::{
+      prev_action: arabic_action_init,
+      curr_action: arabic_action_fina,
+      next_state: 4,
+    },
+    ArabicStateEntry::{
+      prev_action: arabic_action_init,
+      curr_action: arabic_action_fina,
+      next_state: 6,
+    },
   ],
   [
-    ArabicStateEntry::{ prev_action: arabic_action_none, curr_action: arabic_action_none, next_state: 0 },
-    ArabicStateEntry::{ prev_action: arabic_action_none, curr_action: arabic_action_isol, next_state: 2 },
-    ArabicStateEntry::{ prev_action: arabic_action_medi, curr_action: arabic_action_fina, next_state: 1 },
-    ArabicStateEntry::{ prev_action: arabic_action_medi, curr_action: arabic_action_fina, next_state: 3 },
-    ArabicStateEntry::{ prev_action: arabic_action_medi, curr_action: arabic_action_fina, next_state: 4 },
-    ArabicStateEntry::{ prev_action: arabic_action_medi, curr_action: arabic_action_fina, next_state: 6 },
+    ArabicStateEntry::{
+      prev_action: arabic_action_none,
+      curr_action: arabic_action_none,
+      next_state: 0,
+    },
+    ArabicStateEntry::{
+      prev_action: arabic_action_none,
+      curr_action: arabic_action_isol,
+      next_state: 2,
+    },
+    ArabicStateEntry::{
+      prev_action: arabic_action_medi,
+      curr_action: arabic_action_fina,
+      next_state: 1,
+    },
+    ArabicStateEntry::{
+      prev_action: arabic_action_medi,
+      curr_action: arabic_action_fina,
+      next_state: 3,
+    },
+    ArabicStateEntry::{
+      prev_action: arabic_action_medi,
+      curr_action: arabic_action_fina,
+      next_state: 4,
+    },
+    ArabicStateEntry::{
+      prev_action: arabic_action_medi,
+      curr_action: arabic_action_fina,
+      next_state: 6,
+    },
   ],
   [
-    ArabicStateEntry::{ prev_action: arabic_action_none, curr_action: arabic_action_none, next_state: 0 },
-    ArabicStateEntry::{ prev_action: arabic_action_none, curr_action: arabic_action_isol, next_state: 2 },
-    ArabicStateEntry::{ prev_action: arabic_action_med2, curr_action: arabic_action_isol, next_state: 1 },
-    ArabicStateEntry::{ prev_action: arabic_action_med2, curr_action: arabic_action_isol, next_state: 2 },
-    ArabicStateEntry::{ prev_action: arabic_action_med2, curr_action: arabic_action_fin2, next_state: 5 },
-    ArabicStateEntry::{ prev_action: arabic_action_med2, curr_action: arabic_action_isol, next_state: 6 },
+    ArabicStateEntry::{
+      prev_action: arabic_action_none,
+      curr_action: arabic_action_none,
+      next_state: 0,
+    },
+    ArabicStateEntry::{
+      prev_action: arabic_action_none,
+      curr_action: arabic_action_isol,
+      next_state: 2,
+    },
+    ArabicStateEntry::{
+      prev_action: arabic_action_med2,
+      curr_action: arabic_action_isol,
+      next_state: 1,
+    },
+    ArabicStateEntry::{
+      prev_action: arabic_action_med2,
+      curr_action: arabic_action_isol,
+      next_state: 2,
+    },
+    ArabicStateEntry::{
+      prev_action: arabic_action_med2,
+      curr_action: arabic_action_fin2,
+      next_state: 5,
+    },
+    ArabicStateEntry::{
+      prev_action: arabic_action_med2,
+      curr_action: arabic_action_isol,
+      next_state: 6,
+    },
   ],
   [
-    ArabicStateEntry::{ prev_action: arabic_action_none, curr_action: arabic_action_none, next_state: 0 },
-    ArabicStateEntry::{ prev_action: arabic_action_none, curr_action: arabic_action_isol, next_state: 2 },
-    ArabicStateEntry::{ prev_action: arabic_action_isol, curr_action: arabic_action_isol, next_state: 1 },
-    ArabicStateEntry::{ prev_action: arabic_action_isol, curr_action: arabic_action_isol, next_state: 2 },
-    ArabicStateEntry::{ prev_action: arabic_action_isol, curr_action: arabic_action_fin2, next_state: 5 },
-    ArabicStateEntry::{ prev_action: arabic_action_isol, curr_action: arabic_action_isol, next_state: 6 },
+    ArabicStateEntry::{
+      prev_action: arabic_action_none,
+      curr_action: arabic_action_none,
+      next_state: 0,
+    },
+    ArabicStateEntry::{
+      prev_action: arabic_action_none,
+      curr_action: arabic_action_isol,
+      next_state: 2,
+    },
+    ArabicStateEntry::{
+      prev_action: arabic_action_isol,
+      curr_action: arabic_action_isol,
+      next_state: 1,
+    },
+    ArabicStateEntry::{
+      prev_action: arabic_action_isol,
+      curr_action: arabic_action_isol,
+      next_state: 2,
+    },
+    ArabicStateEntry::{
+      prev_action: arabic_action_isol,
+      curr_action: arabic_action_fin2,
+      next_state: 5,
+    },
+    ArabicStateEntry::{
+      prev_action: arabic_action_isol,
+      curr_action: arabic_action_isol,
+      next_state: 6,
+    },
   ],
   [
-    ArabicStateEntry::{ prev_action: arabic_action_none, curr_action: arabic_action_none, next_state: 0 },
-    ArabicStateEntry::{ prev_action: arabic_action_none, curr_action: arabic_action_isol, next_state: 2 },
-    ArabicStateEntry::{ prev_action: arabic_action_none, curr_action: arabic_action_isol, next_state: 1 },
-    ArabicStateEntry::{ prev_action: arabic_action_none, curr_action: arabic_action_isol, next_state: 2 },
-    ArabicStateEntry::{ prev_action: arabic_action_none, curr_action: arabic_action_fin3, next_state: 5 },
-    ArabicStateEntry::{ prev_action: arabic_action_none, curr_action: arabic_action_isol, next_state: 6 },
+    ArabicStateEntry::{
+      prev_action: arabic_action_none,
+      curr_action: arabic_action_none,
+      next_state: 0,
+    },
+    ArabicStateEntry::{
+      prev_action: arabic_action_none,
+      curr_action: arabic_action_isol,
+      next_state: 2,
+    },
+    ArabicStateEntry::{
+      prev_action: arabic_action_none,
+      curr_action: arabic_action_isol,
+      next_state: 1,
+    },
+    ArabicStateEntry::{
+      prev_action: arabic_action_none,
+      curr_action: arabic_action_isol,
+      next_state: 2,
+    },
+    ArabicStateEntry::{
+      prev_action: arabic_action_none,
+      curr_action: arabic_action_fin3,
+      next_state: 5,
+    },
+    ArabicStateEntry::{
+      prev_action: arabic_action_none,
+      curr_action: arabic_action_isol,
+      next_state: 6,
+    },
   ],
 ]
 
@@ -184,7 +352,9 @@ fn arabic_action_column(action : Int) -> Int? {
   if action == arabic_action_medi {
     return Some(1)
   }
-  if action == arabic_action_fina || action == arabic_action_fin2 || action == arabic_action_fin3 {
+  if action == arabic_action_fina ||
+    action == arabic_action_fin2 ||
+    action == arabic_action_fin3 {
     return Some(2)
   }
   if action == arabic_action_isol {
@@ -209,7 +379,11 @@ fn apply_arabic_fallback(buffer : Buffer, actions : Array[Int]) -> Unit {
           None => ()
           Some(value) => {
             let info = buffer.infos[i]
-            buffer.infos[i] = GlyphInfo::{ codepoint: value, cluster: info.cluster, unicode: value }
+            buffer.infos[i] = GlyphInfo::{
+              codepoint: value,
+              cluster: info.cluster,
+              unicode: value,
+            }
           }
         }
       }
@@ -234,18 +408,14 @@ fn apply_gpos(
   let mut gpos_to_use : @ot_tables.GposTable? = None
   match gpos {
     None => ()
-    Some(gpos) => {
+    Some(gpos) =>
       match gpos_tag {
-        None => {
-          gpos_to_use = Some(gpos)
-        }
-        Some(tag) => {
+        None => gpos_to_use = Some(gpos)
+        Some(tag) =>
           if buffer_layout_has_script(gpos.layout(), tag) {
             gpos_to_use = Some(gpos)
           }
-        }
       }
-    }
   }
   let mut gpos_lookups : Array[Int] = []
   if gpos_to_use is Some(gpos) {
@@ -254,22 +424,24 @@ fn apply_gpos(
       Some(tag) => tag
     }
     let lang_tag = language_to_ot_tag(buffer.language)
-    gpos_lookups = match gpos.layout().select_lookup_offsets_with_features(
-      script_tag,
-      language_tag=lang_tag,
-      feature_tags=buffer.gpos_features,
-    ) {
+    gpos_lookups = match
+      gpos
+      .layout()
+      .select_lookup_offsets_with_features(
+        script_tag,
+        language_tag=lang_tag,
+        feature_tags=buffer.gpos_features,
+      ) {
       Err(err) => return Err(Layout(err))
       Ok(value) => value
     }
   }
   let gpos_present = gpos_to_use is Some(_) && !gpos_lookups.is_empty()
-  let kern_tag =
-    if buffer.direction.is_horizontal() {
-      @common.Tag::from_chars('k', 'e', 'r', 'n')
-    } else {
-      @common.Tag::from_chars('v', 'k', 'r', 'n')
-    }
+  let kern_tag = if buffer.direction.is_horizontal() {
+    @common.Tag::from_chars('k', 'e', 'r', 'n')
+  } else {
+    @common.Tag::from_chars('v', 'k', 'r', 'n')
+  }
   let mut wants_kern = false
   for entry in buffer.gpos_features {
     if entry == kern_tag {
@@ -279,15 +451,18 @@ fn apply_gpos(
   }
   let mut has_gpos_kern = false
   if wants_kern && gpos_to_use is Some(gpos) {
-    let kern_lookups = match gpos.layout().select_lookup_offsets_for_feature(
-      match gpos_tag {
-        None => buffer.script.to_tag()
-        Some(tag) => tag
-      },
-      kern_tag,
-      language_tag=language_to_ot_tag(buffer.language),
-      include_required=false,
-    ) {
+    let kern_lookups = match
+      gpos
+      .layout()
+      .select_lookup_offsets_for_feature(
+        match gpos_tag {
+          None => buffer.script.to_tag()
+          Some(tag) => tag
+        },
+        kern_tag,
+        language_tag=language_to_ot_tag(buffer.language),
+        include_required=false,
+      ) {
       Err(err) => return Err(Layout(err))
       Ok(value) => value
     }
@@ -295,7 +470,10 @@ fn apply_gpos(
   }
   match zero_width_marks {
     ZeroWidthMarks::ByGdefEarly =>
-      match zero_marks_by_gdef_or_unicode(font, buffer, unicode_mark_flags, gpos_present) {
+      match
+        zero_marks_by_gdef_or_unicode(
+          font, buffer, unicode_mark_flags, gpos_present,
+        ) {
         Err(err) => return Err(err)
         Ok(_) => ()
       }
@@ -320,25 +498,27 @@ fn apply_gpos(
     }
     let deltas = match gdef {
       None =>
-        match gpos.position_deltas_with_lookups(
-          glyphs[:],
-          gpos_lookups[:],
-          clusters=clusters[:],
-          advances_x=advances_x[:],
-          advances_y=advances_y[:],
-        ) {
+        match
+          gpos.position_deltas_with_lookups(
+            glyphs[:],
+            gpos_lookups[:],
+            clusters=clusters[:],
+            advances_x=advances_x[:],
+            advances_y=advances_y[:],
+          ) {
           Err(err) => return Err(Layout(err))
           Ok(value) => value
         }
       Some(gdef) =>
-        match gpos.position_deltas_with_lookups(
-          glyphs[:],
-          gpos_lookups[:],
-          gdef=gdef,
-          clusters=clusters[:],
-          advances_x=advances_x[:],
-          advances_y=advances_y[:],
-        ) {
+        match
+          gpos.position_deltas_with_lookups(
+            glyphs[:],
+            gpos_lookups[:],
+            gdef~,
+            clusters=clusters[:],
+            advances_x=advances_x[:],
+            advances_y=advances_y[:],
+          ) {
           Err(err) => return Err(Layout(err))
           Ok(value) => value
         }
@@ -389,14 +569,20 @@ fn apply_gpos(
   }
   match zero_width_marks {
     ZeroWidthMarks::ByGdefLate =>
-      match zero_marks_by_gdef_or_unicode(font, buffer, unicode_mark_flags, gpos_present) {
+      match
+        zero_marks_by_gdef_or_unicode(
+          font, buffer, unicode_mark_flags, gpos_present,
+        ) {
         Err(err) => return Err(err)
         Ok(_) => ()
       }
     _ => ()
   }
   if fallback_position && !gpos_present {
-    match fallback_mark_position(font, buffer, unicode_mark_flags, combining_classes) {
+    match
+      fallback_mark_position(
+        font, buffer, unicode_mark_flags, combining_classes,
+      ) {
       Err(err) => return Err(err)
       Ok(_) => ()
     }
@@ -430,7 +616,9 @@ pub fn Buffer::shape_arabic(
       return self.shape_ot(font)
     }
   }
-  let (unicode_mark_flags, combining_classes) = collect_mark_fallback_data(self.infos)
+  let (unicode_mark_flags, combining_classes) = collect_mark_fallback_data(
+    self.infos,
+  )
   if actions.is_empty() {
     match self.shape_basic(font) {
       Err(err) => return Err(err)
@@ -441,8 +629,8 @@ pub fn Buffer::shape_arabic(
       self,
       zero_width_marks=ZeroWidthMarks::ByGdefLate,
       fallback_position=true,
-      unicode_mark_flags=unicode_mark_flags,
-      combining_classes=combining_classes,
+      unicode_mark_flags~,
+      combining_classes~,
     )
   }
   let mut current_glyphs : Array[UInt] = []
@@ -454,12 +642,15 @@ pub fn Buffer::shape_arabic(
     let script_tag = self.script.to_tag()
     let lang_tag = language_to_ot_tag(self.language)
     for feature_tag in arabic_feature_tags {
-      let lookup_offsets = match gsub.layout().select_lookup_offsets_for_feature(
-        script_tag,
-        feature_tag,
-        language_tag=lang_tag,
-        include_required=false,
-      ) {
+      let lookup_offsets = match
+        gsub
+        .layout()
+        .select_lookup_offsets_for_feature(
+          script_tag,
+          feature_tag,
+          language_tag=lang_tag,
+          include_required=false,
+        ) {
         Err(err) => return Err(Layout(err))
         Ok(value) => value
       }
@@ -482,8 +673,8 @@ pub fn Buffer::shape_arabic(
       self,
       zero_width_marks=ZeroWidthMarks::ByGdefLate,
       fallback_position=true,
-      unicode_mark_flags=unicode_mark_flags,
-      combining_classes=combining_classes,
+      unicode_mark_flags~,
+      combining_classes~,
     )
   }
   if gsub is Some(gsub) {
@@ -504,12 +695,15 @@ pub fn Buffer::shape_arabic(
     let lang_tag = language_to_ot_tag(self.language)
     for feature_index in 0..<arabic_feature_tags.length() {
       let feature_tag = arabic_feature_tags[feature_index]
-      let lookup_offsets = match gsub.layout().select_lookup_offsets_for_feature(
-        script_tag,
-        feature_tag,
-        language_tag=lang_tag,
-        include_required=false,
-      ) {
+      let lookup_offsets = match
+        gsub
+        .layout()
+        .select_lookup_offsets_for_feature(
+          script_tag,
+          feature_tag,
+          language_tag=lang_tag,
+          include_required=false,
+        ) {
         Err(err) => return Err(Layout(err))
         Ok(value) => value
       }
@@ -519,25 +713,27 @@ pub fn Buffer::shape_arabic(
       let masks = build_action_mask(actions, feature_index)
       let result = match gdef {
         None =>
-          match gsub.apply_with_lookups(
-            current_glyphs,
-            current_clusters,
-            lookup_offsets[:],
-            masks=masks,
-            lookup_mask=1U,
-          ) {
+          match
+            gsub.apply_with_lookups(
+              current_glyphs,
+              current_clusters,
+              lookup_offsets[:],
+              masks~,
+              lookup_mask=1U,
+            ) {
             Err(err) => return Err(Layout(err))
             Ok(value) => value
           }
         Some(gdef) =>
-          match gsub.apply_with_lookups(
-            current_glyphs,
-            current_clusters,
-            lookup_offsets[:],
-            gdef=gdef,
-            masks=masks,
-            lookup_mask=1U,
-          ) {
+          match
+            gsub.apply_with_lookups(
+              current_glyphs,
+              current_clusters,
+              lookup_offsets[:],
+              gdef~,
+              masks~,
+              lookup_mask=1U,
+            ) {
             Err(err) => return Err(Layout(err))
             Ok(value) => value
           }
@@ -567,7 +763,11 @@ pub fn Buffer::shape_arabic(
       } else {
         0U
       }
-      infos.push(GlyphInfo::{ codepoint: glyph, cluster: current_clusters[i], unicode })
+      infos.push(GlyphInfo::{
+        codepoint: glyph,
+        cluster: current_clusters[i],
+        unicode,
+      })
       positions.push(pos)
     }
     self.infos = infos
@@ -578,7 +778,7 @@ pub fn Buffer::shape_arabic(
     self,
     zero_width_marks=ZeroWidthMarks::ByGdefLate,
     fallback_position=true,
-    unicode_mark_flags=unicode_mark_flags,
-    combining_classes=combining_classes,
+    unicode_mark_flags~,
+    combining_classes~,
   )
 }

@@ -34,7 +34,10 @@ fn buffer_lowercase_tag(tag : @common.Tag) -> @common.Tag {
 }
 
 ///|
-fn buffer_layout_has_script(layout : @ot_tables.LayoutTable, tag : @common.Tag) -> Bool {
+fn buffer_layout_has_script(
+  layout : @ot_tables.LayoutTable,
+  tag : @common.Tag,
+) -> Bool {
   let lower = buffer_lowercase_tag(tag)
   for record in layout.script_list().records() {
     if record.tag == tag || record.tag == lower {

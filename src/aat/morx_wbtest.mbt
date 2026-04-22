@@ -27,9 +27,9 @@ test "aat morx contextual apply lookup" {
     state_array_offset: 0,
     extended: true,
   }
-  let substitutions = ContextualSubstitutions::Lookups(
-    [LookupTable::Format0([0U, 3U, 4U])],
-  )
+  let substitutions = ContextualSubstitutions::Lookups([
+    LookupTable::Format0([0U, 3U, 4U]),
+  ])
   let subtable = ContextualSubtable::{
     coverage_flags: 0,
     sub_feature_flags: 0U,

@@ -1,0 +1,15 @@
+import {
+  "moonbit-community/harfbuzz/face",
+  "moonbitlang/core/debug",
+  "moonbitlang/core/encoding/utf8",
+  "moonbitlang/core/math",
+  "moonbit-community/harfbuzz/aat" @aat,
+  "moonbit-community/harfbuzz/blob" @blob,
+  "moonbit-community/harfbuzz/common" @common,
+  "moonbit-community/harfbuzz/draw" @draw,
+  "moonbit-community/harfbuzz/ot/cff" @ot_cff,
+  "moonbit-community/harfbuzz/ot/color" @ot_color,
+  "moonbit-community/harfbuzz/ot/tables" @ot_tables,
+  "moonbit-community/harfbuzz/ot/var" @ot_var,
+  "moonbit-community/harfbuzz/sfnt" @sfnt,
+}

@@ -83,20 +83,12 @@ priv struct ThaiStateEdge {
 
 ///|
 let thai_above_start_state : Array[Int] = [
-  thai_above_t0,
-  thai_above_t1,
-  thai_above_t0,
-  thai_above_t0,
-  thai_above_t3,
+  thai_above_t0, thai_above_t1, thai_above_t0, thai_above_t0, thai_above_t3,
 ]
 
 ///|
 let thai_below_start_state : Array[Int] = [
-  thai_below_b0,
-  thai_below_b0,
-  thai_below_b1,
-  thai_below_b2,
-  thai_below_b2,
+  thai_below_b0, thai_below_b0, thai_below_b1, thai_below_b2, thai_below_b2,
 ]
 
 ///|
@@ -242,8 +234,10 @@ fn get_consonant_type(u : UInt) -> Int {
 ///|
 fn get_mark_type(u : UInt) -> Int {
   let v = mask_thai_lao(u)
-  if v == 0x0E31U || (v >= 0x0E34U && v <= 0x0E37U) ||
-    v == 0x0E47U || (v >= 0x0E4DU && v <= 0x0E4EU) {
+  if v == 0x0E31U ||
+    (v >= 0x0E34U && v <= 0x0E37U) ||
+    v == 0x0E47U ||
+    (v >= 0x0E4DU && v <= 0x0E4EU) {
     return thai_mark_av
   }
   if v >= 0x0E38U && v <= 0x0E3AU {
@@ -256,7 +250,11 @@ fn get_mark_type(u : UInt) -> Int {
 }
 
 ///|
-fn merge_clusters_range(infos : Array[GlyphInfo], start : Int, end : Int) -> Unit {
+fn merge_clusters_range(
+  infos : Array[GlyphInfo],
+  start : Int,
+  end : Int,
+) -> Unit {
   if start < 0 || start >= end || end > infos.length() {
     return ()
   }
@@ -269,7 +267,11 @@ fn merge_clusters_range(infos : Array[GlyphInfo], start : Int, end : Int) -> Uni
   }
   for i in start..<end {
     let info = infos[i]
-    infos[i] = GlyphInfo::{ codepoint: info.codepoint, cluster: min_cluster, unicode: info.unicode }
+    infos[i] = GlyphInfo::{
+      codepoint: info.codepoint,
+      cluster: min_cluster,
+      unicode: info.unicode,
+    }
   }
 }
 
@@ -289,10 +291,18 @@ fn preprocess_thai_sara_am(buffer : Buffer) -> Unit {
       continue
     }
     let nikhahit = nikhahit_from_sara_am(info.codepoint)
-    infos.push(GlyphInfo::{ codepoint: nikhahit, cluster: info.cluster, unicode: nikhahit })
+    infos.push(GlyphInfo::{
+      codepoint: nikhahit,
+      cluster: info.cluster,
+      unicode: nikhahit,
+    })
     positions.push(pos)
     let sara_aa = sara_aa_from_sara_am(info.codepoint)
-    infos.push(GlyphInfo::{ codepoint: sara_aa, cluster: info.cluster, unicode: sara_aa })
+    infos.push(GlyphInfo::{
+      codepoint: sara_aa,
+      cluster: info.cluster,
+      unicode: sara_aa,
+    })
     positions.push(pos)
     let end = infos.length()
     let mut start = end - 2
@@ -315,7 +325,7 @@ fn preprocess_thai_sara_am(buffer : Buffer) -> Unit {
       merge_clusters_range(infos, start - 1, end)
     }
   }
-  ignore(buffer.replace_glyphs(infos, positions=positions))
+  ignore(buffer.replace_glyphs(infos, positions~))
 }
 
 ///|
@@ -388,7 +398,8 @@ fn apply_thai_pua_shaping(
     }
     if action == thai_action_rd {
       let base_info = buffer.infos[base]
-      let new_codepoint = match thai_pua_shape(base_info.codepoint, action, font) {
+      let new_codepoint = match
+        thai_pua_shape(base_info.codepoint, action, font) {
         Err(err) => return Err(err)
         Ok(value) => value
       }
@@ -402,7 +413,11 @@ fn apply_thai_pua_shaping(
         Err(err) => return Err(err)
         Ok(value) => value
       }
-      buffer.infos[i] = GlyphInfo::{ codepoint: new_codepoint, cluster: info.cluster, unicode: new_codepoint }
+      buffer.infos[i] = GlyphInfo::{
+        codepoint: new_codepoint,
+        cluster: info.cluster,
+        unicode: new_codepoint,
+      }
     }
   }
   Ok(())

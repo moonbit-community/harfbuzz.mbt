@@ -32,11 +32,14 @@ pub fn OtMap::new(
   let gsub_lookups = match gsub {
     None => []
     Some(gsub) =>
-      match gsub.layout().select_lookup_offsets_with_features(
-        script_tag,
-        language_tag=language_tag,
-        feature_tags=gsub_features,
-      ) {
+      match
+        gsub
+        .layout()
+        .select_lookup_offsets_with_features(
+          script_tag,
+          language_tag~,
+          feature_tags=gsub_features,
+        ) {
         Err(err) => return Err(err)
         Ok(value) => value
       }
@@ -44,11 +47,14 @@ pub fn OtMap::new(
   let gpos_lookups = match gpos {
     None => []
     Some(gpos) =>
-      match gpos.layout().select_lookup_offsets_with_features(
-        script_tag,
-        language_tag=language_tag,
-        feature_tags=gpos_features,
-      ) {
+      match
+        gpos
+        .layout()
+        .select_lookup_offsets_with_features(
+          script_tag,
+          language_tag~,
+          feature_tags=gpos_features,
+        ) {
         Err(err) => return Err(err)
         Ok(value) => value
       }

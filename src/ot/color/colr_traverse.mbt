@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+///|
 let max_paint_walk_depth : Int = 64
 
 ///|
@@ -29,6 +30,7 @@ pub fn ColrTable::walk_paint(
   walk_paint_impl(self, paint, visit, 0, max_depth)
 }
 
+///|
 fn walk_paint_impl(
   colr : ColrTable,
   paint : @paint.Paint,
@@ -56,7 +58,13 @@ fn walk_paint_impl(
           Err(err) => return Err(err)
           Ok(None) => ()
           Ok(Some(child)) => {
-            let child_count = walk_paint_impl(colr, child, visit, depth + 1, max_depth)
+            let child_count = walk_paint_impl(
+              colr,
+              child,
+              visit,
+              depth + 1,
+              max_depth,
+            )
             match child_count {
               Err(err) => return Err(err)
               Ok(value) => count = count + value
@@ -66,7 +74,13 @@ fn walk_paint_impl(
       }
     }
     @paint.Paint::Glyph(_, child) => {
-      let child_count = walk_paint_impl(colr, child, visit, depth + 1, max_depth)
+      let child_count = walk_paint_impl(
+        colr,
+        child,
+        visit,
+        depth + 1,
+        max_depth,
+      )
       match child_count {
         Err(err) => return Err(err)
         Ok(value) => count = count + value
@@ -78,7 +92,13 @@ fn walk_paint_impl(
         Err(err) => return Err(err)
         Ok(None) => ()
         Ok(Some(child)) => {
-          let child_count = walk_paint_impl(colr, child, visit, depth + 1, max_depth)
+          let child_count = walk_paint_impl(
+            colr,
+            child,
+            visit,
+            depth + 1,
+            max_depth,
+          )
           match child_count {
             Err(err) => return Err(err)
             Ok(value) => count = count + value
@@ -96,7 +116,13 @@ fn walk_paint_impl(
     | @paint.Paint::RotateAroundCenter(_, _, _, _, child)
     | @paint.Paint::Skew(_, _, _, child)
     | @paint.Paint::SkewAroundCenter(_, _, _, _, _, child) => {
-      let child_count = walk_paint_impl(colr, child, visit, depth + 1, max_depth)
+      let child_count = walk_paint_impl(
+        colr,
+        child,
+        visit,
+        depth + 1,
+        max_depth,
+      )
       match child_count {
         Err(err) => return Err(err)
         Ok(value) => count = count + value
@@ -108,7 +134,13 @@ fn walk_paint_impl(
         Err(err) => return Err(err)
         Ok(value) => count = count + value
       }
-      let backdrop_count = walk_paint_impl(colr, backdrop, visit, depth + 1, max_depth)
+      let backdrop_count = walk_paint_impl(
+        colr,
+        backdrop,
+        visit,
+        depth + 1,
+        max_depth,
+      )
       match backdrop_count {
         Err(err) => return Err(err)
         Ok(value) => count = count + value
