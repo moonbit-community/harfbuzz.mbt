@@ -16,10 +16,7 @@
 test "indic machine non-indic cluster for other" {
   let categories : Array[UInt] = [0U]
   let syllables = find_syllables_indic(categories)
-  @debug.debug_inspect(syllables.length(), content="1")
+  inspect(syllables.length(), content="1")
   let syllable_type = syllables[0] & 0x0f
-  @debug.debug_inspect(
-    syllable_type,
-    content="\{indic_syllable_type_non_cluster}",
-  )
+  inspect(syllable_type, content="\{indic_syllable_type_non_cluster}")
 }

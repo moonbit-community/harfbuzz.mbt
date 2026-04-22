@@ -30,7 +30,7 @@ test "unicode modified combining class" {
 
 ///|
 test "unicode script and mirroring" {
-  @debug.debug_inspect(script(0x41U).to_tag().to_string(), content="Latn")
+  inspect(script(0x41U).to_tag().to_string(), content="Latn")
   @debug.debug_inspect(mirroring(0x28U), content="41")
   @debug.debug_inspect(mirroring(0x29U), content="40")
 }

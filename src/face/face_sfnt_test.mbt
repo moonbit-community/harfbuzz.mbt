@@ -186,7 +186,7 @@ test "face references sfnt table" {
     Err(err) => fail("missing table: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  @debug.debug_inspect(table.to_bytes(), content="b\"\\x0a\\x0b\"")
+  inspect(table.to_bytes(), content="b\"\\x0a\\x0b\"")
 }
 
 ///|
@@ -205,8 +205,8 @@ test "face references ttc tables by index" {
     Err(err) => fail("missing table: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  @debug.debug_inspect(table0.to_bytes(), content="b\"\\x0a\"")
-  @debug.debug_inspect(table1.to_bytes(), content="b\"\\x0b\\x0c\"")
+  inspect(table0.to_bytes(), content="b\"\\x0a\"")
+  inspect(table1.to_bytes(), content="b\"\\x0b\\x0c\"")
 }
 
 ///|
@@ -225,8 +225,8 @@ test "face set_index resets cached tables" {
     Err(err) => fail("missing table: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  @debug.debug_inspect(table0.to_bytes(), content="b\"\\x01\"")
-  @debug.debug_inspect(table1.to_bytes(), content="b\"\\x02\"")
+  inspect(table0.to_bytes(), content="b\"\\x01\"")
+  inspect(table1.to_bytes(), content="b\"\\x02\"")
 }
 
 ///|
@@ -242,28 +242,28 @@ test "face table tags listing" {
     Err(err) => fail("table tags error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  @debug.debug_inspect(total0, content="3")
+  inspect(total0, content="3")
   let names0 : Array[String] = []
   for tag in tags0 {
     names0.push(tag.to_string())
   }
-  @debug.debug_inspect(names0, content="[\"cvt \", \"fpgm\", \"gasp\"]")
+  inspect(names0, content="[\"cvt \", \"fpgm\", \"gasp\"]")
   let (total1, tags1) = match face.table_tags(start_offset=1, count=1) {
     Err(err) => fail("table tags error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  @debug.debug_inspect(total1, content="3")
+  inspect(total1, content="3")
   let names1 : Array[String] = []
   for tag in tags1 {
     names1.push(tag.to_string())
   }
-  @debug.debug_inspect(names1, content="[\"fpgm\"]")
+  inspect(names1, content="[\"fpgm\"]")
   let (total2, tags2) = match face.table_tags(start_offset=3, count=2) {
     Err(err) => fail("table tags error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  @debug.debug_inspect(total2, content="3")
-  @debug.debug_inspect(tags2.length(), content="0")
+  inspect(total2, content="3")
+  inspect(tags2.length(), content="0")
 }
 
 ///|
@@ -277,15 +277,15 @@ test "face collect unicodes format12" {
     Err(err) => fail("collect unicodes error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  @debug.debug_inspect(set.to_sorted_array(), content="[97, 98, 99]")
+  inspect(set.to_sorted_array(), content="[97, 98, 99]")
   let map = match face.collect_nominal_glyph_mapping() {
     Err(err) => fail("collect mapping error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  @debug.debug_inspect(map.population(), content="3")
-  @debug.debug_inspect(map.get(0x61U), content="1")
-  @debug.debug_inspect(map.get(0x62U), content="2")
-  @debug.debug_inspect(map.get(0x63U), content="3")
+  inspect(map.population(), content="3")
+  inspect(map.get(0x61U), content="1")
+  inspect(map.get(0x62U), content="2")
+  inspect(map.get(0x63U), content="3")
 }
 
 ///|
@@ -300,5 +300,5 @@ test "face collect unicodes format4" {
     Err(err) => fail("collect unicodes error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  @debug.debug_inspect(set.to_sorted_array(), content="[97, 98, 99]")
+  inspect(set.to_sorted_array(), content="[97, 98, 99]")
 }

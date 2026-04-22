@@ -1160,5 +1160,5 @@ test "font draw glyph simple square" {
     Ok(value) => value
   }
   assert_true(ok)
-  @debug.debug_inspect(ops.join("|"), content="M0,0|L50,0|L50,50|L0,50|L0,0|Z")
+  inspect(ops.join("|"), content="M0,0|L50,0|L50,50|L0,50|L0,0|Z")
 }

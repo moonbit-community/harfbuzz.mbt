@@ -20,5 +20,5 @@ test "hangul actions classify jamo" {
   buffer.add_codepoint(0x11A8U)
   buffer.add_codepoint(0xAC00U)
   let actions = hangul_actions(buffer)
-  @debug.debug_inspect(actions, content="[0, 1, 2, 3]")
+  inspect(actions, content="[0, 1, 2, 3]")
 }

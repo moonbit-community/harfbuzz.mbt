@@ -15,159 +15,105 @@
 ///|
 test "tag construction" {
   let tag = Tag::from_chars('A', 'B', 'C', 'D')
-  @debug.debug_inspect(tag.to_string(), content="ABCD")
-  @debug.debug_inspect(tag_none.to_uint(), content="0")
+  inspect(tag.to_string(), content="ABCD")
+  inspect(tag_none.to_uint(), content="0")
   let padded = Tag::from_string("a")
-  @debug.debug_inspect(padded.to_string(), content="a   ")
+  inspect(padded.to_string(), content="a   ")
   let long = Tag::from_string("abcde")
-  @debug.debug_inspect(long.to_string(), content="abcd")
+  inspect(long.to_string(), content="abcd")
   let short_len = Tag::from_string("aBcDe", len=2)
-  @debug.debug_inspect(short_len.to_string(), content="aB  ")
+  inspect(short_len.to_string(), content="aB  ")
   let mid_len = Tag::from_string("aBcDe", len=3)
-  @debug.debug_inspect(mid_len.to_string(), content="aBc ")
+  inspect(mid_len.to_string(), content="aBc ")
   let zero_len = Tag::from_string("abcd", len=0)
-  @debug.debug_inspect(zero_len.to_uint(), content="0")
+  inspect(zero_len.to_uint(), content="0")
 }
 
 ///|
 test "direction parsing and helpers" {
   let dir = Direction::from_string("left-to-right")
-  @debug.debug_inspect(dir.to_string(), content="ltr")
+  inspect(dir.to_string(), content="ltr")
   assert_true(dir.is_horizontal())
   assert_true(dir.is_forward())
   let rev = dir.reverse()
-  @debug.debug_inspect(rev.to_string(), content="rtl")
+  inspect(rev.to_string(), content="rtl")
   assert_true(rev.is_backward())
-  @debug.debug_inspect(Direction::from_string("rtl").to_string(), content="rtl")
-  @debug.debug_inspect(
-    Direction::from_string("x").to_string(),
-    content="invalid",
-  )
-  @debug.debug_inspect(Direction::from_string("ttb").to_string(), content="ttb")
-  @debug.debug_inspect(
-    Direction::from_string("t", len=0).to_string(),
-    content="invalid",
-  )
+  inspect(Direction::from_string("rtl").to_string(), content="rtl")
+  inspect(Direction::from_string("x").to_string(), content="invalid")
+  inspect(Direction::from_string("ttb").to_string(), content="ttb")
+  inspect(Direction::from_string("t", len=0).to_string(), content="invalid")
   let invalid = Direction::from_string("")
-  @debug.debug_inspect(invalid.reverse().to_string(), content="invalid")
+  inspect(invalid.reverse().to_string(), content="invalid")
 }
 
 ///|
 test "language canonicalization" {
   let lang = Language::from_string("en-US")
-  @debug.debug_inspect(lang.to_string(), content="Some(\"en-us\")")
+  inspect(lang.to_string(), content="Some(\"en-us\")")
   let base = Language::from_string("en")
   assert_true(base.matches(lang))
   assert_true(!lang.matches(base))
   let zh = Language::from_string("zh_Hant")
-  @debug.debug_inspect(zh.to_string(), content="Some(\"zh-hant\")")
+  inspect(zh.to_string(), content="Some(\"zh-hant\")")
   let fa = Language::from_string("FA_ir")
-  @debug.debug_inspect(fa.to_string(), content="Some(\"fa-ir\")")
+  inspect(fa.to_string(), content="Some(\"fa-ir\")")
   let invalid = Language::from_string("")
-  @debug.debug_inspect(invalid.to_string(), content="None")
+  inspect(invalid.to_string(), content="None")
   let capped = Language::from_string("Enx", len=2)
-  @debug.debug_inspect(capped.to_string(), content="Some(\"en\")")
+  inspect(capped.to_string(), content="Some(\"en\")")
 }
 
 ///|
 test "script aliases and direction" {
   let latin = Script::from_string("Latn")
-  @debug.debug_inspect(latin.to_tag().to_string(), content="Latn")
+  inspect(latin.to_tag().to_string(), content="Latn")
   let hans = Script::from_string("HANS")
-  @debug.debug_inspect(hans.to_tag().to_string(), content="Hani")
+  inspect(hans.to_tag().to_string(), content="Hani")
   let inherited = Script::from_iso15924_tag(Tag::from_chars('Q', 'a', 'a', 'i'))
-  @debug.debug_inspect(inherited.to_tag().to_string(), content="Zinh")
+  inspect(inherited.to_tag().to_string(), content="Zinh")
   let arabic = Script::from_string("Arab")
-  @debug.debug_inspect(arabic.horizontal_direction().to_string(), content="rtl")
+  inspect(arabic.horizontal_direction().to_string(), content="rtl")
 }
 
 ///|
 test "script tag aliases" {
-  @debug.debug_inspect(
-    Script::from_string("Aran").to_tag().to_string(),
-    content="Arab",
-  )
-  @debug.debug_inspect(
-    Script::from_string("Cyrs").to_tag().to_string(),
-    content="Cyrl",
-  )
-  @debug.debug_inspect(
-    Script::from_string("Geok").to_tag().to_string(),
-    content="Geor",
-  )
-  @debug.debug_inspect(
-    Script::from_string("Latf").to_tag().to_string(),
-    content="Latn",
-  )
-  @debug.debug_inspect(
-    Script::from_string("Latg").to_tag().to_string(),
-    content="Latn",
-  )
-  @debug.debug_inspect(
-    Script::from_string("Syrn").to_tag().to_string(),
-    content="Syrc",
-  )
-  @debug.debug_inspect(
-    Script::from_string("Qaac").to_tag().to_string(),
-    content="Copt",
-  )
-  @debug.debug_inspect(
-    Script::from_string("Jamo").to_tag().to_string(),
-    content="Hang",
-  )
+  inspect(Script::from_string("Aran").to_tag().to_string(), content="Arab")
+  inspect(Script::from_string("Cyrs").to_tag().to_string(), content="Cyrl")
+  inspect(Script::from_string("Geok").to_tag().to_string(), content="Geor")
+  inspect(Script::from_string("Latf").to_tag().to_string(), content="Latn")
+  inspect(Script::from_string("Latg").to_tag().to_string(), content="Latn")
+  inspect(Script::from_string("Syrn").to_tag().to_string(), content="Syrc")
+  inspect(Script::from_string("Qaac").to_tag().to_string(), content="Copt")
+  inspect(Script::from_string("Jamo").to_tag().to_string(), content="Hang")
 }
 
 ///|
 test "script tag normalization" {
-  @debug.debug_inspect(
-    Script::from_string("zyyy").to_tag().to_string(),
-    content="Zyyy",
-  )
-  @debug.debug_inspect(
-    Script::from_string("zinh").to_tag().to_string(),
-    content="Zinh",
-  )
-  @debug.debug_inspect(
-    Script::from_string("zzzz").to_tag().to_string(),
-    content="Zzzz",
-  )
-  @debug.debug_inspect(
-    Script::from_string("kana").to_tag().to_string(),
-    content="Kana",
-  )
-  @debug.debug_inspect(
-    Script::from_string("math").to_tag().to_string(),
-    content="Math",
-  )
+  inspect(Script::from_string("zyyy").to_tag().to_string(), content="Zyyy")
+  inspect(Script::from_string("zinh").to_tag().to_string(), content="Zinh")
+  inspect(Script::from_string("zzzz").to_tag().to_string(), content="Zzzz")
+  inspect(Script::from_string("kana").to_tag().to_string(), content="Kana")
+  inspect(Script::from_string("math").to_tag().to_string(), content="Math")
 }
 
 ///|
 test "script unknown tags" {
   let custom = Script::from_string("wWyZ")
-  @debug.debug_inspect(custom.to_tag().to_string(), content="Wwyz")
+  inspect(custom.to_tag().to_string(), content="Wwyz")
   let unknown = Script::from_string("x123")
-  @debug.debug_inspect(unknown.to_tag().to_string(), content="Zzzz")
+  inspect(unknown.to_tag().to_string(), content="Zzzz")
   assert_true(Script::from_string("") == script_invalid)
 }
 
 ///|
 test "script horizontal direction mapping" {
-  @debug.debug_inspect(
+  inspect(
     script_old_italic.horizontal_direction().to_string(),
     content="invalid",
   )
-  @debug.debug_inspect(
-    script_tifinagh.horizontal_direction().to_string(),
-    content="invalid",
-  )
-  @debug.debug_inspect(
-    script_adlam.horizontal_direction().to_string(),
-    content="rtl",
-  )
-  @debug.debug_inspect(
-    script_latin.horizontal_direction().to_string(),
-    content="ltr",
-  )
+  inspect(script_tifinagh.horizontal_direction().to_string(), content="invalid")
+  inspect(script_adlam.horizontal_direction().to_string(), content="rtl")
+  inspect(script_latin.horizontal_direction().to_string(), content="ltr")
 }
 
 ///|
@@ -175,8 +121,8 @@ fn expect_parse_int(result : (Int, Int)?, value : Int, idx : Int) -> Unit raise 
   match result {
     None => fail("expected int parse")
     Some((parsed, next_idx)) => {
-      @debug.debug_inspect(parsed, content="\{value}")
-      @debug.debug_inspect(next_idx, content="\{idx}")
+      inspect(parsed, content="\{value}")
+      inspect(next_idx, content="\{idx}")
     }
   }
 }
@@ -190,8 +136,8 @@ fn expect_parse_uint(
   match result {
     None => fail("expected uint parse")
     Some((parsed, next_idx)) => {
-      @debug.debug_inspect(parsed, content="\{value}")
-      @debug.debug_inspect(next_idx, content="\{idx}")
+      inspect(parsed, content="\{value}")
+      inspect(next_idx, content="\{idx}")
     }
   }
 }
@@ -206,8 +152,8 @@ fn expect_parse_double(
     None => fail("expected double parse")
     Some((parsed, next_idx)) => {
       let rounded = (parsed * 1000.0).round().to_int()
-      @debug.debug_inspect(rounded, content="\{thousand}")
-      @debug.debug_inspect(next_idx, content="\{idx}")
+      inspect(rounded, content="\{thousand}")
+      inspect(next_idx, content="\{idx}")
     }
   }
 }
@@ -218,7 +164,7 @@ test "number parse int and uint" {
   expect_parse_uint(parse_uint("123", end=3), 123U, 3)
   expect_parse_uint(parse_uint("12F", end=3, whole=true, base=16), 0x12FU, 3)
   let whole_fail = parse_uint("12Fq", end=4, whole=true, base=16)
-  @debug.debug_inspect(whole_fail is None, content="true")
+  inspect(whole_fail is None, content="true")
   expect_parse_uint(parse_uint("12Fq", end=4, base=16), 0x12FU, 3)
   expect_parse_int(parse_int("-123", end=4), -123, 4)
   expect_parse_uint(parse_uint("123V", end=4), 123U, 3)
@@ -242,42 +188,39 @@ test "number parse double" {
 ///|
 test "codepoint set basics" {
   let set = CodepointSet::new()
-  @debug.debug_inspect(set.is_empty(), content="true")
+  inspect(set.is_empty(), content="true")
   assert_true(set.add_range(2U, 4U))
   set.add(10U)
   set.add_array([6U, 7U])
   assert_true(set.add_sorted_array([12U, 13U, 14U]))
   set.del(3U)
   set.del_range(10U, 11U)
-  @debug.debug_inspect(
-    set.to_sorted_array(),
-    content="[2, 4, 6, 7, 12, 13, 14]",
-  )
-  @debug.debug_inspect(set.population(), content="7")
-  @debug.debug_inspect(set.get_min(), content="2")
-  @debug.debug_inspect(set.get_max(), content="14")
+  inspect(set.to_sorted_array(), content="[2, 4, 6, 7, 12, 13, 14]")
+  inspect(set.population(), content="7")
+  inspect(set.get_min(), content="2")
+  inspect(set.get_max(), content="14")
 }
 
 ///|
 test "codepoint set empty state" {
   let set = CodepointSet::new()
-  @debug.debug_inspect(set.population(), content="0")
-  @debug.debug_inspect(set.get_min(), content="\{codepoint_invalid}")
-  @debug.debug_inspect(set.get_max(), content="\{codepoint_invalid}")
-  @debug.debug_inspect(set.next(), content="None")
-  @debug.debug_inspect(set.previous(), content="None")
-  @debug.debug_inspect(set.next_range(), content="None")
-  @debug.debug_inspect(set.previous_range(), content="None")
+  inspect(set.population(), content="0")
+  inspect(set.get_min(), content="\{codepoint_invalid}")
+  inspect(set.get_max(), content="\{codepoint_invalid}")
+  inspect(set.next(), content="None")
+  inspect(set.previous(), content="None")
+  inspect(set.next_range(), content="None")
+  inspect(set.previous_range(), content="None")
 }
 
 ///|
 test "codepoint set clear resets" {
   let set = CodepointSet::new()
   assert_true(set.add_range(10U, 12U))
-  @debug.debug_inspect(set.is_empty(), content="false")
+  inspect(set.is_empty(), content="false")
   set.clear()
-  @debug.debug_inspect(set.is_empty(), content="true")
-  @debug.debug_inspect(set.population(), content="0")
+  inspect(set.is_empty(), content="true")
+  inspect(set.population(), content="0")
 }
 
 ///|
@@ -286,22 +229,22 @@ test "codepoint set next and ranges" {
   assert_true(set.add_range(1U, 3U))
   set.add(5U)
   assert_true(set.add_range(7U, 8U))
-  @debug.debug_inspect(set.next(), content="Some(1)")
-  @debug.debug_inspect(set.next(after=2U), content="Some(3)")
-  @debug.debug_inspect(set.previous(before=7U), content="Some(5)")
-  @debug.debug_inspect(set.next_range(), content="Some((1, 3))")
-  @debug.debug_inspect(set.next_range(start=4U), content="Some((5, 5))")
-  @debug.debug_inspect(set.previous_range(end=8U), content="Some((7, 8))")
-  @debug.debug_inspect(set.intersects(2U, 4U), content="true")
-  @debug.debug_inspect(set.intersects(6U, 6U), content="false")
-  @debug.debug_inspect(set.next_many(after=1U, size=3), content="[2, 3, 5]")
+  inspect(set.next(), content="Some(1)")
+  inspect(set.next(after=2U), content="Some(3)")
+  inspect(set.previous(before=7U), content="Some(5)")
+  inspect(set.next_range(), content="Some((1, 3))")
+  inspect(set.next_range(start=4U), content="Some((5, 5))")
+  inspect(set.previous_range(end=8U), content="Some((7, 8))")
+  inspect(set.intersects(2U, 4U), content="true")
+  inspect(set.intersects(6U, 6U), content="false")
+  inspect(set.next_many(after=1U, size=3), content="[2, 3, 5]")
 }
 
 ///|
 test "codepoint set add_sorted_array rejects unsorted" {
   let set = CodepointSet::new()
-  @debug.debug_inspect(set.add_sorted_array([3U, 2U]), content="false")
-  @debug.debug_inspect(set.is_empty(), content="true")
+  inspect(set.add_sorted_array([3U, 2U]), content="false")
+  inspect(set.is_empty(), content="true")
 }
 
 ///|
@@ -311,53 +254,53 @@ test "codepoint set in-place ops" {
   let other = CodepointSet::new()
   other.add_array([3U, 4U, 5U])
   set.union_in_place(other)
-  @debug.debug_inspect(set.to_sorted_array(), content="[1, 2, 3, 4, 5]")
+  inspect(set.to_sorted_array(), content="[1, 2, 3, 4, 5]")
   let sub = CodepointSet::new()
   sub.add_array([2U, 5U])
   set.subtract_in_place(sub)
-  @debug.debug_inspect(set.to_sorted_array(), content="[1, 3, 4]")
+  inspect(set.to_sorted_array(), content="[1, 3, 4]")
   let keep = CodepointSet::new()
   keep.add_array([1U, 4U])
   set.intersect_in_place(keep)
-  @debug.debug_inspect(set.to_sorted_array(), content="[1, 4]")
+  inspect(set.to_sorted_array(), content="[1, 4]")
   let diff = CodepointSet::new()
   diff.add_array([4U, 6U])
   set.symmetric_difference_in_place(diff)
-  @debug.debug_inspect(set.to_sorted_array(), content="[1, 6]")
-  @debug.debug_inspect(set.hash() != 0, content="true")
+  inspect(set.to_sorted_array(), content="[1, 6]")
+  inspect(set.hash() != 0, content="true")
 }
 
 ///|
 test "codepoint map and bimap" {
   let map = CodepointMap::new()
   map.set(1U, 5U)
-  @debug.debug_inspect(map.get(1U), content="5")
-  @debug.debug_inspect(map.get(2U), content="\{map_value_invalid}")
-  @debug.debug_inspect(map.population(), content="1")
+  inspect(map.get(1U), content="5")
+  inspect(map.get(2U), content="\{map_value_invalid}")
+  inspect(map.population(), content="1")
   assert_true(map.has(1U))
   assert_true(!map.has(3U))
   map.set(1U, 7U)
-  @debug.debug_inspect(map.population(), content="1")
-  @debug.debug_inspect(map.get(1U), content="7")
+  inspect(map.population(), content="1")
+  inspect(map.get(1U), content="7")
   map.set(2U, 9U)
-  @debug.debug_inspect(map.population(), content="2")
+  inspect(map.population(), content="2")
   map.del(1U)
-  @debug.debug_inspect(map.get(1U), content="\{map_value_invalid}")
-  @debug.debug_inspect(map.population(), content="1")
+  inspect(map.get(1U), content="\{map_value_invalid}")
+  inspect(map.population(), content="1")
   map.clear()
-  @debug.debug_inspect(map.is_empty(), content="true")
+  inspect(map.is_empty(), content="true")
 
   let bimap = CodepointBiMap::new()
   bimap.set(3U, 9U)
-  @debug.debug_inspect(bimap.get(3U), content="9")
-  @debug.debug_inspect(bimap.backward(9U), content="3")
-  @debug.debug_inspect(bimap.population(), content="1")
+  inspect(bimap.get(3U), content="9")
+  inspect(bimap.backward(9U), content="3")
+  inspect(bimap.population(), content="1")
   assert_true(bimap.has(3U))
   assert_true(!bimap.has(4U))
   bimap.del(3U)
-  @debug.debug_inspect(bimap.get(3U), content="\{map_value_invalid}")
+  inspect(bimap.get(3U), content="\{map_value_invalid}")
   bimap.clear()
-  @debug.debug_inspect(bimap.is_empty(), content="true")
+  inspect(bimap.is_empty(), content="true")
 }
 
 ///|
@@ -365,10 +308,10 @@ test "codepoint map equality" {
   let map_a = CodepointMap::new()
   map_a.set(1U, 2U)
   let map_b = map_a.copy()
-  @debug.debug_inspect(map_a.is_equal(map_b), content="true")
+  inspect(map_a.is_equal(map_b), content="true")
   map_b.set(3U, 4U)
-  @debug.debug_inspect(map_a.is_equal(map_b), content="false")
-  @debug.debug_inspect(map_a.hash() != 0, content="true")
+  inspect(map_a.is_equal(map_b), content="false")
+  inspect(map_a.hash() != 0, content="true")
 }
 
 ///|
@@ -377,39 +320,39 @@ test "codepoint map next/keys values" {
   map.set(5U, 1U)
   map.set(2U, 3U)
   map.set(9U, 0U)
-  @debug.debug_inspect(map.next(), content="Some((0, 2, 3))")
-  @debug.debug_inspect(map.next(idx=0), content="Some((1, 5, 1))")
-  @debug.debug_inspect(map.next(idx=1), content="Some((2, 9, 0))")
-  @debug.debug_inspect(map.next(idx=2), content="None")
+  inspect(map.next(), content="Some((0, 2, 3))")
+  inspect(map.next(idx=0), content="Some((1, 5, 1))")
+  inspect(map.next(idx=1), content="Some((2, 9, 0))")
+  inspect(map.next(idx=2), content="None")
 
   let keys = map.keys_set().to_sorted_array()
   let values = map.values_set().to_sorted_array()
-  @debug.debug_inspect(keys, content="[2, 5, 9]")
-  @debug.debug_inspect(values, content="[0, 1, 3]")
+  inspect(keys, content="[2, 5, 9]")
+  inspect(values, content="[0, 1, 3]")
 }
 
 ///|
 test "codepoint incremental bimap" {
   let bimap = CodepointIncBiMap::new()
-  @debug.debug_inspect(bimap.add(10U), content="0")
-  @debug.debug_inspect(bimap.add(20U), content="1")
-  @debug.debug_inspect(bimap.skip(count=2), content="2")
-  @debug.debug_inspect(bimap.add(30U), content="4")
-  @debug.debug_inspect(bimap.backward(0U), content="10")
-  @debug.debug_inspect(bimap.backward(1U), content="20")
-  @debug.debug_inspect(bimap.backward(2U), content="\{map_value_invalid}")
-  @debug.debug_inspect(bimap.get_next_value(), content="5")
-  @debug.debug_inspect(bimap.identity(3), content="true")
-  @debug.debug_inspect(bimap.get(0U), content="0")
-  @debug.debug_inspect(bimap.get(2U), content="2")
+  inspect(bimap.add(10U), content="0")
+  inspect(bimap.add(20U), content="1")
+  inspect(bimap.skip(count=2), content="2")
+  inspect(bimap.add(30U), content="4")
+  inspect(bimap.backward(0U), content="10")
+  inspect(bimap.backward(1U), content="20")
+  inspect(bimap.backward(2U), content="\{map_value_invalid}")
+  inspect(bimap.get_next_value(), content="5")
+  inspect(bimap.identity(3), content="true")
+  inspect(bimap.get(0U), content="0")
+  inspect(bimap.get(2U), content="2")
   bimap.clear()
   ignore(bimap.add(5U))
   ignore(bimap.add(2U))
   ignore(bimap.add(9U))
   bimap.sort()
-  @debug.debug_inspect(bimap.get(2U), content="0")
-  @debug.debug_inspect(bimap.get(5U), content="1")
-  @debug.debug_inspect(bimap.get(9U), content="2")
+  inspect(bimap.get(2U), content="0")
+  inspect(bimap.get(5U), content="1")
+  inspect(bimap.get(9U), content="2")
 }
 
 ///|
@@ -422,7 +365,7 @@ test "serialize objects patch offsets" {
     Err(err) => fail("serialize failed: \{@debug.to_string(err)}")
     Ok(bytes) => {
       let ints = bytes.to_array().map(b => b.to_int())
-      @debug.debug_inspect(ints, content="[0, 4, 0, 0, 170, 187]")
+      inspect(ints, content="[0, 4, 0, 0, 170, 187]")
     }
   }
 }
@@ -435,9 +378,9 @@ test "serialize objects offsets" {
   match result {
     Err(err) => fail("serialize failed: \{@debug.to_string(err)}")
     Ok((bytes, starts)) => {
-      @debug.debug_inspect(starts, content="[0, 4]")
+      inspect(starts, content="[0, 4]")
       let ints = bytes.to_array().map(b => b.to_int())
-      @debug.debug_inspect(ints, content="[0, 0, 0, 0, 170, 187, 204]")
+      inspect(ints, content="[0, 0, 0, 0, 170, 187, 204]")
     }
   }
 }
@@ -467,7 +410,7 @@ test "serialize objects whence and signed offsets" {
     Err(err) => fail("serialize failed: \{@debug.to_string(err)}")
     Ok(bytes) => {
       let ints = bytes.to_array().map(b => b.to_int())
-      @debug.debug_inspect(ints, content="[0, 0, 0, 0, 17, 34]")
+      inspect(ints, content="[0, 0, 0, 0, 17, 34]")
     }
   }
 
@@ -481,7 +424,7 @@ test "serialize objects whence and signed offsets" {
     Err(err) => fail("serialize failed: \{@debug.to_string(err)}")
     Ok(bytes) => {
       let ints = bytes.to_array().map(b => b.to_int())
-      @debug.debug_inspect(ints, content="[0, 2, 170, 187]")
+      inspect(ints, content="[0, 2, 170, 187]")
     }
   }
 
@@ -493,7 +436,7 @@ test "serialize objects whence and signed offsets" {
     Err(err) => fail("serialize failed: \{@debug.to_string(err)}")
     Ok(bytes) => {
       let ints = bytes.to_array().map(b => b.to_int())
-      @debug.debug_inspect(ints, content="[0, 0, 255, 254]")
+      inspect(ints, content="[0, 0, 255, 254]")
     }
   }
 }
@@ -508,7 +451,7 @@ test "serialize objects bias and virtual order" {
     Err(err) => fail("serialize failed: \{@debug.to_string(err)}")
     Ok(bytes) => {
       let ints = bytes.to_array().map(b => b.to_int())
-      @debug.debug_inspect(ints, content="[0, 4, 51, 68]")
+      inspect(ints, content="[0, 4, 51, 68]")
     }
   }
 
@@ -534,7 +477,7 @@ test "serialize objects packed order" {
     Err(err) => fail("serialize failed: \{@debug.to_string(err)}")
     Ok(bytes) => {
       let ints = bytes.to_array().map(b => b.to_int())
-      @debug.debug_inspect(ints, content="[0, 2, 0, 0]")
+      inspect(ints, content="[0, 2, 0, 0]")
     }
   }
 }
@@ -558,7 +501,7 @@ test "serialize objects in order" {
     Err(err) => fail("serialize failed: \{@debug.to_string(err)}")
     Ok(bytes) => {
       let ints = bytes.to_array().map(b => b.to_int())
-      @debug.debug_inspect(ints, content="[0, 2, 0, 0]")
+      inspect(ints, content="[0, 2, 0, 0]")
     }
   }
 }
