@@ -28,13 +28,12 @@ pub fn Blob::memory_mode(Self) -> MemoryMode
 pub fn Blob::sub(Self, Int, Int) -> Result[Self, BlobError]
 pub fn Blob::to_bytes(Self) -> Bytes
 
-pub enum MemoryMode {
+pub(all) enum MemoryMode {
   Duplicate
   Readonly
   Writable
   ReadonlyMayMakeWritable
 } derive(Eq, ToJson, @debug.Debug)
-pub fn MemoryMode::all() -> Array[Self]
 
 // Type aliases
 

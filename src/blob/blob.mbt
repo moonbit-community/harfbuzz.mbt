@@ -14,18 +14,12 @@
 
 ///|
 /// Memory ownership mode for blob data.
-pub enum MemoryMode {
+pub(all) enum MemoryMode {
   Duplicate
   Readonly
   Writable
   ReadonlyMayMakeWritable
 } derive(Eq, Debug, ToJson)
-
-///|
-/// Return all supported memory ownership modes.
-pub fn MemoryMode::all() -> Array[MemoryMode] {
-  [Duplicate, Readonly, Writable, ReadonlyMayMakeWritable]
-}
 
 ///|
 suberror BlobError {
