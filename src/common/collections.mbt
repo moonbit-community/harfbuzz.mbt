@@ -25,7 +25,7 @@ pub struct CodepointSet {
 
 ///|
 pub fn CodepointSet::new() -> CodepointSet {
-  CodepointSet::{ set: Set::new() }
+  CodepointSet::{ set: Set([]) }
 }
 
 ///|
@@ -482,7 +482,7 @@ pub struct CodepointMap {
 
 ///|
 pub fn CodepointMap::new() -> CodepointMap {
-  CodepointMap::{ map: Map::new() }
+  CodepointMap::{ map: Map([]) }
 }
 
 ///|

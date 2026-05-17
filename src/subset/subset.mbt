@@ -2722,7 +2722,7 @@ pub fn build_plan(
     Err(err) => return Err(Face(err))
     Ok(value) =>
       match value {
-        None => Map::new()
+        None => Map([])
         Some(blob) => {
           let bytes = blob.as_view().to_owned().to_array()
           match parse_math_variant_refs(bytes) {
@@ -11156,7 +11156,7 @@ fn parse_math_variant_refs(
     Err(err) => return Err(err)
     Ok(value) => value
   }
-  let refs = Map::new()
+  let refs = Map([])
   if variants_offset == 0 {
     return Ok(refs)
   }
