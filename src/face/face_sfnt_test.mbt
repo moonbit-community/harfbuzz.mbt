@@ -247,7 +247,9 @@ test "face table tags listing" {
   for tag in tags0 {
     names0.push(tag.to_string())
   }
-  inspect(names0, content="[cvt , fpgm, gasp]")
+  @debug.debug_inspect(names0, content=(
+    #|["cvt ", "fpgm", "gasp"]
+  ))
   let (total1, tags1) = match face.table_tags(start_offset=1, count=1) {
     Err(err) => fail("table tags error: \{@debug.to_string(err)}")
     Ok(value) => value
@@ -257,7 +259,9 @@ test "face table tags listing" {
   for tag in tags1 {
     names1.push(tag.to_string())
   }
-  inspect(names1, content="[fpgm]")
+  @debug.debug_inspect(names1, content=(
+    #|["fpgm"]
+  ))
   let (total2, tags2) = match face.table_tags(start_offset=3, count=2) {
     Err(err) => fail("table tags error: \{@debug.to_string(err)}")
     Ok(value) => value
@@ -277,7 +281,7 @@ test "face collect unicodes format12" {
     Err(err) => fail("collect unicodes error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  inspect(set.to_sorted_array(), content="[97, 98, 99]")
+  @debug.debug_inspect(set.to_sorted_array(), content="[97, 98, 99]")
   let map = match face.collect_nominal_glyph_mapping() {
     Err(err) => fail("collect mapping error: \{@debug.to_string(err)}")
     Ok(value) => value
@@ -300,5 +304,5 @@ test "face collect unicodes format4" {
     Err(err) => fail("collect unicodes error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  inspect(set.to_sorted_array(), content="[97, 98, 99]")
+  @debug.debug_inspect(set.to_sorted_array(), content="[97, 98, 99]")
 }

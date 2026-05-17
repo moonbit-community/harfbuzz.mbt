@@ -52,7 +52,9 @@ test "buffer properties" {
   buffer.set_language(@common.Language::from_string("en"))
   inspect(buffer.get_direction().to_string(), content="ltr")
   inspect(buffer.get_script().to_tag().to_string(), content="Latn")
-  inspect(buffer.get_language().to_string(), content="Some(en)")
+  @debug.debug_inspect(buffer.get_language().to_string(), content=(
+    #|Some("en")
+  ))
 }
 
 ///|
@@ -127,11 +129,20 @@ test "buffer feature list honors manual override" {
 ///|
 test "buffer variation selector fallback" {
   let buffer = Buffer::new()
-  inspect(buffer.get_not_found_variation_selector(), content="None")
+  @debug.debug_inspect(
+    buffer.get_not_found_variation_selector(),
+    content="None",
+  )
   buffer.set_not_found_variation_selector(Some(5U))
-  inspect(buffer.get_not_found_variation_selector(), content="Some(5)")
+  @debug.debug_inspect(
+    buffer.get_not_found_variation_selector(),
+    content="Some(5)",
+  )
   buffer.set_not_found_variation_selector(None)
-  inspect(buffer.get_not_found_variation_selector(), content="None")
+  @debug.debug_inspect(
+    buffer.get_not_found_variation_selector(),
+    content="None",
+  )
 }
 
 ///|
@@ -145,7 +156,9 @@ test "buffer clear preserves properties" {
   inspect(buffer.len(), content="0")
   inspect(buffer.get_direction().to_string(), content="rtl")
   inspect(buffer.get_script().to_tag().to_string(), content="Arab")
-  inspect(buffer.get_language().to_string(), content="Some(fa)")
+  @debug.debug_inspect(buffer.get_language().to_string(), content=(
+    #|Some("fa")
+  ))
 }
 
 ///|
@@ -159,7 +172,7 @@ test "buffer merge clusters" {
   for info in buffer.infos() {
     clusters.push(info.cluster)
   }
-  inspect(clusters, content="[3, 3, 3]")
+  @debug.debug_inspect(clusters, content="[3, 3, 3]")
 }
 
 ///|
@@ -213,7 +226,9 @@ test "buffer guess segment properties" {
   buffer.set_script(@common.script_arabic)
   buffer.guess_segment_properties()
   inspect(buffer.get_direction().to_string(), content="rtl")
-  inspect(buffer.get_language().to_string(), content="Some(und)")
+  @debug.debug_inspect(buffer.get_language().to_string(), content=(
+    #|Some("und")
+  ))
 }
 
 ///|
@@ -236,7 +251,7 @@ test "buffer normalize combining marks" {
   for info in buffer.infos() {
     cps.push(info.codepoint)
   }
-  inspect(cps, content="[225, 807]")
+  @debug.debug_inspect(cps, content="[225, 807]")
 }
 
 ///|
@@ -249,7 +264,7 @@ test "buffer normalize compose" {
   for info in buffer.infos() {
     cps.push(info.codepoint)
   }
-  inspect(cps, content="[193]")
+  @debug.debug_inspect(cps, content="[193]")
 }
 
 ///|
@@ -265,8 +280,8 @@ test "buffer normalize skips variation selectors" {
     cps.push(info.codepoint)
     clusters.push(info.cluster)
   }
-  inspect(cps, content="[65, 769, 65039]")
-  inspect(clusters, content="[0, 1, 1]")
+  @debug.debug_inspect(cps, content="[65, 769, 65039]")
+  @debug.debug_inspect(clusters, content="[0, 1, 1]")
 }
 
 ///|
@@ -280,7 +295,7 @@ test "buffer normalize indic compose exception" {
   for info in buffer.infos() {
     cps.push(info.codepoint)
   }
-  inspect(cps, content="[2527]")
+  @debug.debug_inspect(cps, content="[2527]")
 }
 
 ///|
@@ -294,7 +309,7 @@ test "buffer normalize indic skip mark-base compose" {
   for info in buffer.infos() {
     cps.push(info.codepoint)
   }
-  inspect(cps, content="[776, 769]")
+  @debug.debug_inspect(cps, content="[776, 769]")
 }
 
 ///|
@@ -310,7 +325,7 @@ test "buffer normalize hebrew reorder" {
   for info in buffer.infos() {
     cps.push(info.codepoint)
   }
-  inspect(cps, content="[64302, 1469, 1456]")
+  @debug.debug_inspect(cps, content="[64302, 1469, 1456]")
 }
 
 ///|
@@ -324,7 +339,7 @@ test "buffer normalize hebrew compose" {
   for info in buffer.infos() {
     cps.push(info.codepoint)
   }
-  inspect(cps, content="[64304]")
+  @debug.debug_inspect(cps, content="[64304]")
 }
 
 ///|
@@ -339,7 +354,7 @@ test "buffer normalize arabic reorder" {
   for info in buffer.infos() {
     cps.push(info.codepoint)
   }
-  inspect(cps, content="[1576, 1621, 1618]")
+  @debug.debug_inspect(cps, content="[1576, 1621, 1618]")
 }
 
 ///|
@@ -354,7 +369,7 @@ test "buffer normalize hangul compose" {
   for info in buffer.infos() {
     cps.push(info.codepoint)
   }
-  inspect(cps, content="[44033]")
+  @debug.debug_inspect(cps, content="[44033]")
 }
 
 ///|
@@ -368,7 +383,7 @@ test "buffer normalize hangul tone mark" {
   for info in buffer.infos() {
     cps.push(info.codepoint)
   }
-  inspect(cps, content="[12334, 44032]")
+  @debug.debug_inspect(cps, content="[12334, 44032]")
 }
 
 ///|

@@ -42,7 +42,7 @@ test "layout table header and lists" {
     Err(err) => fail("select error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  inspect(selected, content="[48]")
+  @debug.debug_inspect(selected, content="[48]")
   let filtered = match
     layout.select_lookup_offsets_with_features(
       @common.Tag::from_chars('l', 'a', 't', 'n'),
@@ -60,7 +60,7 @@ test "layout table header and lists" {
     Err(err) => fail("select error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  inspect(single, content="[48]")
+  @debug.debug_inspect(single, content="[48]")
   let missing = match
     layout.select_lookup_offsets_for_feature(
       @common.Tag::from_chars('l', 'a', 't', 'n'),

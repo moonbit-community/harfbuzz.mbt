@@ -49,18 +49,26 @@ test "direction parsing and helpers" {
 ///|
 test "language canonicalization" {
   let lang = Language::from_string("en-US")
-  inspect(lang.to_string(), content="Some(en-us)")
+  @debug.debug_inspect(lang.to_string(), content=(
+    #|Some("en-us")
+  ))
   let base = Language::from_string("en")
   assert_true(base.matches(lang))
   assert_true(!lang.matches(base))
   let zh = Language::from_string("zh_Hant")
-  inspect(zh.to_string(), content="Some(zh-hant)")
+  @debug.debug_inspect(zh.to_string(), content=(
+    #|Some("zh-hant")
+  ))
   let fa = Language::from_string("FA_ir")
-  inspect(fa.to_string(), content="Some(fa-ir)")
+  @debug.debug_inspect(fa.to_string(), content=(
+    #|Some("fa-ir")
+  ))
   let invalid = Language::from_string("")
-  inspect(invalid.to_string(), content="None")
+  @debug.debug_inspect(invalid.to_string(), content="None")
   let capped = Language::from_string("Enx", len=2)
-  inspect(capped.to_string(), content="Some(en)")
+  @debug.debug_inspect(capped.to_string(), content=(
+    #|Some("en")
+  ))
 }
 
 ///|
@@ -195,7 +203,10 @@ test "codepoint set basics" {
   assert_true(set.add_sorted_array([12U, 13U, 14U]))
   set.del(3U)
   set.del_range(10U, 11U)
-  inspect(set.to_sorted_array(), content="[2, 4, 6, 7, 12, 13, 14]")
+  @debug.debug_inspect(
+    set.to_sorted_array(),
+    content="[2, 4, 6, 7, 12, 13, 14]",
+  )
   inspect(set.population(), content="7")
   inspect(set.get_min(), content="2")
   inspect(set.get_max(), content="14")
@@ -207,10 +218,10 @@ test "codepoint set empty state" {
   inspect(set.population(), content="0")
   inspect(set.get_min(), content="\{codepoint_invalid}")
   inspect(set.get_max(), content="\{codepoint_invalid}")
-  inspect(set.next(), content="None")
-  inspect(set.previous(), content="None")
-  inspect(set.next_range(), content="None")
-  inspect(set.previous_range(), content="None")
+  @debug.debug_inspect(set.next(), content="None")
+  @debug.debug_inspect(set.previous(), content="None")
+  @debug.debug_inspect(set.next_range(), content="None")
+  @debug.debug_inspect(set.previous_range(), content="None")
 }
 
 ///|
@@ -229,15 +240,15 @@ test "codepoint set next and ranges" {
   assert_true(set.add_range(1U, 3U))
   set.add(5U)
   assert_true(set.add_range(7U, 8U))
-  inspect(set.next(), content="Some(1)")
-  inspect(set.next(after=2U), content="Some(3)")
-  inspect(set.previous(before=7U), content="Some(5)")
-  inspect(set.next_range(), content="Some((1, 3))")
-  inspect(set.next_range(start=4U), content="Some((5, 5))")
-  inspect(set.previous_range(end=8U), content="Some((7, 8))")
+  @debug.debug_inspect(set.next(), content="Some(1)")
+  @debug.debug_inspect(set.next(after=2U), content="Some(3)")
+  @debug.debug_inspect(set.previous(before=7U), content="Some(5)")
+  @debug.debug_inspect(set.next_range(), content="Some((1, 3))")
+  @debug.debug_inspect(set.next_range(start=4U), content="Some((5, 5))")
+  @debug.debug_inspect(set.previous_range(end=8U), content="Some((7, 8))")
   inspect(set.intersects(2U, 4U), content="true")
   inspect(set.intersects(6U, 6U), content="false")
-  inspect(set.next_many(after=1U, size=3), content="[2, 3, 5]")
+  @debug.debug_inspect(set.next_many(after=1U, size=3), content="[2, 3, 5]")
 }
 
 ///|
@@ -254,19 +265,19 @@ test "codepoint set in-place ops" {
   let other = CodepointSet::new()
   other.add_array([3U, 4U, 5U])
   set.union_in_place(other)
-  inspect(set.to_sorted_array(), content="[1, 2, 3, 4, 5]")
+  @debug.debug_inspect(set.to_sorted_array(), content="[1, 2, 3, 4, 5]")
   let sub = CodepointSet::new()
   sub.add_array([2U, 5U])
   set.subtract_in_place(sub)
-  inspect(set.to_sorted_array(), content="[1, 3, 4]")
+  @debug.debug_inspect(set.to_sorted_array(), content="[1, 3, 4]")
   let keep = CodepointSet::new()
   keep.add_array([1U, 4U])
   set.intersect_in_place(keep)
-  inspect(set.to_sorted_array(), content="[1, 4]")
+  @debug.debug_inspect(set.to_sorted_array(), content="[1, 4]")
   let diff = CodepointSet::new()
   diff.add_array([4U, 6U])
   set.symmetric_difference_in_place(diff)
-  inspect(set.to_sorted_array(), content="[1, 6]")
+  @debug.debug_inspect(set.to_sorted_array(), content="[1, 6]")
   inspect(set.hash() != 0, content="true")
 }
 
@@ -320,15 +331,15 @@ test "codepoint map next/keys values" {
   map.set(5U, 1U)
   map.set(2U, 3U)
   map.set(9U, 0U)
-  inspect(map.next(), content="Some((0, 2, 3))")
-  inspect(map.next(idx=0), content="Some((1, 5, 1))")
-  inspect(map.next(idx=1), content="Some((2, 9, 0))")
-  inspect(map.next(idx=2), content="None")
+  @debug.debug_inspect(map.next(), content="Some((0, 2, 3))")
+  @debug.debug_inspect(map.next(idx=0), content="Some((1, 5, 1))")
+  @debug.debug_inspect(map.next(idx=1), content="Some((2, 9, 0))")
+  @debug.debug_inspect(map.next(idx=2), content="None")
 
   let keys = map.keys_set().to_sorted_array()
   let values = map.values_set().to_sorted_array()
-  inspect(keys, content="[2, 5, 9]")
-  inspect(values, content="[0, 1, 3]")
+  @debug.debug_inspect(keys, content="[2, 5, 9]")
+  @debug.debug_inspect(values, content="[0, 1, 3]")
 }
 
 ///|
@@ -365,7 +376,7 @@ test "serialize objects patch offsets" {
     Err(err) => fail("serialize failed: \{@debug.to_string(err)}")
     Ok(bytes) => {
       let ints = bytes.to_array().map(b => b.to_int())
-      inspect(ints, content="[0, 4, 0, 0, 170, 187]")
+      @debug.debug_inspect(ints, content="[0, 4, 0, 0, 170, 187]")
     }
   }
 }
@@ -378,9 +389,9 @@ test "serialize objects offsets" {
   match result {
     Err(err) => fail("serialize failed: \{@debug.to_string(err)}")
     Ok((bytes, starts)) => {
-      inspect(starts, content="[0, 4]")
+      @debug.debug_inspect(starts, content="[0, 4]")
       let ints = bytes.to_array().map(b => b.to_int())
-      inspect(ints, content="[0, 0, 0, 0, 170, 187, 204]")
+      @debug.debug_inspect(ints, content="[0, 0, 0, 0, 170, 187, 204]")
     }
   }
 }
@@ -410,7 +421,7 @@ test "serialize objects whence and signed offsets" {
     Err(err) => fail("serialize failed: \{@debug.to_string(err)}")
     Ok(bytes) => {
       let ints = bytes.to_array().map(b => b.to_int())
-      inspect(ints, content="[0, 0, 0, 0, 17, 34]")
+      @debug.debug_inspect(ints, content="[0, 0, 0, 0, 17, 34]")
     }
   }
 
@@ -424,7 +435,7 @@ test "serialize objects whence and signed offsets" {
     Err(err) => fail("serialize failed: \{@debug.to_string(err)}")
     Ok(bytes) => {
       let ints = bytes.to_array().map(b => b.to_int())
-      inspect(ints, content="[0, 2, 170, 187]")
+      @debug.debug_inspect(ints, content="[0, 2, 170, 187]")
     }
   }
 
@@ -436,7 +447,7 @@ test "serialize objects whence and signed offsets" {
     Err(err) => fail("serialize failed: \{@debug.to_string(err)}")
     Ok(bytes) => {
       let ints = bytes.to_array().map(b => b.to_int())
-      inspect(ints, content="[0, 0, 255, 254]")
+      @debug.debug_inspect(ints, content="[0, 0, 255, 254]")
     }
   }
 }
@@ -451,7 +462,7 @@ test "serialize objects bias and virtual order" {
     Err(err) => fail("serialize failed: \{@debug.to_string(err)}")
     Ok(bytes) => {
       let ints = bytes.to_array().map(b => b.to_int())
-      inspect(ints, content="[0, 4, 51, 68]")
+      @debug.debug_inspect(ints, content="[0, 4, 51, 68]")
     }
   }
 
@@ -477,7 +488,7 @@ test "serialize objects packed order" {
     Err(err) => fail("serialize failed: \{@debug.to_string(err)}")
     Ok(bytes) => {
       let ints = bytes.to_array().map(b => b.to_int())
-      inspect(ints, content="[0, 2, 0, 0]")
+      @debug.debug_inspect(ints, content="[0, 2, 0, 0]")
     }
   }
 }
@@ -501,7 +512,7 @@ test "serialize objects in order" {
     Err(err) => fail("serialize failed: \{@debug.to_string(err)}")
     Ok(bytes) => {
       let ints = bytes.to_array().map(b => b.to_int())
-      inspect(ints, content="[0, 2, 0, 0]")
+      @debug.debug_inspect(ints, content="[0, 2, 0, 0]")
     }
   }
 }

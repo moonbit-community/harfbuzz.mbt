@@ -33,5 +33,5 @@ test "khmer reorder coeng ro and vpre" {
   for info in buffer.infos() {
     result.push(info.codepoint)
   }
-  inspect(result, content="[11, 12, 13, 10, 14]")
+  @debug.debug_inspect(result, content="[11, 12, 13, 10, 14]")
 }

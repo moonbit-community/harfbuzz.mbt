@@ -29,7 +29,7 @@ test "use reorder repha before post-base" {
   for info in buffer.infos() {
     result.push(info.codepoint)
   }
-  inspect(result, content="[11, 10, 12]")
+  @debug.debug_inspect(result, content="[11, 10, 12]")
 }
 
 ///|
@@ -50,7 +50,7 @@ test "use reorder vpre after halant" {
   for info in buffer.infos() {
     result.push(info.codepoint)
   }
-  inspect(result, content="[20, 21, 23, 22]")
+  @debug.debug_inspect(result, content="[20, 21, 23, 22]")
 }
 
 ///|

@@ -561,8 +561,8 @@ test "hmtx table parse" {
     Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  inspect(hmtx.advances, content="[200, 300, 300]")
-  inspect(hmtx.lsbs, content="[10, 20, 30]")
+  @debug.debug_inspect(hmtx.advances, content="[200, 300, 300]")
+  @debug.debug_inspect(hmtx.lsbs, content="[10, 20, 30]")
 }
 
 ///|
@@ -580,8 +580,8 @@ test "vmtx table parse" {
     Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  inspect(vmtx.advances, content="[700, 800, 800]")
-  inspect(vmtx.tsbs, content="[5, 6, 7]")
+  @debug.debug_inspect(vmtx.advances, content="[700, 800, 800]")
+  @debug.debug_inspect(vmtx.tsbs, content="[5, 6, 7]")
 }
 
 ///|
@@ -622,8 +622,8 @@ test "kern table parse" {
     Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  inspect(kern.kern_value(1U, 2U), content="Some(-50)")
-  inspect(kern.kern_value(2U, 1U), content="None")
+  @debug.debug_inspect(kern.kern_value(1U, 2U), content="Some(-50)")
+  @debug.debug_inspect(kern.kern_value(2U, 1U), content="None")
 }
 
 ///|
@@ -632,8 +632,8 @@ test "kern table format2 parse" {
     Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  inspect(kern.kern_value(1U, 1U), content="Some(-30)")
-  inspect(kern.kern_value(2U, 2U), content="Some(0)")
+  @debug.debug_inspect(kern.kern_value(1U, 1U), content="Some(-30)")
+  @debug.debug_inspect(kern.kern_value(2U, 2U), content="Some(0)")
 }
 
 ///|
@@ -642,8 +642,8 @@ test "kern table format3 parse" {
     Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  inspect(kern.kern_value(1U, 1U), content="Some(-40)")
-  inspect(kern.kern_value(0U, 1U), content="Some(0)")
+  @debug.debug_inspect(kern.kern_value(1U, 1U), content="Some(-40)")
+  @debug.debug_inspect(kern.kern_value(0U, 1U), content="Some(0)")
 }
 
 ///|
@@ -668,12 +668,12 @@ test "os2 table parse v2" {
     Ok(value) => value
   }
   inspect(os2.version, content="2")
-  inspect(os2.code_page_range_1, content="Some(1)")
-  inspect(os2.code_page_range_2, content="Some(2)")
-  inspect(os2.x_height, content="Some(500)")
-  inspect(os2.cap_height, content="Some(700)")
-  inspect(os2.break_char, content="Some(32)")
-  inspect(os2.max_context, content="Some(4)")
+  @debug.debug_inspect(os2.code_page_range_1, content="Some(1)")
+  @debug.debug_inspect(os2.code_page_range_2, content="Some(2)")
+  @debug.debug_inspect(os2.x_height, content="Some(500)")
+  @debug.debug_inspect(os2.cap_height, content="Some(700)")
+  @debug.debug_inspect(os2.break_char, content="Some(32)")
+  @debug.debug_inspect(os2.max_context, content="Some(4)")
 }
 
 ///|
@@ -707,8 +707,10 @@ test "post table parse v2" {
     None => fail("missing custom names")
     Some(value) => value
   }
-  inspect(indices, content="[258]")
-  inspect(names, content="[b\"foo\"]")
+  @debug.debug_inspect(indices, content="[258]")
+  @debug.debug_inspect(names, content=(
+    #|[<Bytes: [0x66, 0x6f, 0x6f]>]
+  ))
 }
 
 ///|
@@ -718,9 +720,9 @@ test "gasp table parse" {
     Ok(value) => value
   }
   inspect(gasp.version, content="1")
-  inspect(gasp.behavior_for_ppem(7), content="Some(1)")
-  inspect(gasp.behavior_for_ppem(16), content="Some(3)")
-  inspect(gasp.behavior_for_ppem(20), content="None")
+  @debug.debug_inspect(gasp.behavior_for_ppem(7), content="Some(1)")
+  @debug.debug_inspect(gasp.behavior_for_ppem(16), content="Some(3)")
+  @debug.debug_inspect(gasp.behavior_for_ppem(20), content="None")
 }
 
 ///|
@@ -759,7 +761,7 @@ test "hdmx table parse" {
   let record = hdmx.records[0]
   inspect(record.pixel_size, content="12")
   inspect(record.max_width, content="8")
-  inspect(record.widths, content="[3, 4, 5, 6]")
+  @debug.debug_inspect(record.widths, content="[3, 4, 5, 6]")
 }
 
 ///|
@@ -835,7 +837,7 @@ test "jstf table parse" {
     None => fail("missing script")
     Some(value) => value
   }
-  inspect(script.extender_glyphs, content="[3]")
+  @debug.debug_inspect(script.extender_glyphs, content="[3]")
   let lang_sys = match script.default_lang_sys {
     None => fail("missing default lang sys")
     Some(value) => value
@@ -854,8 +856,8 @@ test "math table parse" {
     None => fail("missing constants")
     Some(value) => value
   }
-  inspect(constants.percent_scale_down, content="[80, 60]")
-  inspect(constants.min_height, content="[500, 700]")
+  @debug.debug_inspect(constants.percent_scale_down, content="[80, 60]")
+  @debug.debug_inspect(constants.min_height, content="[500, 700]")
   inspect(constants.radical_degree_bottom_raise_percent, content="45")
   let info = match math.glyph_info {
     None => fail("missing glyph info")

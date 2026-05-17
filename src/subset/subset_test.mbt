@@ -5279,7 +5279,7 @@ test "subset cff1 outlines" {
       }
     }
   }
-  assert_eq(components, expected_components)
+  @debug.assert_eq(components, expected_components)
 }
 
 ///|

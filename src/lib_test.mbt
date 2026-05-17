@@ -15,7 +15,7 @@
 ///|
 test "version api" {
   let (major, minor, micro) = version_tuple()
-  inspect((major, minor, micro), content="(0, 0, 0)")
+  @debug.debug_inspect((major, minor, micro), content="(0, 0, 0)")
   let expected = "\{major}.\{minor}.\{micro}"
   inspect(version, content=expected)
   inspect(version_string(), content=expected)
