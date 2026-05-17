@@ -761,7 +761,7 @@ fn dump_dir_checksum_diff(expected : Bytes, actual : Bytes) -> Unit {
                     let act_checksum = read_u32_dbg(actual[:], act_base + 4)
                     if exp_checksum != act_checksum {
                       println(
-                        "  dir checksum diff \{tag} exp=\{exp_checksum} act=\{act_checksum}",
+                        "  dir checksum diff \{tag} exp=\{@debug.to_string(exp_checksum)} act=\{@debug.to_string(act_checksum)}",
                       )
                     }
                     break
@@ -800,7 +800,7 @@ fn dump_dir_offset_diff(expected : Bytes, actual : Bytes) -> Unit {
                     let act_len = read_u32_dbg(actual[:], act_base + 12)
                     if exp_offset != act_offset || exp_len != act_len {
                       println(
-                        "  dir offset diff \{tag} exp=\{exp_offset}/\{exp_len} act=\{act_offset}/\{act_len}",
+                        "  dir offset diff \{tag} exp=\{@debug.to_string(exp_offset)}/\{@debug.to_string(exp_len)} act=\{@debug.to_string(act_offset)}/\{@debug.to_string(act_len)}",
                       )
                     }
                     break

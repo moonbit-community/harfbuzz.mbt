@@ -58,7 +58,7 @@ test "fvar parse and normalize" {
   inspect(min_thousand, content="-1000")
   inspect(max_thousand, content="1000")
   let normalized = fvar.normalize_design_coords([0.5])
-  inspect(normalized, content="[32768]")
+  @debug.debug_inspect(normalized, content="[32768]")
 }
 
 ///|
@@ -68,5 +68,5 @@ test "avar map coords" {
     Ok(value) => value
   }
   let mapped = avar.map_coords_16_16([32768])
-  inspect(mapped, content="[49152]")
+  @debug.debug_inspect(mapped, content="[49152]")
 }

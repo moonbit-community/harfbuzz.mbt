@@ -14,7 +14,9 @@
 
 ///|
 test "shape available shapers" {
-  inspect(available_shapers(), content="[ot, aat, fallback]")
+  @debug.debug_inspect(available_shapers(), content=(
+    #|["ot", "aat", "fallback"]
+  ))
 }
 
 ///|

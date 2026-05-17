@@ -40,7 +40,7 @@ test "aat morx contextual apply lookup" {
   let clusters : Array[Int] = [0, 1]
   let changed = subtable.apply(glyphs, clusters, true)
   assert_true(changed)
-  assert_eq(glyphs, [3U, 4U])
+  @debug.assert_eq(glyphs, [3U, 4U])
 }
 
 ///|
@@ -77,8 +77,8 @@ test "aat morx ligature apply extended" {
   let clusters : Array[Int] = [0, 1]
   let changed = subtable.apply(glyphs, clusters, true)
   assert_true(changed)
-  assert_eq(glyphs, [5U])
-  assert_eq(clusters, [0])
+  @debug.assert_eq(glyphs, [5U])
+  @debug.assert_eq(clusters, [0])
 }
 
 ///|
@@ -107,6 +107,6 @@ test "aat morx insertion apply" {
   let clusters : Array[Int] = [0]
   let changed = subtable.apply(glyphs, clusters, true)
   assert_true(changed)
-  assert_eq(glyphs, [1U, 9U])
-  assert_eq(clusters, [0, 0])
+  @debug.assert_eq(glyphs, [1U, 9U])
+  @debug.assert_eq(clusters, [0, 0])
 }

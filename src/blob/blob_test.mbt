@@ -17,7 +17,9 @@ test "blob basics" {
   let bytes : Bytes = [0x00, 0x01, 0x02, 0x03]
   let blob = Blob::from_bytes(bytes)
   @debug.debug_inspect(blob.len(), content="4")
-  inspect(blob.get(2), content="Some(b'\\x02')")
+  @debug.debug_inspect(blob.get(2), content=(
+    #|Some(0x02)
+  ))
   @debug.debug_inspect(blob.get(5), content="None")
 }
 

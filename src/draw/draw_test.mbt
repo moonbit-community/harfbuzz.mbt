@@ -54,7 +54,7 @@ test "draw extents funcs" {
   session.move_to(10.0, 20.0)
   session.line_to(30.0, 40.0)
   session.quadratic_to(40.0, 50.0, 60.0, 70.0)
-  inspect(
+  @debug.debug_inspect(
     (
       extents.xmin.to_int(),
       extents.ymin.to_int(),
@@ -74,7 +74,7 @@ test "outline recording and replay" {
   session.line_to(10.0, 0.0)
   session.line_to(10.0, 10.0)
   session.close_path()
-  inspect(outline.contours, content="[4]")
+  @debug.debug_inspect(outline.contours, content="[4]")
   let ops : Array[String] = []
   let pen : DrawFuncs[Array[String]] = DrawFuncs::new()
   pen.set_move_to(
