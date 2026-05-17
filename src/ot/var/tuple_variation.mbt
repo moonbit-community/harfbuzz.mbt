@@ -422,7 +422,7 @@ pub fn TupleVariationData::parse(
         shared_points,
         shared_points_size,
         data_offset,
-        data: data.to_bytes(),
+        data: data.to_owned(),
       })
     }
   }

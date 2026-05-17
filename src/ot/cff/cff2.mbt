@@ -140,7 +140,7 @@ pub fn Cff2Table::parse(data : BytesView) -> Result[Cff2Table, CffError] {
         }
       }
       Ok(Cff2Table::{
-        data: data.to_bytes(),
+        data: data.to_owned(),
         top_dict,
         global_subrs,
         charstrings,
@@ -385,7 +385,7 @@ fn cff2_var_store_bytes(
   if offset + 2 + size > data.length() {
     return Err(UnexpectedEof)
   }
-  let bytes = data[offset:offset + 2 + size].to_bytes()
+  let bytes = data[offset:offset + 2 + size].to_owned()
   Ok(Some(bytes))
 }
 

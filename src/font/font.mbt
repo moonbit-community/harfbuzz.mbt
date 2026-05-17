@@ -1437,7 +1437,7 @@ pub fn Font::cvt_values(self : Font) -> Result[Array[Int]?, FontError] {
     Ok(None) => return Ok(None)
     Ok(Some(value)) => value
   }
-  let base = cvt.values().to_array()
+  let base = cvt.values().to_owned()
   match self.var_coords_norm {
     None => Ok(Some(base))
     Some(coords) =>

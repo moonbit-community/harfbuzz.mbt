@@ -51,7 +51,7 @@ pub fn AnkrTable::parse(
         Err(err) => return Err(err)
         Ok(value) => value
       }
-      Ok(AnkrTable::{ version, lookup, anchor_offset, data: data.to_bytes() })
+      Ok(AnkrTable::{ version, lookup, anchor_offset, data: data.to_owned() })
     }
   }
 }

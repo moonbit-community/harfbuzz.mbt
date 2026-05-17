@@ -34,5 +34,5 @@ test "cvt parse" {
     Err(err) => fail("parse failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  @debug.debug_inspect(table.values().to_array(), content="[100, -200, 0]")
+  @debug.debug_inspect(table.values().to_owned(), content="[100, -200, 0]")
 }

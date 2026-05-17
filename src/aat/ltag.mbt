@@ -67,7 +67,7 @@ pub fn LtagTable::parse(data : BytesView) -> Result[LtagTable, AatError] {
               return Err(UnexpectedEof)
             }
             let slice = data[start:end]
-            tags.push(slice.to_bytes())
+            tags.push(slice.to_owned())
           }
         }
       }

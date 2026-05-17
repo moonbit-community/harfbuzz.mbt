@@ -276,7 +276,7 @@ fn parse_var_data(data : BytesView, offset : Int) -> Result[VarData, VarError] {
       if data_offset < 0 || data_offset + total_bytes > data.length() {
         return Err(UnexpectedEof)
       }
-      let deltas = data[data_offset:data_offset + total_bytes].to_bytes()
+      let deltas = data[data_offset:data_offset + total_bytes].to_owned()
       Ok(VarData::{ item_count, word_count, long_words, region_indices, deltas })
     }
   }
