@@ -61,7 +61,7 @@ pub fn face_count(blob : @blob.Blob) -> Int {
 ///|
 /// Create a face from a blob.
 pub fn Face::new(blob : @blob.Blob, index? : Int = 0) -> Face {
-  Face::{ blob, index, upem: 0, glyph_count: 0, tables: Map::new() }
+  Face::{ blob, index, upem: 0, glyph_count: 0, tables: Map([]) }
 }
 
 ///|
@@ -81,7 +81,7 @@ pub fn Face::reference_blob(self : Face) -> @blob.Blob {
 pub fn Face::set_index(self : Face, index : Int) -> Unit {
   if self.index != index {
     self.index = index
-    self.tables = Map::new()
+    self.tables = Map([])
     self.upem = 0
     self.glyph_count = 0
   }
