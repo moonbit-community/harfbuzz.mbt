@@ -708,9 +708,12 @@ test "post table parse v2" {
     Some(value) => value
   }
   @debug.debug_inspect(indices, content="[258]")
-  @debug.debug_inspect(names, content=(
-    #|[<Bytes: [0x66, 0x6f, 0x6f]>]
-  ))
+  @debug.debug_inspect(
+    names,
+    content=(
+      #|[<Bytes: [0x66, 0x6f, 0x6f]>]
+    ),
+  )
 }
 
 ///|
