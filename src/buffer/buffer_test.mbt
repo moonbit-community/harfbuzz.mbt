@@ -52,7 +52,7 @@ test "buffer properties" {
   buffer.set_language(@common.Language::from_string("en"))
   inspect(buffer.get_direction().to_string(), content="ltr")
   inspect(buffer.get_script().to_tag().to_string(), content="Latn")
-  inspect(buffer.get_language().to_string(), content="Some(\"en\")")
+  inspect(buffer.get_language().to_string(), content="Some(en)")
 }
 
 ///|
@@ -145,7 +145,7 @@ test "buffer clear preserves properties" {
   inspect(buffer.len(), content="0")
   inspect(buffer.get_direction().to_string(), content="rtl")
   inspect(buffer.get_script().to_tag().to_string(), content="Arab")
-  inspect(buffer.get_language().to_string(), content="Some(\"fa\")")
+  inspect(buffer.get_language().to_string(), content="Some(fa)")
 }
 
 ///|
@@ -213,7 +213,7 @@ test "buffer guess segment properties" {
   buffer.set_script(@common.script_arabic)
   buffer.guess_segment_properties()
   inspect(buffer.get_direction().to_string(), content="rtl")
-  inspect(buffer.get_language().to_string(), content="Some(\"und\")")
+  inspect(buffer.get_language().to_string(), content="Some(und)")
 }
 
 ///|

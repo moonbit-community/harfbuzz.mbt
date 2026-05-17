@@ -49,18 +49,18 @@ test "direction parsing and helpers" {
 ///|
 test "language canonicalization" {
   let lang = Language::from_string("en-US")
-  inspect(lang.to_string(), content="Some(\"en-us\")")
+  inspect(lang.to_string(), content="Some(en-us)")
   let base = Language::from_string("en")
   assert_true(base.matches(lang))
   assert_true(!lang.matches(base))
   let zh = Language::from_string("zh_Hant")
-  inspect(zh.to_string(), content="Some(\"zh-hant\")")
+  inspect(zh.to_string(), content="Some(zh-hant)")
   let fa = Language::from_string("FA_ir")
-  inspect(fa.to_string(), content="Some(\"fa-ir\")")
+  inspect(fa.to_string(), content="Some(fa-ir)")
   let invalid = Language::from_string("")
   inspect(invalid.to_string(), content="None")
   let capped = Language::from_string("Enx", len=2)
-  inspect(capped.to_string(), content="Some(\"en\")")
+  inspect(capped.to_string(), content="Some(en)")
 }
 
 ///|
