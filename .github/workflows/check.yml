@@ -31,7 +31,7 @@ jobs:
 
       - name: moon check
         run: |
-          moon check --target all
+          moon check --target all --deny-warn
 
       - name: moon test
         run: |
