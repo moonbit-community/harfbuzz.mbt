@@ -37,7 +37,7 @@ fn parse_format0(
       if data_offset < 0 || data_offset + length > data.length() {
         return Err(UnexpectedEof)
       }
-      let map_data = data[data_offset:data_offset + length].to_bytes()
+      let map_data = data[data_offset:data_offset + length].to_owned()
       Ok(DeltaSetIndexMap::{ map_count, width, inner_bit_count, map_data })
     }
   }
@@ -60,7 +60,7 @@ fn parse_format1(
       if data_offset < 0 || data_offset + length > data.length() {
         return Err(UnexpectedEof)
       }
-      let map_data = data[data_offset:data_offset + length].to_bytes()
+      let map_data = data[data_offset:data_offset + length].to_owned()
       Ok(DeltaSetIndexMap::{ map_count, width, inner_bit_count, map_data })
     }
   }

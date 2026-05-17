@@ -89,7 +89,7 @@ fn parse_cff_index(
           if data_len < 0 || data_start + data_len > data.length() {
             return Err(UnexpectedEof)
           }
-          let data_bytes = data[data_start:data_start + data_len].to_bytes()
+          let data_bytes = data[data_start:data_start + data_len].to_owned()
           Ok(CffIndex::{ count, off_size, offsets, data: data_bytes })
         }
       }
@@ -113,7 +113,7 @@ pub fn CffIndex::item_bytes(
   if start < 0 || end < start || end > self.data.length() {
     return Err(InvalidFormat)
   }
-  Ok(self.data[start:end].to_bytes())
+  Ok(self.data[start:end].to_owned())
 }
 
 ///|

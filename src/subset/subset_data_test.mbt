@@ -54,7 +54,7 @@ fn parse_suite(definition : String) -> ParsedSuite {
   let iup_options : Array[String] = []
   let mut section = ParseSection::Unknown
   for line_view in definition.split("\n") {
-    let line = line_view.trim().to_string()
+    let line = line_view.trim().to_owned()
     if line.is_empty() {
       continue
     }
@@ -158,7 +158,7 @@ fn split_extension(value : String) -> (String, String) {
     Some(idx) => {
       let base = value[:idx]
       let ext = value[idx:]
-      (base.to_string(), ext.to_string())
+      (base.to_owned(), ext.to_owned())
     }
   }
 }
@@ -189,13 +189,13 @@ fn subset_codepoints(spec : String) -> Array[UInt]? {
   if spec.has_prefix("U+") {
     let values : Array[UInt] = []
     for part_view in spec.split(",") {
-      let part = part_view.trim().to_string()
+      let part = part_view.trim().to_owned()
       if part.is_empty() {
         continue
       }
       let trimmed = if part.has_prefix("U+") {
         let view = part[2:]
-        view.to_string()
+        view.to_owned()
       } else {
         part
       }
@@ -256,7 +256,7 @@ fn instance_suffix(instance : String, iup_optimize : Bool) -> String {
     if count > 0 {
       sb.write_char(',')
     }
-    sb.write_string(part_view.to_string())
+    sb.write_string(part_view.to_owned())
     count = count + 1
   }
   if iup_optimize {
@@ -326,7 +326,7 @@ fn table_slice(data : Bytes, tag : String) -> Bytes? {
               offset >= 0 &&
               length >= 0 &&
               offset + length <= data.length() {
-              return Some(data[offset:offset + length].to_bytes())
+              return Some(data[offset:offset + length].to_owned())
             }
           _ => ()
         }
@@ -617,7 +617,7 @@ fn cmap_records(data : Bytes) -> Array[(Int, Int, Int, Bytes)] {
                       None => ()
                       Some(length) =>
                         if offset + length <= cmap.length() {
-                          let bytes = cmap[offset:offset + length].to_bytes()
+                          let bytes = cmap[offset:offset + length].to_owned()
                           records.push((platform, encoding, format, bytes))
                         }
                     }

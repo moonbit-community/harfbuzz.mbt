@@ -461,7 +461,7 @@ fn Font::glyph_points_with_gvar_depth(
             }
           }
           let mut parent_phantoms = ensure_four_phantoms(
-            var_points[var_points.length() - 4:var_points.length()].to_array(),
+            var_points[var_points.length() - 4:var_points.length()].to_owned(),
           )
           let all_points : Array[@sfnt.GlyphPoint] = []
           let mut comp_index = 0

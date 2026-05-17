@@ -146,7 +146,7 @@ pub fn Cff1Table::parse(data : BytesView) -> Result[Cff1Table, CffError] {
     (None, None)
   }
   Ok(Cff1Table::{
-    data: data.to_bytes(),
+    data: data.to_owned(),
     name_index,
     top_dict,
     string_index,
@@ -519,7 +519,7 @@ pub fn Cff1Table::subset(
   if header_size < 4 || header_size > self.data.length() {
     return Err(InvalidFormat)
   }
-  let header_bytes = self.data[0:header_size].to_bytes()
+  let header_bytes = self.data[0:header_size].to_owned()
   let mut top_dict_bytes = match write_cff_dict(self.top_dict.entries_map()) {
     Err(err) => return Err(err)
     Ok(value) => value

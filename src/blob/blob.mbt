@@ -106,7 +106,7 @@ pub fn Blob::as_view(self : Blob) -> BytesView {
 ///|
 /// Copy the blob into a new Bytes value.
 pub fn Blob::to_bytes(self : Blob) -> Bytes {
-  self.as_view().to_bytes()
+  self.as_view().to_owned()
 }
 
 ///|

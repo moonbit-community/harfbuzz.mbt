@@ -115,7 +115,7 @@ pub fn GvarTable::parse(data : BytesView) -> Result[GvarTable, VarError] {
         flags,
         data_offset,
         offsets,
-        data: data.to_bytes(),
+        data: data.to_owned(),
       })
     }
   }
@@ -139,7 +139,7 @@ pub fn GvarTable::glyph_variation_data(self : GvarTable, glyph : Int) -> Bytes? 
   if base < 0 || base + end > self.data.length() {
     return None
   }
-  Some(self.data[base + start:base + start + length].to_bytes())
+  Some(self.data[base + start:base + start + length].to_owned())
 }
 
 ///|

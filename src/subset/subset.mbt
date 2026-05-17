@@ -1307,7 +1307,7 @@ fn build_format12_groups(
 
 ///|
 fn cmap_find_format4_offset(data : BytesView) -> Result[Int?, SubsetError] {
-  let bytes = data.to_bytes().to_array()
+  let bytes = data.to_owned().to_array()
   let num_tables = read_u16(bytes, 2)
   match num_tables {
     Err(err) => Err(err)
@@ -1354,7 +1354,7 @@ fn cmap_find_format4_offset(data : BytesView) -> Result[Int?, SubsetError] {
 
 ///|
 fn cmap_has_format12(data : BytesView) -> Result[Bool, SubsetError] {
-  let bytes = data.to_bytes().to_array()
+  let bytes = data.to_owned().to_array()
   let num_tables = read_u16(bytes, 2)
   match num_tables {
     Err(err) => Err(err)
@@ -1403,7 +1403,7 @@ fn cmap_format4_covers(
   offset : Int,
   codepoints : Array[UInt],
 ) -> Result[Bool, SubsetError] {
-  let bytes = data.to_bytes().to_array()
+  let bytes = data.to_owned().to_array()
   for cp in codepoints {
     if cp > 0xFFFFU {
       return Ok(false)
@@ -1507,7 +1507,7 @@ fn build_cmap_from_pairs(face : @face.Face, plan : SubsetPlan) -> Bytes? {
   }
   let cmap_bytes_opt = match cmap_blob {
     None => None
-    Some(blob) => Some(blob.as_view().to_bytes().to_array())
+    Some(blob) => Some(blob.as_view().to_owned().to_array())
   }
   match cmap_bytes_opt {
     None => ()
@@ -1558,7 +1558,7 @@ fn build_cmap_from_pairs(face : @face.Face, plan : SubsetPlan) -> Bytes? {
                       None => ()
                       Some(length) =>
                         if offset + length <= cmap_bytes.length() {
-                          let bytes = cmap_bytes[offset:offset + length].to_array()
+                          let bytes = cmap_bytes[offset:offset + length].to_owned()
                           let subset_bytes = match format14_subset {
                             None =>
                               match build_cmap_format14_subset(bytes, plan) {
@@ -1721,7 +1721,7 @@ fn add_optional_table(
     Err(err) => Err(Face(err))
     Ok(None) => Ok(())
     Ok(Some(blob)) => {
-      tables.push((tag, blob.as_view().to_bytes()))
+      tables.push((tag, blob.as_view().to_owned()))
       Ok(())
     }
   }
@@ -1729,7 +1729,7 @@ fn add_optional_table(
 
 ///|
 fn build_name_subset(blob : @blob.Blob) -> Result[Bytes?, SubsetError] {
-  let bytes = blob.as_view().to_bytes().to_array()
+  let bytes = blob.as_view().to_owned().to_array()
   if bytes.length() < 6 {
     return Ok(None)
   }
@@ -1793,7 +1793,7 @@ fn build_name_subset(blob : @blob.Blob) -> Result[Bytes?, SubsetError] {
       if str_end > bytes.length() {
         return Err(InvalidInput("invalid name string"))
       }
-      let value = bytes[str_start:str_end].to_array()
+      let value = bytes[str_start:str_end].to_owned()
       records.push(
         (
           platform_id,
@@ -1906,7 +1906,7 @@ fn build_hdmx_subset(
   maxp : @sfnt.MaxpTable,
   plan : SubsetPlan,
 ) -> Result[Bytes?, SubsetError] {
-  let bytes = blob.as_view().to_bytes().to_array()
+  let bytes = blob.as_view().to_owned().to_array()
   if bytes.length() < 8 {
     return Ok(None)
   }
@@ -1993,7 +1993,7 @@ fn add_optional_hdmx(
     None => Ok(())
     Some(blob) => {
       if identity {
-        tables.push((tag_hdmx, blob.as_view().to_bytes()))
+        tables.push((tag_hdmx, blob.as_view().to_owned()))
         return Ok(())
       }
       match build_hdmx_subset(blob, maxp, plan) {
@@ -2021,7 +2021,7 @@ fn add_optional_os2(
   match blob {
     None => Ok(())
     Some(blob) => {
-      let bytes = blob.as_view().to_bytes().to_array()
+      let bytes = blob.as_view().to_owned().to_array()
       if bytes.length() >= 68 && !plan.codepoint_map.is_empty() {
         let mut min_cp = plan.codepoint_map[0].0
         let mut max_cp = plan.codepoint_map[0].0
@@ -2078,7 +2078,7 @@ fn add_optional_os2(
 
 ///|
 fn build_post_format3(blob : @blob.Blob) -> Bytes? {
-  let header = blob.as_view().to_bytes().to_array()
+  let header = blob.as_view().to_owned().to_array()
   if header.length() < 32 {
     return None
   }
@@ -2105,14 +2105,14 @@ fn add_optional_post(
     None => Ok(())
     Some(blob) => {
       if identity {
-        tables.push((tag_post, blob.as_view().to_bytes()))
+        tables.push((tag_post, blob.as_view().to_owned()))
         return Ok(())
       }
       match @sfnt.PostTable::parse(blob.as_view()) {
         Err(_) => Ok(())
         Ok(post) => {
           if post.version == 0x00030000 {
-            tables.push((tag_post, blob.as_view().to_bytes()))
+            tables.push((tag_post, blob.as_view().to_owned()))
             return Ok(())
           }
           if post.version == 0x00020000 {
@@ -2724,7 +2724,7 @@ pub fn build_plan(
       match value {
         None => Map::new()
         Some(blob) => {
-          let bytes = blob.as_view().to_bytes().to_array()
+          let bytes = blob.as_view().to_owned().to_array()
           match parse_math_variant_refs(bytes) {
             Err(err) => return Err(err)
             Ok(value) => value
@@ -2874,7 +2874,7 @@ fn build_vmetrics_subset(
       for i in num_vmetrics..<advances.length() {
         push_i16(new_vmtx, tsbs[i])
       }
-      let vhea_bytes = vhea_blob.as_view().to_bytes().to_array()
+      let vhea_bytes = vhea_blob.as_view().to_owned().to_array()
       if vhea_bytes.length() >= 36 {
         write_u16(vhea_bytes, 34, num_vmetrics)
       }
@@ -3321,7 +3321,7 @@ fn build_colr_subset(
   match blob {
     None => Ok(None)
     Some(blob) => {
-      let bytes = blob.as_view().to_bytes().to_array()
+      let bytes = blob.as_view().to_owned().to_array()
       if bytes.length() < 14 {
         return Err(InvalidInput("invalid COLR table"))
       }
@@ -3580,7 +3580,7 @@ fn build_svg_subset(
   match blob {
     None => Ok(None)
     Some(blob) => {
-      let bytes = blob.as_view().to_bytes().to_array()
+      let bytes = blob.as_view().to_owned().to_array()
       if bytes.length() < 10 {
         return Err(InvalidInput("invalid SVG table"))
       }
@@ -3653,7 +3653,7 @@ fn build_svg_subset(
           }
         }
         if doc_id < 0 {
-          let doc_bytes = bytes[doc_base:doc_base + doc_length].to_array()
+          let doc_bytes = bytes[doc_base:doc_base + doc_length].to_owned()
           doc_keys.push((doc_offset, doc_length))
           docs.push(Bytes::from_array(doc_bytes))
           doc_id = doc_keys.length() - 1
@@ -3739,7 +3739,7 @@ fn build_sbix_subset(
   match blob {
     None => Ok(None)
     Some(blob) => {
-      let bytes = blob.as_view().to_bytes().to_array()
+      let bytes = blob.as_view().to_owned().to_array()
       if bytes.length() < 8 {
         return Err(InvalidInput("invalid sbix table"))
       }
@@ -3939,7 +3939,7 @@ fn parse_delta_map(
   if data_offset < 0 || data_offset + length > bytes.length() {
     return Err(InvalidInput("invalid delta map bounds"))
   }
-  let map_data = bytes[data_offset:data_offset + length].to_array()
+  let map_data = bytes[data_offset:data_offset + length].to_owned()
   Ok(DeltaMapInfo::{ format, entry_format, width, map_count, map_data })
 }
 
@@ -3999,8 +3999,8 @@ fn build_cblc_cbdt_subset(
   }
   match (cblc_blob, cbdt_blob) {
     (Some(cblc_blob), Some(cbdt_blob)) => {
-      let cblc_bytes = cblc_blob.as_view().to_bytes().to_array()
-      let cbdt_bytes = cbdt_blob.as_view().to_bytes().to_array()
+      let cblc_bytes = cblc_blob.as_view().to_owned().to_array()
+      let cbdt_bytes = cbdt_blob.as_view().to_owned().to_array()
       if cblc_bytes.length() < 8 || cbdt_bytes.length() < 4 {
         return Err(InvalidInput("invalid CBLC/CBDT table"))
       }
@@ -4028,7 +4028,7 @@ fn build_cblc_cbdt_subset(
       if new_glyph_count <= 0 {
         return Ok(None)
       }
-      let cbdt_header = cbdt_bytes[0:4].to_array()
+      let cbdt_header = cbdt_bytes[0:4].to_owned()
       let cbdt_out : Array[Byte] = []
       for b in cbdt_header {
         cbdt_out.push(b)
@@ -4169,7 +4169,7 @@ fn build_cblc_cbdt_subset(
             if abs_offset < 0 || abs_offset + length > cbdt_bytes.length() {
               return Err(InvalidInput("invalid CBDT data offset"))
             }
-            let data = cbdt_bytes[abs_offset:abs_offset + length].to_array()
+            let data = cbdt_bytes[abs_offset:abs_offset + length].to_owned()
             entries.push((new_gid, data))
           }
           if entries.is_empty() {
@@ -4193,7 +4193,7 @@ fn build_cblc_cbdt_subset(
             let new_run = idx == entries.length() ||
               entries[idx].0 != entries[idx - 1].0 + 1
             if new_run {
-              let run_entries = entries[run_start:idx].to_array()
+              let run_entries = entries[run_start:idx].to_owned()
               let first_gid = run_entries[0].0
               let last_gid = run_entries[run_entries.length() - 1].0
               let offsets_out : Array[Int] = []
@@ -4235,7 +4235,7 @@ fn build_cblc_cbdt_subset(
               let subtable_bytes = if subtable.length() == expected_len {
                 subtable
               } else if subtable.length() > expected_len {
-                subtable[0:expected_len].to_array()
+                subtable[0:expected_len].to_owned()
               } else {
                 return Err(InvalidInput("CBLC subtable length mismatch"))
               }
@@ -4418,7 +4418,7 @@ fn build_gvar_subset(
   match blob {
     None => Ok(None)
     Some(blob) => {
-      let bytes = blob.as_view().to_bytes().to_array()
+      let bytes = blob.as_view().to_owned().to_array()
       if bytes.length() < 20 {
         return Err(InvalidInput("invalid gvar table"))
       }
@@ -4573,7 +4573,7 @@ fn build_hvar_subset(
   match blob {
     None => Ok(None)
     Some(blob) => {
-      let bytes = blob.as_view().to_bytes().to_array()
+      let bytes = blob.as_view().to_owned().to_array()
       if bytes.length() < 20 {
         return Err(InvalidInput("invalid HVAR table"))
       }
@@ -4653,7 +4653,7 @@ fn build_vvar_subset(
   match blob {
     None => Ok(None)
     Some(blob) => {
-      let bytes = blob.as_view().to_bytes().to_array()
+      let bytes = blob.as_view().to_owned().to_array()
       if bytes.length() < 24 {
         return Err(InvalidInput("invalid VVAR table"))
       }
@@ -5166,7 +5166,7 @@ fn build_varc_subset(
   match blob {
     None => Ok(None)
     Some(blob) => {
-      let data = blob.as_view().to_bytes()
+      let data = blob.as_view().to_owned()
       let bytes = data.to_array()
       if bytes.length() < 24 {
         return Err(InvalidInput("invalid VARC table"))
@@ -5291,7 +5291,7 @@ fn build_varc_subset(
         if offset < 0 || next <= offset || next > bytes.length() {
           return Err(InvalidInput("invalid VARC segment bounds"))
         }
-        Ok(bytes[offset:next].to_array())
+        Ok(bytes[offset:next].to_owned())
       }
       let condition_bytes = if condition_list_offset > 0 {
         match segment_bytes(condition_list_offset) {
@@ -5697,14 +5697,14 @@ fn build_anchor_bytes_optional(
     Ok(value) => value
   }
   if format == 1 {
-    let anchor_bytes = bytes[offset:offset + 6].to_array()
+    let anchor_bytes = bytes[offset:offset + 6].to_owned()
     return Ok(Some(Bytes::from_array(anchor_bytes)))
   }
   if format == 2 {
     if offset + 8 > bytes.length() {
       return Err(InvalidInput("invalid GPOS anchor format2 bounds"))
     }
-    let anchor_bytes = bytes[offset:offset + 8].to_array()
+    let anchor_bytes = bytes[offset:offset + 8].to_owned()
     return Ok(Some(Bytes::from_array(anchor_bytes)))
   }
   Ok(None)
@@ -6846,7 +6846,7 @@ fn build_gsub_extension_subtable(
     return Err(InvalidInput("invalid GSUB extension bounds"))
   }
   let ext_base = extension_offset
-  let ext_bytes = bytes[ext_base:bytes.length()].to_array()
+  let ext_bytes = bytes[ext_base:bytes.length()].to_owned()
   let mut new_sub : Bytes? = None
   if extension_type == 1 {
     new_sub = match build_gsub_single_subtable(ext_bytes, plan) {
@@ -7162,7 +7162,7 @@ fn build_gpos_single_subtable(
         continue
       }
       let start = record_base + i * record_size
-      let record_bytes = bytes[start:start + record_size].to_array()
+      let record_bytes = bytes[start:start + record_size].to_owned()
       pairs.push((new_gid, Bytes::from_array(record_bytes)))
     }
     if pairs.is_empty() {
@@ -7359,7 +7359,7 @@ fn build_gpos_pair_subtable(
         }
         let value_start = entry_base + 2
         let value_end = value_start + record_size
-        let record_bytes = bytes[value_start:value_end].to_array()
+        let record_bytes = bytes[value_start:value_end].to_owned()
         pairs.push((new_second, Bytes::from_array(record_bytes)))
       }
       if new_first >= 0 && !pairs.is_empty() {
@@ -8406,7 +8406,7 @@ fn build_gpos_extension_subtable(
     return Err(InvalidInput("invalid GPOS extension bounds"))
   }
   let ext_base = extension_offset
-  let ext_bytes = bytes[ext_base:bytes.length()].to_array()
+  let ext_bytes = bytes[ext_base:bytes.length()].to_owned()
   let mut new_sub : Bytes? = None
   if extension_type == 1 {
     new_sub = match build_gpos_single_subtable(ext_bytes, plan) {
@@ -8549,7 +8549,7 @@ fn gsub_subtable_bytes(
   let range = lookup_subtable_range(bytes.length(), base, sub_offsets, index)
   match range {
     None => Err(InvalidInput("invalid GSUB subtable bounds"))
-    Some((sub_base, sub_end)) => Ok(bytes[sub_base:sub_end].to_array())
+    Some((sub_base, sub_end)) => Ok(bytes[sub_base:sub_end].to_owned())
   }
 }
 
@@ -8571,7 +8571,7 @@ fn gpos_subtable_bytes(
   if sub_base < 0 || sub_base >= bytes.length() {
     return Err(InvalidInput("invalid GPOS subtable bounds"))
   }
-  Ok(bytes[sub_base:bytes.length()].to_array())
+  Ok(bytes[sub_base:bytes.length()].to_owned())
 }
 
 ///|
@@ -9257,7 +9257,7 @@ fn build_gsub_subset(
   match blob {
     None => Ok(None)
     Some(blob) => {
-      let bytes = blob.as_view().to_bytes().to_array()
+      let bytes = blob.as_view().to_owned().to_array()
       if bytes.length() < 10 {
         return Err(InvalidInput("invalid GSUB table"))
       }
@@ -9291,8 +9291,8 @@ fn build_gsub_subset(
       if !(script_offset < feature_offset && feature_offset < lookup_offset) {
         return Ok(None)
       }
-      let script_bytes = bytes[script_offset:feature_offset].to_array()
-      let feature_bytes = bytes[feature_offset:lookup_offset].to_array()
+      let script_bytes = bytes[script_offset:feature_offset].to_owned()
+      let feature_bytes = bytes[feature_offset:lookup_offset].to_owned()
       let lookup_count = match read_u16(bytes, lookup_offset) {
         Err(err) => return Err(err)
         Ok(value) => value
@@ -9594,7 +9594,7 @@ fn build_gpos_subset(
   match blob {
     None => Ok(None)
     Some(blob) => {
-      let bytes = blob.as_view().to_bytes().to_array()
+      let bytes = blob.as_view().to_owned().to_array()
       if bytes.length() < 10 {
         return Err(InvalidInput("invalid GPOS table"))
       }
@@ -9628,8 +9628,8 @@ fn build_gpos_subset(
       if !(script_offset < feature_offset && feature_offset < lookup_offset) {
         return Ok(None)
       }
-      let script_bytes = bytes[script_offset:feature_offset].to_array()
-      let feature_bytes = bytes[feature_offset:lookup_offset].to_array()
+      let script_bytes = bytes[script_offset:feature_offset].to_owned()
+      let feature_bytes = bytes[feature_offset:lookup_offset].to_owned()
       let lookup_count = match read_u16(bytes, lookup_offset) {
         Err(err) => return Err(err)
         Ok(value) => value
@@ -10014,7 +10014,7 @@ fn build_attach_list_subset(
     let new_gid = plan.old_to_new[glyph]
     if new_gid >= 0 {
       let attach_bytes = Bytes::from_array(
-        bytes[attach_base:attach_base + length].to_array(),
+        bytes[attach_base:attach_base + length].to_owned(),
       )
       records.push((new_gid, attach_bytes))
     }
@@ -10948,7 +10948,7 @@ fn build_math_subset(
   match blob {
     None => Ok(None)
     Some(blob) => {
-      let bytes = blob.as_view().to_bytes().to_array()
+      let bytes = blob.as_view().to_owned().to_array()
       if bytes.length() < 10 {
         return Err(InvalidInput("invalid MATH table"))
       }
@@ -11015,7 +11015,7 @@ fn build_math_subset(
                     top_cov_rel = cov_base
                     top_cov_bytes = Some(
                       Bytes::from_array(
-                        info[cov_base:cov_base + cov_len].to_array(),
+                        info[cov_base:cov_base + cov_len].to_owned(),
                       ),
                     )
                   }
@@ -11439,7 +11439,7 @@ fn build_gdef_subset(
   match blob {
     None => Ok(None)
     Some(blob) => {
-      let bytes = blob.as_view().to_bytes().to_array()
+      let bytes = blob.as_view().to_owned().to_array()
       if bytes.length() < 12 {
         return Err(InvalidInput("invalid GDEF table"))
       }
@@ -11968,7 +11968,7 @@ pub fn subset_with_plan(
     let end = loca.offsets[gid + 1]
     let length = end - start
     if length > 0 {
-      let glyph_bytes = glyf_data[start:end].to_bytes().to_array()
+      let glyph_bytes = glyf_data[start:end].to_owned().to_array()
       match remap_composite_glyph(glyph_bytes, plan.old_to_new) {
         Err(err) => return Err(err)
         Ok(_) => ()
@@ -12020,15 +12020,15 @@ pub fn subset_with_plan(
     Ok(value) => value
   }
 
-  let head_bytes = head_blob.as_view().to_bytes().to_array()
+  let head_bytes = head_blob.as_view().to_owned().to_array()
   if head_bytes.length() >= 52 {
     write_u16(head_bytes, 50, if use_short_loca { 0 } else { 1 })
   }
-  let maxp_bytes = maxp_blob.as_view().to_bytes().to_array()
+  let maxp_bytes = maxp_blob.as_view().to_owned().to_array()
   if maxp_bytes.length() >= 6 {
     write_u16(maxp_bytes, 4, plan.glyphs.length())
   }
-  let hhea_bytes = hhea_blob.as_view().to_bytes().to_array()
+  let hhea_bytes = hhea_blob.as_view().to_owned().to_array()
   if hhea_bytes.length() >= 36 {
     write_u16(hhea_bytes, 34, num_hmetrics)
   }
@@ -12191,12 +12191,12 @@ fn subset_bitmap_with_plan(
     Ok(value) => value
   }
 
-  let head_bytes = head_blob.as_view().to_bytes().to_array()
-  let maxp_bytes = maxp_blob.as_view().to_bytes().to_array()
+  let head_bytes = head_blob.as_view().to_owned().to_array()
+  let maxp_bytes = maxp_blob.as_view().to_owned().to_array()
   if maxp_bytes.length() >= 6 {
     write_u16(maxp_bytes, 4, plan.glyphs.length())
   }
-  let hhea_bytes = hhea_blob.as_view().to_bytes().to_array()
+  let hhea_bytes = hhea_blob.as_view().to_owned().to_array()
   if hhea_bytes.length() >= 36 {
     write_u16(hhea_bytes, 34, num_hmetrics)
   }
@@ -12358,12 +12358,12 @@ fn subset_cff1_with_plan(
     Ok(value) => value
   }
 
-  let head_bytes = head_blob.as_view().to_bytes().to_array()
-  let maxp_bytes = maxp_blob.as_view().to_bytes().to_array()
+  let head_bytes = head_blob.as_view().to_owned().to_array()
+  let maxp_bytes = maxp_blob.as_view().to_owned().to_array()
   if maxp_bytes.length() >= 6 {
     write_u16(maxp_bytes, 4, plan.glyphs.length())
   }
-  let hhea_bytes = hhea_blob.as_view().to_bytes().to_array()
+  let hhea_bytes = hhea_blob.as_view().to_owned().to_array()
   if hhea_bytes.length() >= 36 {
     write_u16(hhea_bytes, 34, num_hmetrics)
   }
@@ -12527,12 +12527,12 @@ fn subset_cff2_with_plan(
     Ok(value) => value
   }
 
-  let head_bytes = head_blob.as_view().to_bytes().to_array()
-  let maxp_bytes = maxp_blob.as_view().to_bytes().to_array()
+  let head_bytes = head_blob.as_view().to_owned().to_array()
+  let maxp_bytes = maxp_blob.as_view().to_owned().to_array()
   if maxp_bytes.length() >= 6 {
     write_u16(maxp_bytes, 4, plan.glyphs.length())
   }
-  let hhea_bytes = hhea_blob.as_view().to_bytes().to_array()
+  let hhea_bytes = hhea_blob.as_view().to_owned().to_array()
   if hhea_bytes.length() >= 36 {
     write_u16(hhea_bytes, 34, num_hmetrics)
   }
