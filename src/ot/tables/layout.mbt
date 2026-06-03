@@ -329,7 +329,7 @@ pub struct GsubTable {
 pub fn GsubTable::parse(blob : @blob.Blob) -> Result[GsubTable, OtLayoutError] {
   match LayoutTable::parse(blob) {
     Err(err) => Err(err)
-    Ok(layout) => Ok(GsubTable::{ layout, })
+    Ok(layout) => Ok({ layout, })
   }
 }
 
@@ -348,7 +348,7 @@ pub struct GposTable {
 pub fn GposTable::parse(blob : @blob.Blob) -> Result[GposTable, OtLayoutError] {
   match LayoutTable::parse(blob) {
     Err(err) => Err(err)
-    Ok(layout) => Ok(GposTable::{ layout, })
+    Ok(layout) => Ok({ layout, })
   }
 }
 
@@ -406,7 +406,7 @@ pub fn LayoutTable::parse(
         lookup_list_offset: lookup_offset,
         feature_variations_offset,
       }
-      Ok(LayoutTable::{ data, header, script_list, feature_list, lookup_list })
+      Ok({ data, header, script_list, feature_list, lookup_list })
     }
   }
 }
@@ -445,11 +445,11 @@ fn parse_script_list(
             if abs_offset < 0 || abs_offset >= data.length() {
               return Err(UnexpectedEof)
             }
-            records.push(ScriptRecord::{ tag, offset: abs_offset })
+            records.push({ tag, offset: abs_offset })
           }
         }
       }
-      Ok(ScriptList::{ records, })
+      Ok({ records, })
     }
   }
 }
@@ -488,11 +488,11 @@ fn parse_feature_list(
             if abs_offset < 0 || abs_offset >= data.length() {
               return Err(UnexpectedEof)
             }
-            records.push(FeatureRecord::{ tag, offset: abs_offset })
+            records.push({ tag, offset: abs_offset })
           }
         }
       }
-      Ok(FeatureList::{ records, })
+      Ok({ records, })
     }
   }
 }
@@ -531,7 +531,7 @@ fn parse_lookup_list(
           }
         }
       }
-      Ok(LookupList::{ offsets, })
+      Ok({ offsets, })
     }
   }
 }

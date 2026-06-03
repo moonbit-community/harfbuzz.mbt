@@ -84,7 +84,7 @@ pub fn NameTable::parse(data : BytesView) -> Result[NameTable, SfntError] {
             for j in str_start..<str_end {
               bytes.push(data[j])
             }
-            records.push(NameRecord::{
+            records.push({
               platform_id,
               encoding_id,
               language_id,
@@ -94,7 +94,7 @@ pub fn NameTable::parse(data : BytesView) -> Result[NameTable, SfntError] {
           }
         }
       }
-      Ok(NameTable::{ records, })
+      Ok({ records, })
     }
   }
 }

@@ -131,16 +131,16 @@ pub fn AvarTable::parse(data : BytesView) -> Result[AvarTable, VarError] {
                 (Err(err), _) => return Err(err)
                 (_, Err(err)) => return Err(err)
                 (Ok(from_raw), Ok(to_raw)) =>
-                  mappings.push(AvarMapping::{ from_raw, to_raw })
+                  mappings.push({ from_raw, to_raw })
               }
               offset = offset + 4
             }
             mappings.sort_by((a, b) => a.from_raw - b.from_raw)
-            axes.push(AvarSegmentMap::{ mappings, })
+            axes.push({ mappings, })
           }
         }
       }
-      Ok(AvarTable::{ axes, })
+      Ok({ axes, })
     }
   }
 }

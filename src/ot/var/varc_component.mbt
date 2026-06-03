@@ -279,7 +279,7 @@ fn finalize_transform(flags : UInt, raw : VarcTransformRaw) -> VarcTransform {
     scale_y = scale_x
   }
 
-  VarcTransform::{
+  {
     translate_x,
     translate_y,
     rotation,

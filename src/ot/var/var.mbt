@@ -26,7 +26,7 @@ pub struct AxisCoord {
 
 ///|
 pub fn AxisCoord::new(tag : @common.Tag, value : Double) -> AxisCoord {
-  AxisCoord::{ tag, value }
+  { tag, value }
 }
 
 ///|

@@ -24,7 +24,7 @@ pub struct DrawState {
 
 ///|
 pub fn DrawState::new() -> DrawState {
-  DrawState::{
+  {
     path_open: false,
     path_start_x: 0.0,
     path_start_y: 0.0,
@@ -110,7 +110,7 @@ pub struct DrawFuncs[T] {
 
 ///|
 pub fn[T] DrawFuncs::new() -> DrawFuncs[T] {
-  DrawFuncs::{
+  {
     move_to_cb: draw_move_to_nil,
     line_to_cb: draw_line_to_nil,
     quadratic_to_cb: None,
@@ -393,7 +393,7 @@ pub fn[T] DrawSession::new(
   funcs : DrawFuncs[T],
   draw_data : T,
 ) -> DrawSession[T] {
-  DrawSession::{ funcs, draw_data, st: DrawState::new() }
+  { funcs, draw_data, st: DrawState::new() }
 }
 
 ///|
@@ -470,7 +470,7 @@ pub struct DrawExtents {
 
 ///|
 pub fn DrawExtents::new() -> DrawExtents {
-  DrawExtents::{ xmin: 0.0, ymin: 0.0, xmax: -1.0, ymax: -1.0 }
+  { xmin: 0.0, ymin: 0.0, xmax: -1.0, ymax: -1.0 }
 }
 
 ///|

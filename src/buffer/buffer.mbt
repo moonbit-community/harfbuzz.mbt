@@ -62,7 +62,7 @@ pub struct Buffer {
 ///|
 /// Create an empty buffer.
 pub fn Buffer::new() -> Buffer {
-  Buffer::{
+  {
     infos: [],
     positions: [],
     direction: @common.direction_invalid,
@@ -106,17 +106,8 @@ pub fn Buffer::add_codepoint(
   cluster? : Int = -1,
 ) -> Unit {
   let actual_cluster = if cluster < 0 { self.infos.length() } else { cluster }
-  self.infos.push(GlyphInfo::{
-    codepoint,
-    cluster: actual_cluster,
-    unicode: codepoint,
-  })
-  self.positions.push(GlyphPosition::{
-    x_advance: 0,
-    y_advance: 0,
-    x_offset: 0,
-    y_offset: 0,
-  })
+  self.infos.push({ codepoint, cluster: actual_cluster, unicode: codepoint })
+  self.positions.push({ x_advance: 0, y_advance: 0, x_offset: 0, y_offset: 0 })
 }
 
 ///|
@@ -160,7 +151,7 @@ pub fn Buffer::add_tracking(
   if horizontal {
     for i in 0..<self.positions.length() {
       let pos = self.positions[i]
-      self.positions[i] = GlyphPosition::{
+      self.positions[i] = {
         x_advance: pos.x_advance + adjustment,
         y_advance: pos.y_advance,
         x_offset: pos.x_offset,
@@ -170,7 +161,7 @@ pub fn Buffer::add_tracking(
   } else {
     for i in 0..<self.positions.length() {
       let pos = self.positions[i]
-      self.positions[i] = GlyphPosition::{
+      self.positions[i] = {
         x_advance: pos.x_advance,
         y_advance: pos.y_advance + adjustment,
         x_offset: pos.x_offset,
@@ -191,12 +182,7 @@ pub fn Buffer::replace_glyphs(
   if next_positions.is_empty() {
     let filled : Array[GlyphPosition] = []
     for _ in 0..<infos.length() {
-      filled.push(GlyphPosition::{
-        x_advance: 0,
-        y_advance: 0,
-        x_offset: 0,
-        y_offset: 0,
-      })
+      filled.push({ x_advance: 0, y_advance: 0, x_offset: 0, y_offset: 0 })
     }
     next_positions = filled
   }
@@ -223,7 +209,7 @@ pub fn Buffer::merge_clusters(self : Buffer, start : Int, end : Int) -> Unit {
   }
   for i in start..<end {
     let info = self.infos[i]
-    self.infos[i] = GlyphInfo::{
+    self.infos[i] = {
       codepoint: info.codepoint,
       cluster: min_cluster,
       unicode: info.unicode,
@@ -305,7 +291,7 @@ pub fn Buffer::set_gsub_feature_values(
   tag : @common.Tag,
   values : Array[Int],
 ) -> Unit {
-  self.gsub_feature_values = Some(FeatureValues::{ tag, values })
+  self.gsub_feature_values = Some({ tag, values })
 }
 
 ///|
@@ -432,7 +418,7 @@ fn fallback_glyph_for_codepoint(
   }
   let space_type = @unicode.space_fallback_type(codepoint)
   match space_type {
-    @unicode.SpaceFallbackType::NotSpace => ()
+    NotSpace => ()
     _ =>
       return match font.glyph_for_codepoint(0x0020U) {
         Err(err) => Err(Font(err))
@@ -446,13 +432,13 @@ fn fallback_glyph_for_codepoint(
 ///|
 fn space_fallback_divisor(space_type : @unicode.SpaceFallbackType) -> Int? {
   match space_type {
-    @unicode.SpaceFallbackType::SpaceEm => Some(1)
-    @unicode.SpaceFallbackType::SpaceEm2 => Some(2)
-    @unicode.SpaceFallbackType::SpaceEm3 => Some(3)
-    @unicode.SpaceFallbackType::SpaceEm4 => Some(4)
-    @unicode.SpaceFallbackType::SpaceEm5 => Some(5)
-    @unicode.SpaceFallbackType::SpaceEm6 => Some(6)
-    @unicode.SpaceFallbackType::SpaceEm16 => Some(16)
+    SpaceEm => Some(1)
+    SpaceEm2 => Some(2)
+    SpaceEm3 => Some(3)
+    SpaceEm4 => Some(4)
+    SpaceEm5 => Some(5)
+    SpaceEm6 => Some(6)
+    SpaceEm16 => Some(16)
     _ => None
   }
 }
@@ -504,37 +490,37 @@ fn adjust_space_fallback_position(
 ) -> Result[GlyphPosition, ShapeError] {
   let horizontal = !direction.is_vertical()
   match space_type {
-    @unicode.SpaceFallbackType::NotSpace => Ok(pos)
-    @unicode.SpaceFallbackType::Space => Ok(pos)
-    @unicode.SpaceFallbackType::SpaceNarrow =>
+    NotSpace => Ok(pos)
+    Space => Ok(pos)
+    SpaceNarrow =>
       if horizontal {
-        Ok(GlyphPosition::{
+        Ok({
           x_advance: pos.x_advance / 2,
           y_advance: pos.y_advance,
           x_offset: pos.x_offset,
           y_offset: pos.y_offset,
         })
       } else {
-        Ok(GlyphPosition::{
+        Ok({
           x_advance: pos.x_advance,
           y_advance: pos.y_advance / 2,
           x_offset: pos.x_offset,
           y_offset: pos.y_offset,
         })
       }
-    @unicode.SpaceFallbackType::Space4Em18 => {
+    Space4Em18 => {
       let (scale_x, scale_y) = font.get_scale()
       let scale = if horizontal { scale_x } else { scale_y }
       let advance = scale * 4 / 18
       if horizontal {
-        Ok(GlyphPosition::{
+        Ok({
           x_advance: advance,
           y_advance: pos.y_advance,
           x_offset: pos.x_offset,
           y_offset: pos.y_offset,
         })
       } else {
-        Ok(GlyphPosition::{
+        Ok({
           x_advance: pos.x_advance,
           y_advance: -advance,
           x_offset: pos.x_offset,
@@ -542,7 +528,7 @@ fn adjust_space_fallback_position(
         })
       }
     }
-    @unicode.SpaceFallbackType::SpaceFigure => {
+    SpaceFigure => {
       let mut value : Int? = None
       let mut digit = 0x30
       while digit <= 0x39 {
@@ -561,14 +547,14 @@ fn adjust_space_fallback_position(
         None => Ok(pos)
         Some(advance) =>
           if horizontal {
-            Ok(GlyphPosition::{
+            Ok({
               x_advance: advance,
               y_advance: pos.y_advance,
               x_offset: pos.x_offset,
               y_offset: pos.y_offset,
             })
           } else {
-            Ok(GlyphPosition::{
+            Ok({
               x_advance: pos.x_advance,
               y_advance: advance,
               x_offset: pos.x_offset,
@@ -577,7 +563,7 @@ fn adjust_space_fallback_position(
           }
       }
     }
-    @unicode.SpaceFallbackType::SpacePunctuation => {
+    SpacePunctuation => {
       let mut value = match advance_for_codepoint(font, 0x2EU, horizontal) {
         Err(err) => return Err(err)
         Ok(advance) => advance
@@ -592,14 +578,14 @@ fn adjust_space_fallback_position(
         None => Ok(pos)
         Some(advance) =>
           if horizontal {
-            Ok(GlyphPosition::{
+            Ok({
               x_advance: advance,
               y_advance: pos.y_advance,
               x_offset: pos.x_offset,
               y_offset: pos.y_offset,
             })
           } else {
-            Ok(GlyphPosition::{
+            Ok({
               x_advance: pos.x_advance,
               y_advance: advance,
               x_offset: pos.x_offset,
@@ -616,14 +602,14 @@ fn adjust_space_fallback_position(
           let scale = if horizontal { scale_x } else { scale_y }
           let base = (scale + divisor / 2) / divisor
           if horizontal {
-            Ok(GlyphPosition::{
+            Ok({
               x_advance: base,
               y_advance: pos.y_advance,
               x_offset: pos.x_offset,
               y_offset: pos.y_offset,
             })
           } else {
-            Ok(GlyphPosition::{
+            Ok({
               x_advance: pos.x_advance,
               y_advance: -base,
               x_offset: pos.x_offset,
@@ -757,7 +743,7 @@ pub fn Buffer::normalize(self : Buffer) -> Unit {
         Some(composed) => {
           self.merge_clusters(start, i + 1)
           let base = self.infos[start]
-          self.infos[start] = GlyphInfo::{
+          self.infos[start] = {
             codepoint: composed,
             cluster: base.cluster,
             unicode: composed,
@@ -877,7 +863,7 @@ fn normalize_hangul(buffer : Buffer, vs_clusters : Map[Int, Bool]) -> Unit {
       Some(value) => {
         buffer.merge_clusters(i, i + 2)
         let base = buffer.infos[i]
-        buffer.infos[i] = GlyphInfo::{
+        buffer.infos[i] = {
           codepoint: value,
           cluster: base.cluster,
           unicode: value,
@@ -893,7 +879,7 @@ fn normalize_hangul(buffer : Buffer, vs_clusters : Map[Int, Bool]) -> Unit {
               Some(composed) => {
                 buffer.merge_clusters(i, i + 2)
                 let base = buffer.infos[i]
-                buffer.infos[i] = GlyphInfo::{
+                buffer.infos[i] = {
                   codepoint: composed,
                   cluster: base.cluster,
                   unicode: composed,
@@ -1161,7 +1147,7 @@ pub fn Buffer::shape_basic(
           Ok(value) => value
         }
     }
-    new_infos.push(GlyphInfo::{
+    new_infos.push({
       codepoint: glyph,
       cluster: info.cluster,
       unicode: info.unicode,
@@ -1293,7 +1279,7 @@ pub fn Buffer::apply_morx(
       None => 0U
       Some(value) => value
     }
-    new_infos.push(GlyphInfo::{ codepoint: glyph, cluster, unicode })
+    new_infos.push({ codepoint: glyph, cluster, unicode })
     new_positions.push(pos)
   }
   self.infos = new_infos
@@ -1362,7 +1348,7 @@ pub fn Buffer::apply_kerx(
       adj.y_offset == 0 {
       positions.push(pos)
     } else {
-      positions.push(GlyphPosition::{
+      positions.push({
         x_advance: pos.x_advance + adj.x_advance,
         y_advance: pos.y_advance + adj.y_advance,
         x_offset: pos.x_offset + adj.x_offset,
@@ -1492,7 +1478,7 @@ pub fn Buffer::apply_gpos(
   for i in 0..<self.positions.length() {
     let pos = self.positions[i]
     let delta = deltas[i]
-    new_positions.push(GlyphPosition::{
+    new_positions.push({
       x_advance: pos.x_advance + delta.x_advance,
       y_advance: pos.y_advance + delta.y_advance,
       x_offset: pos.x_offset + delta.x_placement,
@@ -1519,7 +1505,7 @@ pub fn Buffer::apply_gpos(
         advance_since_base = self.positions[i].x_advance
       } else if has_base {
         let pos = self.positions[i]
-        self.positions[i] = GlyphPosition::{
+        self.positions[i] = {
           x_advance: pos.x_advance,
           y_advance: pos.y_advance,
           x_offset: pos.x_offset - advance_since_base,
@@ -1542,7 +1528,7 @@ pub fn Buffer::shape_ot(
   self.shape_ot_with_options(
     font,
     fallback_position~,
-    zero_width_marks=ZeroWidthMarks::ByGdefLate,
+    zero_width_marks=ByGdefLate,
   )
 }
 
@@ -1551,7 +1537,7 @@ fn Buffer::shape_ot_with_options(
   self : Buffer,
   font : @font.Font,
   fallback_position? : Bool = true,
-  zero_width_marks? : ZeroWidthMarks = ZeroWidthMarks::ByGdefLate,
+  zero_width_marks? : ZeroWidthMarks = ByGdefLate,
 ) -> Result[Unit, ShapeError] {
   self.guess_segment_properties()
   let (unicode_mark_flags, combining_classes) = collect_mark_fallback_data(
@@ -1691,7 +1677,7 @@ fn Buffer::shape_ot_with_options(
           Ok(value) => value
         }
         let unicode = if same_len { self.infos[i].unicode } else { 0U }
-        new_infos.push(GlyphInfo::{ codepoint: glyph, cluster, unicode })
+        new_infos.push({ codepoint: glyph, cluster, unicode })
         new_positions.push(pos)
       }
       self.infos = new_infos
@@ -1699,7 +1685,7 @@ fn Buffer::shape_ot_with_options(
     }
   }
   match zero_width_marks {
-    ZeroWidthMarks::ByGdefEarly =>
+    ByGdefEarly =>
       match
         zero_marks_by_gdef_or_unicode(
           font, self, unicode_mark_flags, gpos_present,
@@ -1757,7 +1743,7 @@ fn Buffer::shape_ot_with_options(
     for i in 0..<self.positions.length() {
       let pos = self.positions[i]
       let delta = deltas[i]
-      new_positions.push(GlyphPosition::{
+      new_positions.push({
         x_advance: pos.x_advance + delta.x_advance,
         y_advance: pos.y_advance + delta.y_advance,
         x_offset: pos.x_offset + delta.x_placement,
@@ -1784,7 +1770,7 @@ fn Buffer::shape_ot_with_options(
             None => ()
             Some(value) => {
               let pos = new_positions[i]
-              new_positions[i] = GlyphPosition::{
+              new_positions[i] = {
                 x_advance: pos.x_advance + value,
                 y_advance: pos.y_advance,
                 x_offset: pos.x_offset,
@@ -1798,7 +1784,7 @@ fn Buffer::shape_ot_with_options(
     }
   }
   match zero_width_marks {
-    ZeroWidthMarks::ByGdefLate =>
+    ByGdefLate =>
       match
         zero_marks_by_gdef_or_unicode(
           font, self, unicode_mark_flags, gpos_present,
@@ -1862,12 +1848,7 @@ fn apply_default_ignorables(buffer : Buffer) -> Unit {
         y_offset: 0,
       }
     } else {
-      GlyphPosition::{
-        x_advance: 0,
-        y_advance: 0,
-        x_offset: 0,
-        y_offset: pos.y_offset,
-      }
+      { x_advance: 0, y_advance: 0, x_offset: 0, y_offset: pos.y_offset }
     }
     buffer.positions[i] = next_pos
   }
@@ -1881,12 +1862,12 @@ fn apply_variation_selector_fallback(buffer : Buffer) -> Unit {
       for i in 0..<buffer.infos.length() {
         let info = buffer.infos[i]
         if @unicode.is_variation_selector(info.unicode) {
-          buffer.infos[i] = GlyphInfo::{
+          buffer.infos[i] = {
             codepoint: glyph,
             cluster: info.cluster,
             unicode: info.unicode,
           }
-          buffer.positions[i] = GlyphPosition::{
+          buffer.positions[i] = {
             x_advance: 0,
             y_advance: 0,
             x_offset: 0,
@@ -1921,12 +1902,7 @@ fn default_position(
         }
       }
     }
-    Ok(GlyphPosition::{
-      x_advance: 0,
-      y_advance: advance,
-      x_offset: 0,
-      y_offset: 0,
-    })
+    Ok({ x_advance: 0, y_advance: advance, x_offset: 0, y_offset: 0 })
   } else {
     let advance = match font.glyph_h_advance(glyph) {
       Ok(value) => value
@@ -1939,11 +1915,6 @@ fn default_position(
         }
       }
     }
-    Ok(GlyphPosition::{
-      x_advance: advance,
-      y_advance: 0,
-      x_offset: 0,
-      y_offset: 0,
-    })
+    Ok({ x_advance: advance, y_advance: 0, x_offset: 0, y_offset: 0 })
   }
 }

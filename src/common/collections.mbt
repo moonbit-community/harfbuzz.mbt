@@ -25,7 +25,7 @@ pub struct CodepointSet {
 
 ///|
 pub fn CodepointSet::new() -> CodepointSet {
-  CodepointSet::{ set: Set([]) }
+  { set: Set([]) }
 }
 
 ///|
@@ -323,7 +323,7 @@ pub fn CodepointSet::intersects(
 ///|
 pub fn CodepointSet::hash(self : CodepointSet) -> Int {
   let values = sorted_values(self)
-  let hasher = Hasher::new(seed=0)
+  let hasher = Hasher(seed=0)
   for value in values {
     hasher.combine_uint(value)
   }
@@ -482,7 +482,7 @@ pub struct CodepointMap {
 
 ///|
 pub fn CodepointMap::new() -> CodepointMap {
-  CodepointMap::{ map: Map([]) }
+  { map: Map([]) }
 }
 
 ///|
@@ -526,7 +526,7 @@ pub fn CodepointMap::hash(self : CodepointMap) -> Int {
       0
     }
   })
-  let hasher = Hasher::new(seed=0)
+  let hasher = Hasher(seed=0)
   for pair in entries {
     let (key, value) = pair
     hasher.combine_uint(key)
@@ -537,7 +537,7 @@ pub fn CodepointMap::hash(self : CodepointMap) -> Int {
 
 ///|
 pub fn CodepointMap::copy(self : CodepointMap) -> CodepointMap {
-  CodepointMap::{ map: self.map.copy() }
+  { map: self.map.copy() }
 }
 
 ///|
@@ -651,10 +651,7 @@ pub struct CodepointBiMap {
 
 ///|
 pub fn CodepointBiMap::new() -> CodepointBiMap {
-  CodepointBiMap::{
-    forward: CodepointMap::new(),
-    backward: CodepointMap::new(),
-  }
+  { forward: CodepointMap::new(), backward: CodepointMap::new() }
 }
 
 ///|
@@ -732,7 +729,7 @@ pub struct CodepointIncBiMap {
 
 ///|
 pub fn CodepointIncBiMap::new() -> CodepointIncBiMap {
-  CodepointIncBiMap::{ forward: CodepointMap::new(), back: [] }
+  { forward: CodepointMap::new(), back: [] }
 }
 
 ///|

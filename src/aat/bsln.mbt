@@ -124,7 +124,7 @@ pub fn BslnTable::parse(
           Err(err) => return Err(err)
           Ok(value) => value
         }
-        BslnData::Format1(deltas, lookup)
+        Format1(deltas, lookup)
       } else if format == bsln_format2 {
         if base < 0 || base + 66 > data.length() {
           return Err(UnexpectedEof)
@@ -137,7 +137,7 @@ pub fn BslnTable::parse(
           Err(err) => return Err(err)
           Ok(value) => value
         }
-        BslnData::Format2(std_glyph, points)
+        Format2(std_glyph, points)
       } else if format == bsln_format3 {
         if base < 0 || base + 66 > data.length() {
           return Err(UnexpectedEof)
@@ -155,11 +155,11 @@ pub fn BslnTable::parse(
           Err(err) => return Err(err)
           Ok(value) => value
         }
-        BslnData::Format3(std_glyph, points, lookup)
+        Format3(std_glyph, points, lookup)
       } else {
         return Err(InvalidFormat)
       }
-      Ok(BslnTable::{ version, format, default_baseline, data })
+      Ok({ version, format, default_baseline, data })
     }
   }
 }

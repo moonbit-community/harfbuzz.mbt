@@ -103,11 +103,10 @@ fn parse_kern_subtable_format0(
           (Err(err), _, _) => return Err(err)
           (_, Err(err), _) => return Err(err)
           (_, _, Err(err)) => return Err(err)
-          (Ok(left), Ok(right), Ok(value)) =>
-            pairs.push(KernPair::{ left, right, value })
+          (Ok(left), Ok(right), Ok(value)) => pairs.push({ left, right, value })
         }
       }
-      Ok(KernSubtable::{
+      Ok({
         format,
         horizontal,
         minimum,
@@ -165,7 +164,7 @@ fn parse_kern_class_table(
           }
         }
       }
-      Ok(KernClassTable::{ first_glyph, classes, class_count: max_class + 1 })
+      Ok({ first_glyph, classes, class_count: max_class + 1 })
     }
   }
 }
@@ -231,20 +230,14 @@ fn parse_kern_subtable_format2(
         }
         cursor = cursor + 2
       }
-      Ok(KernSubtable::{
+      Ok({
         format,
         horizontal,
         minimum,
         cross_stream,
         override_flag,
         pairs: [],
-        format2: Some(KernSubtableFormat2::{
-          row_width,
-          left,
-          right,
-          right_class_count,
-          values,
-        }),
+        format2: Some({ row_width, left, right, right_class_count, values }),
         format3: None,
       })
     }
@@ -345,7 +338,7 @@ fn parse_kern_subtable_format3(
           Ok(value) => kern_index.push(value)
         }
       }
-      Ok(KernSubtable::{
+      Ok({
         format,
         horizontal,
         minimum,
@@ -353,7 +346,7 @@ fn parse_kern_subtable_format3(
         override_flag,
         pairs: [],
         format2: None,
-        format3: Some(KernSubtableFormat3::{
+        format3: Some({
           glyph_count,
           kern_value_count,
           left_class_count,
@@ -441,7 +434,7 @@ pub fn KernTable::parse(data : BytesView) -> Result[KernTable, SfntError] {
           }
         }
       }
-      Ok(KernTable::{ subtables, })
+      Ok({ subtables, })
     }
   }
 }

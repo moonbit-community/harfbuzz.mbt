@@ -43,12 +43,12 @@ fn insert_dotted_circle_for_syllables(
     if syllable != last_syllable && (syllable & 0x0f) == broken_type {
       inserted = true
       let info = buffer.infos[i]
-      next_infos.push(GlyphInfo::{
+      next_infos.push({
         codepoint: dotted_circle_codepoint,
         cluster: info.cluster,
         unicode: dotted_circle_codepoint,
       })
-      next_positions.push(GlyphPosition::{
+      next_positions.push({
         x_advance: 0,
         y_advance: 0,
         x_offset: 0,
@@ -112,12 +112,12 @@ fn insert_dotted_circle_for_syllables_with_repha(
       } else {
         buffer.infos[i].cluster
       }
-      next_infos.push(GlyphInfo::{
+      next_infos.push({
         codepoint: dotted_circle_codepoint,
         cluster,
         unicode: dotted_circle_codepoint,
       })
-      next_positions.push(GlyphPosition::{
+      next_positions.push({
         x_advance: 0,
         y_advance: 0,
         x_offset: 0,
@@ -337,11 +337,7 @@ fn apply_gsub_features_for_syllables(
       } else {
         0U
       }
-      infos.push(GlyphInfo::{
-        codepoint: glyph,
-        cluster: current_clusters[idx],
-        unicode,
-      })
+      infos.push({ codepoint: glyph, cluster: current_clusters[idx], unicode })
       positions.push(pos)
     }
     buffer.infos = infos

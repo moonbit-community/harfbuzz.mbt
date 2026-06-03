@@ -145,12 +145,7 @@ fn scale_value(value : Int, scale : Int, upem : Int) -> Int {
 fn make_adjustments(len : Int) -> Array[KerxAdjustment] {
   let adjustments : Array[KerxAdjustment] = []
   for _ in 0..<len {
-    adjustments.push(KerxAdjustment::{
-      x_advance: 0,
-      y_advance: 0,
-      x_offset: 0,
-      y_offset: 0,
-    })
+    adjustments.push({ x_advance: 0, y_advance: 0, x_offset: 0, y_offset: 0 })
   }
   adjustments
 }
@@ -187,11 +182,11 @@ fn parse_kerx_format0(
               header.tuple_count,
               value,
             )
-            pairs.push(KerxPair::{ left, right, value: resolved })
+            pairs.push({ left, right, value: resolved })
           }
         }
       }
-      Ok(KerxSubtable::Format0(header, pairs))
+      Ok(Format0(header, pairs))
     }
   }
 }
@@ -236,7 +231,7 @@ fn parse_kerx_format1(
       Ok(value) => actions.push(value)
     }
   }
-  Ok(KerxSubtable::Format1(header, KerxFormat1::{ table, actions }))
+  Ok(Format1(header, { table, actions }))
 }
 
 ///|
@@ -296,7 +291,7 @@ fn parse_kerx_format2(
         }
       }
       Ok(
-        KerxSubtable::Format2(header, KerxFormat2::{
+        Format2(header, {
           row_width,
           left: left_table,
           right: right_table,
@@ -348,7 +343,7 @@ fn parse_kerx_format4(
       Ok(value) => actions.push(value)
     }
   }
-  Ok(KerxSubtable::Format4(header, KerxFormat4::{ table, flags, actions }))
+  Ok(Format4(header, { table, flags, actions }))
 }
 
 ///|
@@ -450,7 +445,7 @@ fn parse_kerx_format6(
         }
       }
       Ok(
-        KerxSubtable::Format6(header, KerxFormat6::{
+        Format6(header, {
           row_index: row_table,
           column_index: column_table,
           values,
@@ -587,7 +582,7 @@ pub fn KerxTable::parse(
           }
         }
       }
-      Ok(KerxTable::{ version, subtables })
+      Ok({ version, subtables })
     }
   }
 }
@@ -659,14 +654,14 @@ fn apply_pair_kerning(
     if cross_stream {
       let right = adjustments[i + 1]
       adjustments[i + 1] = if horizontal {
-        KerxAdjustment::{
+        {
           x_advance: right.x_advance,
           y_advance: right.y_advance,
           x_offset: right.x_offset,
           y_offset: right.y_offset + scaled,
         }
       } else {
-        KerxAdjustment::{
+        {
           x_advance: right.x_advance,
           y_advance: right.y_advance,
           x_offset: right.x_offset + scaled,
@@ -679,26 +674,26 @@ fn apply_pair_kerning(
       let left = adjustments[i]
       let right = adjustments[i + 1]
       if horizontal {
-        adjustments[i] = KerxAdjustment::{
+        adjustments[i] = {
           x_advance: left.x_advance + kern1,
           y_advance: left.y_advance,
           x_offset: left.x_offset,
           y_offset: left.y_offset,
         }
-        adjustments[i + 1] = KerxAdjustment::{
+        adjustments[i + 1] = {
           x_advance: right.x_advance + kern2,
           y_advance: right.y_advance,
           x_offset: right.x_offset + kern2,
           y_offset: right.y_offset,
         }
       } else {
-        adjustments[i] = KerxAdjustment::{
+        adjustments[i] = {
           x_advance: left.x_advance,
           y_advance: left.y_advance + kern1,
           x_offset: left.x_offset,
           y_offset: left.y_offset,
         }
-        adjustments[i + 1] = KerxAdjustment::{
+        adjustments[i + 1] = {
           x_advance: right.x_advance,
           y_advance: right.y_advance + kern2,
           x_offset: right.x_offset,
@@ -781,14 +776,14 @@ fn apply_format1(
           let pos = adjustments[target]
           if cross_stream {
             adjustments[target] = if horizontal {
-              KerxAdjustment::{
+              {
                 x_advance: pos.x_advance,
                 y_advance: pos.y_advance,
                 x_offset: pos.x_offset,
                 y_offset: pos.y_offset + scaled,
               }
             } else {
-              KerxAdjustment::{
+              {
                 x_advance: pos.x_advance,
                 y_advance: pos.y_advance,
                 x_offset: pos.x_offset + scaled,
@@ -797,14 +792,14 @@ fn apply_format1(
             }
           } else {
             adjustments[target] = if horizontal {
-              KerxAdjustment::{
+              {
                 x_advance: pos.x_advance + scaled,
                 y_advance: pos.y_advance,
                 x_offset: pos.x_offset + scaled,
                 y_offset: pos.y_offset,
               }
             } else {
-              KerxAdjustment::{
+              {
                 x_advance: pos.x_advance,
                 y_advance: pos.y_advance + scaled,
                 x_offset: pos.x_offset,
@@ -882,7 +877,7 @@ fn apply_format4(
                   let pos = adjustments[actual]
                   let x_scaled = scale_value(dx, scale_x, upem)
                   let y_scaled = scale_value(dy, scale_y, upem)
-                  adjustments[actual] = KerxAdjustment::{
+                  adjustments[actual] = {
                     x_advance: pos.x_advance,
                     y_advance: pos.y_advance,
                     x_offset: pos.x_offset + x_scaled,
@@ -912,7 +907,7 @@ fn apply_format4(
                       let pos = adjustments[actual]
                       let x_scaled = scale_value(dx, scale_x, upem)
                       let y_scaled = scale_value(dy, scale_y, upem)
-                      adjustments[actual] = KerxAdjustment::{
+                      adjustments[actual] = {
                         x_advance: pos.x_advance,
                         y_advance: pos.y_advance,
                         x_offset: pos.x_offset + x_scaled,
@@ -938,7 +933,7 @@ fn apply_format4(
             let pos = adjustments[actual]
             let x_scaled = scale_value(dx, scale_x, upem)
             let y_scaled = scale_value(dy, scale_y, upem)
-            adjustments[actual] = KerxAdjustment::{
+            adjustments[actual] = {
               x_advance: pos.x_advance,
               y_advance: pos.y_advance,
               x_offset: pos.x_offset + x_scaled,

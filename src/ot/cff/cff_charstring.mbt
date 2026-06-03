@@ -31,13 +31,7 @@ priv struct CffBoundsBuilder {
 
 ///|
 fn CffBoundsBuilder::new() -> CffBoundsBuilder {
-  CffBoundsBuilder::{
-    has_bounds: false,
-    min_x: 0.0,
-    min_y: 0.0,
-    max_x: 0.0,
-    max_y: 0.0,
-  }
+  { has_bounds: false, min_x: 0.0, min_y: 0.0, max_x: 0.0, max_y: 0.0 }
 }
 
 ///|
@@ -79,7 +73,7 @@ fn CffBoundsBuilder::result(self : CffBoundsBuilder) -> CffBounds? {
   if !self.has_bounds {
     return None
   }
-  Some(CffBounds::{
+  Some({
     x_min: self.min_x,
     y_min: self.min_y,
     x_max: self.max_x,
@@ -95,17 +89,17 @@ priv struct CffPoint {
 
 ///|
 fn CffPoint::offset(self : CffPoint, dx : Double, dy : Double) -> CffPoint {
-  CffPoint::{ x: self.x + dx, y: self.y + dy }
+  { x: self.x + dx, y: self.y + dy }
 }
 
 ///|
 fn CffPoint::offset_x(self : CffPoint, dx : Double) -> CffPoint {
-  CffPoint::{ x: self.x + dx, y: self.y }
+  { x: self.x + dx, y: self.y }
 }
 
 ///|
 fn CffPoint::offset_y(self : CffPoint, dy : Double) -> CffPoint {
-  CffPoint::{ x: self.x, y: self.y + dy }
+  { x: self.x, y: self.y + dy }
 }
 
 ///|
@@ -119,7 +113,7 @@ priv struct CffCharstringState {
 
 ///|
 fn CffCharstringState::new() -> CffCharstringState {
-  CffCharstringState::{
+  {
     x: 0.0,
     y: 0.0,
     has_width: false,
@@ -130,7 +124,7 @@ fn CffCharstringState::new() -> CffCharstringState {
 
 ///|
 fn CffCharstringState::current_point(self : CffCharstringState) -> CffPoint {
-  CffPoint::{ x: self.x, y: self.y }
+  { x: self.x, y: self.y }
 }
 
 ///|
@@ -192,13 +186,7 @@ fn Cff2BlendState::new(
   ivs : Int,
   coords : Array[Int],
 ) -> Cff2BlendState {
-  Cff2BlendState::{
-    ivs,
-    seen_vsindex: false,
-    seen_blend: false,
-    var_store,
-    coords,
-  }
+  { ivs, seen_vsindex: false, seen_blend: false, var_store, coords }
 }
 
 ///|
@@ -1110,7 +1098,7 @@ fn interpret_charstring_cff2(
 
 ///|
 fn offset_bounds(bounds : CffBounds, dx : Double, dy : Double) -> CffBounds {
-  CffBounds::{
+  {
     x_min: bounds.x_min + dx,
     y_min: bounds.y_min + dy,
     x_max: bounds.x_max + dx,
@@ -1374,7 +1362,7 @@ fn handle_hflex1(
   let pt4 = pt3.offset_x(stack[5])
   let pt5 = pt4.offset(stack[6], stack[7])
   let mut pt6 = pt5.offset_x(stack[8])
-  pt6 = CffPoint::{ x: pt6.x, y: state.current_point().y }
+  pt6 = { x: pt6.x, y: state.current_point().y }
   state.curve_to(pt1, pt2, pt3)
   state.curve_to(pt4, pt5, pt6)
   Ok(())
@@ -1404,9 +1392,9 @@ fn handle_flex1(
   let mut pt6 = pt5
   if dx.abs() > dy.abs() {
     pt6 = pt6.offset_x(stack[10])
-    pt6 = CffPoint::{ x: pt6.x, y: state.current_point().y }
+    pt6 = { x: pt6.x, y: state.current_point().y }
   } else {
-    pt6 = CffPoint::{ x: state.current_point().x, y: pt6.y }
+    pt6 = { x: state.current_point().x, y: pt6.y }
     pt6 = pt6.offset_y(stack[10])
   }
   state.curve_to(pt1, pt2, pt3)

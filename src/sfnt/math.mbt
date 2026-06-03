@@ -144,7 +144,7 @@ fn read_math_value_record(
           return Err(UnexpectedEof)
         }
       }
-      Ok(MathValueRecord::{ value, device_offset })
+      Ok({ value, device_offset })
     }
   }
 }
@@ -183,7 +183,7 @@ fn parse_math_constants(
       match radical {
         Err(err) => Err(err)
         Ok(radical) =>
-          Ok(MathConstants::{
+          Ok({
             percent_scale_down,
             min_height,
             math_values,
@@ -230,7 +230,7 @@ fn parse_math_italics_correction(
         }
         records.push(record)
       }
-      Ok(MathItalicsCorrectionInfo::{ coverage_offset, records })
+      Ok({ coverage_offset, records })
     }
   }
 }
@@ -271,7 +271,7 @@ fn parse_math_top_accent_attachment(
         }
         records.push(record)
       }
-      Ok(MathTopAccentAttachment::{ coverage_offset, records })
+      Ok({ coverage_offset, records })
     }
   }
 }
@@ -302,7 +302,7 @@ fn parse_math_kern(
         }
         records.push(record)
       }
-      Ok(MathKern::{ height_count, records })
+      Ok({ height_count, records })
     }
   }
 }
@@ -359,9 +359,9 @@ fn parse_math_kern_info(
             }
           }
         }
-        records.push(MathKernInfoRecord::{ math_kerns, })
+        records.push({ math_kerns, })
       }
-      Ok(MathKernInfo::{ coverage_offset, records })
+      Ok({ coverage_offset, records })
     }
   }
 }
@@ -426,7 +426,7 @@ fn parse_math_glyph_info(
           },
         )
       }
-      Ok(MathGlyphInfo::{
+      Ok({
         italics_correction,
         top_accent_attachment,
         extended_shape_coverage_offset: extended_offset,
@@ -480,7 +480,7 @@ fn parse_math_glyph_assembly(
             Ok(full_advance),
             Ok(flags),
           ) =>
-            parts.push(MathGlyphPartRecord::{
+            parts.push({
               glyph,
               start_connector_length,
               end_connector_length,
@@ -489,7 +489,7 @@ fn parse_math_glyph_assembly(
             })
         }
       }
-      Ok(MathGlyphAssembly::{ italics_correction: italics, parts })
+      Ok({ italics_correction: italics, parts })
     }
   }
 }
@@ -532,13 +532,10 @@ fn parse_math_glyph_construction(
           (Err(err), _) => return Err(err)
           (_, Err(err)) => return Err(err)
           (Ok(glyph), Ok(advance)) =>
-            variants.push(MathGlyphVariantRecord::{
-              variant_glyph: glyph,
-              advance,
-            })
+            variants.push({ variant_glyph: glyph, advance })
         }
       }
-      Ok(MathGlyphConstruction::{ glyph_assembly, variants })
+      Ok({ glyph_assembly, variants })
     }
   }
 }
@@ -616,7 +613,7 @@ fn parse_math_variants(
           }
         }
       }
-      Ok(MathVariants::{
+      Ok({
         min_connector_overlap,
         vert_coverage_offset,
         horiz_coverage_offset,
@@ -686,7 +683,7 @@ pub fn MathTable::parse(data : BytesView) -> Result[MathTable, SfntError] {
           },
         )
       }
-      Ok(MathTable::{
+      Ok({
         major_version: major,
         minor_version: minor,
         constants,

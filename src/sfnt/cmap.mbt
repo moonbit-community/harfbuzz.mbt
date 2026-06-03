@@ -63,7 +63,7 @@ pub fn CmapTable::parse(blob : @blob.Blob) -> Result[CmapTable, SfntError] {
       }
       match (chosen_offset, chosen_format) {
         (Some(subtable_offset), Some(format)) =>
-          Ok(CmapTable::{ data, subtable_offset, format, variation_offset })
+          Ok({ data, subtable_offset, format, variation_offset })
         _ => Err(InvalidFormat)
       }
     }

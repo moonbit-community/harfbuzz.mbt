@@ -66,7 +66,7 @@ pub fn ShapePlan::from_buffer(
       break
     }
   }
-  ShapePlan::{
+  {
     shaper: selected,
     direction: buffer.get_direction(),
     script: buffer.get_script(),

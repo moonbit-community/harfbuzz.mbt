@@ -700,7 +700,7 @@ pub fn Buffer::shape_indic(
       return self.shape_ot_with_options(
         font,
         fallback_position=false,
-        zero_width_marks=ZeroWidthMarks::Disabled,
+        zero_width_marks=Disabled,
       )
     }
   }

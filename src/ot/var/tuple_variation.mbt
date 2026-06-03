@@ -211,13 +211,7 @@ fn parse_tuple_header(
       }
       Ok(
         (
-          TupleHeader::{
-            data_size,
-            tuple_index,
-            peak,
-            start: start_tuple,
-            end: end_tuple,
-          },
+          { data_size, tuple_index, peak, start: start_tuple, end: end_tuple },
           pos,
         ),
       )
@@ -416,7 +410,7 @@ pub fn TupleVariationData::parse(
           }
         }
       }
-      Ok(TupleVariationData::{
+      Ok({
         axis_count,
         tuple_headers,
         shared_points,
@@ -492,7 +486,7 @@ pub fn TupleVariationData::decode(
       pos = end
     }
     let indices = if apply_to_all { None } else { Some(points) }
-    tuples.push(TupleVariation::{
+    tuples.push({
       peak: header.peak,
       start: header.start,
       end: header.end,

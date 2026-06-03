@@ -78,7 +78,7 @@ pub fn HvarTable::parse(data : BytesView) -> Result[HvarTable, VarError] {
         Err(err) => return Err(err)
         Ok(value) => value
       }
-      Ok(HvarTable::{ var_store, adv_map, lsb_map, rsb_map })
+      Ok({ var_store, adv_map, lsb_map, rsb_map })
     }
   }
 }

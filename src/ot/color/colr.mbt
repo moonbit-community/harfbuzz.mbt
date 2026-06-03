@@ -70,11 +70,7 @@ pub fn ColrTable::parse(data : BytesView) -> Result[ColrTable, ColorError] {
             (_, Err(err), _) => return Err(err)
             (_, _, Err(err)) => return Err(err)
             (Ok(glyph_id), Ok(first_layer_index), Ok(num_layers)) =>
-              base_glyphs.push(ColrBaseGlyph::{
-                glyph_id,
-                first_layer_index,
-                num_layers,
-              })
+              base_glyphs.push({ glyph_id, first_layer_index, num_layers })
           }
         }
       }
@@ -92,7 +88,7 @@ pub fn ColrTable::parse(data : BytesView) -> Result[ColrTable, ColorError] {
             (Err(err), _) => return Err(err)
             (_, Err(err)) => return Err(err)
             (Ok(glyph_id), Ok(color_index)) =>
-              layers.push(ColrLayer::{ glyph_id, color_index })
+              layers.push({ glyph_id, color_index })
           }
         }
       }
@@ -161,7 +157,7 @@ pub fn ColrTable::parse(data : BytesView) -> Result[ColrTable, ColorError] {
                         if abs_offset < 0 || abs_offset >= data.length() {
                           return Err(UnexpectedEof)
                         }
-                        base_glyph_paints.push(BaseGlyphPaintRecord::{
+                        base_glyph_paints.push({
                           glyph_id,
                           paint_offset: abs_offset,
                         })
@@ -224,7 +220,7 @@ pub fn ColrTable::parse(data : BytesView) -> Result[ColrTable, ColorError] {
                 data, var_idx_map_offset,
               )
               match parsed {
-                Err(err) => return Err(ColorError::Var(err))
+                Err(err) => return Err(Var(err))
                 Ok(value) => var_idx_map = Some(value)
               }
             }
@@ -235,7 +231,7 @@ pub fn ColrTable::parse(data : BytesView) -> Result[ColrTable, ColorError] {
               let slice = data[var_store_offset:]
               let parsed = @ot_var.ItemVariationStore::parse(slice)
               match parsed {
-                Err(err) => return Err(ColorError::Var(err))
+                Err(err) => return Err(Var(err))
                 Ok(value) => var_store = Some(value)
               }
             }
@@ -243,7 +239,7 @@ pub fn ColrTable::parse(data : BytesView) -> Result[ColrTable, ColorError] {
         }
       }
 
-      Ok(ColrTable::{
+      Ok({
         version,
         base_glyphs,
         layers,
@@ -381,7 +377,7 @@ pub fn ColrTable::clip_extents_for_glyph(
         x_max = x_max + instancer.delta(box.var_idx_base, 2).round().to_int()
         y_max = y_max + instancer.delta(box.var_idx_base, 3).round().to_int()
       }
-      Some(ClipExtents::{
+      Some({
         x_bearing: x_min,
         y_bearing: y_max,
         width: x_max - x_min,
@@ -412,14 +408,7 @@ fn parse_clip_box(
             (_, _, Err(err), _) => Err(err)
             (_, _, _, Err(err)) => Err(err)
             (Ok(x_min), Ok(y_min), Ok(x_max), Ok(y_max)) =>
-              Ok(ClipBox::{
-                format,
-                x_min,
-                y_min,
-                x_max,
-                y_max,
-                var_idx_base: None,
-              })
+              Ok({ format, x_min, y_min, x_max, y_max, var_idx_base: None })
           }
         }
         2 => {
@@ -435,7 +424,7 @@ fn parse_clip_box(
             (_, _, _, Err(err), _) => Err(err)
             (_, _, _, _, Err(err)) => Err(err)
             (Ok(x_min), Ok(y_min), Ok(x_max), Ok(y_max), Ok(var_idx)) =>
-              Ok(ClipBox::{
+              Ok({
                 format,
                 x_min,
                 y_min,
@@ -488,7 +477,7 @@ fn parse_clip_list(
             match clip_box {
               Err(err) => return Err(err)
               Ok(clip_box) =>
-                records.push(ClipRecord::{
+                records.push({
                   start_glyph_id: start_gid,
                   end_glyph_id: end_gid,
                   clip_box,
@@ -497,7 +486,7 @@ fn parse_clip_list(
           }
         }
       }
-      Ok(ClipList::{ format, records })
+      Ok({ format, records })
     }
   }
 }

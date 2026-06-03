@@ -55,7 +55,7 @@ test "serialize width zero link ordering" {
   obj3.real_links.push(SerializeLink::new(0, 0, 0))
   let result2 = serialize_objects([obj2, obj3])
   match result2 {
-    Err(SerializeError::VirtualOrder) => ()
+    Err(VirtualOrder) => ()
     Err(err) => fail("unexpected error: \{@debug.to_string(err)}")
     Ok(_) => fail("expected virtual order error")
   }

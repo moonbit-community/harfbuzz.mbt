@@ -62,40 +62,40 @@ fn parse_suite(definition : String) -> ParsedSuite {
       continue
     }
     if line == "FONTS:" {
-      section = ParseSection::Fonts
+      section = Fonts
       continue
     }
     if line == "PROFILES:" {
-      section = ParseSection::Profiles
+      section = Profiles
       continue
     }
     if line == "SUBSETS:" {
-      section = ParseSection::Subsets
+      section = Subsets
       continue
     }
     if line == "INSTANCES:" {
-      section = ParseSection::Instances
+      section = Instances
       continue
     }
     if line == "OPTIONS:" {
-      section = ParseSection::Options
+      section = Options
       continue
     }
     if line == "IUP_OPTIONS:" {
-      section = ParseSection::IupOptions
+      section = IupOptions
       continue
     }
     match section {
-      ParseSection::Fonts => fonts.push(line)
-      ParseSection::Profiles => profiles.push(line)
-      ParseSection::Subsets => subsets.push(line)
-      ParseSection::Instances => instances.push(line)
-      ParseSection::Options => options.push(line)
-      ParseSection::IupOptions => iup_options.push(line)
-      ParseSection::Unknown => continue
+      Fonts => fonts.push(line)
+      Profiles => profiles.push(line)
+      Subsets => subsets.push(line)
+      Instances => instances.push(line)
+      Options => options.push(line)
+      IupOptions => iup_options.push(line)
+      Unknown => continue
     }
   }
-  ParsedSuite::{ fonts, profiles, subsets, instances, options, iup_options }
+  { fonts, profiles, subsets, instances, options, iup_options }
 }
 
 ///|
@@ -111,7 +111,7 @@ fn build_cases(
           for instance in suite.instances {
             if !suite.iup_options.is_empty() {
               for iup_option in suite.iup_options {
-                cases.push(SubsetDataCase::{
+                cases.push({
                   suite: suite_name,
                   font,
                   profile,
@@ -122,7 +122,7 @@ fn build_cases(
                 })
               }
             } else {
-              cases.push(SubsetDataCase::{
+              cases.push({
                 suite: suite_name,
                 font,
                 profile,
@@ -134,7 +134,7 @@ fn build_cases(
             }
           }
         } else {
-          cases.push(SubsetDataCase::{
+          cases.push({
             suite: suite_name,
             font,
             profile,

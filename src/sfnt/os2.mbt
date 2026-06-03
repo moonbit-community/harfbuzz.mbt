@@ -156,7 +156,7 @@ pub fn Os2Table::parse(data : BytesView) -> Result[Os2Table, SfntError] {
               }
             }
           }
-          Ok(Os2Table::{
+          Ok({
             version,
             weight_class,
             width_class,

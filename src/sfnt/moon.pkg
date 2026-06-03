@@ -2,5 +2,5 @@ import {
   "moonbit-community/harfbuzz/blob",
   "moonbitlang/core/debug",
   "moonbitlang/core/encoding/utf8",
-  "moonbit-community/harfbuzz/common" @common,
+  "moonbit-community/harfbuzz/common",
 }

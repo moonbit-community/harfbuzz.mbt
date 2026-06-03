@@ -3,8 +3,8 @@ import {
 }
 
 import {
-  "moonbit-community/harfbuzz/buffer" @buffer,
-  "moonbit-community/harfbuzz/font" @font,
-  "moonbit-community/harfbuzz/shape" @shape,
-  "moonbit-community/harfbuzz/sfnt" @sfnt,
+  "moonbit-community/harfbuzz/buffer",
+  "moonbit-community/harfbuzz/font",
+  "moonbit-community/harfbuzz/shape",
+  "moonbit-community/harfbuzz/sfnt",
 } for "test"

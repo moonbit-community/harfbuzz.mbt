@@ -20,23 +20,23 @@ pub struct Direction {
 
 ///|
 /// Unset direction.
-pub let direction_invalid : Direction = Direction::{ raw: 0U }
+pub let direction_invalid : Direction = { raw: 0U }
 
 ///|
 /// Left-to-right.
-pub let direction_ltr : Direction = Direction::{ raw: 4U }
+pub let direction_ltr : Direction = { raw: 4U }
 
 ///|
 /// Right-to-left.
-pub let direction_rtl : Direction = Direction::{ raw: 5U }
+pub let direction_rtl : Direction = { raw: 5U }
 
 ///|
 /// Top-to-bottom.
-pub let direction_ttb : Direction = Direction::{ raw: 6U }
+pub let direction_ttb : Direction = { raw: 6U }
 
 ///|
 /// Bottom-to-top.
-pub let direction_btt : Direction = Direction::{ raw: 7U }
+pub let direction_btt : Direction = { raw: 7U }
 
 ///|
 /// Convert a string to a direction (matches by first letter).
@@ -111,7 +111,7 @@ pub fn Direction::reverse(self : Direction) -> Direction {
   if !self.is_valid() {
     direction_invalid
   } else {
-    Direction::{ raw: self.raw ^ 1U }
+    { raw: self.raw ^ 1U }
   }
 }
 

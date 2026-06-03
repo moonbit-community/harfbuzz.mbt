@@ -79,7 +79,7 @@ pub fn Buffer::shape_hebrew(
           Ok(value) => value
         }
         let unicode = if same_len { self.infos[i].unicode } else { 0U }
-        new_infos.push(GlyphInfo::{ codepoint: glyph, cluster, unicode })
+        new_infos.push({ codepoint: glyph, cluster, unicode })
         new_positions.push(pos)
       }
       self.infos = new_infos
@@ -90,7 +90,7 @@ pub fn Buffer::shape_hebrew(
   apply_gpos(
     font,
     self,
-    zero_width_marks=ZeroWidthMarks::ByGdefLate,
+    zero_width_marks=ByGdefLate,
     fallback_position=true,
     unicode_mark_flags~,
     combining_classes~,

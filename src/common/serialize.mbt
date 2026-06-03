@@ -48,7 +48,7 @@ pub struct SerializeObject {
 
 ///|
 pub fn SerializeObject::new(data : Bytes) -> SerializeObject {
-  SerializeObject::{ data, real_links: [], virtual_links: [] }
+  { data, real_links: [], virtual_links: [] }
 }
 
 ///|
@@ -57,10 +57,10 @@ pub fn SerializeLink::new(
   position : Int,
   objidx : Int,
   is_signed? : Bool = false,
-  whence? : SerializeWhence = SerializeWhence::Head,
+  whence? : SerializeWhence = Head,
   bias? : Int = 0,
 ) -> SerializeLink {
-  SerializeLink::{ width, position, objidx, is_signed, whence, bias }
+  { width, position, objidx, is_signed, whence, bias }
 }
 
 ///|
@@ -86,14 +86,14 @@ fn write_offset(
   value : UInt,
 ) -> Result[Unit, SerializeError] {
   let max_value = match max_value_for_width(width) {
-    None => return Err(SerializeError::InvalidWidth)
+    None => return Err(InvalidWidth)
     Some(v) => v
   }
   if value > max_value {
-    return Err(SerializeError::OffsetOverflow)
+    return Err(OffsetOverflow)
   }
   if position < 0 || position + width > data.length() {
-    return Err(SerializeError::OutOfBounds)
+    return Err(OutOfBounds)
   }
   for i in 0..<width {
     let shift = (width - 1 - i) * 8
@@ -134,19 +134,19 @@ fn serialize_objects_with_starts(
     let obj = objects[i]
     for target in obj.virtual_links {
       if target < 0 || target >= count {
-        return Err(SerializeError::InvalidLink)
+        return Err(InvalidLink)
       }
       if target <= i {
-        return Err(SerializeError::VirtualOrder)
+        return Err(VirtualOrder)
       }
     }
     for link in obj.real_links {
       if link.width == 0 {
         if link.objidx < 0 || link.objidx >= count {
-          return Err(SerializeError::InvalidLink)
+          return Err(InvalidLink)
         }
         if link.objidx <= i {
-          return Err(SerializeError::VirtualOrder)
+          return Err(VirtualOrder)
         }
       }
     }
@@ -158,25 +158,25 @@ fn serialize_objects_with_starts(
         continue
       }
       if link.objidx < 0 || link.objidx >= count {
-        return Err(SerializeError::InvalidLink)
+        return Err(InvalidLink)
       }
       let target_start = starts[link.objidx]
       let origin = match link.whence {
-        SerializeWhence::Head => base
-        SerializeWhence::Tail => base + objects[i].data.length()
-        SerializeWhence::Absolute => 0
+        Head => base
+        Tail => base + objects[i].data.length()
+        Absolute => 0
       }
       let offset = target_start + link.bias - origin
       if !link.is_signed && offset < 0 {
-        return Err(SerializeError::NegativeOffset)
+        return Err(NegativeOffset)
       }
       let value = if link.is_signed {
         let limits = match signed_limits(link.width) {
-          None => return Err(SerializeError::InvalidWidth)
+          None => return Err(InvalidWidth)
           Some((min, max)) => (min, max)
         }
         if offset < limits.0 || offset > limits.1 {
-          return Err(SerializeError::OffsetOverflow)
+          return Err(OffsetOverflow)
         }
         if offset < 0 {
           let mask = 1 << (link.width * 8)
@@ -194,7 +194,7 @@ fn serialize_objects_with_starts(
       }
     }
   }
-  let buffer = @buffer.new(size_hint=total)
+  let buffer = @buffer.Buffer(size_hint=total)
   for bytes in patched {
     buffer.write_bytes(Bytes::from_array(bytes))
   }
@@ -233,7 +233,7 @@ fn order_objects(
   for i in 0..<count {
     for target in objects[i].virtual_links {
       if target < 0 || target >= count {
-        return Err(SerializeError::InvalidLink)
+        return Err(InvalidLink)
       }
       edges[i].push(target)
       indegree[target] = indegree[target] + 1
@@ -241,7 +241,7 @@ fn order_objects(
     for link in objects[i].real_links {
       if link.width == 0 {
         if link.objidx < 0 || link.objidx >= count {
-          return Err(SerializeError::InvalidLink)
+          return Err(InvalidLink)
         }
         edges[i].push(link.objidx)
         indegree[link.objidx] = indegree[link.objidx] + 1
@@ -268,7 +268,7 @@ fn order_objects(
     }
   }
   if order.length() != count {
-    return Err(SerializeError::VirtualOrder)
+    return Err(VirtualOrder)
   }
   Ok(order)
 }
@@ -291,7 +291,7 @@ fn remap_objects(
   for i in 0..<order.length() {
     let old_idx = order[i]
     if old_idx < 0 || old_idx >= count {
-      return Err(SerializeError::InvalidLink)
+      return Err(InvalidLink)
     }
     new_index[old_idx] = i
   }
@@ -302,13 +302,13 @@ fn remap_objects(
     let obj = SerializeObject::new(old.data)
     for link in old.real_links {
       if link.objidx < 0 || link.objidx >= count {
-        return Err(SerializeError::InvalidLink)
+        return Err(InvalidLink)
       }
       let mapped = new_index[link.objidx]
       if mapped < 0 {
-        return Err(SerializeError::InvalidLink)
+        return Err(InvalidLink)
       }
-      obj.real_links.push(SerializeLink::{
+      obj.real_links.push({
         width: link.width,
         position: link.position,
         objidx: mapped,
@@ -319,11 +319,11 @@ fn remap_objects(
     }
     for target in old.virtual_links {
       if target < 0 || target >= count {
-        return Err(SerializeError::InvalidLink)
+        return Err(InvalidLink)
       }
       let mapped = new_index[target]
       if mapped < 0 {
-        return Err(SerializeError::InvalidLink)
+        return Err(InvalidLink)
       }
       obj.virtual_links.push(mapped)
     }

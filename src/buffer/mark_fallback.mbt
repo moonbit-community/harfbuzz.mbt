@@ -333,7 +333,7 @@ fn glyph_extents(
       let y_min = scale_value(bounds.y_min, scale_y, upem)
       let y_max = scale_value(bounds.y_max, scale_y, upem)
       Ok(
-        Some(GlyphExtents::{
+        Some({
           x_bearing: x_min,
           y_bearing: y_max,
           width: x_max - x_min,
@@ -446,7 +446,7 @@ fn position_mark_fallback(
     extents.y_bearing = extents.y_bearing - mark_extents.height
     extents.height = extents.height + mark_extents.height
   }
-  buffer.positions[mark_index] = GlyphPosition::{
+  buffer.positions[mark_index] = {
     x_advance: 0,
     y_advance: 0,
     x_offset,
@@ -547,12 +547,7 @@ fn zero_mark_advances_with_flags(
       } else {
         pos.y_offset
       }
-      buffer.positions[i] = GlyphPosition::{
-        x_advance: 0,
-        y_advance: 0,
-        x_offset,
-        y_offset,
-      }
+      buffer.positions[i] = { x_advance: 0, y_advance: 0, x_offset, y_offset }
     }
   }
 }

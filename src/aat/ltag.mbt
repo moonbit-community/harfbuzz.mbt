@@ -71,7 +71,7 @@ pub fn LtagTable::parse(data : BytesView) -> Result[LtagTable, AatError] {
           }
         }
       }
-      Ok(LtagTable::{ version, flags, tags })
+      Ok({ version, flags, tags })
     }
   }
 }

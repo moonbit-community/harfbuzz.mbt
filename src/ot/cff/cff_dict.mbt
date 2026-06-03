@@ -56,7 +56,7 @@ pub fn parse_cff_dict(data : BytesView) -> Result[CffDict, CffError] {
       }
     }
   }
-  Ok(CffDict::{ entries, })
+  Ok({ entries, })
 }
 
 ///|

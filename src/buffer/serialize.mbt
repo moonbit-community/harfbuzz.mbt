@@ -31,7 +31,7 @@ pub fn BufferSerializeMode::from_string(
   len? : Int = -1,
 ) -> BufferSerializeMode {
   if s is "" || len == 0 {
-    return BufferSerializeMode::Glyphs
+    return Glyphs
   }
   let max_len = if len < 0 || len > s.length() { s.length() } else { len }
   let sb = StringBuilder::new(size_hint=max_len)
@@ -45,9 +45,9 @@ pub fn BufferSerializeMode::from_string(
   }
   let normalized = sb.to_string()
   if normalized == "unicode" {
-    BufferSerializeMode::Unicode
+    Unicode
   } else {
-    BufferSerializeMode::Glyphs
+    Glyphs
   }
 }
 
@@ -57,7 +57,7 @@ pub fn BufferSerializeFormat::from_string(
   len? : Int = -1,
 ) -> BufferSerializeFormat {
   if s is "" || len == 0 {
-    return BufferSerializeFormat::Invalid
+    return Invalid
   }
   let max_len = if len < 0 || len > s.length() { s.length() } else { len }
   let sb = StringBuilder::new(size_hint=max_len)
@@ -71,11 +71,11 @@ pub fn BufferSerializeFormat::from_string(
   }
   let normalized = sb.to_string()
   if normalized == "text" {
-    BufferSerializeFormat::Text
+    Text
   } else if normalized == "json" {
-    BufferSerializeFormat::Json
+    Json
   } else {
-    BufferSerializeFormat::Invalid
+    Invalid
   }
 }
 
@@ -84,9 +84,9 @@ pub fn BufferSerializeFormat::to_string(
   self : BufferSerializeFormat,
 ) -> String? {
   match self {
-    BufferSerializeFormat::Text => Some("text")
-    BufferSerializeFormat::Json => Some("json")
-    BufferSerializeFormat::Invalid => None
+    Text => Some("text")
+    Json => Some("json")
+    Invalid => None
   }
 }
 
@@ -144,15 +144,15 @@ fn serialize_text(
   let sb = StringBuilder::new()
   let mut x = 0
   let mut y = 0
-  let open = if mode == BufferSerializeMode::Glyphs { '[' } else { '<' }
-  let close = if mode == BufferSerializeMode::Glyphs { ']' } else { '>' }
+  let open = if mode == Glyphs { '[' } else { '<' }
+  let close = if mode == Glyphs { ']' } else { '>' }
   sb.write_char(open)
   for i in start..<end {
     if i > start {
       sb.write_char('|')
     }
     let info = buffer.infos[i]
-    if mode == BufferSerializeMode::Glyphs {
+    if mode == Glyphs {
       append_uint(sb, info.codepoint)
     } else {
       sb.write_string("U+")
@@ -209,7 +209,7 @@ fn serialize_json(
     }
     sb.write_char('{')
     let info = buffer.infos[i]
-    if mode == BufferSerializeMode::Glyphs {
+    if mode == Glyphs {
       sb.write_string("\"g\":")
       append_uint(sb, info.codepoint)
     } else {
@@ -247,8 +247,8 @@ fn serialize_json(
 ///|
 pub fn Buffer::serialize(
   self : Buffer,
-  format? : BufferSerializeFormat = BufferSerializeFormat::Text,
-  mode? : BufferSerializeMode = BufferSerializeMode::Glyphs,
+  format? : BufferSerializeFormat = Text,
+  mode? : BufferSerializeMode = Glyphs,
   start? : Int = 0,
   end? : Int = -1,
   no_positions? : Bool = false,
@@ -271,14 +271,14 @@ pub fn Buffer::serialize(
   let include_advances = include_positions && !no_advances
   let include_clusters = !no_clusters
   match format {
-    BufferSerializeFormat::Text =>
+    Text =>
       serialize_text(
         self, mode, start, end, include_clusters, include_positions, include_advances,
       )
-    BufferSerializeFormat::Json =>
+    Json =>
       serialize_json(
         self, mode, start, end, include_clusters, include_positions, include_advances,
       )
-    BufferSerializeFormat::Invalid => ""
+    Invalid => ""
   }
 }

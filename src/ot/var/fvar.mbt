@@ -187,7 +187,7 @@ pub fn FvarTable::parse(data : BytesView) -> Result[FvarTable, VarError] {
             } else {
               max_value
             }
-            axes.push(AxisRecord::{
+            axes.push({
               tag,
               min_value,
               default_value,
@@ -228,7 +228,7 @@ pub fn FvarTable::parse(data : BytesView) -> Result[FvarTable, VarError] {
                 Ok(id) => postscript_name_id = Some(id)
               }
             }
-            instances.push(InstanceRecord::{
+            instances.push({
               subfamily_name_id,
               flags,
               coordinates: coords,
@@ -238,7 +238,7 @@ pub fn FvarTable::parse(data : BytesView) -> Result[FvarTable, VarError] {
         }
         instance_offset = instance_offset + instance_size
       }
-      Ok(FvarTable::{ axes, instances })
+      Ok({ axes, instances })
     }
   }
 }

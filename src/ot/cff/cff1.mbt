@@ -145,7 +145,7 @@ pub fn Cff1Table::parse(data : BytesView) -> Result[Cff1Table, CffError] {
   } else {
     (None, None)
   }
-  Ok(Cff1Table::{
+  Ok({
     data: data.to_owned(),
     name_index,
     top_dict,

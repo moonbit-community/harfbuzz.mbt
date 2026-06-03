@@ -415,7 +415,7 @@ test "serialize objects detects overflow" {
   let obj1 = SerializeObject::new(Bytes::from_array([0]))
   let result = serialize_objects([obj0, obj1])
   match result {
-    Err(SerializeError::OffsetOverflow) => ()
+    Err(OffsetOverflow) => ()
     Err(err) => fail("unexpected error: \{@debug.to_string(err)}")
     Ok(_) => fail("expected overflow error")
   }
@@ -424,9 +424,7 @@ test "serialize objects detects overflow" {
 ///|
 test "serialize objects whence and signed offsets" {
   let obj0 = SerializeObject::new(Bytes::from_array([0, 0, 0, 0]))
-  obj0.real_links.push(
-    SerializeLink::new(2, 0, 1, whence=SerializeWhence::Tail),
-  )
+  obj0.real_links.push(SerializeLink::new(2, 0, 1, whence=Tail))
   let obj1 = SerializeObject::new(Bytes::from_array([0x11, 0x22]))
   let result = serialize_objects([obj0, obj1])
   match result {
@@ -438,9 +436,7 @@ test "serialize objects whence and signed offsets" {
   }
 
   let obj2 = SerializeObject::new(Bytes::from_array([0, 0]))
-  obj2.real_links.push(
-    SerializeLink::new(2, 0, 1, whence=SerializeWhence::Absolute),
-  )
+  obj2.real_links.push(SerializeLink::new(2, 0, 1, whence=Absolute))
   let obj3 = SerializeObject::new(Bytes::from_array([0xAA, 0xBB]))
   let result2 = serialize_objects([obj2, obj3])
   match result2 {
@@ -483,7 +479,7 @@ test "serialize objects bias and virtual order" {
   let obj3 = SerializeObject::new(Bytes::from_array([0]))
   let result2 = serialize_objects([obj2, obj3])
   match result2 {
-    Err(SerializeError::VirtualOrder) => ()
+    Err(VirtualOrder) => ()
     Err(err) => fail("unexpected error: \{@debug.to_string(err)}")
     Ok(_) => fail("expected virtual order error")
   }
@@ -537,7 +533,7 @@ test "serialize objects packed cycle" {
   obj1.virtual_links.push(0)
   let result = serialize_objects_packed([obj0, obj1])
   match result {
-    Err(SerializeError::VirtualOrder) => ()
+    Err(VirtualOrder) => ()
     Err(err) => fail("unexpected error: \{@debug.to_string(err)}")
     Ok(_) => fail("expected virtual order error")
   }
@@ -550,7 +546,7 @@ test "serialize objects invalid links" {
   obj1.real_links.push(SerializeLink::new(2, 0, 0))
   let result = serialize_objects([obj0, obj1])
   match result {
-    Err(SerializeError::NegativeOffset) => ()
+    Err(NegativeOffset) => ()
     Err(err) => fail("unexpected error: \{@debug.to_string(err)}")
     Ok(_) => fail("expected negative offset error")
   }
@@ -559,7 +555,7 @@ test "serialize objects invalid links" {
   obj2.real_links.push(SerializeLink::new(2, 4, 0))
   let result2 = serialize_objects([obj2])
   match result2 {
-    Err(SerializeError::OutOfBounds) => ()
+    Err(OutOfBounds) => ()
     Err(err) => fail("unexpected error: \{@debug.to_string(err)}")
     Ok(_) => fail("expected out of bounds error")
   }
@@ -568,7 +564,7 @@ test "serialize objects invalid links" {
   obj3.real_links.push(SerializeLink::new(5, 0, 0))
   let result3 = serialize_objects([obj3])
   match result3 {
-    Err(SerializeError::InvalidWidth) => ()
+    Err(InvalidWidth) => ()
     Err(err) => fail("unexpected error: \{@debug.to_string(err)}")
     Ok(_) => fail("expected invalid width error")
   }

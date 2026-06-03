@@ -1638,7 +1638,7 @@ test "buffer serialize glyphs json" {
     Err(err) => fail("shape error: \{@debug.to_string(err)}")
     Ok(_) => ()
   }
-  let output = buffer.serialize(format=BufferSerializeFormat::Json)
+  let output = buffer.serialize(format=Json)
   inspect(
     output,
     content="[{\"g\":3,\"cl\":0,\"dx\":5,\"dy\":0,\"ax\":480,\"ay\":0},{\"g\":2,\"cl\":1,\"dx\":0,\"dy\":0,\"ax\":410,\"ay\":0}]",
@@ -1655,11 +1655,7 @@ test "buffer serialize unicode text" {
     Err(err) => fail("shape error: \{@debug.to_string(err)}")
     Ok(_) => ()
   }
-  let output = buffer.serialize(
-    format=BufferSerializeFormat::Text,
-    mode=BufferSerializeMode::Unicode,
-    no_positions=true,
-  )
+  let output = buffer.serialize(format=Text, mode=Unicode, no_positions=true)
   inspect(output, content="<U+0041=0|U+0042=1>")
 }
 

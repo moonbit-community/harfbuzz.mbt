@@ -348,7 +348,7 @@ fn preprocess_vowel_constraints(buffer : Buffer) -> Unit {
       next_infos.push(infos[i + 1])
       next_positions.push(positions[i + 1])
       let cluster = infos[i + 2].cluster
-      next_infos.push(GlyphInfo::{
+      next_infos.push({
         codepoint: dotted_circle_codepoint,
         cluster,
         unicode: dotted_circle_codepoint,
@@ -363,7 +363,7 @@ fn preprocess_vowel_constraints(buffer : Buffer) -> Unit {
       next_infos.push(infos[i])
       next_positions.push(positions[i])
       let cluster = infos[i + 1].cluster
-      next_infos.push(GlyphInfo::{
+      next_infos.push({
         codepoint: dotted_circle_codepoint,
         cluster,
         unicode: dotted_circle_codepoint,

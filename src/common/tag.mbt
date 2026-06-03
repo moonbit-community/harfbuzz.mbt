@@ -25,7 +25,7 @@ pub fn Tag::from_bytes(b1 : Byte, b2 : Byte, b3 : Byte, b4 : Byte) -> Tag {
     (b2.to_uint() << 16) |
     (b3.to_uint() << 8) |
     b4.to_uint()
-  Tag::{ value, }
+  { value, }
 }
 
 ///|
@@ -87,7 +87,7 @@ pub fn Tag::to_string(self : Tag) -> String {
 }
 
 ///|
-pub impl Show for Tag with output(self, logger) {
+pub impl Show for Tag with fn output(self, logger) {
   logger.write_string(self.to_string())
 }
 

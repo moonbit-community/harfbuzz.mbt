@@ -35,7 +35,7 @@ pub fn OutlinePoint::new(
   y : Double,
   kind : OutlinePointKind,
 ) -> OutlinePoint {
-  OutlinePoint::{ x, y, kind }
+  { x, y, kind }
 }
 
 ///|
@@ -63,7 +63,7 @@ pub struct Outline {
 
 ///|
 pub fn Outline::new() -> Outline {
-  Outline::{ points: [], contours: [] }
+  { points: [], contours: [] }
 }
 
 ///|
@@ -86,14 +86,14 @@ pub fn[T] Outline::replay(
       let p1 = self.points[i]
       i = i + 1
       match p1.kind {
-        OutlinePointKind::MoveTo => session.move_to(p1.x, p1.y)
-        OutlinePointKind::LineTo => session.line_to(p1.x, p1.y)
-        OutlinePointKind::QuadraticTo => {
+        MoveTo => session.move_to(p1.x, p1.y)
+        LineTo => session.line_to(p1.x, p1.y)
+        QuadraticTo => {
           let p2 = self.points[i]
           i = i + 1
           session.quadratic_to(p1.x, p1.y, p2.x, p2.y)
         }
-        OutlinePointKind::CubicTo => {
+        CubicTo => {
           let p2 = self.points[i]
           let p3 = self.points[i + 1]
           i = i + 2
@@ -238,7 +238,7 @@ fn outline_recording_pen_move_to(
   to_x : Double,
   to_y : Double,
 ) -> Unit {
-  data.points.push(OutlinePoint::new(to_x, to_y, OutlinePointKind::MoveTo))
+  data.points.push(OutlinePoint::new(to_x, to_y, MoveTo))
 }
 
 ///|
@@ -248,7 +248,7 @@ fn outline_recording_pen_line_to(
   to_x : Double,
   to_y : Double,
 ) -> Unit {
-  data.points.push(OutlinePoint::new(to_x, to_y, OutlinePointKind::LineTo))
+  data.points.push(OutlinePoint::new(to_x, to_y, LineTo))
 }
 
 ///|
@@ -260,10 +260,8 @@ fn outline_recording_pen_quadratic_to(
   to_x : Double,
   to_y : Double,
 ) -> Unit {
-  data.points.push(
-    OutlinePoint::new(control_x, control_y, OutlinePointKind::QuadraticTo),
-  )
-  data.points.push(OutlinePoint::new(to_x, to_y, OutlinePointKind::QuadraticTo))
+  data.points.push(OutlinePoint::new(control_x, control_y, QuadraticTo))
+  data.points.push(OutlinePoint::new(to_x, to_y, QuadraticTo))
 }
 
 ///|
@@ -277,13 +275,9 @@ fn outline_recording_pen_cubic_to(
   to_x : Double,
   to_y : Double,
 ) -> Unit {
-  data.points.push(
-    OutlinePoint::new(control1_x, control1_y, OutlinePointKind::CubicTo),
-  )
-  data.points.push(
-    OutlinePoint::new(control2_x, control2_y, OutlinePointKind::CubicTo),
-  )
-  data.points.push(OutlinePoint::new(to_x, to_y, OutlinePointKind::CubicTo))
+  data.points.push(OutlinePoint::new(control1_x, control1_y, CubicTo))
+  data.points.push(OutlinePoint::new(control2_x, control2_y, CubicTo))
+  data.points.push(OutlinePoint::new(to_x, to_y, CubicTo))
 }
 
 ///|

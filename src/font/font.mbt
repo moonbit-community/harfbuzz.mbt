@@ -227,7 +227,7 @@ let tag_opbd : @common.Tag = @common.Tag::from_chars('o', 'p', 'b', 'd')
 ///|
 /// Create a font from a face.
 pub fn Font::new(face : @face.Face) -> Font {
-  Font::{
+  {
     face,
     scale_x: 0,
     scale_y: 0,

@@ -997,7 +997,7 @@ priv struct ContextApplyResult {
 
 ///|
 fn context_no_match(index : Int) -> ContextApplyResult {
-  ContextApplyResult::{ matched: false, changed: false, next_index: index + 1 }
+  { matched: false, changed: false, next_index: index + 1 }
 }
 
 ///|
@@ -1099,7 +1099,7 @@ fn apply_context_class_rule(
       if next_index > glyphs.length() {
         next_index = glyphs.length()
       }
-      Ok(ContextApplyResult::{ matched: true, changed, next_index })
+      Ok({ matched: true, changed, next_index })
     }
   }
 }
@@ -1295,7 +1295,7 @@ fn apply_context_rule(
       if next_index > glyphs.length() {
         next_index = glyphs.length()
       }
-      Ok(ContextApplyResult::{ matched: true, changed, next_index })
+      Ok({ matched: true, changed, next_index })
     }
   }
 }

@@ -59,5 +59,5 @@ pub fn VmtxTable::parse(
       offset = offset + 2
     }
   }
-  Ok(VmtxTable::{ advances, tsbs })
+  Ok({ advances, tsbs })
 }

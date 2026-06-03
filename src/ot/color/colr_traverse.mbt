@@ -47,7 +47,7 @@ fn walk_paint_impl(
     return Ok(count)
   }
   match paint {
-    @paint.Paint::ColrLayers(first_layer_index, num_layers) => {
+    ColrLayers(first_layer_index, num_layers) => {
       if num_layers < 0 {
         return Err(InvalidFormat)
       }
@@ -73,7 +73,7 @@ fn walk_paint_impl(
         }
       }
     }
-    @paint.Paint::Glyph(_, child) => {
+    Glyph(_, child) => {
       let child_count = walk_paint_impl(
         colr,
         child,
@@ -86,7 +86,7 @@ fn walk_paint_impl(
         Ok(value) => count = count + value
       }
     }
-    @paint.Paint::ColrGlyph(glyph_id) => {
+    ColrGlyph(glyph_id) => {
       let glyph_paint = colr.paint_for_glyph(glyph_id)
       match glyph_paint {
         Err(err) => return Err(err)
@@ -106,16 +106,16 @@ fn walk_paint_impl(
         }
       }
     }
-    @paint.Paint::Transform(_, child)
-    | @paint.Paint::Translate(_, _, _, child)
-    | @paint.Paint::Scale(_, _, _, child)
-    | @paint.Paint::ScaleAroundCenter(_, _, _, _, _, child)
-    | @paint.Paint::ScaleUniform(_, _, child)
-    | @paint.Paint::ScaleUniformAroundCenter(_, _, _, _, child)
-    | @paint.Paint::Rotate(_, _, child)
-    | @paint.Paint::RotateAroundCenter(_, _, _, _, child)
-    | @paint.Paint::Skew(_, _, _, child)
-    | @paint.Paint::SkewAroundCenter(_, _, _, _, _, child) => {
+    Transform(_, child)
+    | Translate(_, _, _, child)
+    | Scale(_, _, _, child)
+    | ScaleAroundCenter(_, _, _, _, _, child)
+    | ScaleUniform(_, _, child)
+    | ScaleUniformAroundCenter(_, _, _, _, child)
+    | Rotate(_, _, child)
+    | RotateAroundCenter(_, _, _, _, child)
+    | Skew(_, _, _, child)
+    | SkewAroundCenter(_, _, _, _, _, child) => {
       let child_count = walk_paint_impl(
         colr,
         child,
@@ -128,7 +128,7 @@ fn walk_paint_impl(
         Ok(value) => count = count + value
       }
     }
-    @paint.Paint::Composite(_, src, backdrop) => {
+    Composite(_, src, backdrop) => {
       let src_count = walk_paint_impl(colr, src, visit, depth + 1, max_depth)
       match src_count {
         Err(err) => return Err(err)

@@ -49,12 +49,11 @@ pub fn GaspTable::parse(data : BytesView) -> Result[GaspTable, SfntError] {
         match (max_ppem, behavior) {
           (Err(err), _) => return Err(err)
           (_, Err(err)) => return Err(err)
-          (Ok(max_ppem), Ok(behavior)) =>
-            ranges.push(GaspRange::{ max_ppem, behavior })
+          (Ok(max_ppem), Ok(behavior)) => ranges.push({ max_ppem, behavior })
         }
         offset = offset + 4
       }
-      Ok(GaspTable::{ version, ranges })
+      Ok({ version, ranges })
     }
   }
 }

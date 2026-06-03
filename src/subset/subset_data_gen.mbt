@@ -21,7 +21,7 @@ pub struct SubsetDataSuite {
 
 ///|
 pub let subset_data_suites : Array[SubsetDataSuite] = [
-  SubsetDataSuite::{
+  {
     name: "basics.tests",
     definition: (
       #|FONTS:
@@ -36,7 +36,7 @@ pub let subset_data_suites : Array[SubsetDataSuite] = [
       #|
     ),
   },
-  SubsetDataSuite::{
+  {
     name: "bidi.tests",
     definition: (
       #|FONTS:
@@ -51,7 +51,7 @@ pub let subset_data_suites : Array[SubsetDataSuite] = [
       #|
     ),
   },
-  SubsetDataSuite::{
+  {
     name: "cbdt.tests",
     definition: (
       #|FONTS:
@@ -74,7 +74,7 @@ pub let subset_data_suites : Array[SubsetDataSuite] = [
       #|
     ),
   },
-  SubsetDataSuite::{
+  {
     name: "cmap.tests",
     definition: (
       #|FONTS:
@@ -89,7 +89,7 @@ pub let subset_data_suites : Array[SubsetDataSuite] = [
       #|
     ),
   },
-  SubsetDataSuite::{
+  {
     name: "math.tests",
     definition: (
       #|FONTS:
@@ -103,7 +103,7 @@ pub let subset_data_suites : Array[SubsetDataSuite] = [
       #|
     ),
   },
-  SubsetDataSuite::{
+  {
     name: "sbix.tests",
     definition: (
       #|FONTS:

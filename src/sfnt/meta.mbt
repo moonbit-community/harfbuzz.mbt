@@ -76,11 +76,11 @@ pub fn MetaTable::parse(data : BytesView) -> Result[MetaTable, SfntError] {
             for j in start..<end {
               bytes.push(data[j])
             }
-            records.push(MetaRecord::{ tag, data: Bytes::from_array(bytes) })
+            records.push({ tag, data: Bytes::from_array(bytes) })
           }
         }
       }
-      Ok(MetaTable::{ version, flags, records })
+      Ok({ version, flags, records })
     }
   }
 }

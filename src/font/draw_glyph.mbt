@@ -26,7 +26,7 @@ priv struct DrawPoint {
 
 ///|
 fn mid_point(a : DrawPoint, b : DrawPoint) -> DrawPoint {
-  DrawPoint::{ x: (a.x + b.x) * 0.5, y: (a.y + b.y) * 0.5 }
+  { x: (a.x + b.x) * 0.5, y: (a.y + b.y) * 0.5 }
 }
 
 ///|
@@ -44,10 +44,7 @@ fn scale_point(
   scale_y : Int,
   upem : Int,
 ) -> DrawPoint {
-  DrawPoint::{
-    x: scale_coord(p.x, scale_x, upem),
-    y: scale_coord(p.y, scale_y, upem),
-  }
+  { x: scale_coord(p.x, scale_x, upem), y: scale_coord(p.y, scale_y, upem) }
 }
 
 ///|

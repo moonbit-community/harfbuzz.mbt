@@ -20,7 +20,7 @@ pub struct Language {
 
 ///|
 /// Invalid language value.
-pub let language_invalid : Language = Language::{ tag: "" }
+pub let language_invalid : Language = { tag: "" }
 
 ///|
 /// Canonicalize an ASCII language tag.
@@ -59,7 +59,7 @@ pub fn Language::from_string(s : String, len? : Int = -1) -> Language {
   if tag is "" {
     language_invalid
   } else {
-    Language::{ tag, }
+    { tag, }
   }
 }
 

@@ -23,6 +23,6 @@ pub struct HheaTable {
 pub fn HheaTable::parse(data : BytesView) -> Result[HheaTable, SfntError] {
   match read_u16_int(data, 34) {
     Err(err) => Err(err)
-    Ok(number_of_hmetrics) => Ok(HheaTable::{ number_of_hmetrics, })
+    Ok(number_of_hmetrics) => Ok({ number_of_hmetrics, })
   }
 }

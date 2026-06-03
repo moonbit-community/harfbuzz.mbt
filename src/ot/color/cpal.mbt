@@ -152,7 +152,7 @@ pub fn CpalTable::parse(data : BytesView) -> Result[CpalTable, ColorError] {
           }
         }
       }
-      Ok(CpalTable::{
+      Ok({
         version,
         num_colors,
         num_palettes,

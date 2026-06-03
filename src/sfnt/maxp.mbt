@@ -23,6 +23,6 @@ pub struct MaxpTable {
 pub fn MaxpTable::parse(data : BytesView) -> Result[MaxpTable, SfntError] {
   match read_u16_int(data, 4) {
     Err(err) => Err(err)
-    Ok(num_glyphs) => Ok(MaxpTable::{ num_glyphs, })
+    Ok(num_glyphs) => Ok({ num_glyphs, })
   }
 }

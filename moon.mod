@@ -1,0 +1,15 @@
+name = "moonbit-community/harfbuzz"
+
+version = "0.1.0"
+
+description = "MoonBit port of HarfBuzz."
+
+license = "Apache-2.0"
+
+repository = ""
+
+keywords = [ "harfbuzz", "text", "shaping", "font" ]
+
+options(
+  source: "src",
+)

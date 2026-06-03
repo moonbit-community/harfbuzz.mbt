@@ -99,7 +99,7 @@ fn parse_jstf_mod_list(
           Ok(index) => indices.push(index)
         }
       }
-      Ok(JstfModList::{ indices, })
+      Ok({ indices, })
     }
   }
 }
@@ -125,7 +125,7 @@ fn parse_jstf_max(data : BytesView, offset : Int) -> Result[JstfMax, SfntError] 
           Ok(value) => offsets.push(value)
         }
       }
-      Ok(JstfMax::{ lookup_offsets: offsets })
+      Ok({ lookup_offsets: offsets })
     }
   }
 }
@@ -232,7 +232,7 @@ fn parse_jstf_priority(
     Ok(value) => value
   }
 
-  Ok(JstfPriority::{
+  Ok({
     shrinkage_enable_gsub,
     shrinkage_disable_gsub,
     shrinkage_enable_gpos,
@@ -283,7 +283,7 @@ fn parse_jstf_lang_sys(
           }
         }
       }
-      Ok(JstfLangSys::{ priorities, })
+      Ok({ priorities, })
     }
   }
 }
@@ -349,7 +349,7 @@ fn parse_jstf_lang_sys_record(
           },
         )
       }
-      Ok(JstfLangSysRecord::{ tag, lang_sys })
+      Ok({ tag, lang_sys })
     }
   }
 }
@@ -402,7 +402,7 @@ fn parse_jstf_script(
         }
         lang_sys_records.push(record)
       }
-      Ok(JstfScript::{ extender_glyphs, default_lang_sys, lang_sys_records })
+      Ok({ extender_glyphs, default_lang_sys, lang_sys_records })
     }
   }
 }
@@ -454,11 +454,11 @@ pub fn JstfTable::parse(data : BytesView) -> Result[JstfTable, SfntError] {
                 },
               )
             }
-            scripts.push(JstfScriptRecord::{ tag, script })
+            scripts.push({ tag, script })
           }
         }
       }
-      Ok(JstfTable::{ major_version: major, minor_version: minor, scripts })
+      Ok({ major_version: major, minor_version: minor, scripts })
     }
   }
 }

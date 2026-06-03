@@ -59,5 +59,5 @@ pub fn HmtxTable::parse(
       offset = offset + 2
     }
   }
-  Ok(HmtxTable::{ advances, lsbs })
+  Ok({ advances, lsbs })
 }

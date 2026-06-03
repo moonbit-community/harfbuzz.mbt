@@ -37,25 +37,22 @@ pub struct Blob {
 
 ///|
 /// Create a blob from bytes.
-pub fn Blob::from_bytes(
-  bytes : Bytes,
-  mode? : MemoryMode = MemoryMode::Readonly,
-) -> Blob {
-  Blob::{ bytes, offset: 0, length: bytes.length(), mode }
+pub fn Blob::from_bytes(bytes : Bytes, mode? : MemoryMode = Readonly) -> Blob {
+  { bytes, offset: 0, length: bytes.length(), mode }
 }
 
 ///|
 /// Create a blob by copying bytes.
 pub fn Blob::from_bytes_copy(bytes : Bytes) -> Blob {
   let copy = Bytes::from_array(bytes.to_array())
-  Blob::from_bytes(copy, mode=MemoryMode::Duplicate)
+  Blob::from_bytes(copy, mode=Duplicate)
 }
 
 ///|
 /// Create a blob from a byte array view.
 pub fn Blob::from_array(
   bytes : ArrayView[Byte],
-  mode? : MemoryMode = MemoryMode::Readonly,
+  mode? : MemoryMode = Readonly,
 ) -> Blob {
   Blob::from_bytes(Bytes::from_array(bytes), mode~)
 }
@@ -77,12 +74,7 @@ pub fn Blob::sub(
   if end > self.length {
     return Err(OutOfBounds)
   }
-  Ok(Blob::{
-    bytes: self.bytes,
-    offset: self.offset + offset,
-    length,
-    mode: MemoryMode::Readonly,
-  })
+  Ok({ bytes: self.bytes, offset: self.offset + offset, length, mode: Readonly })
 }
 
 ///|

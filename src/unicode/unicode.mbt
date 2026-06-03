@@ -559,23 +559,23 @@ pub enum SpaceFallbackType {
 /// Return space fallback type for a codepoint (subset of Zs, excluding OGHAM SPACE MARK).
 pub fn space_fallback_type(u : UInt) -> SpaceFallbackType {
   match u {
-    0x0020U => SpaceFallbackType::Space
-    0x00A0U => SpaceFallbackType::Space
-    0x2000U => SpaceFallbackType::SpaceEm2
-    0x2001U => SpaceFallbackType::SpaceEm
-    0x2002U => SpaceFallbackType::SpaceEm2
-    0x2003U => SpaceFallbackType::SpaceEm
-    0x2004U => SpaceFallbackType::SpaceEm3
-    0x2005U => SpaceFallbackType::SpaceEm4
-    0x2006U => SpaceFallbackType::SpaceEm6
-    0x2007U => SpaceFallbackType::SpaceFigure
-    0x2008U => SpaceFallbackType::SpacePunctuation
-    0x2009U => SpaceFallbackType::SpaceEm5
-    0x200AU => SpaceFallbackType::SpaceEm16
-    0x202FU => SpaceFallbackType::SpaceNarrow
-    0x205FU => SpaceFallbackType::Space4Em18
-    0x3000U => SpaceFallbackType::SpaceEm
-    _ => SpaceFallbackType::NotSpace
+    0x0020U => Space
+    0x00A0U => Space
+    0x2000U => SpaceEm2
+    0x2001U => SpaceEm
+    0x2002U => SpaceEm2
+    0x2003U => SpaceEm
+    0x2004U => SpaceEm3
+    0x2005U => SpaceEm4
+    0x2006U => SpaceEm6
+    0x2007U => SpaceFigure
+    0x2008U => SpacePunctuation
+    0x2009U => SpaceEm5
+    0x200AU => SpaceEm16
+    0x202FU => SpaceNarrow
+    0x205FU => Space4Em18
+    0x3000U => SpaceEm
+    _ => NotSpace
   }
 }
 

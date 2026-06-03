@@ -105,12 +105,12 @@ fn parse_sparse_variation_region(
           (_, _, _, Err(err)) => return Err(err)
           (Ok(axis_index), Ok(start_coord), Ok(peak_coord), Ok(end_coord)) => {
             let axis = VarRegionAxis::{ start_coord, peak_coord, end_coord }
-            axes.push(SparseVarRegionAxis::{ axis_index, axis })
+            axes.push({ axis_index, axis })
           }
         }
         pos = pos + record_size
       }
-      Ok(SparseVariationRegion::{ axes, })
+      Ok({ axes, })
     }
   }
 }
@@ -151,7 +151,7 @@ fn parse_sparse_var_region_list(
           }
         }
       }
-      Ok(SparseVarRegionList::{ regions, })
+      Ok({ regions, })
     }
   }
 }
@@ -194,7 +194,7 @@ fn parse_multi_var_data(
             Err(err) => return Err(err)
             Ok(value) => value
           }
-          Ok(MultiVarData::{ region_indices, delta_sets })
+          Ok({ region_indices, delta_sets })
         }
       }
     }
@@ -277,7 +277,7 @@ pub fn MultiItemVariationStore::parse(
         }
         pos = pos + 4
       }
-      Ok(MultiItemVariationStore::{ region_list, data_sets })
+      Ok({ region_list, data_sets })
     }
   }
 }

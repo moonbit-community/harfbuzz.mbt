@@ -57,224 +57,224 @@ priv struct ArabicStateEntry {
 ///|
 let arabic_state_table : Array[Array[ArabicStateEntry]] = [
   [
-    ArabicStateEntry::{
+    {
       prev_action: arabic_action_none,
       curr_action: arabic_action_none,
       next_state: 0,
     },
-    ArabicStateEntry::{
+    {
       prev_action: arabic_action_none,
       curr_action: arabic_action_isol,
       next_state: 2,
     },
-    ArabicStateEntry::{
+    {
       prev_action: arabic_action_none,
       curr_action: arabic_action_isol,
       next_state: 1,
     },
-    ArabicStateEntry::{
+    {
       prev_action: arabic_action_none,
       curr_action: arabic_action_isol,
       next_state: 2,
     },
-    ArabicStateEntry::{
+    {
       prev_action: arabic_action_none,
       curr_action: arabic_action_isol,
       next_state: 1,
     },
-    ArabicStateEntry::{
+    {
       prev_action: arabic_action_none,
       curr_action: arabic_action_isol,
       next_state: 6,
     },
   ],
   [
-    ArabicStateEntry::{
+    {
       prev_action: arabic_action_none,
       curr_action: arabic_action_none,
       next_state: 0,
     },
-    ArabicStateEntry::{
+    {
       prev_action: arabic_action_none,
       curr_action: arabic_action_isol,
       next_state: 2,
     },
-    ArabicStateEntry::{
+    {
       prev_action: arabic_action_none,
       curr_action: arabic_action_isol,
       next_state: 1,
     },
-    ArabicStateEntry::{
+    {
       prev_action: arabic_action_none,
       curr_action: arabic_action_isol,
       next_state: 2,
     },
-    ArabicStateEntry::{
+    {
       prev_action: arabic_action_none,
       curr_action: arabic_action_fin2,
       next_state: 5,
     },
-    ArabicStateEntry::{
+    {
       prev_action: arabic_action_none,
       curr_action: arabic_action_isol,
       next_state: 6,
     },
   ],
   [
-    ArabicStateEntry::{
+    {
       prev_action: arabic_action_none,
       curr_action: arabic_action_none,
       next_state: 0,
     },
-    ArabicStateEntry::{
+    {
       prev_action: arabic_action_none,
       curr_action: arabic_action_isol,
       next_state: 2,
     },
-    ArabicStateEntry::{
+    {
       prev_action: arabic_action_init,
       curr_action: arabic_action_fina,
       next_state: 1,
     },
-    ArabicStateEntry::{
+    {
       prev_action: arabic_action_init,
       curr_action: arabic_action_fina,
       next_state: 3,
     },
-    ArabicStateEntry::{
+    {
       prev_action: arabic_action_init,
       curr_action: arabic_action_fina,
       next_state: 4,
     },
-    ArabicStateEntry::{
+    {
       prev_action: arabic_action_init,
       curr_action: arabic_action_fina,
       next_state: 6,
     },
   ],
   [
-    ArabicStateEntry::{
+    {
       prev_action: arabic_action_none,
       curr_action: arabic_action_none,
       next_state: 0,
     },
-    ArabicStateEntry::{
+    {
       prev_action: arabic_action_none,
       curr_action: arabic_action_isol,
       next_state: 2,
     },
-    ArabicStateEntry::{
+    {
       prev_action: arabic_action_medi,
       curr_action: arabic_action_fina,
       next_state: 1,
     },
-    ArabicStateEntry::{
+    {
       prev_action: arabic_action_medi,
       curr_action: arabic_action_fina,
       next_state: 3,
     },
-    ArabicStateEntry::{
+    {
       prev_action: arabic_action_medi,
       curr_action: arabic_action_fina,
       next_state: 4,
     },
-    ArabicStateEntry::{
+    {
       prev_action: arabic_action_medi,
       curr_action: arabic_action_fina,
       next_state: 6,
     },
   ],
   [
-    ArabicStateEntry::{
+    {
       prev_action: arabic_action_none,
       curr_action: arabic_action_none,
       next_state: 0,
     },
-    ArabicStateEntry::{
+    {
       prev_action: arabic_action_none,
       curr_action: arabic_action_isol,
       next_state: 2,
     },
-    ArabicStateEntry::{
+    {
       prev_action: arabic_action_med2,
       curr_action: arabic_action_isol,
       next_state: 1,
     },
-    ArabicStateEntry::{
+    {
       prev_action: arabic_action_med2,
       curr_action: arabic_action_isol,
       next_state: 2,
     },
-    ArabicStateEntry::{
+    {
       prev_action: arabic_action_med2,
       curr_action: arabic_action_fin2,
       next_state: 5,
     },
-    ArabicStateEntry::{
+    {
       prev_action: arabic_action_med2,
       curr_action: arabic_action_isol,
       next_state: 6,
     },
   ],
   [
-    ArabicStateEntry::{
+    {
       prev_action: arabic_action_none,
       curr_action: arabic_action_none,
       next_state: 0,
     },
-    ArabicStateEntry::{
+    {
       prev_action: arabic_action_none,
       curr_action: arabic_action_isol,
       next_state: 2,
     },
-    ArabicStateEntry::{
+    {
       prev_action: arabic_action_isol,
       curr_action: arabic_action_isol,
       next_state: 1,
     },
-    ArabicStateEntry::{
+    {
       prev_action: arabic_action_isol,
       curr_action: arabic_action_isol,
       next_state: 2,
     },
-    ArabicStateEntry::{
+    {
       prev_action: arabic_action_isol,
       curr_action: arabic_action_fin2,
       next_state: 5,
     },
-    ArabicStateEntry::{
+    {
       prev_action: arabic_action_isol,
       curr_action: arabic_action_isol,
       next_state: 6,
     },
   ],
   [
-    ArabicStateEntry::{
+    {
       prev_action: arabic_action_none,
       curr_action: arabic_action_none,
       next_state: 0,
     },
-    ArabicStateEntry::{
+    {
       prev_action: arabic_action_none,
       curr_action: arabic_action_isol,
       next_state: 2,
     },
-    ArabicStateEntry::{
+    {
       prev_action: arabic_action_none,
       curr_action: arabic_action_isol,
       next_state: 1,
     },
-    ArabicStateEntry::{
+    {
       prev_action: arabic_action_none,
       curr_action: arabic_action_isol,
       next_state: 2,
     },
-    ArabicStateEntry::{
+    {
       prev_action: arabic_action_none,
       curr_action: arabic_action_fin3,
       next_state: 5,
     },
-    ArabicStateEntry::{
+    {
       prev_action: arabic_action_none,
       curr_action: arabic_action_isol,
       next_state: 6,
@@ -379,7 +379,7 @@ fn apply_arabic_fallback(buffer : Buffer, actions : Array[Int]) -> Unit {
           None => ()
           Some(value) => {
             let info = buffer.infos[i]
-            buffer.infos[i] = GlyphInfo::{
+            buffer.infos[i] = {
               codepoint: value,
               cluster: info.cluster,
               unicode: value,
@@ -395,7 +395,7 @@ fn apply_arabic_fallback(buffer : Buffer, actions : Array[Int]) -> Unit {
 fn apply_gpos(
   font : @font.Font,
   buffer : Buffer,
-  zero_width_marks? : ZeroWidthMarks = ZeroWidthMarks::Disabled,
+  zero_width_marks? : ZeroWidthMarks = Disabled,
   fallback_position? : Bool = false,
   unicode_mark_flags? : Array[Bool] = [],
   combining_classes? : Array[Int] = [],
@@ -469,7 +469,7 @@ fn apply_gpos(
     has_gpos_kern = !kern_lookups.is_empty()
   }
   match zero_width_marks {
-    ZeroWidthMarks::ByGdefEarly =>
+    ByGdefEarly =>
       match
         zero_marks_by_gdef_or_unicode(
           font, buffer, unicode_mark_flags, gpos_present,
@@ -527,7 +527,7 @@ fn apply_gpos(
     for i in 0..<buffer.positions.length() {
       let pos = buffer.positions[i]
       let delta = deltas[i]
-      new_positions.push(GlyphPosition::{
+      new_positions.push({
         x_advance: pos.x_advance + delta.x_advance,
         y_advance: pos.y_advance + delta.y_advance,
         x_offset: pos.x_offset + delta.x_placement,
@@ -554,7 +554,7 @@ fn apply_gpos(
             None => ()
             Some(value) => {
               let pos = new_positions[i]
-              new_positions[i] = GlyphPosition::{
+              new_positions[i] = {
                 x_advance: pos.x_advance + value,
                 y_advance: pos.y_advance,
                 x_offset: pos.x_offset,
@@ -568,7 +568,7 @@ fn apply_gpos(
     }
   }
   match zero_width_marks {
-    ZeroWidthMarks::ByGdefLate =>
+    ByGdefLate =>
       match
         zero_marks_by_gdef_or_unicode(
           font, buffer, unicode_mark_flags, gpos_present,
@@ -627,7 +627,7 @@ pub fn Buffer::shape_arabic(
     return apply_gpos(
       font,
       self,
-      zero_width_marks=ZeroWidthMarks::ByGdefLate,
+      zero_width_marks=ByGdefLate,
       fallback_position=true,
       unicode_mark_flags~,
       combining_classes~,
@@ -671,7 +671,7 @@ pub fn Buffer::shape_arabic(
     return apply_gpos(
       font,
       self,
-      zero_width_marks=ZeroWidthMarks::ByGdefLate,
+      zero_width_marks=ByGdefLate,
       fallback_position=true,
       unicode_mark_flags~,
       combining_classes~,
@@ -763,11 +763,7 @@ pub fn Buffer::shape_arabic(
       } else {
         0U
       }
-      infos.push(GlyphInfo::{
-        codepoint: glyph,
-        cluster: current_clusters[i],
-        unicode,
-      })
+      infos.push({ codepoint: glyph, cluster: current_clusters[i], unicode })
       positions.push(pos)
     }
     self.infos = infos
@@ -776,7 +772,7 @@ pub fn Buffer::shape_arabic(
   apply_gpos(
     font,
     self,
-    zero_width_marks=ZeroWidthMarks::ByGdefLate,
+    zero_width_marks=ByGdefLate,
     fallback_position=true,
     unicode_mark_flags~,
     combining_classes~,

@@ -80,7 +80,7 @@ fn parse_justification_header(
           Ok(value) => Some(value)
         }
       }
-      Ok(JustificationHeader::{
+      Ok({
         class_table_offset: class_offset,
         wdc_table_offset: wdc_offset,
         pc_table_offset: pc_offset,
@@ -132,7 +132,7 @@ pub fn JustTable::parse(
           },
         )
       }
-      Ok(JustTable::{ version, format, horiz, vert })
+      Ok({ version, format, horiz, vert })
     }
   }
 }

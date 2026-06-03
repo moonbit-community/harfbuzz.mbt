@@ -139,7 +139,7 @@ pub fn Cff2Table::parse(data : BytesView) -> Result[Cff2Table, CffError] {
           Ok(value) => Some(value)
         }
       }
-      Ok(Cff2Table::{
+      Ok({
         data: data.to_owned(),
         top_dict,
         global_subrs,
@@ -316,7 +316,7 @@ fn parse_cff2_private_dict_entries(
     _ => return Err(InvalidFormat)
   }
   if private_size <= 0 {
-    return Ok((CffDict::{ entries: {} }, None))
+    return Ok(({ entries: {} }, None))
   }
   if private_offset < 0 || private_offset + private_size > data.length() {
     return Err(UnexpectedEof)
@@ -665,7 +665,7 @@ fn parse_cff2_private_dict(
   size : Int,
 ) -> Result[Cff2PrivateDict, CffError] {
   if size <= 0 {
-    return Ok(Cff2PrivateDict::{ local_subrs: None, ivs: 0 })
+    return Ok({ local_subrs: None, ivs: 0 })
   }
   if offset < 0 || offset + size > data.length() {
     return Err(UnexpectedEof)
@@ -692,7 +692,7 @@ fn parse_cff2_private_dict(
       }
     }
   }
-  Ok(Cff2PrivateDict::{ local_subrs, ivs })
+  Ok({ local_subrs, ivs })
 }
 
 ///|
@@ -721,8 +721,8 @@ fn parse_cff2_var_store(
 ///|
 fn map_var_error(err : @ot_var.VarError) -> CffError {
   match err {
-    @ot_var.VarError::UnexpectedEof => UnexpectedEof
-    @ot_var.VarError::InvalidFormat => InvalidFormat
+    UnexpectedEof => UnexpectedEof
+    InvalidFormat => InvalidFormat
   }
 }
 

@@ -78,7 +78,7 @@ fn parse_condition_at(
           (_, Err(err), _) => Err(err)
           (_, _, Err(err)) => Err(err)
           (Ok(axis_index), Ok(min_value), Ok(max_value)) =>
-            Ok(VarcCondition::AxisRange(axis_index, min_value, max_value))
+            Ok(AxisRange(axis_index, min_value, max_value))
         }
       } else if format == 2 {
         let default_value = read_i16(data, pos + 2)
@@ -86,8 +86,7 @@ fn parse_condition_at(
         match (default_value, var_idx) {
           (Err(err), _) => Err(err)
           (_, Err(err)) => Err(err)
-          (Ok(default_value), Ok(var_idx)) =>
-            Ok(VarcCondition::Value(default_value, var_idx))
+          (Ok(default_value), Ok(var_idx)) => Ok(Value(default_value, var_idx))
         }
       } else if format == 3 || format == 4 {
         let count = read_u8_int(data, pos + 2)
@@ -115,9 +114,9 @@ fn parse_condition_at(
               }
             }
             if format == 3 {
-              Ok(VarcCondition::And(conditions))
+              Ok(And(conditions))
             } else {
-              Ok(VarcCondition::Or(conditions))
+              Ok(Or(conditions))
             }
           }
         }
@@ -128,7 +127,7 @@ fn parse_condition_at(
           Ok(child_offset) =>
             match parse_condition_at(data, pos, child_offset, depth + 1) {
               Err(err) => Err(err)
-              Ok(value) => Ok(VarcCondition::Not(value))
+              Ok(value) => Ok(Not(value))
             }
         }
       } else {
@@ -211,7 +210,7 @@ fn parse_cff2_index(
         return Err(InvalidFormat)
       }
       if count == 0 {
-        return Ok(CffIndex::{
+        return Ok({
           count: 0,
           off_size: 0,
           offsets: [],
@@ -245,7 +244,7 @@ fn parse_cff2_index(
             return Err(UnexpectedEof)
           }
           let data_bytes = data[data_start:data_start + data_len].to_owned()
-          Ok(CffIndex::{ count, off_size, offsets, data: data_bytes })
+          Ok({ count, off_size, offsets, data: data_bytes })
         }
       }
     }
@@ -588,7 +587,7 @@ pub fn VarcTable::parse(data : BytesView) -> Result[VarcTable, VarError] {
         Err(err) => return Err(err)
         Ok(_) => ()
       }
-      Ok(VarcTable::{
+      Ok({
         version: version.reinterpret_as_int(),
         coverage_offset,
         var_store_offset,

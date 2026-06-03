@@ -107,7 +107,7 @@ pub fn GvarTable::parse(data : BytesView) -> Result[GvarTable, VarError] {
         Err(err) => return Err(err)
         Ok(value) => value
       }
-      Ok(GvarTable::{
+      Ok({
         axis_count,
         shared_tuple_count,
         shared_tuples_offset,

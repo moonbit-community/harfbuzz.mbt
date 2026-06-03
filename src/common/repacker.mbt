@@ -59,27 +59,27 @@ fn collect_order_edges(
     let obj = objects[i]
     for target in obj.virtual_links {
       if target < 0 || target >= count {
-        return Err(SerializeError::InvalidLink)
+        return Err(InvalidLink)
       }
-      edges[i].push(OrderEdge::{ target, width: 0 })
+      edges[i].push({ target, width: 0 })
       indegree[target] = indegree[target] + 1
     }
     for link in obj.real_links {
       if link.objidx < 0 || link.objidx >= count {
-        return Err(SerializeError::InvalidLink)
+        return Err(InvalidLink)
       }
       if link.width == 0 {
-        edges[i].push(OrderEdge::{ target: link.objidx, width: 0 })
+        edges[i].push({ target: link.objidx, width: 0 })
         indegree[link.objidx] = indegree[link.objidx] + 1
         continue
       }
       if link.is_signed {
         continue
       }
-      if link.whence == SerializeWhence::Absolute {
+      if link.whence == Absolute {
         continue
       }
-      edges[i].push(OrderEdge::{ target: link.objidx, width: link.width })
+      edges[i].push({ target: link.objidx, width: link.width })
       indegree[link.objidx] = indegree[link.objidx] + 1
     }
   }
@@ -226,7 +226,7 @@ fn topo_sort(
     }
   }
   if order.length() != count {
-    return Err(SerializeError::VirtualOrder)
+    return Err(VirtualOrder)
   }
   Ok(order)
 }
@@ -238,17 +238,17 @@ fn compute_starts(
 ) -> Result[Array[Int], SerializeError] {
   let count = objects.length()
   if order.length() != count {
-    return Err(SerializeError::InvalidLink)
+    return Err(InvalidLink)
   }
   let starts : Array[Int] = Array::make(count, 0)
   let seen : Array[Bool] = Array::make(count, false)
   let mut offset = 0
   for idx in order {
     if idx < 0 || idx >= count {
-      return Err(SerializeError::InvalidLink)
+      return Err(InvalidLink)
     }
     if seen[idx] {
-      return Err(SerializeError::InvalidLink)
+      return Err(InvalidLink)
     }
     seen[idx] = true
     starts[idx] = offset
@@ -275,25 +275,25 @@ fn collect_overflows(
         continue
       }
       if link.objidx < 0 || link.objidx >= count {
-        return Err(SerializeError::InvalidLink)
+        return Err(InvalidLink)
       }
       if link.position < 0 || link.position + link.width > obj.data.length() {
-        return Err(SerializeError::OutOfBounds)
+        return Err(OutOfBounds)
       }
       let target_start = starts[link.objidx]
       let origin = match link.whence {
-        SerializeWhence::Head => starts[i]
-        SerializeWhence::Tail => starts[i] + obj.data.length()
-        SerializeWhence::Absolute => 0
+        Head => starts[i]
+        Tail => starts[i] + obj.data.length()
+        Absolute => 0
       }
       let offset = target_start + link.bias - origin
       if link.is_signed {
         let limits = match signed_limits(link.width) {
-          None => return Err(SerializeError::InvalidWidth)
+          None => return Err(InvalidWidth)
           Some((min, max)) => (min, max)
         }
         if offset < limits.0 || offset > limits.1 {
-          overflows.push(OverflowRecord::{
+          overflows.push({
             parent: i,
             child: link.objidx,
             offset,
@@ -305,12 +305,12 @@ fn collect_overflows(
         }
       } else {
         let max_value = match max_value_for_width(link.width) {
-          None => return Err(SerializeError::InvalidWidth)
+          None => return Err(InvalidWidth)
           Some(value) => value
         }
         let max_int = max_value.reinterpret_as_int()
         if offset < 0 || offset > max_int {
-          overflows.push(OverflowRecord::{
+          overflows.push({
             parent: i,
             child: link.objidx,
             offset,
@@ -375,7 +375,7 @@ pub fn repack_object_order(
     }
     iter = iter + 1
   }
-  Err(SerializeError::OffsetOverflow)
+  Err(OffsetOverflow)
 }
 
 ///|

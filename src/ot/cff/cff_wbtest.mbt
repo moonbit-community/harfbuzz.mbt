@@ -110,13 +110,13 @@ test "cff1 seac bounds" {
 
 ///|
 fn empty_index() -> CffIndex {
-  CffIndex::{ count: 0, off_size: 0, offsets: [], data: Bytes::from_array([]) }
+  { count: 0, off_size: 0, offsets: [], data: Bytes::from_array([]) }
 }
 
 ///|
 fn zero_charstrings(count : Int) -> CffIndex {
   let offsets : Array[Int] = Array::make(count + 1, 1)
-  CffIndex::{ count, off_size: 1, offsets, data: Bytes::from_array([]) }
+  { count, off_size: 1, offsets, data: Bytes::from_array([]) }
 }
 
 ///|
@@ -135,7 +135,7 @@ fn build_string_index(names : Array[String]) -> CffIndex {
     cursor = cursor + name_bytes.length()
     offsets.push(cursor)
   }
-  CffIndex::{
+  {
     count: names.length(),
     off_size: 1,
     offsets,

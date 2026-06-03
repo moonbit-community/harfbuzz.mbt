@@ -131,7 +131,7 @@ pub fn PostTable::parse(data : BytesView) -> Result[PostTable, SfntError] {
           }
         }
       }
-      Ok(PostTable::{
+      Ok({
         version,
         italic_angle,
         underline_position,

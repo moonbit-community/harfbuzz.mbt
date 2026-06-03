@@ -51,12 +51,7 @@ fn parse_color_stop(
           Ok(value) => var_idx_base = Some(value)
         }
       }
-      Ok(@paint.ColorStop::{
-        offset: stop_offset,
-        palette_index,
-        alpha,
-        var_idx_base,
-      })
+      Ok({ offset: stop_offset, palette_index, alpha, var_idx_base })
     }
   }
 }
@@ -89,7 +84,7 @@ fn parse_color_line(
           Ok(value) => stops.push(value)
         }
       }
-      Ok(@paint.ColorLine::{ extend, stops })
+      Ok({ extend, stops })
     }
   }
 }
@@ -122,7 +117,7 @@ fn parse_affine(
           Ok(value) => var_idx_base = Some(value)
         }
       }
-      Ok(@paint.Affine2x3::{ xx, yx, xy, yy, dx, dy, var_idx_base })
+      Ok({ xx, yx, xy, yy, dx, dy, var_idx_base })
     }
   }
 }
@@ -148,7 +143,7 @@ fn parse_paint(
             (Err(err), _) => Err(err)
             (_, Err(err)) => Err(err)
             (Ok(num_layers), Ok(first_layer_index)) =>
-              Ok(@paint.Paint::ColrLayers(first_layer_index, num_layers))
+              Ok(ColrLayers(first_layer_index, num_layers))
           }
         }
         2 | 3 => {
@@ -166,7 +161,7 @@ fn parse_paint(
                   Ok(value) => var_idx_base = Some(value)
                 }
               }
-              Ok(@paint.Paint::Solid(palette_index, alpha, var_idx_base))
+              Ok(Solid(palette_index, alpha, var_idx_base))
             }
           }
         }
@@ -214,9 +209,7 @@ fn parse_paint(
                 }
               }
               Ok(
-                @paint.Paint::LinearGradient(
-                  color_line, x0, y0, x1, y1, x2, y2, var_idx_base,
-                ),
+                LinearGradient(color_line, x0, y0, x1, y1, x2, y2, var_idx_base),
               )
             }
           }
@@ -265,9 +258,7 @@ fn parse_paint(
                 }
               }
               Ok(
-                @paint.Paint::RadialGradient(
-                  color_line, x0, y0, r0, x1, y1, r1, var_idx_base,
-                ),
+                RadialGradient(color_line, x0, y0, r0, x1, y1, r1, var_idx_base),
               )
             }
           }
@@ -311,7 +302,7 @@ fn parse_paint(
                 }
               }
               Ok(
-                @paint.Paint::SweepGradient(
+                SweepGradient(
                   color_line, center_x, center_y, start_angle, end_angle, var_idx_base,
                 ),
               )
@@ -333,7 +324,7 @@ fn parse_paint(
               let child = parse_paint(data, child_offset, depth - 1)
               match child {
                 Err(err) => Err(err)
-                Ok(child) => Ok(@paint.Paint::Glyph(glyph_id, child))
+                Ok(child) => Ok(Glyph(glyph_id, child))
               }
             }
           }
@@ -342,7 +333,7 @@ fn parse_paint(
           let glyph_id = read_u16_int(data, offset + 1)
           match glyph_id {
             Err(err) => Err(err)
-            Ok(glyph_id) => Ok(@paint.Paint::ColrGlyph(glyph_id))
+            Ok(glyph_id) => Ok(ColrGlyph(glyph_id))
           }
         }
         12 | 13 => {
@@ -371,7 +362,7 @@ fn parse_paint(
                 Err(err) => return Err(err)
                 Ok(value) => value
               }
-              Ok(@paint.Paint::Transform(transform, src))
+              Ok(Transform(transform, src))
             }
           }
         }
@@ -401,7 +392,7 @@ fn parse_paint(
                   Ok(value) => var_idx_base = Some(value)
                 }
               }
-              Ok(@paint.Paint::Translate(dx, dy, var_idx_base, src))
+              Ok(Translate(dx, dy, var_idx_base, src))
             }
           }
         }
@@ -431,7 +422,7 @@ fn parse_paint(
                   Ok(value) => var_idx_base = Some(value)
                 }
               }
-              Ok(@paint.Paint::Scale(scale_x, scale_y, var_idx_base, src))
+              Ok(Scale(scale_x, scale_y, var_idx_base, src))
             }
           }
         }
@@ -472,7 +463,7 @@ fn parse_paint(
                 }
               }
               Ok(
-                @paint.Paint::ScaleAroundCenter(
+                ScaleAroundCenter(
                   scale_x, scale_y, center_x, center_y, var_idx_base, src,
                 ),
               )
@@ -503,7 +494,7 @@ fn parse_paint(
                   Ok(value) => var_idx_base = Some(value)
                 }
               }
-              Ok(@paint.Paint::ScaleUniform(scale, var_idx_base, src))
+              Ok(ScaleUniform(scale, var_idx_base, src))
             }
           }
         }
@@ -536,7 +527,7 @@ fn parse_paint(
                 }
               }
               Ok(
-                @paint.Paint::ScaleUniformAroundCenter(
+                ScaleUniformAroundCenter(
                   scale, center_x, center_y, var_idx_base, src,
                 ),
               )
@@ -567,7 +558,7 @@ fn parse_paint(
                   Ok(value) => var_idx_base = Some(value)
                 }
               }
-              Ok(@paint.Paint::Rotate(angle, var_idx_base, src))
+              Ok(Rotate(angle, var_idx_base, src))
             }
           }
         }
@@ -600,9 +591,7 @@ fn parse_paint(
                 }
               }
               Ok(
-                @paint.Paint::RotateAroundCenter(
-                  angle, center_x, center_y, var_idx_base, src,
-                ),
+                RotateAroundCenter(angle, center_x, center_y, var_idx_base, src),
               )
             }
           }
@@ -633,7 +622,7 @@ fn parse_paint(
                   Ok(value) => var_idx_base = Some(value)
                 }
               }
-              Ok(@paint.Paint::Skew(x_skew, y_skew, var_idx_base, src))
+              Ok(Skew(x_skew, y_skew, var_idx_base, src))
             }
           }
         }
@@ -668,7 +657,7 @@ fn parse_paint(
                 }
               }
               Ok(
-                @paint.Paint::SkewAroundCenter(
+                SkewAroundCenter(
                   x_skew, y_skew, center_x, center_y, var_idx_base, src,
                 ),
               )
@@ -701,7 +690,7 @@ fn parse_paint(
               let backdrop = parse_paint(data, backdrop_abs, depth - 1)
               match backdrop {
                 Err(err) => Err(err)
-                Ok(backdrop) => Ok(@paint.Paint::Composite(mode, src, backdrop))
+                Ok(backdrop) => Ok(Composite(mode, src, backdrop))
               }
             }
           }

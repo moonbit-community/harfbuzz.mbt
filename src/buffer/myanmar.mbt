@@ -324,7 +324,7 @@ pub fn Buffer::shape_myanmar(
         return self.shape_ot_with_options(
           font,
           fallback_position=false,
-          zero_width_marks=ZeroWidthMarks::ByGdefEarly,
+          zero_width_marks=ByGdefEarly,
         )
       }
     }
@@ -374,7 +374,7 @@ pub fn Buffer::shape_myanmar(
   apply_gpos(
     font,
     self,
-    zero_width_marks=ZeroWidthMarks::ByGdefEarly,
+    zero_width_marks=ByGdefEarly,
     fallback_position=false,
     unicode_mark_flags~,
     combining_classes~,

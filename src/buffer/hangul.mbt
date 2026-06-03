@@ -115,7 +115,7 @@ fn preprocess_hangul_for_font(
             Ok(true) => {
               changed = true
               for component in components {
-                next_infos.push(GlyphInfo::{
+                next_infos.push({
                   codepoint: component,
                   cluster: info.cluster,
                   unicode: component,
@@ -242,11 +242,7 @@ pub fn Buffer::shape_hangul(
       } else {
         0U
       }
-      infos.push(GlyphInfo::{
-        codepoint: glyph,
-        cluster: current_clusters[i],
-        unicode,
-      })
+      infos.push({ codepoint: glyph, cluster: current_clusters[i], unicode })
       positions.push(pos)
     }
     self.infos = infos
@@ -255,7 +251,7 @@ pub fn Buffer::shape_hangul(
   apply_gpos(
     font,
     self,
-    zero_width_marks=ZeroWidthMarks::Disabled,
+    zero_width_marks=Disabled,
     fallback_position=true,
     unicode_mark_flags~,
     combining_classes~,
