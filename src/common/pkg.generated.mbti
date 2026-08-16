@@ -504,13 +504,17 @@ pub fn CodepointSet::union_in_place(Self, Self) -> Unit
 pub struct Direction {
   raw : UInt
 } derive(Eq, ToJson, @debug.Debug)
+pub fn Direction::equal(Self, Self) -> Bool
 pub fn Direction::from_string(String, len? : Int) -> Self
 pub fn Direction::is_backward(Self) -> Bool
 pub fn Direction::is_forward(Self) -> Bool
 pub fn Direction::is_horizontal(Self) -> Bool
 pub fn Direction::is_valid(Self) -> Bool
 pub fn Direction::is_vertical(Self) -> Bool
+pub fn Direction::not_equal(Self, Self) -> Bool
 pub fn Direction::reverse(Self) -> Self
+pub fn Direction::to_json(Self) -> Json
+pub fn Direction::to_repr(Self) -> @debug.Repr
 pub fn Direction::to_string(Self) -> String
 pub fn Direction::to_uint(Self) -> UInt
 
@@ -518,9 +522,13 @@ pub struct Language {
   tag : String
 } derive(Eq, ToJson, @debug.Debug)
 pub fn Language::as_string(Self) -> String
+pub fn Language::equal(Self, Self) -> Bool
 pub fn Language::from_string(String, len? : Int) -> Self
 pub fn Language::is_valid(Self) -> Bool
 pub fn Language::matches(Self, Self) -> Bool
+pub fn Language::not_equal(Self, Self) -> Bool
+pub fn Language::to_json(Self) -> Json
+pub fn Language::to_repr(Self) -> @debug.Repr
 pub fn Language::to_string(Self) -> String?
 
 pub struct OverflowRecord {
@@ -532,14 +540,21 @@ pub struct OverflowRecord {
   width : Int
   is_signed : Bool
 } derive(Eq, @debug.Debug)
+pub fn OverflowRecord::equal(Self, Self) -> Bool
+pub fn OverflowRecord::not_equal(Self, Self) -> Bool
+pub fn OverflowRecord::to_repr(Self) -> @debug.Repr
 
 pub struct Script {
   tag : Tag
 } derive(Eq, ToJson, @debug.Debug)
+pub fn Script::equal(Self, Self) -> Bool
 pub fn Script::from_iso15924_tag(Tag) -> Self
 pub fn Script::from_string(String, len? : Int) -> Self
 pub fn Script::horizontal_direction(Self) -> Direction
+pub fn Script::not_equal(Self, Self) -> Bool
 pub fn Script::to_iso15924_tag(Self) -> Tag
+pub fn Script::to_json(Self) -> Json
+pub fn Script::to_repr(Self) -> @debug.Repr
 pub fn Script::to_tag(Self) -> Tag
 
 pub enum SerializeError {
@@ -550,6 +565,9 @@ pub enum SerializeError {
   NegativeOffset
   VirtualOrder
 } derive(Eq, @debug.Debug)
+pub fn SerializeError::equal(Self, Self) -> Bool
+pub fn SerializeError::not_equal(Self, Self) -> Bool
+pub fn SerializeError::to_repr(Self) -> @debug.Repr
 
 pub(all) struct SerializeLink {
   width : Int
@@ -573,14 +591,24 @@ pub(all) enum SerializeWhence {
   Tail
   Absolute
 } derive(Eq, @debug.Debug)
+pub fn SerializeWhence::equal(Self, Self) -> Bool
+pub fn SerializeWhence::not_equal(Self, Self) -> Bool
+pub fn SerializeWhence::to_repr(Self) -> @debug.Repr
 
 pub struct Tag {
   value : UInt
 } derive(Eq, Hash, ToJson, @debug.Debug)
 pub fn Tag::bytes(Self) -> (Byte, Byte, Byte, Byte)
+pub fn Tag::equal(Self, Self) -> Bool
 pub fn Tag::from_bytes(Byte, Byte, Byte, Byte) -> Self
 pub fn Tag::from_chars(Char, Char, Char, Char) -> Self
 pub fn Tag::from_string(String, len? : Int) -> Self
+pub fn Tag::hash(Self) -> Int
+pub fn Tag::hash_combine(Self, Hasher) -> Unit
+pub fn Tag::not_equal(Self, Self) -> Bool
+pub fn Tag::output(Self, &Logger) -> Unit
+pub fn Tag::to_json(Self) -> Json
+pub fn Tag::to_repr(Self) -> @debug.Repr
 pub fn Tag::to_string(Self) -> String
 pub fn Tag::to_uint(Self) -> UInt
 pub impl Show for Tag
@@ -588,4 +616,3 @@ pub impl Show for Tag
 // Type aliases
 
 // Traits
-

@@ -1,0 +1,50 @@
+// Copyright 2026 International Digital Economy Academy
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+///|
+/// Keeps trait methods available through dot syntax.
+pub extend DrawExtents with @moonbitlang/core/debug.Debug::{to_repr}
+
+///|
+pub extend DrawExtents with ToJson::{to_json}
+
+///|
+pub extend DrawState with @moonbitlang/core/debug.Debug::{to_repr}
+
+///|
+pub extend DrawState with ToJson::{to_json}
+
+///|
+pub extend Outline with @moonbitlang/core/debug.Debug::{to_repr}
+
+///|
+pub extend Outline with ToJson::{to_json}
+
+///|
+pub extend OutlinePoint with @moonbitlang/core/debug.Debug::{to_repr}
+
+///|
+pub extend OutlinePoint with Eq::{not_equal, equal}
+
+///|
+pub extend OutlinePoint with ToJson::{to_json}
+
+///|
+pub extend OutlinePointKind with @moonbitlang/core/debug.Debug::{to_repr}
+
+///|
+pub extend OutlinePointKind with Eq::{not_equal, equal}
+
+///|
+pub extend OutlinePointKind with ToJson::{to_json}

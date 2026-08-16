@@ -23,17 +23,25 @@ pub fn subset_with_plan(@font.Font, SubsetPlan) -> Result[Bytes, SubsetError]
 
 // Errors
 type SubsetError derive(Eq, ToJson, @debug.Debug)
+pub fn SubsetError::equal(Self, Self) -> Bool
+pub fn SubsetError::not_equal(Self, Self) -> Bool
+pub fn SubsetError::to_json(Self) -> Json
+pub fn SubsetError::to_repr(Self) -> @debug.Repr
 
 // Types and methods
 pub struct SubsetDataSuite {
   name : String
   definition : String
 } derive(ToJson, @debug.Debug)
+pub fn SubsetDataSuite::to_json(Self) -> Json
+pub fn SubsetDataSuite::to_repr(Self) -> @debug.Repr
 
 pub struct SubsetInput {
   codepoints : Array[UInt]
 } derive(ToJson, @debug.Debug)
 pub fn SubsetInput::from_codepoints(Array[UInt]) -> Self
+pub fn SubsetInput::to_json(Self) -> Json
+pub fn SubsetInput::to_repr(Self) -> @debug.Repr
 
 pub struct SubsetPlan {
   glyphs : Array[UInt]
@@ -41,8 +49,9 @@ pub struct SubsetPlan {
   codepoint_map : Array[(UInt, Int)]
   gsub_mask : Array[Bool]
 } derive(ToJson, @debug.Debug)
+pub fn SubsetPlan::to_json(Self) -> Json
+pub fn SubsetPlan::to_repr(Self) -> @debug.Repr
 
 // Type aliases
 
 // Traits
-

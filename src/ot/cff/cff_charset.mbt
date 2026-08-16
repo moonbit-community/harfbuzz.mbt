@@ -425,7 +425,7 @@ pub fn parse_cff1_charset(
   offset : Int,
   glyph_count : Int,
 ) -> Result[Map[Int, Int], CffError] {
-  let values : Map[Int, Int] = {}
+  let values : Map[Int, Int] = Map([])
   values[0] = 0
   if glyph_count <= 1 {
     return Ok(values)

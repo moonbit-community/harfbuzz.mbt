@@ -664,7 +664,7 @@ pub fn Buffer::normalize(self : Buffer) -> Unit {
       break
     }
   }
-  let vs_clusters : Map[Int, Bool] = {}
+  let vs_clusters : Map[Int, Bool] = Map([])
   if has_vs {
     merge_variation_selector_clusters(self)
     for info in self.infos {
@@ -1238,7 +1238,7 @@ pub fn Buffer::apply_morx(
     return Ok(())
   }
   let horizontal = self.direction.is_horizontal()
-  let cluster_unicode : Map[Int, UInt] = {}
+  let cluster_unicode : Map[Int, UInt] = Map([])
   for info in self.infos {
     if !cluster_unicode.contains(info.cluster) {
       cluster_unicode[info.cluster] = info.unicode

@@ -28,6 +28,10 @@ pub suberror CffError {
   UnexpectedEof
   InvalidFormat
 } derive(Eq, ToJson, @debug.Debug)
+pub fn CffError::equal(Self, Self) -> Bool
+pub fn CffError::not_equal(Self, Self) -> Bool
+pub fn CffError::to_json(Self) -> Json
+pub fn CffError::to_repr(Self) -> @debug.Repr
 
 // Types and methods
 pub struct Cff1Table {
@@ -45,18 +49,26 @@ pub struct Cff1Table {
   charset_offset : Int
   charset_map : Map[Int, Int]?
 } derive(Eq, ToJson, @debug.Debug)
+pub fn Cff1Table::equal(Self, Self) -> Bool
 pub fn Cff1Table::glyph_bounds(Self, Int) -> Result[CffBounds?, CffError]
 pub fn Cff1Table::glyph_count(Self) -> Int
 pub fn Cff1Table::glyph_from_name(Self, String) -> Result[Int?, CffError]
 pub fn Cff1Table::glyph_name(Self, Int) -> Result[String?, CffError]
+pub fn Cff1Table::not_equal(Self, Self) -> Bool
 pub fn Cff1Table::parse(BytesView) -> Result[Self, CffError]
 pub fn Cff1Table::seac_components(Self, Int) -> Result[(Int, Int)?, CffError]
 pub fn Cff1Table::subset(Self, Array[Int]) -> Result[Bytes, CffError]
+pub fn Cff1Table::to_json(Self) -> Json
+pub fn Cff1Table::to_repr(Self) -> @debug.Repr
 
 pub struct Cff2PrivateDict {
   local_subrs : CffIndex?
   ivs : Int
 } derive(Eq, ToJson, @debug.Debug)
+pub fn Cff2PrivateDict::equal(Self, Self) -> Bool
+pub fn Cff2PrivateDict::not_equal(Self, Self) -> Bool
+pub fn Cff2PrivateDict::to_json(Self) -> Json
+pub fn Cff2PrivateDict::to_repr(Self) -> @debug.Repr
 
 pub struct Cff2Table {
   data : Bytes
@@ -72,10 +84,14 @@ pub struct Cff2Table {
   top_dict_offset : Int
   top_dict_size : Int
 } derive(Eq, ToJson, @debug.Debug)
+pub fn Cff2Table::equal(Self, Self) -> Bool
 pub fn Cff2Table::glyph_bounds(Self, Int, Array[Int]) -> Result[CffBounds?, CffError]
 pub fn Cff2Table::glyph_count(Self) -> Int
+pub fn Cff2Table::not_equal(Self, Self) -> Bool
 pub fn Cff2Table::parse(BytesView) -> Result[Self, CffError]
 pub fn Cff2Table::subset(Self, Array[Int]) -> Result[Bytes, CffError]
+pub fn Cff2Table::to_json(Self) -> Json
+pub fn Cff2Table::to_repr(Self) -> @debug.Repr
 
 pub struct CffBounds {
   x_min : Double
@@ -83,14 +99,22 @@ pub struct CffBounds {
   x_max : Double
   y_max : Double
 } derive(Eq, ToJson, @debug.Debug)
+pub fn CffBounds::equal(Self, Self) -> Bool
+pub fn CffBounds::not_equal(Self, Self) -> Bool
+pub fn CffBounds::to_json(Self) -> Json
+pub fn CffBounds::to_repr(Self) -> @debug.Repr
 
 pub struct CffDict {
   entries : Map[Int, Array[CffNumber]]
 } derive(Eq, ToJson, @debug.Debug)
 pub fn CffDict::entries_map(Self) -> Map[Int, Array[CffNumber]]
+pub fn CffDict::equal(Self, Self) -> Bool
 pub fn CffDict::get_int(Self, Int, index? : Int) -> Int?
 pub fn CffDict::get_numbers(Self, Int) -> Array[CffNumber]?
 pub fn CffDict::get_real(Self, Int, index? : Int) -> Double?
+pub fn CffDict::not_equal(Self, Self) -> Bool
+pub fn CffDict::to_json(Self) -> Json
+pub fn CffDict::to_repr(Self) -> @debug.Repr
 
 pub struct CffIndex {
   count : Int
@@ -99,14 +123,21 @@ pub struct CffIndex {
   data : Bytes
 } derive(Eq, ToJson, @debug.Debug)
 pub fn CffIndex::byte_len(Self, Int) -> Int
+pub fn CffIndex::equal(Self, Self) -> Bool
 pub fn CffIndex::item_bytes(Self, Int) -> Result[Bytes, CffError]
+pub fn CffIndex::not_equal(Self, Self) -> Bool
+pub fn CffIndex::to_json(Self) -> Json
+pub fn CffIndex::to_repr(Self) -> @debug.Repr
 
 pub enum CffNumber {
   Int(Int)
   Real(Double)
 } derive(Eq, ToJson, @debug.Debug)
+pub fn CffNumber::equal(Self, Self) -> Bool
+pub fn CffNumber::not_equal(Self, Self) -> Bool
+pub fn CffNumber::to_json(Self) -> Json
+pub fn CffNumber::to_repr(Self) -> @debug.Repr
 
 // Type aliases
 
 // Traits
-

@@ -1,1 +1,7 @@
+import {
+  "moonbitlang/core/debug",
+}
 
+// Keep the public ColorLine.extend field source-compatible.
+
+warnings = "-reserved_keyword"

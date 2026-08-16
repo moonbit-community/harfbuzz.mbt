@@ -25,7 +25,7 @@ pub fn available_shapers() -> Array[String] {
 }
 
 ///|
-let shape_plan_cache : Map[String, ShapePlan] = {}
+let shape_plan_cache : Map[String, ShapePlan] = Map([])
 
 ///|
 fn shape_plan_key(buffer : @buffer.Buffer, shapers : Array[String]) -> String {

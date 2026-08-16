@@ -68,7 +68,7 @@ fn bytes_to_ascii_string(bytes : Bytes) -> String {
 
 ///|
 fn build_glyph_name_map(post : @sfnt.PostTable) -> Map[String, UInt] {
-  let map : Map[String, UInt] = {}
+  let map : Map[String, UInt] = Map([])
   if post.version == 0x00010000 {
     for i in 0..<post_standard_names.length() {
       map[post_standard_names[i]] = i.reinterpret_as_uint()
