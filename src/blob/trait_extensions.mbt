@@ -1,0 +1,41 @@
+// Copyright 2026 International Digital Economy Academy
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+///|
+/// Keeps trait methods available through dot syntax.
+pub extend Blob with @moonbitlang/core/debug.Debug::{to_repr}
+
+///|
+pub extend Blob with Eq::{not_equal, equal}
+
+///|
+pub extend Blob with ToJson::{to_json}
+
+///|
+pub extend BlobError with @moonbitlang/core/debug.Debug::{to_repr}
+
+///|
+pub extend BlobError with Eq::{not_equal, equal}
+
+///|
+pub extend BlobError with ToJson::{to_json}
+
+///|
+pub extend MemoryMode with @moonbitlang/core/debug.Debug::{to_repr}
+
+///|
+pub extend MemoryMode with Eq::{not_equal, equal}
+
+///|
+pub extend MemoryMode with ToJson::{to_json}

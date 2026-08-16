@@ -635,7 +635,7 @@ fn cmap_records(data : Bytes) -> Array[(Int, Int, Int, Bytes)] {
 
 ///|
 fn cmap_diff_records(expected : Bytes, actual : Bytes) -> String {
-  let actual_map : Map[String, Bytes] = {}
+  let actual_map : Map[String, Bytes] = Map([])
   for entry in cmap_records(actual) {
     let (platform, encoding, format, bytes) = entry
     let key = "\{platform}/\{encoding}:\{format}"
@@ -815,7 +815,7 @@ fn dump_dir_offset_diff(expected : Bytes, actual : Bytes) -> Unit {
 
 ///|
 fn dump_tag_diff(expected : Bytes, actual : Bytes) -> Unit {
-  let exp_tags : Map[String, Bool] = {}
+  let exp_tags : Map[String, Bool] = Map([])
   let exp_count = read_u16_dbg(expected[:], 4)
   match exp_count {
     None => ()

@@ -20,6 +20,10 @@ pub(all) struct Affine2x3 {
   dy : Int
   var_idx_base : UInt?
 } derive(Eq, ToJson, @debug.Debug)
+pub fn Affine2x3::equal(Self, Self) -> Bool
+pub fn Affine2x3::not_equal(Self, Self) -> Bool
+pub fn Affine2x3::to_json(Self) -> Json
+pub fn Affine2x3::to_repr(Self) -> @debug.Repr
 
 pub struct Color {
   r : Int
@@ -27,12 +31,20 @@ pub struct Color {
   b : Int
   a : Int
 } derive(Eq, ToJson, @debug.Debug)
+pub fn Color::equal(Self, Self) -> Bool
 pub fn Color::from_bgra(Int, Int, Int, Int) -> Self
+pub fn Color::not_equal(Self, Self) -> Bool
+pub fn Color::to_json(Self) -> Json
+pub fn Color::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ColorLine {
   extend : Int
   stops : Array[ColorStop]
 } derive(Eq, ToJson, @debug.Debug)
+pub fn ColorLine::equal(Self, Self) -> Bool
+pub fn ColorLine::not_equal(Self, Self) -> Bool
+pub fn ColorLine::to_json(Self) -> Json
+pub fn ColorLine::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ColorStop {
   offset : Int
@@ -40,6 +52,10 @@ pub(all) struct ColorStop {
   alpha : Int
   var_idx_base : UInt?
 } derive(Eq, ToJson, @debug.Debug)
+pub fn ColorStop::equal(Self, Self) -> Bool
+pub fn ColorStop::not_equal(Self, Self) -> Bool
+pub fn ColorStop::to_json(Self) -> Json
+pub fn ColorStop::to_repr(Self) -> @debug.Repr
 
 pub(all) enum Paint {
   ColrLayers(Int, Int)
@@ -61,9 +77,10 @@ pub(all) enum Paint {
   SkewAroundCenter(Int, Int, Int, Int, UInt?, Paint)
   Composite(Int, Paint, Paint)
 } derive(ToJson, @debug.Debug)
+pub fn Paint::to_json(Self) -> Json
+pub fn Paint::to_repr(Self) -> @debug.Repr
 
 // Type aliases
 pub type VarIdx = UInt
 
 // Traits
-

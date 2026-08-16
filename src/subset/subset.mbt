@@ -34,7 +34,7 @@ pub fn SubsetInput::from_codepoints(codepoints : Array[UInt]) -> SubsetInput {
 
 ///|
 fn expand_bidi_codepoints(codepoints : Array[UInt]) -> Array[UInt] {
-  let seen : Map[Int, Bool] = {}
+  let seen : Map[Int, Bool] = Map([])
   let expanded : Array[UInt] = []
   for cp in codepoints {
     let key = cp.reinterpret_as_int()
@@ -1080,7 +1080,7 @@ fn build_cmap_format14_subset(
   if record_base + record_count * 11 > length {
     return Err(InvalidInput("invalid cmap format14 record bounds"))
   }
-  let retained : Map[Int, Bool] = {}
+  let retained : Map[Int, Bool] = Map([])
   for entry in plan.codepoint_map {
     let (codepoint, _) = entry
     retained[codepoint.reinterpret_as_int()] = true

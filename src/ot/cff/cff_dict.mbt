@@ -27,7 +27,7 @@ pub struct CffDict {
 pub fn parse_cff_dict(data : BytesView) -> Result[CffDict, CffError] {
   let mut pos = 0
   let mut operands : Array[CffNumber] = []
-  let entries : Map[Int, Array[CffNumber]] = {}
+  let entries : Map[Int, Array[CffNumber]] = Map([])
   while pos < data.length() {
     let b0 = data[pos].to_int()
     if b0 == 12 {
@@ -66,7 +66,7 @@ pub fn CffDict::get_numbers(self : CffDict, op : Int) -> Array[CffNumber]? {
 
 ///|
 pub fn CffDict::entries_map(self : CffDict) -> Map[Int, Array[CffNumber]] {
-  let next : Map[Int, Array[CffNumber]] = {}
+  let next : Map[Int, Array[CffNumber]] = Map([])
   self.entries.eachi((_, key, value) => next[key] = value.copy())
   next
 }

@@ -139,7 +139,7 @@ test "cff1 sid mapping helpers" {
   @debug.debug_inspect(cff1_standard_sid(0), content="None")
   @debug.debug_inspect(cff1_sid_to_gid(0, None, 5, 10), content="Some(5)")
   @debug.debug_inspect(cff1_sid_to_gid(1, None, 229, 400), content="Some(2)")
-  let map : Map[Int, Int] = {}
+  let map : Map[Int, Int] = Map([])
   map[99] = 7
   @debug.debug_inspect(cff1_sid_to_gid(3, Some(map), 99, 20), content="Some(7)")
 }

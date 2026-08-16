@@ -202,7 +202,7 @@ pub fn Cff2Table::glyph_count(self : Cff2Table) -> Int {
 fn cff2_clone_entries(
   entries : Map[Int, Array[CffNumber]],
 ) -> Map[Int, Array[CffNumber]] {
-  let next : Map[Int, Array[CffNumber]] = {}
+  let next : Map[Int, Array[CffNumber]] = Map([])
   entries.eachi((_, key, value) => next[key] = value.copy())
   next
 }
