@@ -110,6 +110,8 @@ fn read_i16(data : BytesView, offset : Int) -> Result[Int, SfntError] {
 
 ///|
 /// Parse a SFNT directory from a blob at a byte offset.
+/// Table data offsets in the directory are relative to the beginning of the
+/// blob, so TTC faces can be parsed by passing the face offset as base.
 pub fn Sfnt::parse_at(blob : @blob.Blob, base : Int) -> Result[Sfnt, SfntError] {
   if base < 0 {
     return Err(InvalidFormat)
@@ -139,7 +141,7 @@ pub fn Sfnt::parse_at(blob : @blob.Blob, base : Int) -> Result[Sfnt, SfntError] 
               (Err(err), _) => return Err(err)
               (_, Err(err)) => return Err(err)
               (Ok(table_offset), Ok(length)) =>
-                records.push({ tag, offset: base + table_offset, length })
+                records.push({ tag, offset: table_offset, length })
             }
             offset = offset + 16
           }

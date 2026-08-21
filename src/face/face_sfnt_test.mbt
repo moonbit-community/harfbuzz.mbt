@@ -155,6 +155,33 @@ fn build_cmap_format4_simple(start : Int, end : Int, start_gid : Int) -> Bytes {
 }
 
 ///|
+fn read_u16_at(bytes : Array[Byte], offset : Int) -> Int {
+  let b0 = bytes[offset].to_uint()
+  let b1 = bytes[offset + 1].to_uint()
+  ((b0 << 8) | b1).reinterpret_as_int()
+}
+
+///|
+fn read_u32_at(bytes : Array[Byte], offset : Int) -> Int {
+  let b0 = bytes[offset].to_uint()
+  let b1 = bytes[offset + 1].to_uint()
+  let b2 = bytes[offset + 2].to_uint()
+  let b3 = bytes[offset + 3].to_uint()
+  ((b0 << 24) | (b1 << 16) | (b2 << 8) | b3).reinterpret_as_int()
+}
+
+///|
+fn write_u32_at(bytes : Array[Byte], offset : Int, value : Int) -> Unit {
+  bytes[offset] = ((value >> 24) & 0xff).to_byte()
+  bytes[offset + 1] = ((value >> 16) & 0xff).to_byte()
+  bytes[offset + 2] = ((value >> 8) & 0xff).to_byte()
+  bytes[offset + 3] = (value & 0xff).to_byte()
+}
+
+///|
+/// Build a TTC. Table offsets in a real TTC file are measured from the start
+/// of the file, so each face's directory offsets are rebased to absolute
+/// positions before returning.
 fn build_ttc(fonts : Array[Bytes]) -> Bytes {
   let bytes : Array[Byte] = []
   bytes.push(0x74)
@@ -164,13 +191,23 @@ fn build_ttc(fonts : Array[Bytes]) -> Bytes {
   push_u32(bytes, 0x00010000)
   push_u32(bytes, fonts.length())
   let mut offset = 12 + fonts.length() * 4
+  let bases : Array[Int] = []
   for font in fonts {
     push_u32(bytes, offset)
+    bases.push(offset)
     offset = offset + font.length()
   }
   for font in fonts {
     for b in font {
       bytes.push(b)
+    }
+  }
+  for i in 0..<fonts.length() {
+    let base = bases[i]
+    let num_tables = read_u16_at(bytes, base + 4)
+    for j in 0..<num_tables {
+      let record = base + 12 + j * 16
+      write_u32_at(bytes, record + 8, read_u32_at(bytes, record + 8) + base)
     }
   }
   Bytes::from_array(bytes)
