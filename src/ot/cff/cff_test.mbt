@@ -15,7 +15,7 @@
 ///|
 test "cff1 index parse" {
   let bytes : Bytes = [0x00, 0x01, 0x01, 0x01, 0x02, 0xAA]
-  let index = match parse_cff1_index(bytes[:], 0) {
+  let index = match @cff.parse_cff1_index(bytes[:], 0) {
     Err(err) => fail("index parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -31,7 +31,7 @@ test "cff1 index parse" {
 ///|
 test "cff1 index empty" {
   let bytes : Bytes = [0x00, 0x00]
-  let index = match parse_cff1_index(bytes[:], 0) {
+  let index = match @cff.parse_cff1_index(bytes[:], 0) {
     Err(err) => fail("index parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -41,7 +41,7 @@ test "cff1 index empty" {
 ///|
 test "cff2 index parse" {
   let bytes : Bytes = [0x00, 0x00, 0x00, 0x01, 0x01, 0x01, 0x02, 0xBB]
-  let index = match parse_cff2_index(bytes[:], 0) {
+  let index = match @cff.parse_cff2_index(bytes[:], 0) {
     Err(err) => fail("index parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -57,7 +57,7 @@ test "cff2 index parse" {
 ///|
 test "cff dict parse int" {
   let bytes : Bytes = [181, 17]
-  let dict = match parse_cff_dict(bytes[:]) {
+  let dict = match @cff.parse_cff_dict(bytes[:]) {
     Err(err) => fail("dict parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -67,7 +67,7 @@ test "cff dict parse int" {
 ///|
 test "cff dict parse real" {
   let bytes : Bytes = [30, 0x12, 0xA5, 0xFF, 0]
-  let dict = match parse_cff_dict(bytes[:]) {
+  let dict = match @cff.parse_cff_dict(bytes[:]) {
     Err(err) => fail("dict parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -87,7 +87,7 @@ test "cff dict parse real" {
 ///|
 test "cff dict parse vsindex op" {
   let bytes : Bytes = [140, 22]
-  let dict = match parse_cff_dict(bytes[:]) {
+  let dict = match @cff.parse_cff_dict(bytes[:]) {
     Err(err) => fail("dict parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -97,7 +97,7 @@ test "cff dict parse vsindex op" {
 ///|
 test "cff1 charset format0" {
   let bytes : Bytes = [0x00, 0x00, 0x64, 0x00, 0x65]
-  let map = match parse_cff1_charset(bytes[:], 0, 3) {
+  let map = match @cff.parse_cff1_charset(bytes[:], 0, 3) {
     Err(err) => fail("charset parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -110,7 +110,7 @@ test "cff1 charset format0" {
 ///|
 test "cff1 charset format1" {
   let bytes : Bytes = [0x01, 0x00, 0xC8, 0x02]
-  let map = match parse_cff1_charset(bytes[:], 0, 4) {
+  let map = match @cff.parse_cff1_charset(bytes[:], 0, 4) {
     Err(err) => fail("charset parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -123,7 +123,7 @@ test "cff1 charset format1" {
 ///|
 test "cff1 charset format2" {
   let bytes : Bytes = [0x02, 0x01, 0x2C, 0x00, 0x02]
-  let map = match parse_cff1_charset(bytes[:], 0, 4) {
+  let map = match @cff.parse_cff1_charset(bytes[:], 0, 4) {
     Err(err) => fail("charset parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -135,19 +135,25 @@ test "cff1 charset format2" {
 
 ///|
 test "cff1 sid mapping helpers" {
-  @debug.debug_inspect(cff1_standard_sid(32), content="Some(1)")
-  @debug.debug_inspect(cff1_standard_sid(0), content="None")
-  @debug.debug_inspect(cff1_sid_to_gid(0, None, 5, 10), content="Some(5)")
-  @debug.debug_inspect(cff1_sid_to_gid(1, None, 229, 400), content="Some(2)")
-  let map : Map[Int, Int] = {}
+  @debug.debug_inspect(@cff.cff1_standard_sid(32), content="Some(1)")
+  @debug.debug_inspect(@cff.cff1_standard_sid(0), content="None")
+  @debug.debug_inspect(@cff.cff1_sid_to_gid(0, None, 5, 10), content="Some(5)")
+  @debug.debug_inspect(
+    @cff.cff1_sid_to_gid(1, None, 229, 400),
+    content="Some(2)",
+  )
+  let map : Map[Int, Int] = Map([])
   map[99] = 7
-  @debug.debug_inspect(cff1_sid_to_gid(3, Some(map), 99, 20), content="Some(7)")
+  @debug.debug_inspect(
+    @cff.cff1_sid_to_gid(3, Some(map), 99, 20),
+    content="Some(7)",
+  )
 }
 
 ///|
 test "cff charstring bounds simple" {
   let bytes : Bytes = [189, 139, 21, 239, 189, 5, 14]
-  let bounds = match cff_charstring_bounds(bytes[:], None, None) {
+  let bounds = match @cff.cff_charstring_bounds(bytes[:], None, None) {
     Err(err) => fail("bounds error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -169,7 +175,7 @@ test "cff charstring bounds simple" {
 ///|
 test "cff charstring dotsection" {
   let bytes : Bytes = [139, 139, 21, 12, 0, 189, 139, 5, 14]
-  let bounds = match cff_charstring_bounds(bytes[:], None, None) {
+  let bounds = match @cff.cff_charstring_bounds(bytes[:], None, None) {
     Err(err) => fail("bounds error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -195,7 +201,7 @@ test "cff2 parse minimal" {
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x01, 0x01, 0x01, 0x00, 0x00,
     0x00, 0x01, 0x01, 0x01, 0x01, 0x00, 0x00,
   ]
-  let cff2 = match Cff2Table::parse(bytes[:]) {
+  let cff2 = match @cff.Cff2Table::parse(bytes[:]) {
     Err(err) => fail("cff2 parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -266,7 +272,7 @@ test "cff2 charstring blend bounds" {
   }
   let bytes : Bytes = [149, 144, 140, 16, 139, 21, 14]
   let bounds = match
-    cff2_charstring_bounds(bytes[:], None, None, Some(store), 0, [16384]) {
+    @cff.cff2_charstring_bounds(bytes[:], None, None, Some(store), 0, [16384]) {
     Err(err) => fail("bounds error: \{@debug.to_string(err)}")
     Ok(value) => value
   }

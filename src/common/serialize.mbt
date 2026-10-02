@@ -23,11 +23,23 @@ pub enum SerializeError {
 } derive(Eq, Debug)
 
 ///|
+pub extend SerializeError with Eq::{not_equal, equal}
+
+///|
+pub extend SerializeError with @debug.Debug::{to_repr}
+
+///|
 pub(all) enum SerializeWhence {
   Head
   Tail
   Absolute
 } derive(Eq, Debug)
+
+///|
+pub extend SerializeWhence with Eq::{not_equal, equal}
+
+///|
+pub extend SerializeWhence with @debug.Debug::{to_repr}
 
 ///|
 pub(all) struct SerializeLink {

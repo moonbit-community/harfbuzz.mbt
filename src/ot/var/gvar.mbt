@@ -25,6 +25,12 @@ pub struct GvarTable {
 } derive(Debug, ToJson)
 
 ///|
+pub extend GvarTable with @debug.Debug::{to_repr}
+
+///|
+pub extend GvarTable with ToJson::{to_json}
+
+///|
 fn parse_offsets(
   data : BytesView,
   offset : Int,

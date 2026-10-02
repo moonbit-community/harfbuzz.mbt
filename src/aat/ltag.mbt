@@ -21,6 +21,12 @@ pub struct LtagTable {
 } derive(Debug, ToJson)
 
 ///|
+pub extend LtagTable with @debug.Debug::{to_repr}
+
+///|
+pub extend LtagTable with ToJson::{to_json}
+
+///|
 pub fn LtagTable::has_data(self : LtagTable) -> Bool {
   self.version != 0
 }

@@ -60,7 +60,7 @@ fn build_gdef_table_format1_2() -> Bytes {
 ///|
 test "gdef parse class defs and mark sets" {
   let bytes = build_gdef_table_format1_2()
-  let gdef = match GdefTable::parse(@blob.Blob::from_bytes(bytes)) {
+  let gdef = match @tables.GdefTable::parse(@blob.Blob::from_bytes(bytes)) {
     Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }

@@ -1921,7 +1921,8 @@ fn build_font_bytes_subset_gpos_extension_fixture() -> Bytes {
 ///|
 test "subset drops unused glyphs" {
   let font = @font.Font::from_bytes(build_font_bytes_subset_fixture())
-  let bytes = match subset(font, SubsetInput::from_codepoints([0x41U])) {
+  let bytes = match
+    @subset.subset(font, @subset.SubsetInput::from_codepoints([0x41U])) {
     Err(err) => fail("subset failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -1954,7 +1955,8 @@ test "subset drops unused glyphs" {
 ///|
 test "subset preserves os2" {
   let font = @font.Font::from_bytes(build_font_bytes_subset_fixture())
-  let bytes = match subset(font, SubsetInput::from_codepoints([0x41U])) {
+  let bytes = match
+    @subset.subset(font, @subset.SubsetInput::from_codepoints([0x41U])) {
     Err(err) => fail("subset failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -1986,7 +1988,8 @@ test "subset preserves os2" {
 ///|
 test "subset preserves cpal" {
   let font = @font.Font::from_bytes(build_font_bytes_subset_fixture())
-  let bytes = match subset(font, SubsetInput::from_codepoints([0x41U])) {
+  let bytes = match
+    @subset.subset(font, @subset.SubsetInput::from_codepoints([0x41U])) {
     Err(err) => fail("subset failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -2005,7 +2008,8 @@ test "subset preserves cpal" {
 ///|
 test "subset rebuilds post table when remapped" {
   let font = @font.Font::from_bytes(build_font_bytes_subset_fixture())
-  let bytes = match subset(font, SubsetInput::from_codepoints([0x42U])) {
+  let bytes = match
+    @subset.subset(font, @subset.SubsetInput::from_codepoints([0x42U])) {
     Err(err) => fail("subset failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -2028,7 +2032,8 @@ test "subset rebuilds post table when remapped" {
 ///|
 test "subset preserves post table for identity subset" {
   let font = @font.Font::from_bytes(build_font_bytes_subset_fixture())
-  let bytes = match subset(font, SubsetInput::from_codepoints([0x41U, 0x42U])) {
+  let bytes = match
+    @subset.subset(font, @subset.SubsetInput::from_codepoints([0x41U, 0x42U])) {
     Err(err) => fail("subset failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -2051,7 +2056,8 @@ test "subset preserves post table for identity subset" {
 ///|
 test "subset rebuilds vorg" {
   let font = @font.Font::from_bytes(build_font_bytes_subset_fixture())
-  let bytes = match subset(font, SubsetInput::from_codepoints([0x42U])) {
+  let bytes = match
+    @subset.subset(font, @subset.SubsetInput::from_codepoints([0x42U])) {
     Err(err) => fail("subset failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -2076,7 +2082,8 @@ test "subset rebuilds vorg" {
 ///|
 test "subset rebuilds kern" {
   let font = @font.Font::from_bytes(build_font_bytes_subset_fixture())
-  let bytes = match subset(font, SubsetInput::from_codepoints([0x42U])) {
+  let bytes = match
+    @subset.subset(font, @subset.SubsetInput::from_codepoints([0x42U])) {
     Err(err) => fail("subset failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -2143,7 +2150,8 @@ test "subset rebuilds kern" {
 ///|
 test "subset rebuilds gsub single" {
   let font = @font.Font::from_bytes(build_font_bytes_subset_fixture())
-  let bytes = match subset(font, SubsetInput::from_codepoints([0x42U])) {
+  let bytes = match
+    @subset.subset(font, @subset.SubsetInput::from_codepoints([0x42U])) {
     Err(err) => fail("subset failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -2230,7 +2238,8 @@ test "subset rebuilds gsub single" {
 ///|
 test "subset rebuilds gsub multiple" {
   let font = @font.Font::from_bytes(build_font_bytes_subset_fixture())
-  let bytes = match subset(font, SubsetInput::from_codepoints([0x42U])) {
+  let bytes = match
+    @subset.subset(font, @subset.SubsetInput::from_codepoints([0x42U])) {
     Err(err) => fail("subset failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -2322,7 +2331,8 @@ test "subset rebuilds gsub multiple" {
 ///|
 test "subset rebuilds gsub alternate" {
   let font = @font.Font::from_bytes(build_font_bytes_subset_fixture())
-  let bytes = match subset(font, SubsetInput::from_codepoints([0x42U])) {
+  let bytes = match
+    @subset.subset(font, @subset.SubsetInput::from_codepoints([0x42U])) {
     Err(err) => fail("subset failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -2415,7 +2425,8 @@ test "subset rebuilds gsub alternate" {
 ///|
 test "subset rebuilds gsub ligature" {
   let font = @font.Font::from_bytes(build_font_bytes_subset_fixture())
-  let bytes = match subset(font, SubsetInput::from_codepoints([0x42U])) {
+  let bytes = match
+    @subset.subset(font, @subset.SubsetInput::from_codepoints([0x42U])) {
     Err(err) => fail("subset failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -2516,7 +2527,8 @@ test "subset rebuilds gsub ligature" {
 ///|
 test "subset rebuilds gsub contextual" {
   let font = @font.Font::from_bytes(build_font_bytes_subset_fixture())
-  let bytes = match subset(font, SubsetInput::from_codepoints([0x42U])) {
+  let bytes = match
+    @subset.subset(font, @subset.SubsetInput::from_codepoints([0x42U])) {
     Err(err) => fail("subset failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -2629,7 +2641,8 @@ test "subset rebuilds gsub contextual" {
 ///|
 test "subset rebuilds gsub chaining" {
   let font = @font.Font::from_bytes(build_font_bytes_subset_fixture())
-  let bytes = match subset(font, SubsetInput::from_codepoints([0x42U])) {
+  let bytes = match
+    @subset.subset(font, @subset.SubsetInput::from_codepoints([0x42U])) {
     Err(err) => fail("subset failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -2761,7 +2774,8 @@ test "subset rebuilds gsub chaining" {
 ///|
 test "subset rebuilds gsub extension" {
   let font = @font.Font::from_bytes(build_font_bytes_subset_fixture())
-  let bytes = match subset(font, SubsetInput::from_codepoints([0x42U])) {
+  let bytes = match
+    @subset.subset(font, @subset.SubsetInput::from_codepoints([0x42U])) {
     Err(err) => fail("subset failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -2854,7 +2868,8 @@ test "subset rebuilds gsub extension" {
 ///|
 test "subset rebuilds gsub reverse chaining" {
   let font = @font.Font::from_bytes(build_font_bytes_subset_fixture())
-  let bytes = match subset(font, SubsetInput::from_codepoints([0x42U])) {
+  let bytes = match
+    @subset.subset(font, @subset.SubsetInput::from_codepoints([0x42U])) {
     Err(err) => fail("subset failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -2969,7 +2984,8 @@ test "subset rebuilds gsub reverse chaining" {
 ///|
 test "subset rebuilds gpos single" {
   let font = @font.Font::from_bytes(build_font_bytes_subset_fixture())
-  let bytes = match subset(font, SubsetInput::from_codepoints([0x42U])) {
+  let bytes = match
+    @subset.subset(font, @subset.SubsetInput::from_codepoints([0x42U])) {
     Err(err) => fail("subset failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -3051,7 +3067,8 @@ test "subset rebuilds gpos single" {
 ///|
 test "subset rebuilds gpos pair" {
   let font = @font.Font::from_bytes(build_font_bytes_subset_gpos_pair_fixture())
-  let bytes = match subset(font, SubsetInput::from_codepoints([0x42U])) {
+  let bytes = match
+    @subset.subset(font, @subset.SubsetInput::from_codepoints([0x42U])) {
     Err(err) => fail("subset failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -3151,7 +3168,8 @@ test "subset rebuilds gpos extension" {
   let font = @font.Font::from_bytes(
     build_font_bytes_subset_gpos_extension_fixture(),
   )
-  let bytes = match subset(font, SubsetInput::from_codepoints([0x42U])) {
+  let bytes = match
+    @subset.subset(font, @subset.SubsetInput::from_codepoints([0x42U])) {
     Err(err) => fail("subset failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -3247,7 +3265,8 @@ test "subset rebuilds gpos cursive" {
   let font = @font.Font::from_bytes(
     build_font_bytes_subset_with_gpos(build_gpos_cursive()),
   )
-  let bytes = match subset(font, SubsetInput::from_codepoints([0x42U])) {
+  let bytes = match
+    @subset.subset(font, @subset.SubsetInput::from_codepoints([0x42U])) {
     Err(err) => fail("subset failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -3346,7 +3365,8 @@ test "subset rebuilds gpos mark-to-base" {
   let font = @font.Font::from_bytes(
     build_font_bytes_subset_with_gpos(build_gpos_mark_base()),
   )
-  let bytes = match subset(font, SubsetInput::from_codepoints([0x42U])) {
+  let bytes = match
+    @subset.subset(font, @subset.SubsetInput::from_codepoints([0x42U])) {
     Err(err) => fail("subset failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -3449,7 +3469,8 @@ test "subset rebuilds gpos mark-to-ligature" {
   let font = @font.Font::from_bytes(
     build_font_bytes_subset_with_gpos(build_gpos_mark_ligature()),
   )
-  let bytes = match subset(font, SubsetInput::from_codepoints([0x42U])) {
+  let bytes = match
+    @subset.subset(font, @subset.SubsetInput::from_codepoints([0x42U])) {
     Err(err) => fail("subset failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -3553,7 +3574,8 @@ test "subset rebuilds gpos mark-to-mark" {
   let font = @font.Font::from_bytes(
     build_font_bytes_subset_with_gpos(build_gpos_mark_mark()),
   )
-  let bytes = match subset(font, SubsetInput::from_codepoints([0x42U])) {
+  let bytes = match
+    @subset.subset(font, @subset.SubsetInput::from_codepoints([0x42U])) {
     Err(err) => fail("subset failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -3623,7 +3645,8 @@ test "subset rebuilds gpos contextual" {
   let font = @font.Font::from_bytes(
     build_font_bytes_subset_with_gpos(build_gpos_contextual()),
   )
-  let bytes = match subset(font, SubsetInput::from_codepoints([0x42U])) {
+  let bytes = match
+    @subset.subset(font, @subset.SubsetInput::from_codepoints([0x42U])) {
     Err(err) => fail("subset failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -3684,7 +3707,8 @@ test "subset rebuilds gpos chaining" {
   let font = @font.Font::from_bytes(
     build_font_bytes_subset_with_gpos(build_gpos_chaining()),
   )
-  let bytes = match subset(font, SubsetInput::from_codepoints([0x42U])) {
+  let bytes = match
+    @subset.subset(font, @subset.SubsetInput::from_codepoints([0x42U])) {
     Err(err) => fail("subset failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -3743,7 +3767,8 @@ test "subset rebuilds gpos chaining" {
 ///|
 test "subset rebuilds colr v0" {
   let font = @font.Font::from_bytes(build_font_bytes_subset_fixture())
-  let bytes = match subset(font, SubsetInput::from_codepoints([0x42U])) {
+  let bytes = match
+    @subset.subset(font, @subset.SubsetInput::from_codepoints([0x42U])) {
     Err(err) => fail("subset failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -3818,7 +3843,8 @@ test "subset rebuilds colr v0" {
 ///|
 test "subset rebuilds colr v1" {
   let font = @font.Font::from_bytes(build_font_bytes_subset_colr_v1_fixture())
-  let bytes = match subset(font, SubsetInput::from_codepoints([0x42U])) {
+  let bytes = match
+    @subset.subset(font, @subset.SubsetInput::from_codepoints([0x42U])) {
     Err(err) => fail("subset failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -3865,7 +3891,8 @@ test "subset rebuilds colr v1" {
 ///|
 test "subset rebuilds sbix" {
   let font = @font.Font::from_bytes(build_font_bytes_subset_sbix_fixture())
-  let bytes = match subset(font, SubsetInput::from_codepoints([0x42U])) {
+  let bytes = match
+    @subset.subset(font, @subset.SubsetInput::from_codepoints([0x42U])) {
     Err(err) => fail("subset failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -3976,7 +4003,8 @@ test "subset rebuilds sbix" {
 ///|
 test "subset rebuilds cblc/cbdt" {
   let font = @font.Font::from_bytes(build_font_bytes_subset_cblc_fixture())
-  let bytes = match subset(font, SubsetInput::from_codepoints([0x42U])) {
+  let bytes = match
+    @subset.subset(font, @subset.SubsetInput::from_codepoints([0x42U])) {
     Err(err) => fail("subset failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -4090,7 +4118,8 @@ test "subset rebuilds cblc/cbdt" {
 ///|
 test "subset rebuilds svg" {
   let font = @font.Font::from_bytes(build_font_bytes_subset_svg_fixture())
-  let bytes = match subset(font, SubsetInput::from_codepoints([0x42U])) {
+  let bytes = match
+    @subset.subset(font, @subset.SubsetInput::from_codepoints([0x42U])) {
     Err(err) => fail("subset failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -4150,7 +4179,8 @@ test "subset rebuilds svg" {
 ///|
 test "subset rebuilds gdef" {
   let font = @font.Font::from_bytes(build_font_bytes_subset_fixture())
-  let bytes = match subset(font, SubsetInput::from_codepoints([0x42U])) {
+  let bytes = match
+    @subset.subset(font, @subset.SubsetInput::from_codepoints([0x42U])) {
     Err(err) => fail("subset failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -4432,7 +4462,8 @@ test "subset rebuilds gdef" {
 ///|
 test "subset rebuilds variation tables" {
   let font = @font.Font::from_bytes(build_font_bytes_subset_variation_fixture())
-  let bytes = match subset(font, SubsetInput::from_codepoints([0x42U])) {
+  let bytes = match
+    @subset.subset(font, @subset.SubsetInput::from_codepoints([0x42U])) {
     Err(err) => fail("subset failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -4548,7 +4579,8 @@ test "subset rebuilds variation tables" {
 ///|
 test "subset keeps empty gsub when remapped" {
   let font = @font.Font::from_bytes(build_font_bytes_subset_fixture())
-  let bytes = match subset(font, SubsetInput::from_codepoints([0x41U])) {
+  let bytes = match
+    @subset.subset(font, @subset.SubsetInput::from_codepoints([0x41U])) {
     Err(err) => fail("subset failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -4588,7 +4620,8 @@ test "subset keeps empty gsub when remapped" {
 ///|
 test "subset preserves layout tables for identity subset" {
   let font = @font.Font::from_bytes(build_font_bytes_subset_fixture())
-  let bytes = match subset(font, SubsetInput::from_codepoints([0x41U, 0x42U])) {
+  let bytes = match
+    @subset.subset(font, @subset.SubsetInput::from_codepoints([0x41U, 0x42U])) {
     Err(err) => fail("subset failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -4613,7 +4646,8 @@ test "subset preserves layout tables for identity subset" {
 ///|
 test "subset rebuilds vmtx" {
   let font = @font.Font::from_bytes(build_font_bytes_subset_fixture())
-  let bytes = match subset(font, SubsetInput::from_codepoints([0x41U])) {
+  let bytes = match
+    @subset.subset(font, @subset.SubsetInput::from_codepoints([0x41U])) {
     Err(err) => fail("subset failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -4669,7 +4703,8 @@ test "subset rebuilds vmtx" {
 ///|
 test "subset remaps composite components" {
   let font = @font.Font::from_bytes(build_font_bytes_subset_fixture())
-  let bytes = match subset(font, SubsetInput::from_codepoints([0x42U])) {
+  let bytes = match
+    @subset.subset(font, @subset.SubsetInput::from_codepoints([0x42U])) {
     Err(err) => fail("subset failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -5140,7 +5175,8 @@ fn build_font_bytes_test_cff2_vf() -> Bytes {
 test "subset cff1 cmap" {
   let font = @font.Font::from_bytes(build_font_bytes_cff1_seac_c0())
   let keep = 0xC0U
-  let bytes = match subset(font, SubsetInput::from_codepoints([keep])) {
+  let bytes = match
+    @subset.subset(font, @subset.SubsetInput::from_codepoints([keep])) {
     Err(err) => fail("subset failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -5205,7 +5241,8 @@ test "subset cff1 outlines" {
     Err(err) => fail("seac components error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  let bytes = match subset(font, SubsetInput::from_codepoints([keep])) {
+  let bytes = match
+    @subset.subset(font, @subset.SubsetInput::from_codepoints([keep])) {
     Err(err) => fail("subset failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -5286,7 +5323,8 @@ test "subset cff1 outlines" {
 test "subset cff2 outlines" {
   let font = @font.Font::from_bytes(build_font_bytes_test_cff2_vf())
   let keep = 0x41U
-  let bytes = match subset(font, SubsetInput::from_codepoints([keep])) {
+  let bytes = match
+    @subset.subset(font, @subset.SubsetInput::from_codepoints([keep])) {
     Err(err) => fail("subset failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }

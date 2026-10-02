@@ -21,6 +21,12 @@ pub struct HvarTable {
 } derive(Debug, ToJson)
 
 ///|
+pub extend HvarTable with @debug.Debug::{to_repr}
+
+///|
+pub extend HvarTable with ToJson::{to_json}
+
+///|
 fn parse_map_optional(
   data : BytesView,
   offset : Int,

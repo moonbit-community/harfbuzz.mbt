@@ -40,6 +40,15 @@ pub struct Cff2PrivateDict {
 } derive(Eq, Debug, ToJson)
 
 ///|
+pub extend Cff2PrivateDict with Eq::{not_equal, equal}
+
+///|
+pub extend Cff2PrivateDict with @debug.Debug::{to_repr}
+
+///|
+pub extend Cff2PrivateDict with ToJson::{to_json}
+
+///|
 pub struct Cff2Table {
   data : Bytes
   top_dict : CffDict
@@ -54,6 +63,15 @@ pub struct Cff2Table {
   top_dict_offset : Int
   top_dict_size : Int
 } derive(Eq, Debug, ToJson)
+
+///|
+pub extend Cff2Table with Eq::{not_equal, equal}
+
+///|
+pub extend Cff2Table with @debug.Debug::{to_repr}
+
+///|
+pub extend Cff2Table with ToJson::{to_json}
 
 ///|
 pub fn Cff2Table::parse(data : BytesView) -> Result[Cff2Table, CffError] {
@@ -202,7 +220,7 @@ pub fn Cff2Table::glyph_count(self : Cff2Table) -> Int {
 fn cff2_clone_entries(
   entries : Map[Int, Array[CffNumber]],
 ) -> Map[Int, Array[CffNumber]] {
-  let next : Map[Int, Array[CffNumber]] = {}
+  let next : Map[Int, Array[CffNumber]] = Map([])
   entries.eachi((_, key, value) => next[key] = value.copy())
   next
 }

@@ -19,12 +19,27 @@ pub struct Anchor {
 } derive(Eq, Debug, ToJson)
 
 ///|
+pub extend Anchor with Eq::{not_equal, equal}
+
+///|
+pub extend Anchor with @debug.Debug::{to_repr}
+
+///|
+pub extend Anchor with ToJson::{to_json}
+
+///|
 pub struct AnkrTable {
   version : Int
   lookup : LookupTable
   anchor_offset : Int
   data : Bytes
 } derive(Debug, ToJson)
+
+///|
+pub extend AnkrTable with @debug.Debug::{to_repr}
+
+///|
+pub extend AnkrTable with ToJson::{to_json}
 
 ///|
 pub fn AnkrTable::parse(

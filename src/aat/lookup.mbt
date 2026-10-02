@@ -20,6 +20,15 @@ pub(all) struct LookupSegmentSingle {
 } derive(Eq, Debug, ToJson)
 
 ///|
+pub extend LookupSegmentSingle with Eq::{not_equal, equal}
+
+///|
+pub extend LookupSegmentSingle with @debug.Debug::{to_repr}
+
+///|
+pub extend LookupSegmentSingle with ToJson::{to_json}
+
+///|
 pub(all) struct LookupSegmentArray {
   first : UInt
   last : UInt
@@ -27,10 +36,28 @@ pub(all) struct LookupSegmentArray {
 } derive(Eq, Debug, ToJson)
 
 ///|
+pub extend LookupSegmentArray with Eq::{not_equal, equal}
+
+///|
+pub extend LookupSegmentArray with @debug.Debug::{to_repr}
+
+///|
+pub extend LookupSegmentArray with ToJson::{to_json}
+
+///|
 pub(all) struct LookupSingle {
   glyph : UInt
   value : UInt
 } derive(Eq, Debug, ToJson)
+
+///|
+pub extend LookupSingle with Eq::{not_equal, equal}
+
+///|
+pub extend LookupSingle with @debug.Debug::{to_repr}
+
+///|
+pub extend LookupSingle with ToJson::{to_json}
 
 ///|
 pub(all) enum LookupTable {
@@ -41,6 +68,15 @@ pub(all) enum LookupTable {
   Format8(UInt, Array[UInt])
   Format10(Int, UInt, Array[UInt])
 } derive(Eq, Debug, ToJson)
+
+///|
+pub extend LookupTable with Eq::{not_equal, equal}
+
+///|
+pub extend LookupTable with @debug.Debug::{to_repr}
+
+///|
+pub extend LookupTable with ToJson::{to_json}
 
 ///|
 fn within_range(glyph : UInt, first : UInt, last : UInt) -> Bool {

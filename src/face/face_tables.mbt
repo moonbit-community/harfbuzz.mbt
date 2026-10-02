@@ -22,6 +22,15 @@ suberror FaceTableError {
 } derive(Eq, Debug, ToJson)
 
 ///|
+pub extend FaceTableError with Eq::{not_equal, equal}
+
+///|
+pub extend FaceTableError with @debug.Debug::{to_repr}
+
+///|
+pub extend FaceTableError with ToJson::{to_json}
+
+///|
 fn read_u32(data : BytesView, offset : Int) -> Result[Int, FaceTableError] {
   if offset + 4 > data.length() {
     return Err(UnexpectedEof)

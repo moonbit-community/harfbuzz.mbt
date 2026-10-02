@@ -25,11 +25,11 @@ pub fn available_shapers() -> Array[String] {
 }
 
 ///|
-let shape_plan_cache : Map[String, ShapePlan] = {}
+let shape_plan_cache : Map[String, ShapePlan] = Map([])
 
 ///|
 fn shape_plan_key(buffer : @buffer.Buffer, shapers : Array[String]) -> String {
-  let sb = StringBuilder::new()
+  let sb = StringBuilder()
   sb.write_view(shapers.join(","))
   sb.write_char('|')
   sb.write_view(buffer.get_direction().to_string())

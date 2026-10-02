@@ -30,7 +30,7 @@ test "cvt parse" {
   push_i16_cvt(bytes, 100)
   push_i16_cvt(bytes, -200)
   push_i16_cvt(bytes, 0)
-  let table = match CvtTable::parse(Bytes::from_array(bytes)[:]) {
+  let table = match @sfnt.CvtTable::parse(Bytes::from_array(bytes)[:]) {
     Err(err) => fail("parse failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }

@@ -19,6 +19,15 @@ pub struct Language {
 } derive(Eq, Debug, ToJson)
 
 ///|
+pub extend Language with Eq::{not_equal, equal}
+
+///|
+pub extend Language with @debug.Debug::{to_repr}
+
+///|
+pub extend Language with ToJson::{to_json}
+
+///|
 /// Invalid language value.
 pub let language_invalid : Language = { tag: "", }
 
@@ -43,7 +52,7 @@ pub fn Language::from_string(s : String, len? : Int = -1) -> Language {
     return language_invalid
   }
   let max_len = if len < 0 { s.length() } else if len > 63 { 63 } else { len }
-  let sb = StringBuilder::new(size_hint=max_len)
+  let sb = StringBuilder(size_hint=max_len)
   let mut count = 0
   for c in s {
     if count >= max_len {

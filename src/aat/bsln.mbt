@@ -34,6 +34,12 @@ pub enum BslnData {
 } derive(Debug, ToJson)
 
 ///|
+pub extend BslnData with @debug.Debug::{to_repr}
+
+///|
+pub extend BslnData with ToJson::{to_json}
+
+///|
 /// Parsed bsln table.
 pub struct BslnTable {
   version : Int
@@ -41,6 +47,12 @@ pub struct BslnTable {
   default_baseline : Int
   data : BslnData
 } derive(Debug, ToJson)
+
+///|
+pub extend BslnTable with @debug.Debug::{to_repr}
+
+///|
+pub extend BslnTable with ToJson::{to_json}
 
 ///|
 pub fn BslnTable::has_data(self : BslnTable) -> Bool {

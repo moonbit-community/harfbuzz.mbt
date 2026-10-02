@@ -20,6 +20,15 @@ pub struct HeadTable {
 } derive(Eq, Debug, ToJson)
 
 ///|
+pub extend HeadTable with Eq::{not_equal, equal}
+
+///|
+pub extend HeadTable with @debug.Debug::{to_repr}
+
+///|
+pub extend HeadTable with ToJson::{to_json}
+
+///|
 /// Parse head table bytes.
 pub fn HeadTable::parse(data : BytesView) -> Result[HeadTable, SfntError] {
   let upem = read_u16_int(data, 18)

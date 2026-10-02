@@ -145,7 +145,7 @@ fn build_font_bytes_aat_morx() -> Bytes {
 
 ///|
 test "aat morx parse and apply" {
-  let font = Font::from_bytes(build_font_bytes_aat_morx())
+  let font = @font.Font::from_bytes(build_font_bytes_aat_morx())
   let morx = match font.morx() {
     Err(err) => fail("morx parse failed: \{@debug.to_string(err)}")
     Ok(None) => fail("morx table missing")

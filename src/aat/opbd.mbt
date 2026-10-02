@@ -22,6 +22,15 @@ pub struct OpticalBounds {
 } derive(Eq, Debug, ToJson)
 
 ///|
+pub extend OpticalBounds with Eq::{not_equal, equal}
+
+///|
+pub extend OpticalBounds with @debug.Debug::{to_repr}
+
+///|
+pub extend OpticalBounds with ToJson::{to_json}
+
+///|
 /// Parsed opbd table.
 pub struct OpbdTable {
   version : Int
@@ -29,6 +38,12 @@ pub struct OpbdTable {
   lookup : LookupTable
   data : BytesView
 } derive(Debug, ToJson)
+
+///|
+pub extend OpbdTable with @debug.Debug::{to_repr}
+
+///|
+pub extend OpbdTable with ToJson::{to_json}
 
 ///|
 pub fn OpbdTable::has_data(self : OpbdTable) -> Bool {

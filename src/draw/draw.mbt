@@ -23,6 +23,12 @@ pub struct DrawState {
 } derive(Debug, ToJson)
 
 ///|
+pub extend DrawState with @debug.Debug::{to_repr}
+
+///|
+pub extend DrawState with ToJson::{to_json}
+
+///|
 pub fn DrawState::new() -> DrawState {
   {
     path_open: false,
@@ -467,6 +473,12 @@ pub struct DrawExtents {
   mut xmax : Double
   mut ymax : Double
 } derive(Debug, ToJson)
+
+///|
+pub extend DrawExtents with @debug.Debug::{to_repr}
+
+///|
+pub extend DrawExtents with ToJson::{to_json}
 
 ///|
 pub fn DrawExtents::new() -> DrawExtents {

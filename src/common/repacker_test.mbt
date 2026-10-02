@@ -14,13 +14,13 @@
 
 ///|
 test "repacker resolves simple overflow" {
-  let obj0 = SerializeObject::new(Bytes::from_array([0, 0]))
-  let obj1 = SerializeObject::new(Bytes::make(300, 0))
-  let obj2 = SerializeObject::new(Bytes::from_array([0, 0]))
-  obj0.real_links.push(SerializeLink::new(1, 0, 2))
-  let order = repack_object_order([obj0, obj1, obj2])
+  let obj0 = @common.SerializeObject::new(Bytes::from_array([0, 0]))
+  let obj1 = @common.SerializeObject::new(Bytes::make(300, 0))
+  let obj2 = @common.SerializeObject::new(Bytes::from_array([0, 0]))
+  obj0.real_links.push(@common.SerializeLink::new(1, 0, 2))
+  let order = @common.repack_object_order([obj0, obj1, obj2])
   @debug.debug_inspect(order, content="Ok([0, 2, 1])")
-  let result = serialize_objects_repacked([obj0, obj1, obj2])
+  let result = @common.serialize_objects_repacked([obj0, obj1, obj2])
   match result {
     Err(err) => fail("serialize failed: \{@debug.to_string(err)}")
     Ok(bytes) => {
@@ -38,10 +38,10 @@ test "repacker resolves simple overflow" {
 
 ///|
 test "serialize width zero link ordering" {
-  let obj0 = SerializeObject::new(Bytes::from_array([1]))
-  let obj1 = SerializeObject::new(Bytes::from_array([2]))
-  obj0.real_links.push(SerializeLink::new(0, 0, 1))
-  let result = serialize_objects([obj0, obj1])
+  let obj0 = @common.SerializeObject::new(Bytes::from_array([1]))
+  let obj1 = @common.SerializeObject::new(Bytes::from_array([2]))
+  obj0.real_links.push(@common.SerializeLink::new(0, 0, 1))
+  let result = @common.serialize_objects([obj0, obj1])
   match result {
     Err(err) => fail("serialize failed: \{@debug.to_string(err)}")
     Ok(bytes) => {
@@ -50,10 +50,10 @@ test "serialize width zero link ordering" {
     }
   }
 
-  let obj2 = SerializeObject::new(Bytes::from_array([1]))
-  let obj3 = SerializeObject::new(Bytes::from_array([2]))
-  obj3.real_links.push(SerializeLink::new(0, 0, 0))
-  let result2 = serialize_objects([obj2, obj3])
+  let obj2 = @common.SerializeObject::new(Bytes::from_array([1]))
+  let obj3 = @common.SerializeObject::new(Bytes::from_array([2]))
+  obj3.real_links.push(@common.SerializeLink::new(0, 0, 0))
+  let result2 = @common.serialize_objects([obj2, obj3])
   match result2 {
     Err(VirtualOrder) => ()
     Err(err) => fail("unexpected error: \{@debug.to_string(err)}")

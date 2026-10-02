@@ -16,4 +16,3 @@ pub fn shape(@font.Font, @buffer.Buffer) -> Result[Unit, @buffer.ShapeError]
 // Type aliases
 
 // Traits
-

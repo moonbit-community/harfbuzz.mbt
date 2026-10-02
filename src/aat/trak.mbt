@@ -24,6 +24,15 @@ pub(all) struct TrackTableEntry {
 } derive(Eq, Debug, ToJson)
 
 ///|
+pub extend TrackTableEntry with Eq::{not_equal, equal}
+
+///|
+pub extend TrackTableEntry with @debug.Debug::{to_repr}
+
+///|
+pub extend TrackTableEntry with ToJson::{to_json}
+
+///|
 fn TrackTableEntry::track_value(self : TrackTableEntry) -> Double {
   self.track.to_double() * f16dot16_scale
 }
@@ -101,6 +110,15 @@ pub(all) struct TrackData {
 } derive(Eq, Debug, ToJson)
 
 ///|
+pub extend TrackData with Eq::{not_equal, equal}
+
+///|
+pub extend TrackData with @debug.Debug::{to_repr}
+
+///|
+pub extend TrackData with ToJson::{to_json}
+
+///|
 fn TrackData::tracking(
   self : TrackData,
   ptem : Double,
@@ -143,6 +161,15 @@ pub struct TrakTable {
   horiz : TrackData?
   vert : TrackData?
 } derive(Eq, Debug, ToJson)
+
+///|
+pub extend TrakTable with Eq::{not_equal, equal}
+
+///|
+pub extend TrakTable with @debug.Debug::{to_repr}
+
+///|
+pub extend TrakTable with ToJson::{to_json}
 
 ///|
 /// Parse a trak table.

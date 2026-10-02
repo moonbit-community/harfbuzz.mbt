@@ -102,7 +102,7 @@ fn build_hvar_bytes() -> Bytes {
 
 ///|
 test "hvar lsb rsb deltas" {
-  let hvar = match HvarTable::parse(build_hvar_bytes()) {
+  let hvar = match @var.HvarTable::parse(build_hvar_bytes()) {
     Err(err) => fail("parse failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }

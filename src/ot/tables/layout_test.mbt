@@ -18,7 +18,7 @@ test "layout table header and lists" {
     build_gsub_lookup(),
     @common.Tag::from_chars('l', 'i', 'g', 'a'),
   )
-  let layout = match LayoutTable::parse(@blob.Blob::from_bytes(bytes)) {
+  let layout = match @tables.LayoutTable::parse(@blob.Blob::from_bytes(bytes)) {
     Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -75,7 +75,7 @@ test "layout table header and lists" {
 ///|
 test "gsub/gpos wrappers" {
   let gsub = match
-    GsubTable::parse(
+    @tables.GsubTable::parse(
       @blob.Blob::from_bytes(
         build_layout_table(
           build_gsub_lookup(),
@@ -87,7 +87,7 @@ test "gsub/gpos wrappers" {
     Ok(value) => value
   }
   let gpos = match
-    GposTable::parse(
+    @tables.GposTable::parse(
       @blob.Blob::from_bytes(
         build_layout_table(
           build_gpos_lookup(),

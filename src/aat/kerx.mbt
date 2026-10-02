@@ -32,10 +32,25 @@ pub struct KerxPair {
 } derive(Eq, Debug, ToJson)
 
 ///|
+pub extend KerxPair with Eq::{not_equal, equal}
+
+///|
+pub extend KerxPair with @debug.Debug::{to_repr}
+
+///|
+pub extend KerxPair with ToJson::{to_json}
+
+///|
 pub struct KerxFormat1 {
   table : StateTable
   actions : Array[Int]
 } derive(Debug, ToJson)
+
+///|
+pub extend KerxFormat1 with @debug.Debug::{to_repr}
+
+///|
+pub extend KerxFormat1 with ToJson::{to_json}
 
 ///|
 pub struct KerxFormat2 {
@@ -46,11 +61,23 @@ pub struct KerxFormat2 {
 } derive(Debug, ToJson)
 
 ///|
+pub extend KerxFormat2 with @debug.Debug::{to_repr}
+
+///|
+pub extend KerxFormat2 with ToJson::{to_json}
+
+///|
 pub struct KerxFormat4 {
   table : StateTable
   flags : UInt
   actions : Array[Int]
 } derive(Debug, ToJson)
+
+///|
+pub extend KerxFormat4 with @debug.Debug::{to_repr}
+
+///|
+pub extend KerxFormat4 with ToJson::{to_json}
 
 ///|
 pub struct KerxFormat6 {
@@ -61,6 +88,12 @@ pub struct KerxFormat6 {
 } derive(Debug, ToJson)
 
 ///|
+pub extend KerxFormat6 with @debug.Debug::{to_repr}
+
+///|
+pub extend KerxFormat6 with ToJson::{to_json}
+
+///|
 pub struct KerxAdjustment {
   x_advance : Int
   y_advance : Int
@@ -69,10 +102,28 @@ pub struct KerxAdjustment {
 } derive(Eq, Debug, ToJson)
 
 ///|
+pub extend KerxAdjustment with Eq::{not_equal, equal}
+
+///|
+pub extend KerxAdjustment with @debug.Debug::{to_repr}
+
+///|
+pub extend KerxAdjustment with ToJson::{to_json}
+
+///|
 pub struct KerxSubtableHeader {
   coverage : UInt
   tuple_count : Int
 } derive(Eq, Debug, ToJson)
+
+///|
+pub extend KerxSubtableHeader with Eq::{not_equal, equal}
+
+///|
+pub extend KerxSubtableHeader with @debug.Debug::{to_repr}
+
+///|
+pub extend KerxSubtableHeader with ToJson::{to_json}
 
 ///|
 pub enum KerxSubtable {
@@ -84,10 +135,22 @@ pub enum KerxSubtable {
 } derive(Debug, ToJson)
 
 ///|
+pub extend KerxSubtable with @debug.Debug::{to_repr}
+
+///|
+pub extend KerxSubtable with ToJson::{to_json}
+
+///|
 pub struct KerxTable {
   version : Int
   subtables : Array[KerxSubtable]
 } derive(Debug, ToJson)
+
+///|
+pub extend KerxTable with @debug.Debug::{to_repr}
+
+///|
+pub extend KerxTable with ToJson::{to_json}
 
 ///|
 fn coverage_type(coverage : UInt) -> Int {

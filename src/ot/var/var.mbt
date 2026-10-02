@@ -19,10 +19,28 @@ pub suberror VarError {
 } derive(Eq, Debug, ToJson)
 
 ///|
+pub extend VarError with Eq::{not_equal, equal}
+
+///|
+pub extend VarError with @debug.Debug::{to_repr}
+
+///|
+pub extend VarError with ToJson::{to_json}
+
+///|
 pub struct AxisCoord {
   tag : @common.Tag
   value : Double
 } derive(Eq, Debug, ToJson)
+
+///|
+pub extend AxisCoord with Eq::{not_equal, equal}
+
+///|
+pub extend AxisCoord with @debug.Debug::{to_repr}
+
+///|
+pub extend AxisCoord with ToJson::{to_json}
 
 ///|
 pub fn AxisCoord::new(tag : @common.Tag, value : Double) -> AxisCoord {

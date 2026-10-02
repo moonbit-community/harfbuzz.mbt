@@ -19,6 +19,15 @@ pub suberror OtLayoutError {
 } derive(Eq, Debug, ToJson)
 
 ///|
+pub extend OtLayoutError with Eq::{not_equal, equal}
+
+///|
+pub extend OtLayoutError with @debug.Debug::{to_repr}
+
+///|
+pub extend OtLayoutError with ToJson::{to_json}
+
+///|
 /// Layout table header (GSUB/GPOS shared).
 pub struct LayoutHeader {
   version : UInt
@@ -29,6 +38,15 @@ pub struct LayoutHeader {
 } derive(Eq, Debug, ToJson)
 
 ///|
+pub extend LayoutHeader with Eq::{not_equal, equal}
+
+///|
+pub extend LayoutHeader with @debug.Debug::{to_repr}
+
+///|
+pub extend LayoutHeader with ToJson::{to_json}
+
+///|
 /// Script record entry (offset from table start).
 pub struct ScriptRecord {
   tag : @common.Tag
@@ -36,10 +54,28 @@ pub struct ScriptRecord {
 } derive(Eq, Debug, ToJson)
 
 ///|
+pub extend ScriptRecord with Eq::{not_equal, equal}
+
+///|
+pub extend ScriptRecord with @debug.Debug::{to_repr}
+
+///|
+pub extend ScriptRecord with ToJson::{to_json}
+
+///|
 /// Script list table.
 pub struct ScriptList {
   records : Array[ScriptRecord]
 } derive(Eq, Debug, ToJson)
+
+///|
+pub extend ScriptList with Eq::{not_equal, equal}
+
+///|
+pub extend ScriptList with @debug.Debug::{to_repr}
+
+///|
+pub extend ScriptList with ToJson::{to_json}
 
 ///|
 pub fn ScriptList::records(self : ScriptList) -> ArrayView[ScriptRecord] {
@@ -54,10 +90,28 @@ pub struct FeatureRecord {
 } derive(Eq, Debug, ToJson)
 
 ///|
+pub extend FeatureRecord with Eq::{not_equal, equal}
+
+///|
+pub extend FeatureRecord with @debug.Debug::{to_repr}
+
+///|
+pub extend FeatureRecord with ToJson::{to_json}
+
+///|
 /// Feature list table.
 pub struct FeatureList {
   records : Array[FeatureRecord]
 } derive(Eq, Debug, ToJson)
+
+///|
+pub extend FeatureList with Eq::{not_equal, equal}
+
+///|
+pub extend FeatureList with @debug.Debug::{to_repr}
+
+///|
+pub extend FeatureList with ToJson::{to_json}
 
 ///|
 pub fn FeatureList::records(self : FeatureList) -> ArrayView[FeatureRecord] {
@@ -69,6 +123,15 @@ pub fn FeatureList::records(self : FeatureList) -> ArrayView[FeatureRecord] {
 pub struct LookupList {
   offsets : Array[Int]
 } derive(Eq, Debug, ToJson)
+
+///|
+pub extend LookupList with Eq::{not_equal, equal}
+
+///|
+pub extend LookupList with @debug.Debug::{to_repr}
+
+///|
+pub extend LookupList with ToJson::{to_json}
 
 ///|
 pub fn LookupList::offsets(self : LookupList) -> ArrayView[Int] {
@@ -84,6 +147,12 @@ pub struct LayoutTable {
   feature_list : FeatureList
   lookup_list : LookupList
 } derive(Debug, ToJson)
+
+///|
+pub extend LayoutTable with @debug.Debug::{to_repr}
+
+///|
+pub extend LayoutTable with ToJson::{to_json}
 
 ///|
 pub fn LayoutTable::header(self : LayoutTable) -> LayoutHeader {
@@ -326,6 +395,12 @@ pub struct GsubTable {
 } derive(Debug, ToJson)
 
 ///|
+pub extend GsubTable with @debug.Debug::{to_repr}
+
+///|
+pub extend GsubTable with ToJson::{to_json}
+
+///|
 pub fn GsubTable::parse(blob : @blob.Blob) -> Result[GsubTable, OtLayoutError] {
   match LayoutTable::parse(blob) {
     Err(err) => Err(err)
@@ -343,6 +418,12 @@ pub fn GsubTable::layout(self : GsubTable) -> LayoutTable {
 pub struct GposTable {
   layout : LayoutTable
 } derive(Debug, ToJson)
+
+///|
+pub extend GposTable with @debug.Debug::{to_repr}
+
+///|
+pub extend GposTable with ToJson::{to_json}
 
 ///|
 pub fn GposTable::parse(blob : @blob.Blob) -> Result[GposTable, OtLayoutError] {

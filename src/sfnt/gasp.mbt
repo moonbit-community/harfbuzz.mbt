@@ -20,11 +20,26 @@ pub struct GaspRange {
 } derive(Eq, Debug, ToJson)
 
 ///|
+pub extend GaspRange with Eq::{not_equal, equal}
+
+///|
+pub extend GaspRange with @debug.Debug::{to_repr}
+
+///|
+pub extend GaspRange with ToJson::{to_json}
+
+///|
 /// Parsed gasp table.
 pub struct GaspTable {
   version : Int
   ranges : Array[GaspRange]
 } derive(Debug, ToJson)
+
+///|
+pub extend GaspTable with @debug.Debug::{to_repr}
+
+///|
+pub extend GaspTable with ToJson::{to_json}
 
 ///|
 /// Parse gasp table bytes (version 0/1).

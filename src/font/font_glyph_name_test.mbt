@@ -48,7 +48,7 @@ test "font glyph names from post format2" {
   let post = build_post_format2([0, 3, 258], ["icon0"])
   let sfnt = build_sfnt([(tag_maxp, build_maxp(3)), (tag_post, post)])
   let face = @face.Face::from_bytes(sfnt)
-  let font = Font::new(face)
+  let font = @font.Font::new(face)
   let name0 = match font.glyph_name(0) {
     Err(err) => fail("glyph name error: \{@debug.to_string(err)}")
     Ok(value) => value

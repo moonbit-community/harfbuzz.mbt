@@ -20,6 +20,12 @@ pub struct HmtxTable {
 } derive(Debug, ToJson)
 
 ///|
+pub extend HmtxTable with @debug.Debug::{to_repr}
+
+///|
+pub extend HmtxTable with ToJson::{to_json}
+
+///|
 /// Parse hmtx table bytes.
 pub fn HmtxTable::parse(
   data : BytesView,

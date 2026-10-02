@@ -19,6 +19,15 @@ pub struct HheaTable {
 } derive(Eq, Debug, ToJson)
 
 ///|
+pub extend HheaTable with Eq::{not_equal, equal}
+
+///|
+pub extend HheaTable with @debug.Debug::{to_repr}
+
+///|
+pub extend HheaTable with ToJson::{to_json}
+
+///|
 /// Parse hhea table bytes.
 pub fn HheaTable::parse(data : BytesView) -> Result[HheaTable, SfntError] {
   match read_u16_int(data, 34) {

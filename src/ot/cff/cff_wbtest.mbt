@@ -187,7 +187,7 @@ test "cff1 glyph names custom strings" {
   let charstrings = zero_charstrings(3)
   let string_index = build_string_index(["customA", "customB"])
   let standard_len = cff1_standard_strings_len()
-  let map : Map[Int, Int] = {}
+  let map : Map[Int, Int] = Map([])
   map[standard_len] = 1
   map[standard_len + 1] = 2
   let cff1 = Cff1Table::{

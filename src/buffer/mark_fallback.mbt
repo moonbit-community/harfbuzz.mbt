@@ -72,6 +72,9 @@ struct GlyphExtents {
 } derive(Debug)
 
 ///|
+pub extend GlyphExtents with @debug.Debug::{to_repr}
+
+///|
 let cc_attached_below_left : Int = 200
 
 ///|

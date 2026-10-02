@@ -21,12 +21,24 @@ pub enum BaseCoord {
 } derive(Debug, ToJson)
 
 ///|
+pub extend BaseCoord with @debug.Debug::{to_repr}
+
+///|
+pub extend BaseCoord with ToJson::{to_json}
+
+///|
 /// Feature min/max record.
 pub struct FeatMinMaxRecord {
   tag : @common.Tag
   min_coord : BaseCoord?
   max_coord : BaseCoord?
 } derive(Debug, ToJson)
+
+///|
+pub extend FeatMinMaxRecord with @debug.Debug::{to_repr}
+
+///|
+pub extend FeatMinMaxRecord with ToJson::{to_json}
 
 ///|
 /// Min/max table.
@@ -37,6 +49,12 @@ pub struct MinMax {
 } derive(Debug, ToJson)
 
 ///|
+pub extend MinMax with @debug.Debug::{to_repr}
+
+///|
+pub extend MinMax with ToJson::{to_json}
+
+///|
 /// Base values table.
 pub struct BaseValues {
   default_index : Int
@@ -44,11 +62,23 @@ pub struct BaseValues {
 } derive(Debug, ToJson)
 
 ///|
+pub extend BaseValues with @debug.Debug::{to_repr}
+
+///|
+pub extend BaseValues with ToJson::{to_json}
+
+///|
 /// Base language system record.
 pub struct BaseLangSysRecord {
   tag : @common.Tag
   min_max : MinMax?
 } derive(Debug, ToJson)
+
+///|
+pub extend BaseLangSysRecord with @debug.Debug::{to_repr}
+
+///|
+pub extend BaseLangSysRecord with ToJson::{to_json}
 
 ///|
 /// Base script table.
@@ -59,11 +89,23 @@ pub struct BaseScript {
 } derive(Debug, ToJson)
 
 ///|
+pub extend BaseScript with @debug.Debug::{to_repr}
+
+///|
+pub extend BaseScript with ToJson::{to_json}
+
+///|
 /// Base script record.
 pub struct BaseScriptRecord {
   tag : @common.Tag
   base_script : BaseScript?
 } derive(Debug, ToJson)
+
+///|
+pub extend BaseScriptRecord with @debug.Debug::{to_repr}
+
+///|
+pub extend BaseScriptRecord with ToJson::{to_json}
 
 ///|
 /// Base script list.
@@ -72,10 +114,22 @@ pub struct BaseScriptList {
 } derive(Debug, ToJson)
 
 ///|
+pub extend BaseScriptList with @debug.Debug::{to_repr}
+
+///|
+pub extend BaseScriptList with ToJson::{to_json}
+
+///|
 /// Base tag list.
 pub struct BaseTagList {
   tags : Array[@common.Tag]
 } derive(Debug, ToJson)
+
+///|
+pub extend BaseTagList with @debug.Debug::{to_repr}
+
+///|
+pub extend BaseTagList with ToJson::{to_json}
 
 ///|
 /// Axis table.
@@ -83,6 +137,12 @@ pub struct Axis {
   base_tags : BaseTagList?
   base_scripts : BaseScriptList?
 } derive(Debug, ToJson)
+
+///|
+pub extend Axis with @debug.Debug::{to_repr}
+
+///|
+pub extend Axis with ToJson::{to_json}
 
 ///|
 /// Parsed BASE table.
@@ -93,6 +153,12 @@ pub struct BaseTable {
   v_axis : Axis?
   var_store_offset : Int?
 } derive(Debug, ToJson)
+
+///|
+pub extend BaseTable with @debug.Debug::{to_repr}
+
+///|
+pub extend BaseTable with ToJson::{to_json}
 
 ///|
 fn parse_base_coord(

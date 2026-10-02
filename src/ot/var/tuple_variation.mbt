@@ -22,6 +22,12 @@ struct TupleHeader {
 } derive(Debug, ToJson)
 
 ///|
+pub extend TupleHeader with @debug.Debug::{to_repr}
+
+///|
+pub extend TupleHeader with ToJson::{to_json}
+
+///|
 fn TupleHeader::has_private_points(self : TupleHeader) -> Bool {
   (self.tuple_index & 0x2000) != 0
 }
@@ -35,6 +41,12 @@ pub struct TupleVariation {
   deltas_x : Array[Int]
   deltas_y : Array[Int]?
 } derive(Debug, ToJson)
+
+///|
+pub extend TupleVariation with @debug.Debug::{to_repr}
+
+///|
+pub extend TupleVariation with ToJson::{to_json}
 
 ///|
 fn coord_at(coords : Array[Int], index : Int) -> Int {
@@ -110,6 +122,12 @@ pub struct TupleVariationData {
   data_offset : Int
   data : Bytes
 } derive(Debug, ToJson)
+
+///|
+pub extend TupleVariationData with @debug.Debug::{to_repr}
+
+///|
+pub extend TupleVariationData with ToJson::{to_json}
 
 ///|
 fn clone_int_array(values : Array[Int]) -> Array[Int] {

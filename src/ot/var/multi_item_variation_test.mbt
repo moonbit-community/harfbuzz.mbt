@@ -92,7 +92,7 @@ fn build_multi_item_store() -> Bytes {
 ///|
 test "multi item var store delta" {
   let store = match
-    MultiItemVariationStore::parse(build_multi_item_store()[:]) {
+    @var.MultiItemVariationStore::parse(build_multi_item_store()[:]) {
     Err(err) => fail("parse failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }

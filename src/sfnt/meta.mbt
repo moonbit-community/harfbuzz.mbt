@@ -20,12 +20,24 @@ pub struct MetaRecord {
 } derive(Debug, ToJson)
 
 ///|
+pub extend MetaRecord with @debug.Debug::{to_repr}
+
+///|
+pub extend MetaRecord with ToJson::{to_json}
+
+///|
 /// Parsed meta table.
 pub struct MetaTable {
   version : Int
   flags : Int
   records : Array[MetaRecord]
 } derive(Debug, ToJson)
+
+///|
+pub extend MetaTable with @debug.Debug::{to_repr}
+
+///|
+pub extend MetaTable with ToJson::{to_json}
 
 ///|
 /// Parse meta table bytes.

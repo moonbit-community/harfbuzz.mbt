@@ -48,7 +48,7 @@ fn build_tuple_variation_bytes() -> Bytes {
 ///|
 test "tuple variation decode" {
   let data = build_tuple_variation_bytes()
-  let parsed = match TupleVariationData::parse(data[:], 1, []) {
+  let parsed = match @var.TupleVariationData::parse(data[:], 1, []) {
     Err(err) => fail("parse failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }

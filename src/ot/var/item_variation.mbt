@@ -20,11 +20,29 @@ pub(all) struct VarRegionAxis {
 } derive(Eq, Debug, ToJson)
 
 ///|
+pub extend VarRegionAxis with Eq::{not_equal, equal}
+
+///|
+pub extend VarRegionAxis with @debug.Debug::{to_repr}
+
+///|
+pub extend VarRegionAxis with ToJson::{to_json}
+
+///|
 pub(all) struct VarRegionList {
   axis_count : Int
   region_count : Int
   axes : Array[VarRegionAxis]
 } derive(Eq, Debug, ToJson)
+
+///|
+pub extend VarRegionList with Eq::{not_equal, equal}
+
+///|
+pub extend VarRegionList with @debug.Debug::{to_repr}
+
+///|
+pub extend VarRegionList with ToJson::{to_json}
 
 ///|
 pub(all) struct VarData {
@@ -36,10 +54,28 @@ pub(all) struct VarData {
 } derive(Eq, Debug, ToJson)
 
 ///|
+pub extend VarData with Eq::{not_equal, equal}
+
+///|
+pub extend VarData with @debug.Debug::{to_repr}
+
+///|
+pub extend VarData with ToJson::{to_json}
+
+///|
 pub struct ItemVariationStore {
   region_list : VarRegionList
   data_sets : Array[VarData]
 } derive(Eq, Debug, ToJson)
+
+///|
+pub extend ItemVariationStore with Eq::{not_equal, equal}
+
+///|
+pub extend ItemVariationStore with @debug.Debug::{to_repr}
+
+///|
+pub extend ItemVariationStore with ToJson::{to_json}
 
 ///|
 fn VarRegionAxis::evaluate(self : VarRegionAxis, coord : Int) -> Double {

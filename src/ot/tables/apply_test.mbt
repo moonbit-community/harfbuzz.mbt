@@ -1981,7 +1981,8 @@ test "gsub single substitution apply" {
     build_gsub_lookup(),
     @common.Tag::from_chars('l', 'i', 'g', 'a'),
   )
-  let gsub = match GsubTable::parse(@blob.Blob::from_bytes(gsub_bytes)) {
+  let gsub = match
+    @tables.GsubTable::parse(@blob.Blob::from_bytes(gsub_bytes)) {
     Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -2000,7 +2001,8 @@ test "gsub single substitution apply mask" {
     build_gsub_lookup(),
     @common.Tag::from_chars('l', 'i', 'g', 'a'),
   )
-  let gsub = match GsubTable::parse(@blob.Blob::from_bytes(gsub_bytes)) {
+  let gsub = match
+    @tables.GsubTable::parse(@blob.Blob::from_bytes(gsub_bytes)) {
     Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -2027,12 +2029,15 @@ test "gsub single lookup mark filtering set" {
     build_gsub_single_lookup_mark_filter(),
     @common.Tag::from_chars('l', 'i', 'g', 'a'),
   )
-  let gsub = match GsubTable::parse(@blob.Blob::from_bytes(gsub_bytes)) {
+  let gsub = match
+    @tables.GsubTable::parse(@blob.Blob::from_bytes(gsub_bytes)) {
     Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let gdef = match
-    GdefTable::parse(@blob.Blob::from_bytes(build_gdef_mark_filter_table())) {
+    @tables.GdefTable::parse(
+      @blob.Blob::from_bytes(build_gdef_mark_filter_table()),
+    ) {
     Err(err) => fail("gdef parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -2065,12 +2070,15 @@ test "gsub single lookup mark attachment type" {
     build_gsub_single_lookup_mark_attach_type(),
     @common.Tag::from_chars('l', 'i', 'g', 'a'),
   )
-  let gsub = match GsubTable::parse(@blob.Blob::from_bytes(gsub_bytes)) {
+  let gsub = match
+    @tables.GsubTable::parse(@blob.Blob::from_bytes(gsub_bytes)) {
     Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let gdef = match
-    GdefTable::parse(@blob.Blob::from_bytes(build_gdef_mark_filter_table())) {
+    @tables.GdefTable::parse(
+      @blob.Blob::from_bytes(build_gdef_mark_filter_table()),
+    ) {
     Err(err) => fail("gdef parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -2103,12 +2111,15 @@ test "gsub lookup ignore base glyphs" {
     build_gsub_single_lookup_ignore_base(),
     @common.Tag::from_chars('l', 'i', 'g', 'a'),
   )
-  let gsub = match GsubTable::parse(@blob.Blob::from_bytes(gsub_bytes)) {
+  let gsub = match
+    @tables.GsubTable::parse(@blob.Blob::from_bytes(gsub_bytes)) {
     Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let gdef = match
-    GdefTable::parse(@blob.Blob::from_bytes(build_gdef_class_def_table())) {
+    @tables.GdefTable::parse(
+      @blob.Blob::from_bytes(build_gdef_class_def_table()),
+    ) {
     Err(err) => fail("gdef parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -2131,12 +2142,15 @@ test "gsub lookup ignore ligature glyphs" {
     build_gsub_single_lookup_ignore_ligature(),
     @common.Tag::from_chars('l', 'i', 'g', 'a'),
   )
-  let gsub = match GsubTable::parse(@blob.Blob::from_bytes(gsub_bytes)) {
+  let gsub = match
+    @tables.GsubTable::parse(@blob.Blob::from_bytes(gsub_bytes)) {
     Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let gdef = match
-    GdefTable::parse(@blob.Blob::from_bytes(build_gdef_class_def_table())) {
+    @tables.GdefTable::parse(
+      @blob.Blob::from_bytes(build_gdef_class_def_table()),
+    ) {
     Err(err) => fail("gdef parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -2159,7 +2173,8 @@ test "gpos pair adjust deltas" {
     build_gpos_lookup(),
     @common.Tag::from_chars('k', 'e', 'r', 'n'),
   )
-  let gpos = match GposTable::parse(@blob.Blob::from_bytes(gpos_bytes)) {
+  let gpos = match
+    @tables.GposTable::parse(@blob.Blob::from_bytes(gpos_bytes)) {
     Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -2180,12 +2195,15 @@ test "gpos pair lookup ignore marks" {
     build_gpos_pair_lookup_ignore_marks(),
     @common.Tag::from_chars('k', 'e', 'r', 'n'),
   )
-  let gpos = match GposTable::parse(@blob.Blob::from_bytes(gpos_bytes)) {
+  let gpos = match
+    @tables.GposTable::parse(@blob.Blob::from_bytes(gpos_bytes)) {
     Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let gdef = match
-    GdefTable::parse(@blob.Blob::from_bytes(build_gdef_class_def_table())) {
+    @tables.GdefTable::parse(
+      @blob.Blob::from_bytes(build_gdef_class_def_table()),
+    ) {
     Err(err) => fail("gdef parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -2208,12 +2226,15 @@ test "gpos pair lookup ignore ligatures" {
     build_gpos_pair_lookup_ignore_ligature(),
     @common.Tag::from_chars('k', 'e', 'r', 'n'),
   )
-  let gpos = match GposTable::parse(@blob.Blob::from_bytes(gpos_bytes)) {
+  let gpos = match
+    @tables.GposTable::parse(@blob.Blob::from_bytes(gpos_bytes)) {
     Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let gdef = match
-    GdefTable::parse(@blob.Blob::from_bytes(build_gdef_class_def_table())) {
+    @tables.GdefTable::parse(
+      @blob.Blob::from_bytes(build_gdef_class_def_table()),
+    ) {
     Err(err) => fail("gdef parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -2236,12 +2257,15 @@ test "gpos pair lookup ignore base glyphs" {
     build_gpos_pair_lookup_ignore_base(),
     @common.Tag::from_chars('k', 'e', 'r', 'n'),
   )
-  let gpos = match GposTable::parse(@blob.Blob::from_bytes(gpos_bytes)) {
+  let gpos = match
+    @tables.GposTable::parse(@blob.Blob::from_bytes(gpos_bytes)) {
     Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let gdef = match
-    GdefTable::parse(@blob.Blob::from_bytes(build_gdef_class_def_table())) {
+    @tables.GdefTable::parse(
+      @blob.Blob::from_bytes(build_gdef_class_def_table()),
+    ) {
     Err(err) => fail("gdef parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -2264,12 +2288,15 @@ test "gpos pair lookup mark filtering set" {
     build_gpos_lookup_mark_filter(),
     @common.Tag::from_chars('k', 'e', 'r', 'n'),
   )
-  let gpos = match GposTable::parse(@blob.Blob::from_bytes(gpos_bytes)) {
+  let gpos = match
+    @tables.GposTable::parse(@blob.Blob::from_bytes(gpos_bytes)) {
     Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let gdef = match
-    GdefTable::parse(@blob.Blob::from_bytes(build_gdef_mark_filter_table())) {
+    @tables.GdefTable::parse(
+      @blob.Blob::from_bytes(build_gdef_mark_filter_table()),
+    ) {
     Err(err) => fail("gdef parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -2302,7 +2329,8 @@ test "gpos pair adjust format2" {
     build_gpos_lookup_format2(),
     @common.Tag::from_chars('k', 'e', 'r', 'n'),
   )
-  let gpos = match GposTable::parse(@blob.Blob::from_bytes(gpos_bytes)) {
+  let gpos = match
+    @tables.GposTable::parse(@blob.Blob::from_bytes(gpos_bytes)) {
     Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -2322,7 +2350,8 @@ test "gpos single adjust format1" {
     build_gpos_single_lookup_format1(),
     @common.Tag::from_chars('k', 'e', 'r', 'n'),
   )
-  let gpos = match GposTable::parse(@blob.Blob::from_bytes(gpos_bytes)) {
+  let gpos = match
+    @tables.GposTable::parse(@blob.Blob::from_bytes(gpos_bytes)) {
     Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -2345,12 +2374,15 @@ test "gpos single lookup ignore marks" {
     build_gpos_single_lookup_format1_ignore_marks(),
     @common.Tag::from_chars('k', 'e', 'r', 'n'),
   )
-  let gpos = match GposTable::parse(@blob.Blob::from_bytes(gpos_bytes)) {
+  let gpos = match
+    @tables.GposTable::parse(@blob.Blob::from_bytes(gpos_bytes)) {
     Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let gdef = match
-    GdefTable::parse(@blob.Blob::from_bytes(build_gdef_mark_filter_table())) {
+    @tables.GdefTable::parse(
+      @blob.Blob::from_bytes(build_gdef_mark_filter_table()),
+    ) {
     Err(err) => fail("gdef parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -2372,7 +2404,8 @@ test "gpos single adjust format2" {
     build_gpos_single_lookup_format2(),
     @common.Tag::from_chars('k', 'e', 'r', 'n'),
   )
-  let gpos = match GposTable::parse(@blob.Blob::from_bytes(gpos_bytes)) {
+  let gpos = match
+    @tables.GposTable::parse(@blob.Blob::from_bytes(gpos_bytes)) {
     Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -2394,7 +2427,8 @@ test "gpos cursive format1" {
     build_gpos_cursive_lookup_format1(),
     @common.Tag::from_chars('k', 'e', 'r', 'n'),
   )
-  let gpos = match GposTable::parse(@blob.Blob::from_bytes(gpos_bytes)) {
+  let gpos = match
+    @tables.GposTable::parse(@blob.Blob::from_bytes(gpos_bytes)) {
     Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -2415,12 +2449,15 @@ test "gpos cursive lookup ignore marks" {
     build_gpos_cursive_lookup_format1_ignore_marks(),
     @common.Tag::from_chars('k', 'e', 'r', 'n'),
   )
-  let gpos = match GposTable::parse(@blob.Blob::from_bytes(gpos_bytes)) {
+  let gpos = match
+    @tables.GposTable::parse(@blob.Blob::from_bytes(gpos_bytes)) {
     Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let gdef = match
-    GdefTable::parse(@blob.Blob::from_bytes(build_gdef_class_def_table())) {
+    @tables.GdefTable::parse(
+      @blob.Blob::from_bytes(build_gdef_class_def_table()),
+    ) {
     Err(err) => fail("gdef parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -2442,7 +2479,8 @@ test "gpos context format1" {
     [build_gpos_context_lookup(), build_gpos_single_lookup_format1()],
     @common.Tag::from_chars('k', 'e', 'r', 'n'),
   )
-  let gpos = match GposTable::parse(@blob.Blob::from_bytes(gpos_bytes)) {
+  let gpos = match
+    @tables.GposTable::parse(@blob.Blob::from_bytes(gpos_bytes)) {
     Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -2468,12 +2506,15 @@ test "gpos context ignore base glyphs" {
     ],
     @common.Tag::from_chars('k', 'e', 'r', 'n'),
   )
-  let gpos = match GposTable::parse(@blob.Blob::from_bytes(gpos_bytes)) {
+  let gpos = match
+    @tables.GposTable::parse(@blob.Blob::from_bytes(gpos_bytes)) {
     Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let gdef = match
-    GdefTable::parse(@blob.Blob::from_bytes(build_gdef_class_def_table())) {
+    @tables.GdefTable::parse(
+      @blob.Blob::from_bytes(build_gdef_class_def_table()),
+    ) {
     Err(err) => fail("gdef parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -2499,7 +2540,8 @@ test "gpos context mark to base format1" {
     ],
     @common.Tag::from_chars('k', 'e', 'r', 'n'),
   )
-  let gpos = match GposTable::parse(@blob.Blob::from_bytes(gpos_bytes)) {
+  let gpos = match
+    @tables.GposTable::parse(@blob.Blob::from_bytes(gpos_bytes)) {
     Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -2522,7 +2564,8 @@ test "gpos chain format1" {
     [build_gpos_chain_lookup(), build_gpos_single_lookup_format1()],
     @common.Tag::from_chars('k', 'e', 'r', 'n'),
   )
-  let gpos = match GposTable::parse(@blob.Blob::from_bytes(gpos_bytes)) {
+  let gpos = match
+    @tables.GposTable::parse(@blob.Blob::from_bytes(gpos_bytes)) {
     Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -2545,7 +2588,8 @@ test "gpos context format2" {
     [build_gpos_context_lookup_format2(), build_gpos_single_lookup_format1()],
     @common.Tag::from_chars('k', 'e', 'r', 'n'),
   )
-  let gpos = match GposTable::parse(@blob.Blob::from_bytes(gpos_bytes)) {
+  let gpos = match
+    @tables.GposTable::parse(@blob.Blob::from_bytes(gpos_bytes)) {
     Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -2568,7 +2612,8 @@ test "gpos context format3" {
     [build_gpos_context_lookup_format3(), build_gpos_single_lookup_format1()],
     @common.Tag::from_chars('k', 'e', 'r', 'n'),
   )
-  let gpos = match GposTable::parse(@blob.Blob::from_bytes(gpos_bytes)) {
+  let gpos = match
+    @tables.GposTable::parse(@blob.Blob::from_bytes(gpos_bytes)) {
     Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -2591,7 +2636,8 @@ test "gpos chain format2" {
     [build_gpos_chain_lookup_format2(), build_gpos_single_lookup_format1()],
     @common.Tag::from_chars('k', 'e', 'r', 'n'),
   )
-  let gpos = match GposTable::parse(@blob.Blob::from_bytes(gpos_bytes)) {
+  let gpos = match
+    @tables.GposTable::parse(@blob.Blob::from_bytes(gpos_bytes)) {
     Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -2614,7 +2660,8 @@ test "gpos chain format3" {
     [build_gpos_chain_lookup_format3(), build_gpos_single_lookup_format1()],
     @common.Tag::from_chars('k', 'e', 'r', 'n'),
   )
-  let gpos = match GposTable::parse(@blob.Blob::from_bytes(gpos_bytes)) {
+  let gpos = match
+    @tables.GposTable::parse(@blob.Blob::from_bytes(gpos_bytes)) {
     Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -2640,12 +2687,15 @@ test "gpos chain format3 mark filtering set" {
     ],
     @common.Tag::from_chars('k', 'e', 'r', 'n'),
   )
-  let gpos = match GposTable::parse(@blob.Blob::from_bytes(gpos_bytes)) {
+  let gpos = match
+    @tables.GposTable::parse(@blob.Blob::from_bytes(gpos_bytes)) {
     Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let gdef = match
-    GdefTable::parse(@blob.Blob::from_bytes(build_gdef_mark_filter_table())) {
+    @tables.GdefTable::parse(
+      @blob.Blob::from_bytes(build_gdef_mark_filter_table()),
+    ) {
     Err(err) => fail("gdef parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -2676,7 +2726,8 @@ test "gpos mark to base format1" {
     build_gpos_mark_to_base_lookup_format1(),
     @common.Tag::from_chars('k', 'e', 'r', 'n'),
   )
-  let gpos = match GposTable::parse(@blob.Blob::from_bytes(gpos_bytes)) {
+  let gpos = match
+    @tables.GposTable::parse(@blob.Blob::from_bytes(gpos_bytes)) {
     Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -2697,7 +2748,8 @@ test "gpos mark to base skips intervening marks" {
     build_gpos_mark_to_base_lookup_format1(),
     @common.Tag::from_chars('k', 'e', 'r', 'n'),
   )
-  let gpos = match GposTable::parse(@blob.Blob::from_bytes(gpos_bytes)) {
+  let gpos = match
+    @tables.GposTable::parse(@blob.Blob::from_bytes(gpos_bytes)) {
     Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -2720,12 +2772,15 @@ test "gpos mark to base mark filtering set" {
     build_gpos_mark_to_base_lookup_format1_mark_filter(),
     @common.Tag::from_chars('k', 'e', 'r', 'n'),
   )
-  let gpos = match GposTable::parse(@blob.Blob::from_bytes(gpos_bytes)) {
+  let gpos = match
+    @tables.GposTable::parse(@blob.Blob::from_bytes(gpos_bytes)) {
     Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let gdef = match
-    GdefTable::parse(@blob.Blob::from_bytes(build_gdef_mark_filter_table())) {
+    @tables.GdefTable::parse(
+      @blob.Blob::from_bytes(build_gdef_mark_filter_table()),
+    ) {
     Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -2756,12 +2811,15 @@ test "gpos mark to base mark attachment type" {
     build_gpos_mark_to_base_lookup_format1_mark_attach_type(),
     @common.Tag::from_chars('k', 'e', 'r', 'n'),
   )
-  let gpos = match GposTable::parse(@blob.Blob::from_bytes(gpos_bytes)) {
+  let gpos = match
+    @tables.GposTable::parse(@blob.Blob::from_bytes(gpos_bytes)) {
     Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let gdef = match
-    GdefTable::parse(@blob.Blob::from_bytes(build_gdef_mark_filter_table())) {
+    @tables.GdefTable::parse(
+      @blob.Blob::from_bytes(build_gdef_mark_filter_table()),
+    ) {
     Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -2792,7 +2850,8 @@ test "gpos mark to mark format1" {
     build_gpos_mark_to_mark_lookup_format1(),
     @common.Tag::from_chars('k', 'e', 'r', 'n'),
   )
-  let gpos = match GposTable::parse(@blob.Blob::from_bytes(gpos_bytes)) {
+  let gpos = match
+    @tables.GposTable::parse(@blob.Blob::from_bytes(gpos_bytes)) {
     Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -2813,12 +2872,15 @@ test "gpos mark to mark mark filtering set" {
     build_gpos_mark_to_mark_lookup_format1_mark_filter(),
     @common.Tag::from_chars('k', 'e', 'r', 'n'),
   )
-  let gpos = match GposTable::parse(@blob.Blob::from_bytes(gpos_bytes)) {
+  let gpos = match
+    @tables.GposTable::parse(@blob.Blob::from_bytes(gpos_bytes)) {
     Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let gdef = match
-    GdefTable::parse(@blob.Blob::from_bytes(build_gdef_mark_filter_table())) {
+    @tables.GdefTable::parse(
+      @blob.Blob::from_bytes(build_gdef_mark_filter_table()),
+    ) {
     Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -2849,12 +2911,15 @@ test "gpos mark to mark mark attachment type" {
     build_gpos_mark_to_mark_lookup_format1_mark_attach_type(),
     @common.Tag::from_chars('k', 'e', 'r', 'n'),
   )
-  let gpos = match GposTable::parse(@blob.Blob::from_bytes(gpos_bytes)) {
+  let gpos = match
+    @tables.GposTable::parse(@blob.Blob::from_bytes(gpos_bytes)) {
     Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let gdef = match
-    GdefTable::parse(@blob.Blob::from_bytes(build_gdef_mark_filter_table())) {
+    @tables.GdefTable::parse(
+      @blob.Blob::from_bytes(build_gdef_mark_filter_table()),
+    ) {
     Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -2885,7 +2950,8 @@ test "gpos mark to ligature format1" {
     build_gpos_mark_to_ligature_lookup_format1(),
     @common.Tag::from_chars('k', 'e', 'r', 'n'),
   )
-  let gpos = match GposTable::parse(@blob.Blob::from_bytes(gpos_bytes)) {
+  let gpos = match
+    @tables.GposTable::parse(@blob.Blob::from_bytes(gpos_bytes)) {
     Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -2906,12 +2972,15 @@ test "gpos mark to ligature mark filtering set" {
     build_gpos_mark_to_ligature_lookup_format1_mark_filter(),
     @common.Tag::from_chars('k', 'e', 'r', 'n'),
   )
-  let gpos = match GposTable::parse(@blob.Blob::from_bytes(gpos_bytes)) {
+  let gpos = match
+    @tables.GposTable::parse(@blob.Blob::from_bytes(gpos_bytes)) {
     Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let gdef = match
-    GdefTable::parse(@blob.Blob::from_bytes(build_gdef_mark_filter_table())) {
+    @tables.GdefTable::parse(
+      @blob.Blob::from_bytes(build_gdef_mark_filter_table()),
+    ) {
     Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -2942,12 +3011,15 @@ test "gpos mark to ligature mark attachment type" {
     build_gpos_mark_to_ligature_lookup_format1_mark_attach_type(),
     @common.Tag::from_chars('k', 'e', 'r', 'n'),
   )
-  let gpos = match GposTable::parse(@blob.Blob::from_bytes(gpos_bytes)) {
+  let gpos = match
+    @tables.GposTable::parse(@blob.Blob::from_bytes(gpos_bytes)) {
     Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let gdef = match
-    GdefTable::parse(@blob.Blob::from_bytes(build_gdef_mark_filter_table())) {
+    @tables.GdefTable::parse(
+      @blob.Blob::from_bytes(build_gdef_mark_filter_table()),
+    ) {
     Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -2978,7 +3050,8 @@ test "gsub ligature substitution apply" {
     build_gsub_ligature_lookup(),
     @common.Tag::from_chars('l', 'i', 'g', 'a'),
   )
-  let gsub = match GsubTable::parse(@blob.Blob::from_bytes(gsub_bytes)) {
+  let gsub = match
+    @tables.GsubTable::parse(@blob.Blob::from_bytes(gsub_bytes)) {
     Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -3005,7 +3078,8 @@ test "gsub ligature substitution apply mask" {
     build_gsub_ligature_lookup(),
     @common.Tag::from_chars('l', 'i', 'g', 'a'),
   )
-  let gsub = match GsubTable::parse(@blob.Blob::from_bytes(gsub_bytes)) {
+  let gsub = match
+    @tables.GsubTable::parse(@blob.Blob::from_bytes(gsub_bytes)) {
     Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -3035,7 +3109,8 @@ test "gsub ligature substitution mask propagation" {
     [build_gsub_ligature_lookup(), build_gsub_single_lookup(6, 9)],
     @common.Tag::from_chars('l', 'i', 'g', 'a'),
   )
-  let gsub = match GsubTable::parse(@blob.Blob::from_bytes(gsub_bytes)) {
+  let gsub = match
+    @tables.GsubTable::parse(@blob.Blob::from_bytes(gsub_bytes)) {
     Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -3065,7 +3140,8 @@ test "gsub multiple substitution apply" {
     build_gsub_multiple_lookup(),
     @common.Tag::from_chars('l', 'i', 'g', 'a'),
   )
-  let gsub = match GsubTable::parse(@blob.Blob::from_bytes(gsub_bytes)) {
+  let gsub = match
+    @tables.GsubTable::parse(@blob.Blob::from_bytes(gsub_bytes)) {
     Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -3092,7 +3168,8 @@ test "gsub multiple substitution mask propagation" {
     [build_gsub_multiple_lookup(), build_gsub_single_lookup(6, 9)],
     @common.Tag::from_chars('l', 'i', 'g', 'a'),
   )
-  let gsub = match GsubTable::parse(@blob.Blob::from_bytes(gsub_bytes)) {
+  let gsub = match
+    @tables.GsubTable::parse(@blob.Blob::from_bytes(gsub_bytes)) {
     Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -3122,7 +3199,8 @@ test "gsub alternate substitution apply" {
     build_gsub_alternate_lookup(),
     @common.Tag::from_chars('l', 'i', 'g', 'a'),
   )
-  let gsub = match GsubTable::parse(@blob.Blob::from_bytes(gsub_bytes)) {
+  let gsub = match
+    @tables.GsubTable::parse(@blob.Blob::from_bytes(gsub_bytes)) {
     Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -3149,7 +3227,8 @@ test "gsub extension lookup apply" {
     build_gsub_extension_lookup(),
     @common.Tag::from_chars('l', 'i', 'g', 'a'),
   )
-  let gsub = match GsubTable::parse(@blob.Blob::from_bytes(gsub_bytes)) {
+  let gsub = match
+    @tables.GsubTable::parse(@blob.Blob::from_bytes(gsub_bytes)) {
     Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -3168,7 +3247,8 @@ test "gpos extension lookup apply" {
     build_gpos_extension_lookup(),
     @common.Tag::from_chars('k', 'e', 'r', 'n'),
   )
-  let gpos = match GposTable::parse(@blob.Blob::from_bytes(gpos_bytes)) {
+  let gpos = match
+    @tables.GposTable::parse(@blob.Blob::from_bytes(gpos_bytes)) {
     Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -3189,7 +3269,8 @@ test "gsub reverse chain substitution apply" {
     build_gsub_reverse_chain_lookup(),
     @common.Tag::from_chars('l', 'i', 'g', 'a'),
   )
-  let gsub = match GsubTable::parse(@blob.Blob::from_bytes(gsub_bytes)) {
+  let gsub = match
+    @tables.GsubTable::parse(@blob.Blob::from_bytes(gsub_bytes)) {
     Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -3216,12 +3297,15 @@ test "gsub reverse chain lookup mark filtering set" {
     build_gsub_reverse_chain_lookup_mark_filter(),
     @common.Tag::from_chars('l', 'i', 'g', 'a'),
   )
-  let gsub = match GsubTable::parse(@blob.Blob::from_bytes(gsub_bytes)) {
+  let gsub = match
+    @tables.GsubTable::parse(@blob.Blob::from_bytes(gsub_bytes)) {
     Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let gdef = match
-    GdefTable::parse(@blob.Blob::from_bytes(build_gdef_mark_filter_table())) {
+    @tables.GdefTable::parse(
+      @blob.Blob::from_bytes(build_gdef_mark_filter_table()),
+    ) {
     Err(err) => fail("gdef parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -3258,7 +3342,8 @@ test "gsub contextual substitution apply" {
     [context_lookup, single_lookup],
     @common.Tag::from_chars('l', 'i', 'g', 'a'),
   )
-  let gsub = match GsubTable::parse(@blob.Blob::from_bytes(gsub_bytes)) {
+  let gsub = match
+    @tables.GsubTable::parse(@blob.Blob::from_bytes(gsub_bytes)) {
     Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -3287,12 +3372,15 @@ test "gsub contextual ignore marks" {
     [context_lookup, single_lookup],
     @common.Tag::from_chars('l', 'i', 'g', 'a'),
   )
-  let gsub = match GsubTable::parse(@blob.Blob::from_bytes(gsub_bytes)) {
+  let gsub = match
+    @tables.GsubTable::parse(@blob.Blob::from_bytes(gsub_bytes)) {
     Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let gdef = match
-    GdefTable::parse(@blob.Blob::from_bytes(build_gdef_mark_filter_table())) {
+    @tables.GdefTable::parse(
+      @blob.Blob::from_bytes(build_gdef_mark_filter_table()),
+    ) {
     Err(err) => fail("gdef parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -3322,7 +3410,8 @@ test "gsub chaining substitution apply" {
     [chain_lookup, single_lookup],
     @common.Tag::from_chars('l', 'i', 'g', 'a'),
   )
-  let gsub = match GsubTable::parse(@blob.Blob::from_bytes(gsub_bytes)) {
+  let gsub = match
+    @tables.GsubTable::parse(@blob.Blob::from_bytes(gsub_bytes)) {
     Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -3351,12 +3440,15 @@ test "gsub chaining ignore marks" {
     [chain_lookup, single_lookup],
     @common.Tag::from_chars('l', 'i', 'g', 'a'),
   )
-  let gsub = match GsubTable::parse(@blob.Blob::from_bytes(gsub_bytes)) {
+  let gsub = match
+    @tables.GsubTable::parse(@blob.Blob::from_bytes(gsub_bytes)) {
     Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let gdef = match
-    GdefTable::parse(@blob.Blob::from_bytes(build_gdef_mark_filter_table())) {
+    @tables.GdefTable::parse(
+      @blob.Blob::from_bytes(build_gdef_mark_filter_table()),
+    ) {
     Err(err) => fail("gdef parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -3386,7 +3478,8 @@ test "gsub contextual substitution format2" {
     [context_lookup, single_lookup],
     @common.Tag::from_chars('l', 'i', 'g', 'a'),
   )
-  let gsub = match GsubTable::parse(@blob.Blob::from_bytes(gsub_bytes)) {
+  let gsub = match
+    @tables.GsubTable::parse(@blob.Blob::from_bytes(gsub_bytes)) {
     Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -3415,7 +3508,8 @@ test "gsub chaining substitution format2" {
     [chain_lookup, single_lookup],
     @common.Tag::from_chars('l', 'i', 'g', 'a'),
   )
-  let gsub = match GsubTable::parse(@blob.Blob::from_bytes(gsub_bytes)) {
+  let gsub = match
+    @tables.GsubTable::parse(@blob.Blob::from_bytes(gsub_bytes)) {
     Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -3444,12 +3538,15 @@ test "gsub chaining format2 ignore marks" {
     [chain_lookup, single_lookup],
     @common.Tag::from_chars('l', 'i', 'g', 'a'),
   )
-  let gsub = match GsubTable::parse(@blob.Blob::from_bytes(gsub_bytes)) {
+  let gsub = match
+    @tables.GsubTable::parse(@blob.Blob::from_bytes(gsub_bytes)) {
     Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let gdef = match
-    GdefTable::parse(@blob.Blob::from_bytes(build_gdef_mark_filter_table())) {
+    @tables.GdefTable::parse(
+      @blob.Blob::from_bytes(build_gdef_mark_filter_table()),
+    ) {
     Err(err) => fail("gdef parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -3479,12 +3576,15 @@ test "gsub chaining format2 ignore base glyphs" {
     [chain_lookup, single_lookup],
     @common.Tag::from_chars('l', 'i', 'g', 'a'),
   )
-  let gsub = match GsubTable::parse(@blob.Blob::from_bytes(gsub_bytes)) {
+  let gsub = match
+    @tables.GsubTable::parse(@blob.Blob::from_bytes(gsub_bytes)) {
     Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let gdef = match
-    GdefTable::parse(@blob.Blob::from_bytes(build_gdef_class_def_table())) {
+    @tables.GdefTable::parse(
+      @blob.Blob::from_bytes(build_gdef_class_def_table()),
+    ) {
     Err(err) => fail("gdef parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -3514,12 +3614,15 @@ test "gsub chaining format2 ignore ligature glyphs" {
     [chain_lookup, single_lookup],
     @common.Tag::from_chars('l', 'i', 'g', 'a'),
   )
-  let gsub = match GsubTable::parse(@blob.Blob::from_bytes(gsub_bytes)) {
+  let gsub = match
+    @tables.GsubTable::parse(@blob.Blob::from_bytes(gsub_bytes)) {
     Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let gdef = match
-    GdefTable::parse(@blob.Blob::from_bytes(build_gdef_class_def_table())) {
+    @tables.GdefTable::parse(
+      @blob.Blob::from_bytes(build_gdef_class_def_table()),
+    ) {
     Err(err) => fail("gdef parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -3549,7 +3652,8 @@ test "gsub contextual substitution format3" {
     [context_lookup, single_lookup],
     @common.Tag::from_chars('l', 'i', 'g', 'a'),
   )
-  let gsub = match GsubTable::parse(@blob.Blob::from_bytes(gsub_bytes)) {
+  let gsub = match
+    @tables.GsubTable::parse(@blob.Blob::from_bytes(gsub_bytes)) {
     Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -3578,12 +3682,15 @@ test "gsub lookup flags mark filtering set" {
     [context_lookup, single_lookup],
     @common.Tag::from_chars('l', 'i', 'g', 'a'),
   )
-  let gsub = match GsubTable::parse(@blob.Blob::from_bytes(gsub_bytes)) {
+  let gsub = match
+    @tables.GsubTable::parse(@blob.Blob::from_bytes(gsub_bytes)) {
     Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let gdef = match
-    GdefTable::parse(@blob.Blob::from_bytes(build_gdef_mark_filter_table())) {
+    @tables.GdefTable::parse(
+      @blob.Blob::from_bytes(build_gdef_mark_filter_table()),
+    ) {
     Err(err) => fail("gdef parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -3620,7 +3727,8 @@ test "gsub chaining substitution format3" {
     [chain_lookup, single_lookup],
     @common.Tag::from_chars('l', 'i', 'g', 'a'),
   )
-  let gsub = match GsubTable::parse(@blob.Blob::from_bytes(gsub_bytes)) {
+  let gsub = match
+    @tables.GsubTable::parse(@blob.Blob::from_bytes(gsub_bytes)) {
     Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -3649,12 +3757,15 @@ test "gsub chaining format3 ignore marks" {
     [chain_lookup, single_lookup],
     @common.Tag::from_chars('l', 'i', 'g', 'a'),
   )
-  let gsub = match GsubTable::parse(@blob.Blob::from_bytes(gsub_bytes)) {
+  let gsub = match
+    @tables.GsubTable::parse(@blob.Blob::from_bytes(gsub_bytes)) {
     Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let gdef = match
-    GdefTable::parse(@blob.Blob::from_bytes(build_gdef_mark_filter_table())) {
+    @tables.GdefTable::parse(
+      @blob.Blob::from_bytes(build_gdef_mark_filter_table()),
+    ) {
     Err(err) => fail("gdef parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -3684,12 +3795,15 @@ test "gsub chaining format3 ignore base glyphs" {
     [chain_lookup, single_lookup],
     @common.Tag::from_chars('l', 'i', 'g', 'a'),
   )
-  let gsub = match GsubTable::parse(@blob.Blob::from_bytes(gsub_bytes)) {
+  let gsub = match
+    @tables.GsubTable::parse(@blob.Blob::from_bytes(gsub_bytes)) {
     Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let gdef = match
-    GdefTable::parse(@blob.Blob::from_bytes(build_gdef_class_def_table())) {
+    @tables.GdefTable::parse(
+      @blob.Blob::from_bytes(build_gdef_class_def_table()),
+    ) {
     Err(err) => fail("gdef parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -3719,12 +3833,15 @@ test "gsub chaining format3 ignore ligature glyphs" {
     [chain_lookup, single_lookup],
     @common.Tag::from_chars('l', 'i', 'g', 'a'),
   )
-  let gsub = match GsubTable::parse(@blob.Blob::from_bytes(gsub_bytes)) {
+  let gsub = match
+    @tables.GsubTable::parse(@blob.Blob::from_bytes(gsub_bytes)) {
     Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
   let gdef = match
-    GdefTable::parse(@blob.Blob::from_bytes(build_gdef_class_def_table())) {
+    @tables.GdefTable::parse(
+      @blob.Blob::from_bytes(build_gdef_class_def_table()),
+    ) {
     Err(err) => fail("gdef parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }

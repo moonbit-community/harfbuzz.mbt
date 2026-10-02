@@ -71,7 +71,7 @@ fn build_gvar_with_tuple() -> Bytes {
 
 ///|
 test "gvar parse offsets" {
-  let gvar = match GvarTable::parse(build_gvar_bytes()) {
+  let gvar = match @var.GvarTable::parse(build_gvar_bytes()) {
     Err(err) => fail("parse failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -89,7 +89,7 @@ test "gvar parse offsets" {
 
 ///|
 test "gvar glyph deltas" {
-  let gvar = match GvarTable::parse(build_gvar_with_tuple()) {
+  let gvar = match @var.GvarTable::parse(build_gvar_with_tuple()) {
     Err(err) => fail("parse failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }

@@ -23,6 +23,12 @@ pub struct Face {
 } derive(Debug, ToJson)
 
 ///|
+pub extend Face with @debug.Debug::{to_repr}
+
+///|
+pub extend Face with ToJson::{to_json}
+
+///|
 /// Return the number of faces in a blob.
 pub fn face_count(blob : @blob.Blob) -> Int {
   let data = blob.as_view()

@@ -23,10 +23,22 @@ pub struct GdefHeader {
 } derive(Debug, ToJson)
 
 ///|
+pub extend GdefHeader with @debug.Debug::{to_repr}
+
+///|
+pub extend GdefHeader with ToJson::{to_json}
+
+///|
 pub struct GdefTable {
   data : BytesView
   header : GdefHeader
 } derive(Debug, ToJson)
+
+///|
+pub extend GdefTable with @debug.Debug::{to_repr}
+
+///|
+pub extend GdefTable with ToJson::{to_json}
 
 ///|
 pub fn GdefTable::parse(blob : @blob.Blob) -> Result[GdefTable, OtLayoutError] {

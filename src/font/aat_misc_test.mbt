@@ -106,7 +106,7 @@ fn build_font_bytes_aat_misc() -> Bytes {
 
 ///|
 test "aat misc tables parse" {
-  let font = Font::from_bytes(build_font_bytes_aat_misc())
+  let font = @font.Font::from_bytes(build_font_bytes_aat_misc())
   let bsln = match font.bsln() {
     Err(err) => fail("bsln parse failed: \{@debug.to_string(err)}")
     Ok(None) => fail("bsln table missing")

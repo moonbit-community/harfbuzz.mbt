@@ -30,6 +30,12 @@ pub struct OverflowRecord {
 } derive(Eq, Debug)
 
 ///|
+pub extend OverflowRecord with Eq::{not_equal, equal}
+
+///|
+pub extend OverflowRecord with @debug.Debug::{to_repr}
+
+///|
 let inf_distance : Int64 = Int64::from_int(1) << 60
 
 ///|

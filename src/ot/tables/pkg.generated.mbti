@@ -14,17 +14,29 @@ pub suberror OtLayoutError {
   UnexpectedEof
   InvalidFormat
 } derive(Eq, ToJson, @debug.Debug)
+pub fn OtLayoutError::equal(Self, Self) -> Bool
+pub fn OtLayoutError::not_equal(Self, Self) -> Bool
+pub fn OtLayoutError::to_json(Self) -> Json
+pub fn OtLayoutError::to_repr(Self) -> @debug.Repr
 
 // Types and methods
 pub struct FeatureList {
   records : Array[FeatureRecord]
 } derive(Eq, ToJson, @debug.Debug)
+pub fn FeatureList::equal(Self, Self) -> Bool
+pub fn FeatureList::not_equal(Self, Self) -> Bool
 pub fn FeatureList::records(Self) -> ArrayView[FeatureRecord]
+pub fn FeatureList::to_json(Self) -> Json
+pub fn FeatureList::to_repr(Self) -> @debug.Repr
 
 pub struct FeatureRecord {
   tag : @common.Tag
   offset : Int
 } derive(Eq, ToJson, @debug.Debug)
+pub fn FeatureRecord::equal(Self, Self) -> Bool
+pub fn FeatureRecord::not_equal(Self, Self) -> Bool
+pub fn FeatureRecord::to_json(Self) -> Json
+pub fn FeatureRecord::to_repr(Self) -> @debug.Repr
 
 pub struct GdefHeader {
   version : UInt
@@ -34,6 +46,8 @@ pub struct GdefHeader {
   mark_attach_class_def_offset : Int?
   mark_glyph_sets_def_offset : Int?
 } derive(ToJson, @debug.Debug)
+pub fn GdefHeader::to_json(Self) -> Json
+pub fn GdefHeader::to_repr(Self) -> @debug.Repr
 
 pub struct GdefTable {
   data : BytesView
@@ -44,6 +58,8 @@ pub fn GdefTable::header(Self) -> GdefHeader
 pub fn GdefTable::mark_attach_class(Self, UInt) -> Result[Int, OtLayoutError]
 pub fn GdefTable::mark_glyph_set_contains(Self, Int, UInt) -> Result[Bool, OtLayoutError]
 pub fn GdefTable::parse(@blob.Blob) -> Result[Self, OtLayoutError]
+pub fn GdefTable::to_json(Self) -> Json
+pub fn GdefTable::to_repr(Self) -> @debug.Repr
 
 pub struct GposTable {
   layout : LayoutTable
@@ -54,6 +70,8 @@ pub fn GposTable::pair_adjust_deltas_with_lookups(Self, ArrayView[UInt], ArrayVi
 pub fn GposTable::parse(@blob.Blob) -> Result[Self, OtLayoutError]
 pub fn GposTable::position_deltas(Self, ArrayView[UInt]) -> Result[Array[ValueRecord], OtLayoutError]
 pub fn GposTable::position_deltas_with_lookups(Self, ArrayView[UInt], ArrayView[Int], gdef? : GdefTable, clusters? : ArrayView[Int], advances_x? : ArrayView[Int], advances_y? : ArrayView[Int]) -> Result[Array[ValueRecord], OtLayoutError]
+pub fn GposTable::to_json(Self) -> Json
+pub fn GposTable::to_repr(Self) -> @debug.Repr
 
 pub struct GsubTable {
   layout : LayoutTable
@@ -64,6 +82,8 @@ pub fn GsubTable::apply_with_lookups(Self, Array[UInt], Array[Int], ArrayView[In
 pub fn GsubTable::apply_with_lookups_and_masks(Self, Array[UInt], Array[Int], ArrayView[Int], gdef? : GdefTable, masks? : Array[UInt], lookup_mask? : UInt, alt_values? : Array[Int]) -> Result[(Array[UInt], Array[Int], Array[UInt], Bool), OtLayoutError]
 pub fn GsubTable::layout(Self) -> LayoutTable
 pub fn GsubTable::parse(@blob.Blob) -> Result[Self, OtLayoutError]
+pub fn GsubTable::to_json(Self) -> Json
+pub fn GsubTable::to_repr(Self) -> @debug.Repr
 
 pub struct LayoutHeader {
   version : UInt
@@ -72,6 +92,10 @@ pub struct LayoutHeader {
   lookup_list_offset : Int
   feature_variations_offset : Int?
 } derive(Eq, ToJson, @debug.Debug)
+pub fn LayoutHeader::equal(Self, Self) -> Bool
+pub fn LayoutHeader::not_equal(Self, Self) -> Bool
+pub fn LayoutHeader::to_json(Self) -> Json
+pub fn LayoutHeader::to_repr(Self) -> @debug.Repr
 
 pub struct LayoutTable {
   data : BytesView
@@ -88,26 +112,44 @@ pub fn LayoutTable::script_list(Self) -> ScriptList
 pub fn LayoutTable::select_lookup_offsets(Self, @common.Tag, language_tag? : @common.Tag) -> Result[Array[Int], OtLayoutError]
 pub fn LayoutTable::select_lookup_offsets_for_feature(Self, @common.Tag, @common.Tag, language_tag? : @common.Tag, include_required? : Bool) -> Result[Array[Int], OtLayoutError]
 pub fn LayoutTable::select_lookup_offsets_with_features(Self, @common.Tag, language_tag? : @common.Tag, feature_tags? : Array[@common.Tag]) -> Result[Array[Int], OtLayoutError]
+pub fn LayoutTable::to_json(Self) -> Json
+pub fn LayoutTable::to_repr(Self) -> @debug.Repr
 
 pub struct LookupList {
   offsets : Array[Int]
 } derive(Eq, ToJson, @debug.Debug)
+pub fn LookupList::equal(Self, Self) -> Bool
+pub fn LookupList::not_equal(Self, Self) -> Bool
 pub fn LookupList::offsets(Self) -> ArrayView[Int]
+pub fn LookupList::to_json(Self) -> Json
+pub fn LookupList::to_repr(Self) -> @debug.Repr
 
 pub struct PairAdjust {
   first : ValueRecord
   second : ValueRecord
 } derive(Eq, ToJson, @debug.Debug)
+pub fn PairAdjust::equal(Self, Self) -> Bool
+pub fn PairAdjust::not_equal(Self, Self) -> Bool
+pub fn PairAdjust::to_json(Self) -> Json
+pub fn PairAdjust::to_repr(Self) -> @debug.Repr
 
 pub struct ScriptList {
   records : Array[ScriptRecord]
 } derive(Eq, ToJson, @debug.Debug)
+pub fn ScriptList::equal(Self, Self) -> Bool
+pub fn ScriptList::not_equal(Self, Self) -> Bool
 pub fn ScriptList::records(Self) -> ArrayView[ScriptRecord]
+pub fn ScriptList::to_json(Self) -> Json
+pub fn ScriptList::to_repr(Self) -> @debug.Repr
 
 pub struct ScriptRecord {
   tag : @common.Tag
   offset : Int
 } derive(Eq, ToJson, @debug.Debug)
+pub fn ScriptRecord::equal(Self, Self) -> Bool
+pub fn ScriptRecord::not_equal(Self, Self) -> Bool
+pub fn ScriptRecord::to_json(Self) -> Json
+pub fn ScriptRecord::to_repr(Self) -> @debug.Repr
 
 pub struct ValueRecord {
   x_placement : Int
@@ -115,8 +157,11 @@ pub struct ValueRecord {
   x_advance : Int
   y_advance : Int
 } derive(Eq, ToJson, @debug.Debug)
+pub fn ValueRecord::equal(Self, Self) -> Bool
+pub fn ValueRecord::not_equal(Self, Self) -> Bool
+pub fn ValueRecord::to_json(Self) -> Json
+pub fn ValueRecord::to_repr(Self) -> @debug.Repr
 
 // Type aliases
 
 // Traits
-

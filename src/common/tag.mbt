@@ -19,6 +19,21 @@ pub struct Tag {
 } derive(Eq, Debug, ToJson, Hash)
 
 ///|
+pub extend Tag with Eq::{not_equal, equal}
+
+///|
+pub extend Tag with @debug.Debug::{to_repr}
+
+///|
+pub extend Tag with ToJson::{to_json}
+
+///|
+pub extend Tag with Hash::{hash, hash_combine}
+
+///|
+pub extend Tag with Show::{output}
+
+///|
 /// Construct a tag from four bytes.
 pub fn Tag::from_bytes(b1 : Byte, b2 : Byte, b3 : Byte, b4 : Byte) -> Tag {
   let value = (b1.to_uint() << 24) |
@@ -77,7 +92,7 @@ pub fn Tag::bytes(self : Tag) -> (Byte, Byte, Byte, Byte) {
 /// Convert a tag to a four-character string.
 pub fn Tag::to_string(self : Tag) -> String {
   let (b1, b2, b3, b4) = self.bytes()
-  let sb = StringBuilder::new(size_hint=4)
+  let sb = StringBuilder(size_hint=4)
   sb
   ..write_char(b1.to_int().unsafe_to_char())
   ..write_char(b2.to_int().unsafe_to_char())

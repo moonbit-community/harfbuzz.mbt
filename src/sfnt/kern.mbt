@@ -21,6 +21,15 @@ pub struct KernPair {
 } derive(Eq, Debug, ToJson)
 
 ///|
+pub extend KernPair with Eq::{not_equal, equal}
+
+///|
+pub extend KernPair with @debug.Debug::{to_repr}
+
+///|
+pub extend KernPair with ToJson::{to_json}
+
+///|
 /// Parsed kern subtable (format 0/2).
 pub struct KernSubtable {
   format : Int
@@ -34,12 +43,24 @@ pub struct KernSubtable {
 } derive(Debug, ToJson)
 
 ///|
+pub extend KernSubtable with @debug.Debug::{to_repr}
+
+///|
+pub extend KernSubtable with ToJson::{to_json}
+
+///|
 /// Kern class table (format 2).
 pub struct KernClassTable {
   first_glyph : Int
   classes : Array[Int]
   class_count : Int
 } derive(Debug, ToJson)
+
+///|
+pub extend KernClassTable with @debug.Debug::{to_repr}
+
+///|
+pub extend KernClassTable with ToJson::{to_json}
 
 ///|
 /// Kern subtable format 2 (class-based).
@@ -50,6 +71,12 @@ pub struct KernSubtableFormat2 {
   right_class_count : Int
   values : Array[Int]
 } derive(Debug, ToJson)
+
+///|
+pub extend KernSubtableFormat2 with @debug.Debug::{to_repr}
+
+///|
+pub extend KernSubtableFormat2 with ToJson::{to_json}
 
 ///|
 /// Kern subtable format 3 (class-based, byte indices).
@@ -65,10 +92,22 @@ pub struct KernSubtableFormat3 {
 } derive(Debug, ToJson)
 
 ///|
+pub extend KernSubtableFormat3 with @debug.Debug::{to_repr}
+
+///|
+pub extend KernSubtableFormat3 with ToJson::{to_json}
+
+///|
 /// Parsed kern table (subset).
 pub struct KernTable {
   subtables : Array[KernSubtable]
 } derive(Debug, ToJson)
+
+///|
+pub extend KernTable with @debug.Debug::{to_repr}
+
+///|
+pub extend KernTable with ToJson::{to_json}
 
 ///|
 fn parse_kern_subtable_format0(

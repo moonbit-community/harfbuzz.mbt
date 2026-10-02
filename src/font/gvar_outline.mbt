@@ -20,6 +20,12 @@ struct PointDelta {
 } derive(Debug, ToJson)
 
 ///|
+pub extend PointDelta with @debug.Debug::{to_repr}
+
+///|
+pub extend PointDelta with ToJson::{to_json}
+
+///|
 fn clone_points(points : Array[@sfnt.GlyphPoint]) -> Array[@sfnt.GlyphPoint] {
   let out : Array[@sfnt.GlyphPoint] = []
   for point in points {

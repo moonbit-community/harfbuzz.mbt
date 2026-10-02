@@ -50,7 +50,7 @@ fn build_cvar_bytes() -> Bytes {
 
 ///|
 test "cvar apply deltas" {
-  let cvar = match CvarTable::parse(build_cvar_bytes()[:], 1) {
+  let cvar = match @var.CvarTable::parse(build_cvar_bytes()[:], 1) {
     Err(err) => fail("parse failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }

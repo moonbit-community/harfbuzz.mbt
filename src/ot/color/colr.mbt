@@ -27,6 +27,12 @@ pub struct ColrTable {
 } derive(Debug, ToJson)
 
 ///|
+pub extend ColrTable with @debug.Debug::{to_repr}
+
+///|
+pub extend ColrTable with ToJson::{to_json}
+
+///|
 /// Parse COLR table data.
 pub fn ColrTable::parse(data : BytesView) -> Result[ColrTable, ColorError] {
   let version = read_u16_int(data, 0)
