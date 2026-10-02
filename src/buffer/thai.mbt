@@ -94,43 +94,43 @@ let thai_below_start_state : Array[Int] = [
 ///|
 let thai_above_state_machine : Array[Array[ThaiStateEdge]] = [
   [
-    { action: thai_action_nop, next_state: thai_above_t3 },
-    { action: thai_action_nop, next_state: thai_above_t0 },
-    { action: thai_action_sd, next_state: thai_above_t3 },
+    { action: thai_action_nop, next_state: thai_above_t3, },
+    { action: thai_action_nop, next_state: thai_above_t0, },
+    { action: thai_action_sd, next_state: thai_above_t3, },
   ],
   [
-    { action: thai_action_sl, next_state: thai_above_t2 },
-    { action: thai_action_nop, next_state: thai_above_t1 },
-    { action: thai_action_sdl, next_state: thai_above_t2 },
+    { action: thai_action_sl, next_state: thai_above_t2, },
+    { action: thai_action_nop, next_state: thai_above_t1, },
+    { action: thai_action_sdl, next_state: thai_above_t2, },
   ],
   [
-    { action: thai_action_nop, next_state: thai_above_t3 },
-    { action: thai_action_nop, next_state: thai_above_t2 },
-    { action: thai_action_sl, next_state: thai_above_t3 },
+    { action: thai_action_nop, next_state: thai_above_t3, },
+    { action: thai_action_nop, next_state: thai_above_t2, },
+    { action: thai_action_sl, next_state: thai_above_t3, },
   ],
   [
-    { action: thai_action_nop, next_state: thai_above_t3 },
-    { action: thai_action_nop, next_state: thai_above_t3 },
-    { action: thai_action_nop, next_state: thai_above_t3 },
+    { action: thai_action_nop, next_state: thai_above_t3, },
+    { action: thai_action_nop, next_state: thai_above_t3, },
+    { action: thai_action_nop, next_state: thai_above_t3, },
   ],
 ]
 
 ///|
 let thai_below_state_machine : Array[Array[ThaiStateEdge]] = [
   [
-    { action: thai_action_nop, next_state: thai_below_b0 },
-    { action: thai_action_nop, next_state: thai_below_b2 },
-    { action: thai_action_nop, next_state: thai_below_b0 },
+    { action: thai_action_nop, next_state: thai_below_b0, },
+    { action: thai_action_nop, next_state: thai_below_b2, },
+    { action: thai_action_nop, next_state: thai_below_b0, },
   ],
   [
-    { action: thai_action_nop, next_state: thai_below_b1 },
-    { action: thai_action_rd, next_state: thai_below_b2 },
-    { action: thai_action_nop, next_state: thai_below_b1 },
+    { action: thai_action_nop, next_state: thai_below_b1, },
+    { action: thai_action_rd, next_state: thai_below_b2, },
+    { action: thai_action_nop, next_state: thai_below_b1, },
   ],
   [
-    { action: thai_action_nop, next_state: thai_below_b2 },
-    { action: thai_action_sd, next_state: thai_below_b2 },
-    { action: thai_action_nop, next_state: thai_below_b2 },
+    { action: thai_action_nop, next_state: thai_below_b2, },
+    { action: thai_action_sd, next_state: thai_below_b2, },
+    { action: thai_action_nop, next_state: thai_below_b2, },
   ],
 ]
 
@@ -143,45 +143,45 @@ priv struct ThaiPuaMapping {
 
 ///|
 let thai_pua_sd : Array[ThaiPuaMapping] = [
-  { u: 0x0E48U, win_pua: 0xF70AU, mac_pua: 0xF88BU },
-  { u: 0x0E49U, win_pua: 0xF70BU, mac_pua: 0xF88EU },
-  { u: 0x0E4AU, win_pua: 0xF70CU, mac_pua: 0xF891U },
-  { u: 0x0E4BU, win_pua: 0xF70DU, mac_pua: 0xF894U },
-  { u: 0x0E4CU, win_pua: 0xF70EU, mac_pua: 0xF897U },
-  { u: 0x0E38U, win_pua: 0xF718U, mac_pua: 0xF89BU },
-  { u: 0x0E39U, win_pua: 0xF719U, mac_pua: 0xF89CU },
-  { u: 0x0E3AU, win_pua: 0xF71AU, mac_pua: 0xF89DU },
+  { u: 0x0E48U, win_pua: 0xF70AU, mac_pua: 0xF88BU, },
+  { u: 0x0E49U, win_pua: 0xF70BU, mac_pua: 0xF88EU, },
+  { u: 0x0E4AU, win_pua: 0xF70CU, mac_pua: 0xF891U, },
+  { u: 0x0E4BU, win_pua: 0xF70DU, mac_pua: 0xF894U, },
+  { u: 0x0E4CU, win_pua: 0xF70EU, mac_pua: 0xF897U, },
+  { u: 0x0E38U, win_pua: 0xF718U, mac_pua: 0xF89BU, },
+  { u: 0x0E39U, win_pua: 0xF719U, mac_pua: 0xF89CU, },
+  { u: 0x0E3AU, win_pua: 0xF71AU, mac_pua: 0xF89DU, },
 ]
 
 ///|
 let thai_pua_sdl : Array[ThaiPuaMapping] = [
-  { u: 0x0E48U, win_pua: 0xF705U, mac_pua: 0xF88CU },
-  { u: 0x0E49U, win_pua: 0xF706U, mac_pua: 0xF88FU },
-  { u: 0x0E4AU, win_pua: 0xF707U, mac_pua: 0xF892U },
-  { u: 0x0E4BU, win_pua: 0xF708U, mac_pua: 0xF895U },
-  { u: 0x0E4CU, win_pua: 0xF709U, mac_pua: 0xF898U },
+  { u: 0x0E48U, win_pua: 0xF705U, mac_pua: 0xF88CU, },
+  { u: 0x0E49U, win_pua: 0xF706U, mac_pua: 0xF88FU, },
+  { u: 0x0E4AU, win_pua: 0xF707U, mac_pua: 0xF892U, },
+  { u: 0x0E4BU, win_pua: 0xF708U, mac_pua: 0xF895U, },
+  { u: 0x0E4CU, win_pua: 0xF709U, mac_pua: 0xF898U, },
 ]
 
 ///|
 let thai_pua_sl : Array[ThaiPuaMapping] = [
-  { u: 0x0E48U, win_pua: 0xF713U, mac_pua: 0xF88AU },
-  { u: 0x0E49U, win_pua: 0xF714U, mac_pua: 0xF88DU },
-  { u: 0x0E4AU, win_pua: 0xF715U, mac_pua: 0xF890U },
-  { u: 0x0E4BU, win_pua: 0xF716U, mac_pua: 0xF893U },
-  { u: 0x0E4CU, win_pua: 0xF717U, mac_pua: 0xF896U },
-  { u: 0x0E31U, win_pua: 0xF710U, mac_pua: 0xF884U },
-  { u: 0x0E34U, win_pua: 0xF701U, mac_pua: 0xF885U },
-  { u: 0x0E35U, win_pua: 0xF702U, mac_pua: 0xF886U },
-  { u: 0x0E36U, win_pua: 0xF703U, mac_pua: 0xF887U },
-  { u: 0x0E37U, win_pua: 0xF704U, mac_pua: 0xF888U },
-  { u: 0x0E47U, win_pua: 0xF712U, mac_pua: 0xF889U },
-  { u: 0x0E4DU, win_pua: 0xF711U, mac_pua: 0xF899U },
+  { u: 0x0E48U, win_pua: 0xF713U, mac_pua: 0xF88AU, },
+  { u: 0x0E49U, win_pua: 0xF714U, mac_pua: 0xF88DU, },
+  { u: 0x0E4AU, win_pua: 0xF715U, mac_pua: 0xF890U, },
+  { u: 0x0E4BU, win_pua: 0xF716U, mac_pua: 0xF893U, },
+  { u: 0x0E4CU, win_pua: 0xF717U, mac_pua: 0xF896U, },
+  { u: 0x0E31U, win_pua: 0xF710U, mac_pua: 0xF884U, },
+  { u: 0x0E34U, win_pua: 0xF701U, mac_pua: 0xF885U, },
+  { u: 0x0E35U, win_pua: 0xF702U, mac_pua: 0xF886U, },
+  { u: 0x0E36U, win_pua: 0xF703U, mac_pua: 0xF887U, },
+  { u: 0x0E37U, win_pua: 0xF704U, mac_pua: 0xF888U, },
+  { u: 0x0E47U, win_pua: 0xF712U, mac_pua: 0xF889U, },
+  { u: 0x0E4DU, win_pua: 0xF711U, mac_pua: 0xF899U, },
 ]
 
 ///|
 let thai_pua_rd : Array[ThaiPuaMapping] = [
-  { u: 0x0E0DU, win_pua: 0xF70FU, mac_pua: 0xF89AU },
-  { u: 0x0E10U, win_pua: 0xF700U, mac_pua: 0xF89EU },
+  { u: 0x0E0DU, win_pua: 0xF70FU, mac_pua: 0xF89AU, },
+  { u: 0x0E10U, win_pua: 0xF700U, mac_pua: 0xF89EU, },
 ]
 
 ///|
@@ -291,10 +291,14 @@ fn preprocess_thai_sara_am(buffer : Buffer) -> Unit {
       continue
     }
     let nikhahit = nikhahit_from_sara_am(info.codepoint)
-    infos.push({ codepoint: nikhahit, cluster: info.cluster, unicode: nikhahit })
+    infos.push({
+      codepoint: nikhahit,
+      cluster: info.cluster,
+      unicode: nikhahit,
+    })
     positions.push(pos)
     let sara_aa = sara_aa_from_sara_am(info.codepoint)
-    infos.push({ codepoint: sara_aa, cluster: info.cluster, unicode: sara_aa })
+    infos.push({ codepoint: sara_aa, cluster: info.cluster, unicode: sara_aa, })
     positions.push(pos)
     let end = infos.length()
     let mut start = end - 2

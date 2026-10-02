@@ -55,7 +55,7 @@ pub fn VorgTable::parse(data : BytesView) -> Result[VorgTable, SfntError] {
         match (glyph, origin_y) {
           (Err(err), _) => return Err(err)
           (_, Err(err)) => return Err(err)
-          (Ok(glyph), Ok(origin_y)) => metrics.push({ glyph, origin_y })
+          (Ok(glyph), Ok(origin_y)) => metrics.push({ glyph, origin_y, })
         }
         offset = offset + 4
       }

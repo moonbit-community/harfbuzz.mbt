@@ -316,7 +316,7 @@ fn parse_cff2_private_dict_entries(
     _ => return Err(InvalidFormat)
   }
   if private_size <= 0 {
-    return Ok(({ entries: {} }, None))
+    return Ok(({ entries: {}, }, None))
   }
   if private_offset < 0 || private_offset + private_size > data.length() {
     return Err(UnexpectedEof)
@@ -665,7 +665,7 @@ fn parse_cff2_private_dict(
   size : Int,
 ) -> Result[Cff2PrivateDict, CffError] {
   if size <= 0 {
-    return Ok({ local_subrs: None, ivs: 0 })
+    return Ok({ local_subrs: None, ivs: 0, })
   }
   if offset < 0 || offset + size > data.length() {
     return Err(UnexpectedEof)
@@ -692,7 +692,7 @@ fn parse_cff2_private_dict(
       }
     }
   }
-  Ok({ local_subrs, ivs })
+  Ok({ local_subrs, ivs, })
 }
 
 ///|

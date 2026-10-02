@@ -93,7 +93,7 @@ pub fn GdefTable::parse(blob : @blob.Blob) -> Result[GdefTable, OtLayoutError] {
             },
             mark_glyph_sets_def_offset,
           }
-          Ok({ data, header })
+          Ok({ data, header, })
         }
       }
     }

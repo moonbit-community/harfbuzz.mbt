@@ -125,7 +125,7 @@ fn parse_jstf_max(data : BytesView, offset : Int) -> Result[JstfMax, SfntError] 
           Ok(value) => offsets.push(value)
         }
       }
-      Ok({ lookup_offsets: offsets })
+      Ok({ lookup_offsets: offsets, })
     }
   }
 }
@@ -349,7 +349,7 @@ fn parse_jstf_lang_sys_record(
           },
         )
       }
-      Ok({ tag, lang_sys })
+      Ok({ tag, lang_sys, })
     }
   }
 }
@@ -402,7 +402,7 @@ fn parse_jstf_script(
         }
         lang_sys_records.push(record)
       }
-      Ok({ extender_glyphs, default_lang_sys, lang_sys_records })
+      Ok({ extender_glyphs, default_lang_sys, lang_sys_records, })
     }
   }
 }
@@ -454,11 +454,11 @@ pub fn JstfTable::parse(data : BytesView) -> Result[JstfTable, SfntError] {
                 },
               )
             }
-            scripts.push({ tag, script })
+            scripts.push({ tag, script, })
           }
         }
       }
-      Ok({ major_version: major, minor_version: minor, scripts })
+      Ok({ major_version: major, minor_version: minor, scripts, })
     }
   }
 }

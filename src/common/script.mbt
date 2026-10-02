@@ -101,7 +101,7 @@ pub fn Script::from_iso15924_tag(tag : Tag) -> Script {
     return script_syriac
   }
   if looks_like_script_tag(canonical) {
-    { tag: canonical }
+    { tag: canonical, }
   } else {
     script_unknown
   }

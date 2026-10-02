@@ -211,7 +211,7 @@ fn parse_tuple_header(
       }
       Ok(
         (
-          { data_size, tuple_index, peak, start: start_tuple, end: end_tuple },
+          { data_size, tuple_index, peak, start: start_tuple, end: end_tuple, },
           pos,
         ),
       )

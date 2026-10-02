@@ -53,7 +53,7 @@ fn read_bounds(
     (_, _, Err(err), _) => Err(err)
     (_, _, _, Err(err)) => Err(err)
     (Ok(left), Ok(top), Ok(right), Ok(bottom)) =>
-      Ok({ left, top, right, bottom })
+      Ok({ left, top, right, bottom, })
   }
 }
 
@@ -80,7 +80,7 @@ pub fn OpbdTable::parse(
         Err(err) => return Err(err)
         Ok(value) => value
       }
-      Ok({ version, format, lookup, data })
+      Ok({ version, format, lookup, data, })
     }
   }
 }
@@ -120,7 +120,7 @@ pub fn OpbdTable::bounds(
     let bottom = contour_point(glyph, bounds.bottom)
     match (left, top, right, bottom) {
       (Some((left, _)), Some((_, top)), Some((right, _)), Some((_, bottom))) =>
-        Ok(Some({ left, top, right, bottom }))
+        Ok(Some({ left, top, right, bottom, }))
       _ => Ok(None)
     }
   } else {

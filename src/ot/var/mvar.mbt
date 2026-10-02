@@ -66,11 +66,11 @@ pub fn MvarTable::parse(data : BytesView) -> Result[MvarTable, VarError] {
         match (tag, var_idx) {
           (Err(err), _) => return Err(err)
           (_, Err(err)) => return Err(err)
-          (Ok(tag), Ok(var_idx)) => records.push({ tag, var_idx })
+          (Ok(tag), Ok(var_idx)) => records.push({ tag, var_idx, })
         }
         offset = offset + value_record_size
       }
-      Ok({ records, var_store })
+      Ok({ records, var_store, })
     }
   }
 }

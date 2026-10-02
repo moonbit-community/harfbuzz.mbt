@@ -144,7 +144,7 @@ fn read_math_value_record(
           return Err(UnexpectedEof)
         }
       }
-      Ok({ value, device_offset })
+      Ok({ value, device_offset, })
     }
   }
 }
@@ -230,7 +230,7 @@ fn parse_math_italics_correction(
         }
         records.push(record)
       }
-      Ok({ coverage_offset, records })
+      Ok({ coverage_offset, records, })
     }
   }
 }
@@ -271,7 +271,7 @@ fn parse_math_top_accent_attachment(
         }
         records.push(record)
       }
-      Ok({ coverage_offset, records })
+      Ok({ coverage_offset, records, })
     }
   }
 }
@@ -302,7 +302,7 @@ fn parse_math_kern(
         }
         records.push(record)
       }
-      Ok({ height_count, records })
+      Ok({ height_count, records, })
     }
   }
 }
@@ -361,7 +361,7 @@ fn parse_math_kern_info(
         }
         records.push({ math_kerns, })
       }
-      Ok({ coverage_offset, records })
+      Ok({ coverage_offset, records, })
     }
   }
 }
@@ -489,7 +489,7 @@ fn parse_math_glyph_assembly(
             })
         }
       }
-      Ok({ italics_correction: italics, parts })
+      Ok({ italics_correction: italics, parts, })
     }
   }
 }
@@ -532,10 +532,10 @@ fn parse_math_glyph_construction(
           (Err(err), _) => return Err(err)
           (_, Err(err)) => return Err(err)
           (Ok(glyph), Ok(advance)) =>
-            variants.push({ variant_glyph: glyph, advance })
+            variants.push({ variant_glyph: glyph, advance, })
         }
       }
-      Ok({ glyph_assembly, variants })
+      Ok({ glyph_assembly, variants, })
     }
   }
 }

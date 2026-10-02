@@ -43,7 +43,7 @@ test "cff1 seac bounds" {
     offsets: [],
     data: Bytes::from_array([]),
   }
-  let empty_dict = CffDict::{ entries: {} }
+  let empty_dict = CffDict::{ entries: {}, }
   let cff1 = Cff1Table::{
     data: Bytes::from_array([]),
     name_index: empty_index,
@@ -110,13 +110,13 @@ test "cff1 seac bounds" {
 
 ///|
 fn empty_index() -> CffIndex {
-  { count: 0, off_size: 0, offsets: [], data: Bytes::from_array([]) }
+  { count: 0, off_size: 0, offsets: [], data: Bytes::from_array([]), }
 }
 
 ///|
 fn zero_charstrings(count : Int) -> CffIndex {
   let offsets : Array[Int] = Array::make(count + 1, 1)
-  { count, off_size: 1, offsets, data: Bytes::from_array([]) }
+  { count, off_size: 1, offsets, data: Bytes::from_array([]), }
 }
 
 ///|
@@ -146,7 +146,7 @@ fn build_string_index(names : Array[String]) -> CffIndex {
 ///|
 test "cff1 glyph names standard charset" {
   let empty = empty_index()
-  let empty_dict = CffDict::{ entries: {} }
+  let empty_dict = CffDict::{ entries: {}, }
   let charstrings = zero_charstrings(3)
   let cff1 = Cff1Table::{
     data: Bytes::from_array([]),
@@ -183,7 +183,7 @@ test "cff1 glyph names standard charset" {
 ///|
 test "cff1 glyph names custom strings" {
   let empty = empty_index()
-  let empty_dict = CffDict::{ entries: {} }
+  let empty_dict = CffDict::{ entries: {}, }
   let charstrings = zero_charstrings(3)
   let string_index = build_string_index(["customA", "customB"])
   let standard_len = cff1_standard_strings_len()

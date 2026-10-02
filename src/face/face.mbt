@@ -61,7 +61,7 @@ pub fn face_count(blob : @blob.Blob) -> Int {
 ///|
 /// Create a face from a blob.
 pub fn Face::new(blob : @blob.Blob, index? : Int = 0) -> Face {
-  { blob, index, upem: 0, glyph_count: 0, tables: Map([]) }
+  { blob, index, upem: 0, glyph_count: 0, tables: Map([]), }
 }
 
 ///|

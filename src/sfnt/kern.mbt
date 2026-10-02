@@ -103,7 +103,8 @@ fn parse_kern_subtable_format0(
           (Err(err), _, _) => return Err(err)
           (_, Err(err), _) => return Err(err)
           (_, _, Err(err)) => return Err(err)
-          (Ok(left), Ok(right), Ok(value)) => pairs.push({ left, right, value })
+          (Ok(left), Ok(right), Ok(value)) =>
+            pairs.push({ left, right, value, })
         }
       }
       Ok({
@@ -164,7 +165,7 @@ fn parse_kern_class_table(
           }
         }
       }
-      Ok({ first_glyph, classes, class_count: max_class + 1 })
+      Ok({ first_glyph, classes, class_count: max_class + 1, })
     }
   }
 }
@@ -237,7 +238,7 @@ fn parse_kern_subtable_format2(
         cross_stream,
         override_flag,
         pairs: [],
-        format2: Some({ row_width, left, right, right_class_count, values }),
+        format2: Some({ row_width, left, right, right_class_count, values, }),
         format3: None,
       })
     }

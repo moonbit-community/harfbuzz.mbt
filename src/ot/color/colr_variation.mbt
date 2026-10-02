@@ -32,7 +32,7 @@ pub fn ColrTable::var_instancer(
   self : ColrTable,
   coords : Array[Int],
 ) -> ColrVarInstancer {
-  { coords, var_store: self.var_store, var_idx_map: self.var_idx_map }
+  { coords, var_store: self.var_store, var_idx_map: self.var_idx_map, }
 }
 
 ///|

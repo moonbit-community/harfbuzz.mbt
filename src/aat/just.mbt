@@ -132,7 +132,7 @@ pub fn JustTable::parse(
           },
         )
       }
-      Ok({ version, format, horiz, vert })
+      Ok({ version, format, horiz, vert, })
     }
   }
 }

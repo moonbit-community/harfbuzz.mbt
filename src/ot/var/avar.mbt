@@ -131,7 +131,7 @@ pub fn AvarTable::parse(data : BytesView) -> Result[AvarTable, VarError] {
                 (Err(err), _) => return Err(err)
                 (_, Err(err)) => return Err(err)
                 (Ok(from_raw), Ok(to_raw)) =>
-                  mappings.push({ from_raw, to_raw })
+                  mappings.push({ from_raw, to_raw, })
               }
               offset = offset + 4
             }

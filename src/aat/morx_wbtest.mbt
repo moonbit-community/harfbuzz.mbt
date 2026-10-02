@@ -17,7 +17,7 @@ test "aat morx contextual apply lookup" {
   let class_lookup = LookupTable::Format0([1U, 4U, 4U])
   let state_array : Array[Int] = [0, 0, 0, 0, 0]
   let entries : Array[StateEntry] = [
-    { new_state: 0, flags: 0, data1: 0xffff, data2: 0 },
+    { new_state: 0, flags: 0, data1: 0xffff, data2: 0, },
   ]
   let table = StateTable::{
     n_classes: 5,
@@ -48,9 +48,9 @@ test "aat morx ligature apply extended" {
   state_array[4] = 1
   state_array[9] = 2
   let entries : Array[StateEntry] = [
-    { new_state: 0, flags: 0, data1: 0, data2: 0 },
-    { new_state: 1, flags: 0x8000, data1: 0, data2: 0 },
-    { new_state: 0, flags: 0xa000, data1: 0, data2: 0 },
+    { new_state: 0, flags: 0, data1: 0, data2: 0, },
+    { new_state: 1, flags: 0x8000, data1: 0, data2: 0, },
+    { new_state: 0, flags: 0xa000, data1: 0, data2: 0, },
   ]
   let table = StateTable::{
     n_classes: 5,
@@ -84,8 +84,8 @@ test "aat morx insertion apply" {
   let class_lookup = LookupTable::Format0([1U, 4U])
   let state_array : Array[Int] = [0, 0, 0, 0, 1]
   let entries : Array[StateEntry] = [
-    { new_state: 0, flags: 0, data1: 0xffff, data2: 0xffff },
-    { new_state: 0, flags: 0x0020, data1: 0, data2: 0xffff },
+    { new_state: 0, flags: 0, data1: 0xffff, data2: 0xffff, },
+    { new_state: 0, flags: 0x0020, data1: 0, data2: 0xffff, },
   ]
   let table = StateTable::{
     n_classes: 5,

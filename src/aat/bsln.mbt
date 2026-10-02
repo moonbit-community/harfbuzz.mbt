@@ -159,7 +159,7 @@ pub fn BslnTable::parse(
       } else {
         return Err(InvalidFormat)
       }
-      Ok({ version, format, default_baseline, data })
+      Ok({ version, format, default_baseline, data, })
     }
   }
 }

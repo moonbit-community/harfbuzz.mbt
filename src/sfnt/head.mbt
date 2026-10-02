@@ -28,6 +28,6 @@ pub fn HeadTable::parse(data : BytesView) -> Result[HeadTable, SfntError] {
     (Err(err), _) => Err(err)
     (_, Err(err)) => Err(err)
     (Ok(units_per_em), Ok(index_to_loc_format)) =>
-      Ok({ units_per_em, index_to_loc_format })
+      Ok({ units_per_em, index_to_loc_format, })
   }
 }

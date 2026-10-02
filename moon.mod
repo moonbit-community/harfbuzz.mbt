@@ -10,6 +10,4 @@ repository = ""
 
 keywords = [ "harfbuzz", "text", "shaping", "font" ]
 
-options(
-  source: "src",
-)
+source = "src"

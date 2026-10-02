@@ -547,7 +547,7 @@ fn zero_mark_advances_with_flags(
       } else {
         pos.y_offset
       }
-      buffer.positions[i] = { x_advance: 0, y_advance: 0, x_offset, y_offset }
+      buffer.positions[i] = { x_advance: 0, y_advance: 0, x_offset, y_offset, }
     }
   }
 }

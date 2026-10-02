@@ -38,7 +38,7 @@ pub struct Blob {
 ///|
 /// Create a blob from bytes.
 pub fn Blob::from_bytes(bytes : Bytes, mode? : MemoryMode = Readonly) -> Blob {
-  { bytes, offset: 0, length: bytes.length(), mode }
+  { bytes, offset: 0, length: bytes.length(), mode, }
 }
 
 ///|
@@ -74,7 +74,12 @@ pub fn Blob::sub(
   if end > self.length {
     return Err(OutOfBounds)
   }
-  Ok({ bytes: self.bytes, offset: self.offset + offset, length, mode: Readonly })
+  Ok({
+    bytes: self.bytes,
+    offset: self.offset + offset,
+    length,
+    mode: Readonly,
+  })
 }
 
 ///|

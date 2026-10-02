@@ -763,7 +763,7 @@ pub fn Buffer::shape_arabic(
       } else {
         0U
       }
-      infos.push({ codepoint: glyph, cluster: current_clusters[i], unicode })
+      infos.push({ codepoint: glyph, cluster: current_clusters[i], unicode, })
       positions.push(pos)
     }
     self.infos = infos

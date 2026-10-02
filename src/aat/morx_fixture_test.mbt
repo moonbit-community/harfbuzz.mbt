@@ -368,11 +368,11 @@ test "aat morx fixture MORXTwentyeight" {
   }
   let name_map = build_glyph_name_map(post)
   let expected : Array[ExpectedGlyph] = [
-    { name: "A_E_D", cluster: 0, x_advance: 1394, x_offset: 0, y_offset: 0 },
-    { name: "x", cluster: 1, x_advance: 529, x_offset: 0, y_offset: 0 },
-    { name: "y", cluster: 3, x_advance: 510, x_offset: 0, y_offset: 0 },
-    { name: "y", cluster: 5, x_advance: 510, x_offset: 0, y_offset: 0 },
-    { name: "y", cluster: 6, x_advance: 510, x_offset: 0, y_offset: 0 },
+    { name: "A_E_D", cluster: 0, x_advance: 1394, x_offset: 0, y_offset: 0, },
+    { name: "x", cluster: 1, x_advance: 529, x_offset: 0, y_offset: 0, },
+    { name: "y", cluster: 3, x_advance: 510, x_offset: 0, y_offset: 0, },
+    { name: "y", cluster: 5, x_advance: 510, x_offset: 0, y_offset: 0, },
+    { name: "y", cluster: 6, x_advance: 510, x_offset: 0, y_offset: 0, },
   ]
   assert_shaped(buffer, name_map, expected)
 }
@@ -390,7 +390,7 @@ test "aat morx fixture Tamil" {
   }
   let name_map = build_glyph_name_map(post)
   let expected : Array[ExpectedGlyph] = [
-    { name: "ka-tamil", cluster: 0, x_advance: 825, x_offset: 0, y_offset: 0 },
+    { name: "ka-tamil", cluster: 0, x_advance: 825, x_offset: 0, y_offset: 0, },
     {
       name: "pulli-tamil",
       cluster: 0,
@@ -398,8 +398,8 @@ test "aat morx fixture Tamil" {
       x_offset: -392,
       y_offset: 0,
     },
-    { name: "space", cluster: 2, x_advance: 260, x_offset: 0, y_offset: 0 },
-    { name: "ca-tamil", cluster: 3, x_advance: 723, x_offset: 0, y_offset: 0 },
+    { name: "space", cluster: 2, x_advance: 260, x_offset: 0, y_offset: 0, },
+    { name: "ca-tamil", cluster: 3, x_advance: 723, x_offset: 0, y_offset: 0, },
     {
       name: "pulli-tamil",
       cluster: 3,

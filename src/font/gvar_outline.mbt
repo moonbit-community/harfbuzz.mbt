@@ -34,7 +34,7 @@ fn clone_points(points : Array[@sfnt.GlyphPoint]) -> Array[@sfnt.GlyphPoint] {
 fn make_deltas(count : Int) -> Array[PointDelta] {
   let deltas : Array[PointDelta] = []
   for _ in 0..<count {
-    deltas.push({ x: 0.0, y: 0.0, referenced: false })
+    deltas.push({ x: 0.0, y: 0.0, referenced: false, })
   }
   deltas
 }

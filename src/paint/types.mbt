@@ -32,7 +32,7 @@ pub struct Color {
 ///|
 /// Helper to build a color from BGRA bytes.
 pub fn Color::from_bgra(b : Int, g : Int, r : Int, a : Int) -> Color {
-  { r, g, b, a }
+  { r, g, b, a, }
 }
 
 ///|
