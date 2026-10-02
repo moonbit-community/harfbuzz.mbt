@@ -48,7 +48,7 @@ pub struct SerializeObject {
 
 ///|
 pub fn SerializeObject::new(data : Bytes) -> SerializeObject {
-  { data, real_links: [], virtual_links: [] }
+  { data, real_links: [], virtual_links: [], }
 }
 
 ///|
@@ -60,7 +60,7 @@ pub fn SerializeLink::new(
   whence? : SerializeWhence = Head,
   bias? : Int = 0,
 ) -> SerializeLink {
-  { width, position, objidx, is_signed, whence, bias }
+  { width, position, objidx, is_signed, whence, bias, }
 }
 
 ///|

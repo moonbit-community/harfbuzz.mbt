@@ -160,14 +160,14 @@ pub fn FeatTable::parse(data : BytesView) -> Result[FeatTable, AatError] {
                 (Err(err), _) => return Err(err)
                 (_, Err(err)) => return Err(err)
                 (Ok(setting), Ok(setting_name)) =>
-                  settings.push({ setting, name_id: setting_name })
+                  settings.push({ setting, name_id: setting_name, })
               }
             }
-            features.push({ feature, name_id, flags, settings })
+            features.push({ feature, name_id, flags, settings, })
           }
         }
       }
-      Ok({ version, features })
+      Ok({ version, features, })
     }
   }
 }

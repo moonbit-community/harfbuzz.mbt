@@ -30,7 +30,7 @@ pub struct PairAdjust {
 
 ///|
 fn value_record_zero() -> ValueRecord {
-  { x_placement: 0, y_placement: 0, x_advance: 0, y_advance: 0 }
+  { x_placement: 0, y_placement: 0, x_advance: 0, y_advance: 0, }
 }
 
 ///|
@@ -945,7 +945,7 @@ priv struct PosApplyResult {
 
 ///|
 fn pos_no_match(index : Int) -> PosApplyResult {
-  { matched: false, changed: false, next_index: index + 1 }
+  { matched: false, changed: false, next_index: index + 1, }
 }
 
 ///|
@@ -1037,7 +1037,7 @@ fn apply_context_pos_class_rule(
       if next_index > glyphs.length() {
         next_index = glyphs.length()
       }
-      Ok({ matched: true, changed, next_index })
+      Ok({ matched: true, changed, next_index, })
     }
   }
 }
@@ -1195,7 +1195,7 @@ fn apply_context_pos_rule(
       if next_index > glyphs.length() {
         next_index = glyphs.length()
       }
-      Ok({ matched: true, changed, next_index })
+      Ok({ matched: true, changed, next_index, })
     }
   }
 }
@@ -2068,7 +2068,7 @@ fn apply_chain_pos_class_rule(
                   if next_index > glyphs.length() {
                     next_index = glyphs.length()
                   }
-                  Ok({ matched: true, changed, next_index })
+                  Ok({ matched: true, changed, next_index, })
                 }
               }
             }
@@ -2261,7 +2261,7 @@ fn apply_chain_pos_rule(
                   if next_index > glyphs.length() {
                     next_index = glyphs.length()
                   }
-                  Ok({ matched: true, changed, next_index })
+                  Ok({ matched: true, changed, next_index, })
                 }
               }
             }
@@ -4420,7 +4420,7 @@ fn pair_adjust_format1(
                                 Err(err) => return Err(err)
                                 Ok((value2, _)) =>
                                   return Ok(
-                                    Some({ first: value1, second: value2 }),
+                                    Some({ first: value1, second: value2, }),
                                   )
                               }
                             }
@@ -4527,7 +4527,7 @@ fn pair_adjust_format2(
                   match value2 {
                     Err(err) => Err(err)
                     Ok((value2, _)) =>
-                      Ok(Some({ first: value1, second: value2 }))
+                      Ok(Some({ first: value1, second: value2, }))
                   }
                 }
               }

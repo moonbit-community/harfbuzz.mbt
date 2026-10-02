@@ -152,7 +152,7 @@ fn parse_axis_value(
                 (Err(err), _) => return Err(err)
                 (_, Err(err)) => return Err(err)
                 (Ok(axis_index), Ok(value)) =>
-                  axis_values.push({ axis_index, value })
+                  axis_values.push({ axis_index, value, })
               }
               cursor = cursor + 6
             }
@@ -223,7 +223,7 @@ pub fn StatTable::parse(data : BytesView) -> Result[StatTable, SfntError] {
             (Err(err), _) => return Err(err)
             (_, Err(err)) => return Err(err)
             (Ok(name_id), Ok(ordering)) =>
-              design_axes.push({ tag, name_id, ordering })
+              design_axes.push({ tag, name_id, ordering, })
           }
         }
       }

@@ -2813,7 +2813,7 @@ pub fn build_plan(
       }
     }
   }
-  Ok({ glyphs, old_to_new, codepoint_map, gsub_mask })
+  Ok({ glyphs, old_to_new, codepoint_map, gsub_mask, })
 }
 
 ///|
@@ -3940,7 +3940,7 @@ fn parse_delta_map(
     return Err(InvalidInput("invalid delta map bounds"))
   }
   let map_data = bytes[data_offset:data_offset + length].to_owned()
-  Ok({ format, entry_format, width, map_count, map_data })
+  Ok({ format, entry_format, width, map_count, map_data, })
 }
 
 ///|
@@ -8837,7 +8837,7 @@ fn parse_feature_list_bytes(
       }
       lookup_indices.push(lookup_index)
     }
-    features.push({ tag, params, lookup_indices })
+    features.push({ tag, params, lookup_indices, })
   }
   Ok(features)
 }
@@ -8901,7 +8901,7 @@ fn parse_langsys_bytes(
     }
     feature_indices.push(index)
   }
-  Ok({ req_feature, feature_indices })
+  Ok({ req_feature, feature_indices, })
 }
 
 ///|
@@ -8986,7 +8986,7 @@ fn parse_script_list_bytes(
       }
       languages.push((lang_tag, langsys))
     }
-    entries.push({ tag, default_lang, languages })
+    entries.push({ tag, default_lang, languages, })
   }
   Ok(entries)
 }
@@ -9148,7 +9148,7 @@ fn map_langsys_features(
       new_indices.push(mapped)
     }
   }
-  Ok({ req_feature, feature_indices: new_indices })
+  Ok({ req_feature, feature_indices: new_indices, })
 }
 
 ///|
@@ -9234,7 +9234,7 @@ fn filter_layout_tables(
       }
       languages.push((lang_tag, mapped))
     }
-    mapped_scripts.push({ tag: script.tag, default_lang, languages })
+    mapped_scripts.push({ tag: script.tag, default_lang, languages, })
   }
   let script_list = build_script_list_filtered(mapped_scripts)
   let feature_list = build_feature_list_bytes(remapped_features)
@@ -11710,7 +11710,7 @@ fn build_plan_cff1(
       }
     }
   }
-  Ok({ glyphs, old_to_new, codepoint_map, gsub_mask })
+  Ok({ glyphs, old_to_new, codepoint_map, gsub_mask, })
 }
 
 ///|
@@ -11792,7 +11792,7 @@ fn build_plan_cff2(
       }
     }
   }
-  Ok({ glyphs, old_to_new, codepoint_map, gsub_mask })
+  Ok({ glyphs, old_to_new, codepoint_map, gsub_mask, })
 }
 
 ///|

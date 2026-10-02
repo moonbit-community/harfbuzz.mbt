@@ -79,7 +79,7 @@ pub fn Buffer::shape_hebrew(
           Ok(value) => value
         }
         let unicode = if same_len { self.infos[i].unicode } else { 0U }
-        new_infos.push({ codepoint: glyph, cluster, unicode })
+        new_infos.push({ codepoint: glyph, cluster, unicode, })
         new_positions.push(pos)
       }
       self.infos = new_infos

@@ -188,7 +188,7 @@ fn parse_feat_min_max_record(
           },
         )
       }
-      Ok({ tag, min_coord, max_coord })
+      Ok({ tag, min_coord, max_coord, })
     }
   }
 }
@@ -240,7 +240,7 @@ fn parse_min_max(data : BytesView, offset : Int) -> Result[MinMax, SfntError] {
         }
         records.push(record)
       }
-      Ok({ min_coord, max_coord, records })
+      Ok({ min_coord, max_coord, records, })
     }
   }
 }
@@ -284,7 +284,7 @@ fn parse_base_values(
           }
         }
       }
-      Ok({ default_index, base_coords })
+      Ok({ default_index, base_coords, })
     }
   }
 }
@@ -321,7 +321,7 @@ fn parse_base_lang_sys_record(
           },
         )
       }
-      Ok({ tag, min_max })
+      Ok({ tag, min_max, })
     }
   }
 }
@@ -376,7 +376,7 @@ fn parse_base_script(
         }
         lang_sys_records.push(record)
       }
-      Ok({ base_values, default_min_max, lang_sys_records })
+      Ok({ base_values, default_min_max, lang_sys_records, })
     }
   }
 }
@@ -423,7 +423,7 @@ fn parse_base_script_list(
                 },
               )
             }
-            records.push({ tag, base_script })
+            records.push({ tag, base_script, })
           }
         }
       }
@@ -495,7 +495,7 @@ fn parse_axis(data : BytesView, offset : Int) -> Result[Axis, SfntError] {
           },
         )
       }
-      Ok({ base_tags, base_scripts })
+      Ok({ base_tags, base_scripts, })
     }
   }
 }

@@ -232,7 +232,7 @@ fn StateTable::entry_for(
   klass : Int,
 ) -> StateEntry {
   if self.n_classes <= 0 {
-    return { new_state: 0, flags: 0, data1: 0, data2: 0 }
+    return { new_state: 0, flags: 0, data1: 0, data2: 0, }
   }
   let mut safe_state = state
   if safe_state < 0 {
@@ -244,11 +244,11 @@ fn StateTable::entry_for(
   }
   let index = safe_state * self.n_classes + safe_klass
   if index < 0 || index >= self.state_array.length() {
-    return { new_state: 0, flags: 0, data1: 0, data2: 0 }
+    return { new_state: 0, flags: 0, data1: 0, data2: 0, }
   }
   let entry_index = self.state_array[index]
   if entry_index < 0 || entry_index >= self.entries.length() {
-    { new_state: 0, flags: 0, data1: 0, data2: 0 }
+    { new_state: 0, flags: 0, data1: 0, data2: 0, }
   } else {
     self.entries[entry_index]
   }
@@ -1058,7 +1058,7 @@ fn parse_state_table(
           (_, _, Err(err), _) => return Err(err)
           (_, _, _, Err(err)) => return Err(err)
           (Ok(new_state), Ok(flags), Ok(data1), Ok(data2)) =>
-            entries.push({ new_state, flags, data1, data2 })
+            entries.push({ new_state, flags, data1, data2, })
         }
       }
       Ok({
@@ -1147,7 +1147,7 @@ fn parse_contextual_subtable(
     }
     Values(subs_offset / 2, values)
   }
-  Ok(Contextual({ coverage_flags, sub_feature_flags, table, substitutions }))
+  Ok(Contextual({ coverage_flags, sub_feature_flags, table, substitutions, }))
 }
 
 ///|
@@ -1315,7 +1315,7 @@ fn parse_insertion_subtable(
       Ok(value) => insertion_action.push(value)
     }
   }
-  Ok(Insertion({ coverage_flags, sub_feature_flags, table, insertion_action }))
+  Ok(Insertion({ coverage_flags, sub_feature_flags, table, insertion_action, }))
 }
 
 ///|
@@ -1498,7 +1498,7 @@ pub fn MorxTable::parse(
 ) -> Result[MorxTable, AatError] {
   match parse_mort_morx(data, true, num_glyphs) {
     Err(err) => Err(err)
-    Ok((version, subtables)) => Ok({ version, subtables })
+    Ok((version, subtables)) => Ok({ version, subtables, })
   }
 }
 
@@ -1509,7 +1509,7 @@ pub fn MortTable::parse(
 ) -> Result[MortTable, AatError] {
   match parse_mort_morx(data, false, num_glyphs) {
     Err(err) => Err(err)
-    Ok((version, subtables)) => Ok({ version, subtables })
+    Ok((version, subtables)) => Ok({ version, subtables, })
   }
 }
 

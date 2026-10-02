@@ -35,7 +35,7 @@ pub fn OutlinePoint::new(
   y : Double,
   kind : OutlinePointKind,
 ) -> OutlinePoint {
-  { x, y, kind }
+  { x, y, kind, }
 }
 
 ///|
@@ -63,7 +63,7 @@ pub struct Outline {
 
 ///|
 pub fn Outline::new() -> Outline {
-  { points: [], contours: [] }
+  { points: [], contours: [], }
 }
 
 ///|
@@ -156,10 +156,10 @@ pub fn Outline::embolden(
   let orientation_negative = self.control_area() < 0.0
   let mut first = 0
   for contour_index in 0..<self.contours.length() {
-    let mut input_vec = OutlineVector::{ x: 0.0, y: 0.0 }
-    let mut output_vec = OutlineVector::{ x: 0.0, y: 0.0 }
-    let mut anchor_vec = OutlineVector::{ x: 0.0, y: 0.0 }
-    let shift = OutlineVector::{ x: 0.0, y: 0.0 }
+    let mut input_vec = OutlineVector::{ x: 0.0, y: 0.0, }
+    let mut output_vec = OutlineVector::{ x: 0.0, y: 0.0, }
+    let mut anchor_vec = OutlineVector::{ x: 0.0, y: 0.0, }
+    let shift = OutlineVector::{ x: 0.0, y: 0.0, }
     let mut l_in = 0.0
     let mut l_out = 0.0
     let mut l_anchor = 0.0

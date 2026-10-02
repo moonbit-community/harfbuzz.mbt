@@ -175,7 +175,7 @@ pub fn TrakTable::parse(data : BytesView) -> Result[TrakTable, AatError] {
           Ok(value) => vert = Some(value)
         }
       }
-      Ok({ version, format, horiz, vert })
+      Ok({ version, format, horiz, vert, })
     }
   }
 }
@@ -262,11 +262,11 @@ fn parse_track_data(
                 Ok(value) => values.push(value)
               }
             }
-            track_table.push({ track, name_id, values })
+            track_table.push({ track, name_id, values, })
           }
         }
       }
-      Ok({ track_table, size_table })
+      Ok({ track_table, size_table, })
     }
   }
 }

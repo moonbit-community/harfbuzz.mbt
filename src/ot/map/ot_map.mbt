@@ -59,7 +59,7 @@ pub fn OtMap::new(
         Ok(value) => value
       }
   }
-  Ok({ gsub_lookups, gpos_lookups })
+  Ok({ gsub_lookups, gpos_lookups, })
 }
 
 ///|

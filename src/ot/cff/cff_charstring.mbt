@@ -31,7 +31,7 @@ priv struct CffBoundsBuilder {
 
 ///|
 fn CffBoundsBuilder::new() -> CffBoundsBuilder {
-  { has_bounds: false, min_x: 0.0, min_y: 0.0, max_x: 0.0, max_y: 0.0 }
+  { has_bounds: false, min_x: 0.0, min_y: 0.0, max_x: 0.0, max_y: 0.0, }
 }
 
 ///|
@@ -89,17 +89,17 @@ priv struct CffPoint {
 
 ///|
 fn CffPoint::offset(self : CffPoint, dx : Double, dy : Double) -> CffPoint {
-  { x: self.x + dx, y: self.y + dy }
+  { x: self.x + dx, y: self.y + dy, }
 }
 
 ///|
 fn CffPoint::offset_x(self : CffPoint, dx : Double) -> CffPoint {
-  { x: self.x + dx, y: self.y }
+  { x: self.x + dx, y: self.y, }
 }
 
 ///|
 fn CffPoint::offset_y(self : CffPoint, dy : Double) -> CffPoint {
-  { x: self.x, y: self.y + dy }
+  { x: self.x, y: self.y + dy, }
 }
 
 ///|
@@ -124,7 +124,7 @@ fn CffCharstringState::new() -> CffCharstringState {
 
 ///|
 fn CffCharstringState::current_point(self : CffCharstringState) -> CffPoint {
-  { x: self.x, y: self.y }
+  { x: self.x, y: self.y, }
 }
 
 ///|
@@ -186,7 +186,7 @@ fn Cff2BlendState::new(
   ivs : Int,
   coords : Array[Int],
 ) -> Cff2BlendState {
-  { ivs, seen_vsindex: false, seen_blend: false, var_store, coords }
+  { ivs, seen_vsindex: false, seen_blend: false, var_store, coords, }
 }
 
 ///|
@@ -1322,7 +1322,7 @@ fn handle_hflex(
   let pt3 = pt2.offset_x(stack[3])
   let pt4 = pt3.offset_x(stack[4])
   let pt5 = pt4.offset_x(stack[5])
-  let pt5 = CffPoint::{ x: pt5.x, y: pt1.y }
+  let pt5 = CffPoint::{ x: pt5.x, y: pt1.y, }
   let pt6 = pt5.offset_x(stack[6])
   state.curve_to(pt1, pt2, pt3)
   state.curve_to(pt4, pt5, pt6)
@@ -1362,7 +1362,7 @@ fn handle_hflex1(
   let pt4 = pt3.offset_x(stack[5])
   let pt5 = pt4.offset(stack[6], stack[7])
   let mut pt6 = pt5.offset_x(stack[8])
-  pt6 = { x: pt6.x, y: state.current_point().y }
+  pt6 = { x: pt6.x, y: state.current_point().y, }
   state.curve_to(pt1, pt2, pt3)
   state.curve_to(pt4, pt5, pt6)
   Ok(())
@@ -1392,9 +1392,9 @@ fn handle_flex1(
   let mut pt6 = pt5
   if dx.abs() > dy.abs() {
     pt6 = pt6.offset_x(stack[10])
-    pt6 = { x: pt6.x, y: state.current_point().y }
+    pt6 = { x: pt6.x, y: state.current_point().y, }
   } else {
-    pt6 = { x: state.current_point().x, y: pt6.y }
+    pt6 = { x: state.current_point().x, y: pt6.y, }
     pt6 = pt6.offset_y(stack[10])
   }
   state.curve_to(pt1, pt2, pt3)

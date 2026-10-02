@@ -51,7 +51,7 @@ fn parse_color_stop(
           Ok(value) => var_idx_base = Some(value)
         }
       }
-      Ok({ offset: stop_offset, palette_index, alpha, var_idx_base })
+      Ok({ offset: stop_offset, palette_index, alpha, var_idx_base, })
     }
   }
 }
@@ -84,7 +84,7 @@ fn parse_color_line(
           Ok(value) => stops.push(value)
         }
       }
-      Ok({ extend, stops })
+      Ok({ extend, stops, })
     }
   }
 }
@@ -117,7 +117,7 @@ fn parse_affine(
           Ok(value) => var_idx_base = Some(value)
         }
       }
-      Ok({ xx, yx, xy, yy, dx, dy, var_idx_base })
+      Ok({ xx, yx, xy, yy, dx, dy, var_idx_base, })
     }
   }
 }

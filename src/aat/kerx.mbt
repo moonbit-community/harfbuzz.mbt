@@ -145,7 +145,7 @@ fn scale_value(value : Int, scale : Int, upem : Int) -> Int {
 fn make_adjustments(len : Int) -> Array[KerxAdjustment] {
   let adjustments : Array[KerxAdjustment] = []
   for _ in 0..<len {
-    adjustments.push({ x_advance: 0, y_advance: 0, x_offset: 0, y_offset: 0 })
+    adjustments.push({ x_advance: 0, y_advance: 0, x_offset: 0, y_offset: 0, })
   }
   adjustments
 }
@@ -182,7 +182,7 @@ fn parse_kerx_format0(
               header.tuple_count,
               value,
             )
-            pairs.push({ left, right, value: resolved })
+            pairs.push({ left, right, value: resolved, })
           }
         }
       }
@@ -231,7 +231,7 @@ fn parse_kerx_format1(
       Ok(value) => actions.push(value)
     }
   }
-  Ok(Format1(header, { table, actions }))
+  Ok(Format1(header, { table, actions, }))
 }
 
 ///|
@@ -343,7 +343,7 @@ fn parse_kerx_format4(
       Ok(value) => actions.push(value)
     }
   }
-  Ok(Format4(header, { table, flags, actions }))
+  Ok(Format4(header, { table, flags, actions, }))
 }
 
 ///|
@@ -540,7 +540,7 @@ pub fn KerxTable::parse(
             if length < 12 || offset + length > data.length() {
               return Err(UnexpectedEof)
             }
-            let header = KerxSubtableHeader::{ coverage, tuple_count }
+            let header = KerxSubtableHeader::{ coverage, tuple_count, }
             let sub_type = coverage_type(coverage)
             if sub_type == 0 {
               let subtable = match
@@ -582,7 +582,7 @@ pub fn KerxTable::parse(
           }
         }
       }
-      Ok({ version, subtables })
+      Ok({ version, subtables, })
     }
   }
 }

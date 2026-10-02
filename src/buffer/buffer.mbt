@@ -106,8 +106,8 @@ pub fn Buffer::add_codepoint(
   cluster? : Int = -1,
 ) -> Unit {
   let actual_cluster = if cluster < 0 { self.infos.length() } else { cluster }
-  self.infos.push({ codepoint, cluster: actual_cluster, unicode: codepoint })
-  self.positions.push({ x_advance: 0, y_advance: 0, x_offset: 0, y_offset: 0 })
+  self.infos.push({ codepoint, cluster: actual_cluster, unicode: codepoint, })
+  self.positions.push({ x_advance: 0, y_advance: 0, x_offset: 0, y_offset: 0, })
 }
 
 ///|
@@ -182,7 +182,7 @@ pub fn Buffer::replace_glyphs(
   if next_positions.is_empty() {
     let filled : Array[GlyphPosition] = []
     for _ in 0..<infos.length() {
-      filled.push({ x_advance: 0, y_advance: 0, x_offset: 0, y_offset: 0 })
+      filled.push({ x_advance: 0, y_advance: 0, x_offset: 0, y_offset: 0, })
     }
     next_positions = filled
   }
@@ -291,7 +291,7 @@ pub fn Buffer::set_gsub_feature_values(
   tag : @common.Tag,
   values : Array[Int],
 ) -> Unit {
-  self.gsub_feature_values = Some({ tag, values })
+  self.gsub_feature_values = Some({ tag, values, })
 }
 
 ///|
@@ -1279,7 +1279,7 @@ pub fn Buffer::apply_morx(
       None => 0U
       Some(value) => value
     }
-    new_infos.push({ codepoint: glyph, cluster, unicode })
+    new_infos.push({ codepoint: glyph, cluster, unicode, })
     new_positions.push(pos)
   }
   self.infos = new_infos
@@ -1677,7 +1677,7 @@ fn Buffer::shape_ot_with_options(
           Ok(value) => value
         }
         let unicode = if same_len { self.infos[i].unicode } else { 0U }
-        new_infos.push({ codepoint: glyph, cluster, unicode })
+        new_infos.push({ codepoint: glyph, cluster, unicode, })
         new_positions.push(pos)
       }
       self.infos = new_infos
@@ -1848,7 +1848,7 @@ fn apply_default_ignorables(buffer : Buffer) -> Unit {
         y_offset: 0,
       }
     } else {
-      { x_advance: 0, y_advance: 0, x_offset: 0, y_offset: pos.y_offset }
+      { x_advance: 0, y_advance: 0, x_offset: 0, y_offset: pos.y_offset, }
     }
     buffer.positions[i] = next_pos
   }
@@ -1902,7 +1902,7 @@ fn default_position(
         }
       }
     }
-    Ok({ x_advance: 0, y_advance: advance, x_offset: 0, y_offset: 0 })
+    Ok({ x_advance: 0, y_advance: advance, x_offset: 0, y_offset: 0, })
   } else {
     let advance = match font.glyph_h_advance(glyph) {
       Ok(value) => value
@@ -1915,6 +1915,6 @@ fn default_position(
         }
       }
     }
-    Ok({ x_advance: advance, y_advance: 0, x_offset: 0, y_offset: 0 })
+    Ok({ x_advance: advance, y_advance: 0, x_offset: 0, y_offset: 0, })
   }
 }

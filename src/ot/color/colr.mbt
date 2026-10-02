@@ -70,7 +70,7 @@ pub fn ColrTable::parse(data : BytesView) -> Result[ColrTable, ColorError] {
             (_, Err(err), _) => return Err(err)
             (_, _, Err(err)) => return Err(err)
             (Ok(glyph_id), Ok(first_layer_index), Ok(num_layers)) =>
-              base_glyphs.push({ glyph_id, first_layer_index, num_layers })
+              base_glyphs.push({ glyph_id, first_layer_index, num_layers, })
           }
         }
       }
@@ -88,7 +88,7 @@ pub fn ColrTable::parse(data : BytesView) -> Result[ColrTable, ColorError] {
             (Err(err), _) => return Err(err)
             (_, Err(err)) => return Err(err)
             (Ok(glyph_id), Ok(color_index)) =>
-              layers.push({ glyph_id, color_index })
+              layers.push({ glyph_id, color_index, })
           }
         }
       }
@@ -408,7 +408,7 @@ fn parse_clip_box(
             (_, _, Err(err), _) => Err(err)
             (_, _, _, Err(err)) => Err(err)
             (Ok(x_min), Ok(y_min), Ok(x_max), Ok(y_max)) =>
-              Ok({ format, x_min, y_min, x_max, y_max, var_idx_base: None })
+              Ok({ format, x_min, y_min, x_max, y_max, var_idx_base: None, })
           }
         }
         2 => {
@@ -486,7 +486,7 @@ fn parse_clip_list(
           }
         }
       }
-      Ok({ format, records })
+      Ok({ format, records, })
     }
   }
 }

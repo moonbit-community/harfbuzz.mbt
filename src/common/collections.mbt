@@ -25,7 +25,7 @@ pub struct CodepointSet {
 
 ///|
 pub fn CodepointSet::new() -> CodepointSet {
-  { set: Set([]) }
+  { set: Set([]), }
 }
 
 ///|
@@ -482,7 +482,7 @@ pub struct CodepointMap {
 
 ///|
 pub fn CodepointMap::new() -> CodepointMap {
-  { map: Map([]) }
+  { map: Map([]), }
 }
 
 ///|
@@ -537,7 +537,7 @@ pub fn CodepointMap::hash(self : CodepointMap) -> Int {
 
 ///|
 pub fn CodepointMap::copy(self : CodepointMap) -> CodepointMap {
-  { map: self.map.copy() }
+  { map: self.map.copy(), }
 }
 
 ///|
@@ -651,7 +651,7 @@ pub struct CodepointBiMap {
 
 ///|
 pub fn CodepointBiMap::new() -> CodepointBiMap {
-  { forward: CodepointMap::new(), backward: CodepointMap::new() }
+  { forward: CodepointMap::new(), backward: CodepointMap::new(), }
 }
 
 ///|
@@ -729,7 +729,7 @@ pub struct CodepointIncBiMap {
 
 ///|
 pub fn CodepointIncBiMap::new() -> CodepointIncBiMap {
-  { forward: CodepointMap::new(), back: [] }
+  { forward: CodepointMap::new(), back: [], }
 }
 
 ///|

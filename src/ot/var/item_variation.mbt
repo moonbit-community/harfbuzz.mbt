@@ -233,11 +233,11 @@ fn parse_region_list(
           (_, Err(err), _) => return Err(err)
           (_, _, Err(err)) => return Err(err)
           (Ok(start_coord), Ok(peak_coord), Ok(end_coord)) =>
-            axes.push({ start_coord, peak_coord, end_coord })
+            axes.push({ start_coord, peak_coord, end_coord, })
         }
         axis_offset = axis_offset + 6
       }
-      Ok({ axis_count, region_count, axes })
+      Ok({ axis_count, region_count, axes, })
     }
   }
 }
@@ -277,7 +277,7 @@ fn parse_var_data(data : BytesView, offset : Int) -> Result[VarData, VarError] {
         return Err(UnexpectedEof)
       }
       let deltas = data[data_offset:data_offset + total_bytes].to_owned()
-      Ok({ item_count, word_count, long_words, region_indices, deltas })
+      Ok({ item_count, word_count, long_words, region_indices, deltas, })
     }
   }
 }
@@ -323,7 +323,7 @@ pub fn ItemVariationStore::parse(
         }
         offset = offset + 4
       }
-      Ok({ region_list, data_sets })
+      Ok({ region_list, data_sets, })
     }
   }
 }

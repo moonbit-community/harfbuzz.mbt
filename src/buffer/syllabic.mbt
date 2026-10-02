@@ -337,7 +337,7 @@ fn apply_gsub_features_for_syllables(
       } else {
         0U
       }
-      infos.push({ codepoint: glyph, cluster: current_clusters[idx], unicode })
+      infos.push({ codepoint: glyph, cluster: current_clusters[idx], unicode, })
       positions.push(pos)
     }
     buffer.infos = infos

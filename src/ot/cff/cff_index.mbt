@@ -90,7 +90,7 @@ fn parse_cff_index(
             return Err(UnexpectedEof)
           }
           let data_bytes = data[data_start:data_start + data_len].to_owned()
-          Ok({ count, off_size, offsets, data: data_bytes })
+          Ok({ count, off_size, offsets, data: data_bytes, })
         }
       }
     }

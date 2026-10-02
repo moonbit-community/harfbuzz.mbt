@@ -60,10 +60,10 @@ pub fn HdmxTable::parse(data : BytesView) -> Result[HdmxTable, SfntError] {
           widths.push(data[cursor].to_uint().reinterpret_as_int())
           cursor = cursor + 1
         }
-        records.push({ pixel_size, max_width, widths })
+        records.push({ pixel_size, max_width, widths, })
         offset = offset + record_size
       }
-      Ok({ version, records })
+      Ok({ version, records, })
     }
   }
 }

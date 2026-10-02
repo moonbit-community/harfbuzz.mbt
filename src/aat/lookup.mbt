@@ -205,7 +205,7 @@ fn parse_format2(
             if last == 0xffffU && first == 0xffffU {
               continue
             }
-            segments.push({ first, last, value })
+            segments.push({ first, last, value, })
           }
         }
       }
@@ -265,7 +265,7 @@ fn parse_format4(
                 Ok(value) => values.push(value)
               }
             }
-            segments.push({ first, last, values })
+            segments.push({ first, last, values, })
           }
         }
       }
@@ -302,7 +302,7 @@ fn parse_format6(
             if glyph == 0xffffU {
               continue
             }
-            entries.push({ glyph, value })
+            entries.push({ glyph, value, })
           }
         }
       }

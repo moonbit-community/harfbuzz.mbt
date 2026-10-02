@@ -393,7 +393,7 @@ pub fn[T] DrawSession::new(
   funcs : DrawFuncs[T],
   draw_data : T,
 ) -> DrawSession[T] {
-  { funcs, draw_data, st: DrawState::new() }
+  { funcs, draw_data, st: DrawState::new(), }
 }
 
 ///|
@@ -470,7 +470,7 @@ pub struct DrawExtents {
 
 ///|
 pub fn DrawExtents::new() -> DrawExtents {
-  { xmin: 0.0, ymin: 0.0, xmax: -1.0, ymax: -1.0 }
+  { xmin: 0.0, ymin: 0.0, xmax: -1.0, ymax: -1.0, }
 }
 
 ///|

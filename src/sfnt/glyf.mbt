@@ -38,7 +38,7 @@ pub fn GlyphPoint::new(
   flag : Int,
   is_end_point : Bool,
 ) -> GlyphPoint {
-  { x, y, flag, is_end_point }
+  { x, y, flag, is_end_point, }
 }
 
 ///|
@@ -79,7 +79,7 @@ pub fn GlyphBounds::new(
   x_max : Int,
   y_max : Int,
 ) -> GlyphBounds {
-  { contours, x_min, y_min, x_max, y_max }
+  { contours, x_min, y_min, x_max, y_max, }
 }
 
 ///|
@@ -108,7 +108,7 @@ pub struct CompositeComponent {
 ///|
 /// Parse glyf table from its blob.
 pub fn GlyfTable::parse(blob : @blob.Blob) -> Result[GlyfTable, SfntError] {
-  Ok({ data: blob.as_view() })
+  Ok({ data: blob.as_view(), })
 }
 
 ///|
@@ -143,7 +143,7 @@ pub fn GlyfTable::glyph_bounds(
     (_, _, _, Err(err), _) => Err(err)
     (_, _, _, _, Err(err)) => Err(err)
     (Ok(contours), Ok(x_min), Ok(y_min), Ok(x_max), Ok(y_max)) =>
-      Ok(Some({ contours, x_min, y_min, x_max, y_max }))
+      Ok(Some({ contours, x_min, y_min, x_max, y_max, }))
   }
 }
 
@@ -330,7 +330,7 @@ pub fn GlyfTable::glyph_simple_points(
     let flag = if i < flags.length() { flags[i] } else { 0 }
     let x = if i < x_coords.length() { x_coords[i].to_double() } else { 0.0 }
     let y = if i < y_coords.length() { y_coords[i].to_double() } else { 0.0 }
-    points.push({ x, y, flag, is_end_point: false })
+    points.push({ x, y, flag, is_end_point: false, })
   }
   for end_point in end_points {
     if end_point < 0 || end_point >= point_count {

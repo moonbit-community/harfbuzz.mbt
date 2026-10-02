@@ -139,11 +139,11 @@ pub fn Sfnt::parse_at(blob : @blob.Blob, base : Int) -> Result[Sfnt, SfntError] 
               (Err(err), _) => return Err(err)
               (_, Err(err)) => return Err(err)
               (Ok(table_offset), Ok(length)) =>
-                records.push({ tag, offset: base + table_offset, length })
+                records.push({ tag, offset: base + table_offset, length, })
             }
             offset = offset + 16
           }
-          Ok({ blob, records })
+          Ok({ blob, records, })
         }
       }
     }

@@ -39,7 +39,7 @@ pub fn CvarTable::parse(
         Err(err) => return Err(err)
         Ok(value) => value
       }
-      Ok({ version: value.reinterpret_as_int(), tuple_data })
+      Ok({ version: value.reinterpret_as_int(), tuple_data, })
     }
   }
 }

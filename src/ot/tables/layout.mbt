@@ -406,7 +406,7 @@ pub fn LayoutTable::parse(
         lookup_list_offset: lookup_offset,
         feature_variations_offset,
       }
-      Ok({ data, header, script_list, feature_list, lookup_list })
+      Ok({ data, header, script_list, feature_list, lookup_list, })
     }
   }
 }
@@ -445,7 +445,7 @@ fn parse_script_list(
             if abs_offset < 0 || abs_offset >= data.length() {
               return Err(UnexpectedEof)
             }
-            records.push({ tag, offset: abs_offset })
+            records.push({ tag, offset: abs_offset, })
           }
         }
       }
@@ -488,7 +488,7 @@ fn parse_feature_list(
             if abs_offset < 0 || abs_offset >= data.length() {
               return Err(UnexpectedEof)
             }
-            records.push({ tag, offset: abs_offset })
+            records.push({ tag, offset: abs_offset, })
           }
         }
       }

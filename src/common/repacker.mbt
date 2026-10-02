@@ -61,7 +61,7 @@ fn collect_order_edges(
       if target < 0 || target >= count {
         return Err(InvalidLink)
       }
-      edges[i].push({ target, width: 0 })
+      edges[i].push({ target, width: 0, })
       indegree[target] = indegree[target] + 1
     }
     for link in obj.real_links {
@@ -69,7 +69,7 @@ fn collect_order_edges(
         return Err(InvalidLink)
       }
       if link.width == 0 {
-        edges[i].push({ target: link.objidx, width: 0 })
+        edges[i].push({ target: link.objidx, width: 0, })
         indegree[link.objidx] = indegree[link.objidx] + 1
         continue
       }
@@ -79,7 +79,7 @@ fn collect_order_edges(
       if link.whence == Absolute {
         continue
       }
-      edges[i].push({ target: link.objidx, width: link.width })
+      edges[i].push({ target: link.objidx, width: link.width, })
       indegree[link.objidx] = indegree[link.objidx] + 1
     }
   }

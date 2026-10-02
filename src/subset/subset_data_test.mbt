@@ -95,7 +95,7 @@ fn parse_suite(definition : String) -> ParsedSuite {
       Unknown => continue
     }
   }
-  { fonts, profiles, subsets, instances, options, iup_options }
+  { fonts, profiles, subsets, instances, options, iup_options, }
 }
 
 ///|

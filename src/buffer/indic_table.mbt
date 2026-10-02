@@ -173,22 +173,22 @@ priv struct IndicRange {
 
 ///|
 let indic_ranges : Array[IndicRange] = [
-  { start: 0x0028U, end: 0x003FU, offset: 0 },
-  { start: 0x00B0U, end: 0x00D7U, offset: 24 },
-  { start: 0x0900U, end: 0x0D7FU, offset: 64 },
-  { start: 0x1000U, end: 0x109FU, offset: 1216 },
-  { start: 0x1780U, end: 0x17EFU, offset: 1376 },
-  { start: 0x1CD0U, end: 0x1CFFU, offset: 1488 },
-  { start: 0x2008U, end: 0x2027U, offset: 1536 },
-  { start: 0x2070U, end: 0x2087U, offset: 1568 },
-  { start: 0x25F8U, end: 0x25FFU, offset: 1592 },
-  { start: 0xA8E0U, end: 0xA8FFU, offset: 1600 },
-  { start: 0xA9E0U, end: 0xA9FFU, offset: 1632 },
-  { start: 0xAA60U, end: 0xAA7FU, offset: 1664 },
-  { start: 0xFE00U, end: 0xFE0FU, offset: 1696 },
-  { start: 0x11300U, end: 0x11307U, offset: 1712 },
-  { start: 0x11338U, end: 0x1133FU, offset: 1720 },
-  { start: 0x116D0U, end: 0x116E7U, offset: 1728 },
+  { start: 0x0028U, end: 0x003FU, offset: 0, },
+  { start: 0x00B0U, end: 0x00D7U, offset: 24, },
+  { start: 0x0900U, end: 0x0D7FU, offset: 64, },
+  { start: 0x1000U, end: 0x109FU, offset: 1216, },
+  { start: 0x1780U, end: 0x17EFU, offset: 1376, },
+  { start: 0x1CD0U, end: 0x1CFFU, offset: 1488, },
+  { start: 0x2008U, end: 0x2027U, offset: 1536, },
+  { start: 0x2070U, end: 0x2087U, offset: 1568, },
+  { start: 0x25F8U, end: 0x25FFU, offset: 1592, },
+  { start: 0xA8E0U, end: 0xA8FFU, offset: 1600, },
+  { start: 0xA9E0U, end: 0xA9FFU, offset: 1632, },
+  { start: 0xAA60U, end: 0xAA7FU, offset: 1664, },
+  { start: 0xFE00U, end: 0xFE0FU, offset: 1696, },
+  { start: 0x11300U, end: 0x11307U, offset: 1712, },
+  { start: 0x11338U, end: 0x1133FU, offset: 1720, },
+  { start: 0x116D0U, end: 0x116E7U, offset: 1728, },
 ]
 
 ///|

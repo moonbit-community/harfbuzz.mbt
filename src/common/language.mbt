@@ -20,7 +20,7 @@ pub struct Language {
 
 ///|
 /// Invalid language value.
-pub let language_invalid : Language = { tag: "" }
+pub let language_invalid : Language = { tag: "", }
 
 ///|
 /// Canonicalize an ASCII language tag.

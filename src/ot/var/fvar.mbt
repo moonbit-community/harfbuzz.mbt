@@ -238,7 +238,7 @@ pub fn FvarTable::parse(data : BytesView) -> Result[FvarTable, VarError] {
         }
         instance_offset = instance_offset + instance_size
       }
-      Ok({ axes, instances })
+      Ok({ axes, instances, })
     }
   }
 }
