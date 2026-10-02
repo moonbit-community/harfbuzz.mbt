@@ -22,6 +22,12 @@ pub struct CmapTable {
 } derive(Debug, ToJson)
 
 ///|
+pub extend CmapTable with @debug.Debug::{to_repr}
+
+///|
+pub extend CmapTable with ToJson::{to_json}
+
+///|
 /// Parse a cmap table from its blob.
 pub fn CmapTable::parse(blob : @blob.Blob) -> Result[CmapTable, SfntError] {
   let data = blob.as_view()

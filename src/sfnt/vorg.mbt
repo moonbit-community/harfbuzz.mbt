@@ -20,6 +20,15 @@ pub struct VorgMetric {
 } derive(Eq, Debug, ToJson)
 
 ///|
+pub extend VorgMetric with Eq::{not_equal, equal}
+
+///|
+pub extend VorgMetric with @debug.Debug::{to_repr}
+
+///|
+pub extend VorgMetric with ToJson::{to_json}
+
+///|
 /// Parsed VORG table.
 pub struct VorgTable {
   major_version : Int
@@ -27,6 +36,12 @@ pub struct VorgTable {
   default_origin_y : Int
   metrics : Array[VorgMetric]
 } derive(Debug, ToJson)
+
+///|
+pub extend VorgTable with @debug.Debug::{to_repr}
+
+///|
+pub extend VorgTable with ToJson::{to_json}
 
 ///|
 /// Parse VORG table bytes.

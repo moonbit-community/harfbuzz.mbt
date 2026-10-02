@@ -47,7 +47,7 @@ fn build_avar_bytes() -> Bytes {
 
 ///|
 test "fvar parse and normalize" {
-  let fvar = match FvarTable::parse(build_fvar_bytes()) {
+  let fvar = match @var.FvarTable::parse(build_fvar_bytes()) {
     Err(err) => fail("parse failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -63,7 +63,7 @@ test "fvar parse and normalize" {
 
 ///|
 test "avar map coords" {
-  let avar = match AvarTable::parse(build_avar_bytes()) {
+  let avar = match @var.AvarTable::parse(build_avar_bytes()) {
     Err(err) => fail("parse failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }

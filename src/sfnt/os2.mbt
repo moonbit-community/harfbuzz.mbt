@@ -36,6 +36,12 @@ pub struct Os2Table {
 } derive(Debug, ToJson)
 
 ///|
+pub extend Os2Table with @debug.Debug::{to_repr}
+
+///|
+pub extend Os2Table with ToJson::{to_json}
+
+///|
 fn os2_required_len(version : Int) -> Int {
   if version < 0 {
     return 0

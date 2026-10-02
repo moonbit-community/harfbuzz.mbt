@@ -19,14 +19,41 @@ pub struct AvarMapping {
 } derive(Eq, Debug, ToJson)
 
 ///|
+pub extend AvarMapping with Eq::{not_equal, equal}
+
+///|
+pub extend AvarMapping with @debug.Debug::{to_repr}
+
+///|
+pub extend AvarMapping with ToJson::{to_json}
+
+///|
 pub struct AvarSegmentMap {
   mappings : Array[AvarMapping]
 } derive(Eq, Debug, ToJson)
 
 ///|
+pub extend AvarSegmentMap with Eq::{not_equal, equal}
+
+///|
+pub extend AvarSegmentMap with @debug.Debug::{to_repr}
+
+///|
+pub extend AvarSegmentMap with ToJson::{to_json}
+
+///|
 pub struct AvarTable {
   axes : Array[AvarSegmentMap]
 } derive(Eq, Debug, ToJson)
+
+///|
+pub extend AvarTable with Eq::{not_equal, equal}
+
+///|
+pub extend AvarTable with @debug.Debug::{to_repr}
+
+///|
+pub extend AvarTable with ToJson::{to_json}
 
 ///|
 pub fn AvarTable::axis_count(self : AvarTable) -> Int {

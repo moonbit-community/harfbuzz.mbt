@@ -216,7 +216,7 @@ fn subset_codepoints(spec : String) -> Array[UInt]? {
 
 ///|
 fn codepoints_hex(codepoints : Array[UInt]) -> String {
-  let sb = StringBuilder::new()
+  let sb = StringBuilder()
   for i in 0..<codepoints.length() {
     if i > 0 {
       sb.write_char(',')
@@ -247,7 +247,7 @@ fn instance_suffix(instance : String, iup_optimize : Bool) -> String {
   }
   let replaced = instance.replace_all(old=":", new="-")
   let mut count = 0
-  let sb = StringBuilder::new()
+  let sb = StringBuilder()
   sb.write_char('.')
   for part_view in replaced.split(",") {
     if count >= 6 {
@@ -302,7 +302,7 @@ fn read_tag_dbg(data : BytesView, offset : Int) -> String? {
   if offset < 0 || offset + 4 > data.length() {
     return None
   }
-  let sb = StringBuilder::new()
+  let sb = StringBuilder()
   for i in 0..<4 {
     sb.write_char(data[offset + i].to_int().unsafe_to_char())
   }
@@ -635,7 +635,7 @@ fn cmap_records(data : Bytes) -> Array[(Int, Int, Int, Bytes)] {
 
 ///|
 fn cmap_diff_records(expected : Bytes, actual : Bytes) -> String {
-  let actual_map : Map[String, Bytes] = {}
+  let actual_map : Map[String, Bytes] = Map([])
   for entry in cmap_records(actual) {
     let (platform, encoding, format, bytes) = entry
     let key = "\{platform}/\{encoding}:\{format}"
@@ -815,7 +815,7 @@ fn dump_dir_offset_diff(expected : Bytes, actual : Bytes) -> Unit {
 
 ///|
 fn dump_tag_diff(expected : Bytes, actual : Bytes) -> Unit {
-  let exp_tags : Map[String, Bool] = {}
+  let exp_tags : Map[String, Bool] = Map([])
   let exp_count = read_u16_dbg(expected[:], 4)
   match exp_count {
     None => ()
@@ -852,7 +852,7 @@ test "subset data fixtures" {
   let mut ran = 0
   let mut skipped = 0
   let mut mismatched = 0
-  for suite in subset_data_suites {
+  for suite in @subset.subset_data_suites {
     let parsed = parse_suite(suite.definition)
     let cases = build_cases(suite.name, parsed)
     for case in cases {
@@ -869,7 +869,7 @@ test "subset data fixtures" {
         Some(value) => value
       }
       let key = expected_key(case, codepoints)
-      let expected = subset_data_expected_bytes(key)
+      let expected = @subset.subset_data_expected_bytes(key)
       let expected = match expected {
         None => {
           skipped = skipped + 1
@@ -877,7 +877,7 @@ test "subset data fixtures" {
         }
         Some(value) => value
       }
-      let font_bytes = subset_data_font_bytes(case.font)
+      let font_bytes = @subset.subset_data_font_bytes(case.font)
       let font_bytes = match font_bytes {
         None => {
           skipped = skipped + 1
@@ -952,6 +952,6 @@ test "subset data fixtures" {
       ran = ran + 1
     }
   }
-  let expected = "(\{subset_data_case_count}, 0, 0)"
+  let expected = "(\{@subset.subset_data_case_count}, 0, 0)"
   @debug.debug_inspect((ran, skipped, mismatched), content=expected)
 }

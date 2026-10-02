@@ -556,6 +556,15 @@ pub enum SpaceFallbackType {
 } derive(Eq, Debug, ToJson)
 
 ///|
+pub extend SpaceFallbackType with Eq::{not_equal, equal}
+
+///|
+pub extend SpaceFallbackType with @debug.Debug::{to_repr}
+
+///|
+pub extend SpaceFallbackType with ToJson::{to_json}
+
+///|
 /// Return space fallback type for a codepoint (subset of Zs, excluding OGHAM SPACE MARK).
 pub fn space_fallback_type(u : UInt) -> SpaceFallbackType {
   match u {

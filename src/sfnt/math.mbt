@@ -20,6 +20,15 @@ pub struct MathValueRecord {
 } derive(Eq, Debug, ToJson)
 
 ///|
+pub extend MathValueRecord with Eq::{not_equal, equal}
+
+///|
+pub extend MathValueRecord with @debug.Debug::{to_repr}
+
+///|
+pub extend MathValueRecord with ToJson::{to_json}
+
+///|
 /// Math constants table.
 pub struct MathConstants {
   percent_scale_down : Array[Int]
@@ -29,11 +38,23 @@ pub struct MathConstants {
 } derive(Debug, ToJson)
 
 ///|
+pub extend MathConstants with @debug.Debug::{to_repr}
+
+///|
+pub extend MathConstants with ToJson::{to_json}
+
+///|
 /// Italics correction info.
 pub struct MathItalicsCorrectionInfo {
   coverage_offset : Int
   records : Array[MathValueRecord]
 } derive(Debug, ToJson)
+
+///|
+pub extend MathItalicsCorrectionInfo with @debug.Debug::{to_repr}
+
+///|
+pub extend MathItalicsCorrectionInfo with ToJson::{to_json}
 
 ///|
 /// Top accent attachment info.
@@ -43,11 +64,23 @@ pub struct MathTopAccentAttachment {
 } derive(Debug, ToJson)
 
 ///|
+pub extend MathTopAccentAttachment with @debug.Debug::{to_repr}
+
+///|
+pub extend MathTopAccentAttachment with ToJson::{to_json}
+
+///|
 /// Math kern table.
 pub struct MathKern {
   height_count : Int
   records : Array[MathValueRecord]
 } derive(Debug, ToJson)
+
+///|
+pub extend MathKern with @debug.Debug::{to_repr}
+
+///|
+pub extend MathKern with ToJson::{to_json}
 
 ///|
 /// Math kern info record (four corners).
@@ -56,11 +89,23 @@ pub struct MathKernInfoRecord {
 } derive(Debug, ToJson)
 
 ///|
+pub extend MathKernInfoRecord with @debug.Debug::{to_repr}
+
+///|
+pub extend MathKernInfoRecord with ToJson::{to_json}
+
+///|
 /// Math kern info table.
 pub struct MathKernInfo {
   coverage_offset : Int
   records : Array[MathKernInfoRecord]
 } derive(Debug, ToJson)
+
+///|
+pub extend MathKernInfo with @debug.Debug::{to_repr}
+
+///|
+pub extend MathKernInfo with ToJson::{to_json}
 
 ///|
 /// Math glyph info table.
@@ -72,11 +117,23 @@ pub struct MathGlyphInfo {
 } derive(Debug, ToJson)
 
 ///|
+pub extend MathGlyphInfo with @debug.Debug::{to_repr}
+
+///|
+pub extend MathGlyphInfo with ToJson::{to_json}
+
+///|
 /// Math glyph variant record.
 pub struct MathGlyphVariantRecord {
   variant_glyph : Int
   advance : Int
 } derive(Debug, ToJson)
+
+///|
+pub extend MathGlyphVariantRecord with @debug.Debug::{to_repr}
+
+///|
+pub extend MathGlyphVariantRecord with ToJson::{to_json}
 
 ///|
 /// Math glyph part record.
@@ -89,6 +146,12 @@ pub struct MathGlyphPartRecord {
 } derive(Debug, ToJson)
 
 ///|
+pub extend MathGlyphPartRecord with @debug.Debug::{to_repr}
+
+///|
+pub extend MathGlyphPartRecord with ToJson::{to_json}
+
+///|
 /// Math glyph assembly table.
 pub struct MathGlyphAssembly {
   italics_correction : MathValueRecord
@@ -96,11 +159,23 @@ pub struct MathGlyphAssembly {
 } derive(Debug, ToJson)
 
 ///|
+pub extend MathGlyphAssembly with @debug.Debug::{to_repr}
+
+///|
+pub extend MathGlyphAssembly with ToJson::{to_json}
+
+///|
 /// Math glyph construction table.
 pub struct MathGlyphConstruction {
   glyph_assembly : MathGlyphAssembly?
   variants : Array[MathGlyphVariantRecord]
 } derive(Debug, ToJson)
+
+///|
+pub extend MathGlyphConstruction with @debug.Debug::{to_repr}
+
+///|
+pub extend MathGlyphConstruction with ToJson::{to_json}
 
 ///|
 /// Math variants table.
@@ -114,6 +189,12 @@ pub struct MathVariants {
 } derive(Debug, ToJson)
 
 ///|
+pub extend MathVariants with @debug.Debug::{to_repr}
+
+///|
+pub extend MathVariants with ToJson::{to_json}
+
+///|
 /// Parsed MATH table.
 pub struct MathTable {
   major_version : Int
@@ -122,6 +203,12 @@ pub struct MathTable {
   glyph_info : MathGlyphInfo?
   variants : MathVariants?
 } derive(Debug, ToJson)
+
+///|
+pub extend MathTable with @debug.Debug::{to_repr}
+
+///|
+pub extend MathTable with ToJson::{to_json}
 
 ///|
 fn read_math_value_record(

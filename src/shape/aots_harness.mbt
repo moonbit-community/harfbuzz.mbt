@@ -21,3 +21,9 @@ pub struct AotsTestCase {
   no_positions : Bool
   no_advances : Bool
 } derive(Debug, ToJson)
+
+///|
+pub extend AotsTestCase with @debug.Debug::{to_repr}
+
+///|
+pub extend AotsTestCase with ToJson::{to_json}

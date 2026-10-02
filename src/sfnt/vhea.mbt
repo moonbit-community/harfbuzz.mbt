@@ -19,6 +19,15 @@ pub struct VheaTable {
 } derive(Eq, Debug, ToJson)
 
 ///|
+pub extend VheaTable with Eq::{not_equal, equal}
+
+///|
+pub extend VheaTable with @debug.Debug::{to_repr}
+
+///|
+pub extend VheaTable with ToJson::{to_json}
+
+///|
 /// Parse vhea table bytes.
 pub fn VheaTable::parse(data : BytesView) -> Result[VheaTable, SfntError] {
   match read_u16_int(data, 34) {

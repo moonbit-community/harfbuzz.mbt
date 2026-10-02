@@ -25,6 +25,15 @@ suberror FontError {
 } derive(Eq, Debug, ToJson)
 
 ///|
+pub extend FontError with Eq::{not_equal, equal}
+
+///|
+pub extend FontError with @debug.Debug::{to_repr}
+
+///|
+pub extend FontError with ToJson::{to_json}
+
+///|
 /// Font ties a face to scale metrics.
 pub struct Font {
   face : @face.Face
@@ -82,6 +91,12 @@ pub struct Font {
   mut var_coords_design : Array[Double]?
   mut var_coords_norm : Array[Int]?
 } derive(Debug, ToJson)
+
+///|
+pub extend Font with @debug.Debug::{to_repr}
+
+///|
+pub extend Font with ToJson::{to_json}
 
 ///|
 let tag_head : @common.Tag = @common.Tag::from_chars('h', 'e', 'a', 'd')

@@ -19,6 +19,15 @@ pub suberror CffError {
 } derive(Eq, Debug, ToJson)
 
 ///|
+pub extend CffError with Eq::{not_equal, equal}
+
+///|
+pub extend CffError with @debug.Debug::{to_repr}
+
+///|
+pub extend CffError with ToJson::{to_json}
+
+///|
 fn read_u8_int(data : BytesView, offset : Int) -> Result[Int, CffError] {
   if offset < 0 || offset + 1 > data.length() {
     return Err(UnexpectedEof)

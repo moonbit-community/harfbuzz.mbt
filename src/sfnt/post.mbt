@@ -29,6 +29,12 @@ pub struct PostTable {
 } derive(Debug, ToJson)
 
 ///|
+pub extend PostTable with @debug.Debug::{to_repr}
+
+///|
+pub extend PostTable with ToJson::{to_json}
+
+///|
 fn read_i32(data : BytesView, offset : Int) -> Result[Int, SfntError] {
   match read_u32(data, offset) {
     Err(err) => Err(err)

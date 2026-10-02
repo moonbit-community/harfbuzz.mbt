@@ -34,3 +34,9 @@ pub(all) enum Paint {
   SkewAroundCenter(Int, Int, Int, Int, VarIdx?, Paint)
   Composite(Int, Paint, Paint)
 } derive(Debug, ToJson)
+
+///|
+pub extend Paint with @debug.Debug::{to_repr}
+
+///|
+pub extend Paint with ToJson::{to_json}

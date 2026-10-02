@@ -20,6 +20,15 @@ pub suberror ColorError {
 } derive(Eq, Debug, ToJson)
 
 ///|
+pub extend ColorError with Eq::{not_equal, equal}
+
+///|
+pub extend ColorError with @debug.Debug::{to_repr}
+
+///|
+pub extend ColorError with ToJson::{to_json}
+
+///|
 fn read_u8_int(data : BytesView, offset : Int) -> Result[Int, ColorError] {
   if offset < 0 || offset + 1 > data.length() {
     return Err(UnexpectedEof)

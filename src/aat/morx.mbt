@@ -35,6 +35,15 @@ pub(all) struct NoncontextualSubtable {
 } derive(Eq, Debug, ToJson)
 
 ///|
+pub extend NoncontextualSubtable with Eq::{not_equal, equal}
+
+///|
+pub extend NoncontextualSubtable with @debug.Debug::{to_repr}
+
+///|
+pub extend NoncontextualSubtable with ToJson::{to_json}
+
+///|
 pub(all) struct StateEntry {
   new_state : Int
   flags : Int
@@ -43,10 +52,28 @@ pub(all) struct StateEntry {
 } derive(Eq, Debug, ToJson)
 
 ///|
+pub extend StateEntry with Eq::{not_equal, equal}
+
+///|
+pub extend StateEntry with @debug.Debug::{to_repr}
+
+///|
+pub extend StateEntry with ToJson::{to_json}
+
+///|
 pub(all) enum ClassTable {
   Lookup(LookupTable)
   Array(UInt, Array[Int])
 } derive(Eq, Debug, ToJson)
+
+///|
+pub extend ClassTable with Eq::{not_equal, equal}
+
+///|
+pub extend ClassTable with @debug.Debug::{to_repr}
+
+///|
+pub extend ClassTable with ToJson::{to_json}
 
 ///|
 pub(all) struct StateTable {
@@ -59,11 +86,29 @@ pub(all) struct StateTable {
 } derive(Eq, Debug, ToJson)
 
 ///|
+pub extend StateTable with Eq::{not_equal, equal}
+
+///|
+pub extend StateTable with @debug.Debug::{to_repr}
+
+///|
+pub extend StateTable with ToJson::{to_json}
+
+///|
 pub(all) struct RearrangementSubtable {
   coverage_flags : Int
   sub_feature_flags : UInt
   table : StateTable
 } derive(Eq, Debug, ToJson)
+
+///|
+pub extend RearrangementSubtable with Eq::{not_equal, equal}
+
+///|
+pub extend RearrangementSubtable with @debug.Debug::{to_repr}
+
+///|
+pub extend RearrangementSubtable with ToJson::{to_json}
 
 ///|
 pub(all) enum ContextualSubstitutions {
@@ -72,12 +117,30 @@ pub(all) enum ContextualSubstitutions {
 } derive(Eq, Debug, ToJson)
 
 ///|
+pub extend ContextualSubstitutions with Eq::{not_equal, equal}
+
+///|
+pub extend ContextualSubstitutions with @debug.Debug::{to_repr}
+
+///|
+pub extend ContextualSubstitutions with ToJson::{to_json}
+
+///|
 pub(all) struct ContextualSubtable {
   coverage_flags : Int
   sub_feature_flags : UInt
   table : StateTable
   substitutions : ContextualSubstitutions
 } derive(Eq, Debug, ToJson)
+
+///|
+pub extend ContextualSubtable with Eq::{not_equal, equal}
+
+///|
+pub extend ContextualSubtable with @debug.Debug::{to_repr}
+
+///|
+pub extend ContextualSubtable with ToJson::{to_json}
 
 ///|
 pub(all) struct LigatureSubtable {
@@ -93,12 +156,30 @@ pub(all) struct LigatureSubtable {
 } derive(Eq, Debug, ToJson)
 
 ///|
+pub extend LigatureSubtable with Eq::{not_equal, equal}
+
+///|
+pub extend LigatureSubtable with @debug.Debug::{to_repr}
+
+///|
+pub extend LigatureSubtable with ToJson::{to_json}
+
+///|
 pub(all) struct InsertionSubtable {
   coverage_flags : Int
   sub_feature_flags : UInt
   table : StateTable
   insertion_action : Array[UInt]
 } derive(Eq, Debug, ToJson)
+
+///|
+pub extend InsertionSubtable with Eq::{not_equal, equal}
+
+///|
+pub extend InsertionSubtable with @debug.Debug::{to_repr}
+
+///|
+pub extend InsertionSubtable with ToJson::{to_json}
 
 ///|
 pub(all) enum MorxSubtable {
@@ -110,16 +191,43 @@ pub(all) enum MorxSubtable {
 } derive(Eq, Debug, ToJson)
 
 ///|
+pub extend MorxSubtable with Eq::{not_equal, equal}
+
+///|
+pub extend MorxSubtable with @debug.Debug::{to_repr}
+
+///|
+pub extend MorxSubtable with ToJson::{to_json}
+
+///|
 pub struct MorxTable {
   version : Int
   subtables : Array[MorxSubtable]
 } derive(Eq, Debug, ToJson)
 
 ///|
+pub extend MorxTable with Eq::{not_equal, equal}
+
+///|
+pub extend MorxTable with @debug.Debug::{to_repr}
+
+///|
+pub extend MorxTable with ToJson::{to_json}
+
+///|
 pub struct MortTable {
   version : Int
   subtables : Array[MorxSubtable]
 } derive(Eq, Debug, ToJson)
+
+///|
+pub extend MortTable with Eq::{not_equal, equal}
+
+///|
+pub extend MortTable with @debug.Debug::{to_repr}
+
+///|
+pub extend MortTable with ToJson::{to_json}
 
 ///|
 fn coverage_flags_from(coverage : UInt, extended : Bool) -> Int {

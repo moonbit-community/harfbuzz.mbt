@@ -20,6 +20,15 @@ pub suberror SfntError {
 } derive(Eq, Debug, ToJson)
 
 ///|
+pub extend SfntError with Eq::{not_equal, equal}
+
+///|
+pub extend SfntError with @debug.Debug::{to_repr}
+
+///|
+pub extend SfntError with ToJson::{to_json}
+
+///|
 /// Table directory entry.
 pub struct TableRecord {
   tag : @common.Tag
@@ -28,11 +37,26 @@ pub struct TableRecord {
 } derive(Eq, Debug, ToJson)
 
 ///|
+pub extend TableRecord with Eq::{not_equal, equal}
+
+///|
+pub extend TableRecord with @debug.Debug::{to_repr}
+
+///|
+pub extend TableRecord with ToJson::{to_json}
+
+///|
 /// SFNT font directory.
 pub struct Sfnt {
   blob : @blob.Blob
   records : Array[TableRecord]
 } derive(Debug, ToJson)
+
+///|
+pub extend Sfnt with @debug.Debug::{to_repr}
+
+///|
+pub extend Sfnt with ToJson::{to_json}
 
 ///|
 fn read_u16(data : BytesView, offset : Int) -> Result[UInt, SfntError] {

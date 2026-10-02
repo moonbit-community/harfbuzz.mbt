@@ -62,12 +62,12 @@ fn parse_color_line(
   offset : Int,
   has_var : Bool,
 ) -> Result[@paint.ColorLine, ColorError] {
-  let extend = read_u8_int(data, offset)
+  let extend_mode = read_u8_int(data, offset)
   let count = read_u16_int(data, offset + 1)
-  match (extend, count) {
+  match (extend_mode, count) {
     (Err(err), _) => Err(err)
     (_, Err(err)) => Err(err)
-    (Ok(extend), Ok(count)) => {
+    (Ok(extend_mode), Ok(count)) => {
       if count < 0 {
         return Err(InvalidFormat)
       }
@@ -84,7 +84,7 @@ fn parse_color_line(
           Ok(value) => stops.push(value)
         }
       }
-      Ok({ extend, stops, })
+      Ok({ extend_mode, stops, })
     }
   }
 }

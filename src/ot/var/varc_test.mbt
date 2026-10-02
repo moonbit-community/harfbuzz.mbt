@@ -100,7 +100,7 @@ fn build_varc_bytes_with_glyph_record() -> Bytes {
 
 ///|
 test "varc parse" {
-  let varc = match VarcTable::parse(build_varc_bytes()[:]) {
+  let varc = match @var.VarcTable::parse(build_varc_bytes()[:]) {
     Err(err) => fail("parse failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -112,7 +112,7 @@ test "varc parse" {
 
 ///|
 test "varc axis indices list" {
-  let varc = match VarcTable::parse(build_varc_bytes()[:]) {
+  let varc = match @var.VarcTable::parse(build_varc_bytes()[:]) {
     Err(err) => fail("parse failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -125,7 +125,7 @@ test "varc axis indices list" {
 
 ///|
 test "varc condition list" {
-  let varc = match VarcTable::parse(build_varc_bytes_with_condition()[:]) {
+  let varc = match @var.VarcTable::parse(build_varc_bytes_with_condition()[:]) {
     Err(err) => fail("parse failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -141,7 +141,8 @@ test "varc condition list" {
 
 ///|
 test "varc glyph record" {
-  let varc = match VarcTable::parse(build_varc_bytes_with_glyph_record()[:]) {
+  let varc = match
+    @var.VarcTable::parse(build_varc_bytes_with_glyph_record()[:]) {
     Err(err) => fail("parse failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }

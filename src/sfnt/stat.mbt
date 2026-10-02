@@ -21,11 +21,29 @@ pub struct StatAxisRecord {
 } derive(Eq, Debug, ToJson)
 
 ///|
+pub extend StatAxisRecord with Eq::{not_equal, equal}
+
+///|
+pub extend StatAxisRecord with @debug.Debug::{to_repr}
+
+///|
+pub extend StatAxisRecord with ToJson::{to_json}
+
+///|
 /// Axis value record used by format 4.
 pub struct AxisValueRecord {
   axis_index : Int
   value : Int
 } derive(Eq, Debug, ToJson)
+
+///|
+pub extend AxisValueRecord with Eq::{not_equal, equal}
+
+///|
+pub extend AxisValueRecord with @debug.Debug::{to_repr}
+
+///|
+pub extend AxisValueRecord with ToJson::{to_json}
 
 ///|
 /// Axis value table formats.
@@ -37,6 +55,12 @@ pub enum AxisValue {
 } derive(Debug, ToJson)
 
 ///|
+pub extend AxisValue with @debug.Debug::{to_repr}
+
+///|
+pub extend AxisValue with ToJson::{to_json}
+
+///|
 /// Parsed STAT table.
 pub struct StatTable {
   version : Int
@@ -45,6 +69,12 @@ pub struct StatTable {
   axis_values : Array[AxisValue]
   elided_fallback_name_id : Int
 } derive(Debug, ToJson)
+
+///|
+pub extend StatTable with @debug.Debug::{to_repr}
+
+///|
+pub extend StatTable with ToJson::{to_json}
 
 ///|
 fn read_fixed_16_16(data : BytesView, offset : Int) -> Result[Int, SfntError] {

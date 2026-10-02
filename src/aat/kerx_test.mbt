@@ -270,7 +270,7 @@ fn build_ankr_for_kerx() -> Bytes {
 ///|
 test "aat kerx format0" {
   let data = build_kerx_format0()
-  let kerx = match KerxTable::parse(data[:], 10) {
+  let kerx = match @aat.KerxTable::parse(data[:], 10) {
     Err(err) => fail("kerx parse failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -282,7 +282,7 @@ test "aat kerx format0" {
 ///|
 test "aat kerx format1" {
   let data = build_kerx_format1()
-  let kerx = match KerxTable::parse(data[:], 10) {
+  let kerx = match @aat.KerxTable::parse(data[:], 10) {
     Err(err) => fail("kerx parse failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -296,11 +296,11 @@ test "aat kerx format1" {
 ///|
 test "aat kerx format4 anchor" {
   let data = build_kerx_format4()
-  let kerx = match KerxTable::parse(data[:], 10) {
+  let kerx = match @aat.KerxTable::parse(data[:], 10) {
     Err(err) => fail("kerx parse failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  let ankr = match AnkrTable::parse(build_ankr_for_kerx()[:], 10) {
+  let ankr = match @aat.AnkrTable::parse(build_ankr_for_kerx()[:], 10) {
     Err(err) => fail("ankr parse failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -313,7 +313,7 @@ test "aat kerx format4 anchor" {
 ///|
 test "aat kerx format4 control points" {
   let data = build_kerx_format4_control_points()
-  let kerx = match KerxTable::parse(data[:], 10) {
+  let kerx = match @aat.KerxTable::parse(data[:], 10) {
     Err(err) => fail("kerx parse failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -343,7 +343,7 @@ test "aat kerx format4 control points" {
 ///|
 test "aat kerx format6 long values" {
   let data = build_kerx_format6_long()
-  let kerx = match KerxTable::parse(data[:], 3) {
+  let kerx = match @aat.KerxTable::parse(data[:], 3) {
     Err(err) => fail("kerx parse failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }

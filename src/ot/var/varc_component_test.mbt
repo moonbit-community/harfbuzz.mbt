@@ -140,7 +140,7 @@ fn build_varc_component_table() -> Bytes {
 
 ///|
 test "varc component parse" {
-  let varc = match VarcTable::parse(build_varc_component_table()[:]) {
+  let varc = match @var.VarcTable::parse(build_varc_component_table()[:]) {
     Err(err) => fail("parse failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }

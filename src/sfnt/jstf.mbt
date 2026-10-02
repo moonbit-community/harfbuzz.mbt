@@ -19,10 +19,22 @@ pub struct JstfModList {
 } derive(Debug, ToJson)
 
 ///|
+pub extend JstfModList with @debug.Debug::{to_repr}
+
+///|
+pub extend JstfModList with ToJson::{to_json}
+
+///|
 /// Justification max table (offsets to GPOS lookups).
 pub struct JstfMax {
   lookup_offsets : Array[Int]
 } derive(Debug, ToJson)
+
+///|
+pub extend JstfMax with @debug.Debug::{to_repr}
+
+///|
+pub extend JstfMax with ToJson::{to_json}
 
 ///|
 /// Justification priority table.
@@ -40,10 +52,22 @@ pub struct JstfPriority {
 } derive(Debug, ToJson)
 
 ///|
+pub extend JstfPriority with @debug.Debug::{to_repr}
+
+///|
+pub extend JstfPriority with ToJson::{to_json}
+
+///|
 /// Justification language system table.
 pub struct JstfLangSys {
   priorities : Array[JstfPriority?]
 } derive(Debug, ToJson)
+
+///|
+pub extend JstfLangSys with @debug.Debug::{to_repr}
+
+///|
+pub extend JstfLangSys with ToJson::{to_json}
 
 ///|
 /// Justification language system record.
@@ -51,6 +75,12 @@ pub struct JstfLangSysRecord {
   tag : @common.Tag
   lang_sys : JstfLangSys?
 } derive(Debug, ToJson)
+
+///|
+pub extend JstfLangSysRecord with @debug.Debug::{to_repr}
+
+///|
+pub extend JstfLangSysRecord with ToJson::{to_json}
 
 ///|
 /// Justification script table.
@@ -61,11 +91,23 @@ pub struct JstfScript {
 } derive(Debug, ToJson)
 
 ///|
+pub extend JstfScript with @debug.Debug::{to_repr}
+
+///|
+pub extend JstfScript with ToJson::{to_json}
+
+///|
 /// Justification script record.
 pub struct JstfScriptRecord {
   tag : @common.Tag
   script : JstfScript?
 } derive(Debug, ToJson)
+
+///|
+pub extend JstfScriptRecord with @debug.Debug::{to_repr}
+
+///|
+pub extend JstfScriptRecord with ToJson::{to_json}
 
 ///|
 /// Parsed JSTF table.
@@ -74,6 +116,12 @@ pub struct JstfTable {
   minor_version : Int
   scripts : Array[JstfScriptRecord]
 } derive(Debug, ToJson)
+
+///|
+pub extend JstfTable with @debug.Debug::{to_repr}
+
+///|
+pub extend JstfTable with ToJson::{to_json}
 
 ///|
 fn parse_jstf_mod_list(

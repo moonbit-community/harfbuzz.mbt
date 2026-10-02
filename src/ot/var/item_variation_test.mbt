@@ -54,7 +54,8 @@ fn build_item_variation_store() -> Bytes {
 
 ///|
 test "item variation store delta" {
-  let store = match ItemVariationStore::parse(build_item_variation_store()) {
+  let store = match
+    @var.ItemVariationStore::parse(build_item_variation_store()) {
     Err(err) => fail("parse failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }

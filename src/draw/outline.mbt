@@ -22,12 +22,30 @@ pub enum OutlinePointKind {
 } derive(Eq, Debug, ToJson)
 
 ///|
+pub extend OutlinePointKind with Eq::{not_equal, equal}
+
+///|
+pub extend OutlinePointKind with @debug.Debug::{to_repr}
+
+///|
+pub extend OutlinePointKind with ToJson::{to_json}
+
+///|
 /// Outline point with type.
 pub struct OutlinePoint {
   mut x : Double
   mut y : Double
   kind : OutlinePointKind
 } derive(Eq, Debug, ToJson)
+
+///|
+pub extend OutlinePoint with Eq::{not_equal, equal}
+
+///|
+pub extend OutlinePoint with @debug.Debug::{to_repr}
+
+///|
+pub extend OutlinePoint with ToJson::{to_json}
 
 ///|
 pub fn OutlinePoint::new(
@@ -60,6 +78,12 @@ pub struct Outline {
   points : Array[OutlinePoint]
   contours : Array[Int]
 } derive(Debug, ToJson)
+
+///|
+pub extend Outline with @debug.Debug::{to_repr}
+
+///|
+pub extend Outline with ToJson::{to_json}
 
 ///|
 pub fn Outline::new() -> Outline {

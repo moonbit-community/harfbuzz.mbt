@@ -21,6 +21,15 @@ pub struct CffIndex {
 } derive(Eq, Debug, ToJson)
 
 ///|
+pub extend CffIndex with Eq::{not_equal, equal}
+
+///|
+pub extend CffIndex with @debug.Debug::{to_repr}
+
+///|
+pub extend CffIndex with ToJson::{to_json}
+
+///|
 pub fn parse_cff1_index(
   data : BytesView,
   offset : Int,

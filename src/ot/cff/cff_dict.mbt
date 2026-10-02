@@ -19,15 +19,33 @@ pub enum CffNumber {
 } derive(Eq, Debug, ToJson)
 
 ///|
+pub extend CffNumber with Eq::{not_equal, equal}
+
+///|
+pub extend CffNumber with @debug.Debug::{to_repr}
+
+///|
+pub extend CffNumber with ToJson::{to_json}
+
+///|
 pub struct CffDict {
   entries : Map[Int, Array[CffNumber]]
 } derive(Eq, Debug, ToJson)
 
 ///|
+pub extend CffDict with Eq::{not_equal, equal}
+
+///|
+pub extend CffDict with @debug.Debug::{to_repr}
+
+///|
+pub extend CffDict with ToJson::{to_json}
+
+///|
 pub fn parse_cff_dict(data : BytesView) -> Result[CffDict, CffError] {
   let mut pos = 0
   let mut operands : Array[CffNumber] = []
-  let entries : Map[Int, Array[CffNumber]] = {}
+  let entries : Map[Int, Array[CffNumber]] = Map([])
   while pos < data.length() {
     let b0 = data[pos].to_int()
     if b0 == 12 {
@@ -66,7 +84,7 @@ pub fn CffDict::get_numbers(self : CffDict, op : Int) -> Array[CffNumber]? {
 
 ///|
 pub fn CffDict::entries_map(self : CffDict) -> Map[Int, Array[CffNumber]] {
-  let next : Map[Int, Array[CffNumber]] = {}
+  let next : Map[Int, Array[CffNumber]] = Map([])
   self.entries.eachi((_, key, value) => next[key] = value.copy())
   next
 }

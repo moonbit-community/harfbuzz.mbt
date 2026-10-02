@@ -20,10 +20,22 @@ pub(all) enum BufferSerializeFormat {
 } derive(Eq, Debug)
 
 ///|
+pub extend BufferSerializeFormat with Eq::{not_equal, equal}
+
+///|
+pub extend BufferSerializeFormat with @debug.Debug::{to_repr}
+
+///|
 pub(all) enum BufferSerializeMode {
   Glyphs
   Unicode
 } derive(Eq, Debug)
+
+///|
+pub extend BufferSerializeMode with Eq::{not_equal, equal}
+
+///|
+pub extend BufferSerializeMode with @debug.Debug::{to_repr}
 
 ///|
 pub fn BufferSerializeMode::from_string(
@@ -34,7 +46,7 @@ pub fn BufferSerializeMode::from_string(
     return Glyphs
   }
   let max_len = if len < 0 || len > s.length() { s.length() } else { len }
-  let sb = StringBuilder::new(size_hint=max_len)
+  let sb = StringBuilder(size_hint=max_len)
   let mut count = 0
   for c in s {
     if count >= max_len {
@@ -60,7 +72,7 @@ pub fn BufferSerializeFormat::from_string(
     return Invalid
   }
   let max_len = if len < 0 || len > s.length() { s.length() } else { len }
-  let sb = StringBuilder::new(size_hint=max_len)
+  let sb = StringBuilder(size_hint=max_len)
   let mut count = 0
   for c in s {
     if count >= max_len {
@@ -113,7 +125,7 @@ fn format_hex(value : UInt, min_width : Int) -> String {
     digits.push('0')
   }
   let len = digits.length()
-  let sb = StringBuilder::new(size_hint=len)
+  let sb = StringBuilder(size_hint=len)
   for i in 0..<len {
     let idx = len - 1 - i
     sb.write_char(digits[idx])
@@ -141,7 +153,7 @@ fn serialize_text(
   include_positions : Bool,
   include_advances : Bool,
 ) -> String {
-  let sb = StringBuilder::new()
+  let sb = StringBuilder()
   let mut x = 0
   let mut y = 0
   let open = if mode == Glyphs { '[' } else { '<' }
@@ -199,7 +211,7 @@ fn serialize_json(
   include_positions : Bool,
   include_advances : Bool,
 ) -> String {
-  let sb = StringBuilder::new()
+  let sb = StringBuilder()
   let mut x = 0
   let mut y = 0
   sb.write_char('[')

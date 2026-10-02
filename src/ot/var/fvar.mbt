@@ -23,6 +23,15 @@ pub struct AxisRecord {
 } derive(Eq, Debug, ToJson)
 
 ///|
+pub extend AxisRecord with Eq::{not_equal, equal}
+
+///|
+pub extend AxisRecord with @debug.Debug::{to_repr}
+
+///|
+pub extend AxisRecord with ToJson::{to_json}
+
+///|
 pub struct InstanceRecord {
   subfamily_name_id : Int
   flags : Int
@@ -31,10 +40,28 @@ pub struct InstanceRecord {
 } derive(Eq, Debug, ToJson)
 
 ///|
+pub extend InstanceRecord with Eq::{not_equal, equal}
+
+///|
+pub extend InstanceRecord with @debug.Debug::{to_repr}
+
+///|
+pub extend InstanceRecord with ToJson::{to_json}
+
+///|
 pub struct FvarTable {
   axes : Array[AxisRecord]
   instances : Array[InstanceRecord]
 } derive(Eq, Debug, ToJson)
+
+///|
+pub extend FvarTable with Eq::{not_equal, equal}
+
+///|
+pub extend FvarTable with @debug.Debug::{to_repr}
+
+///|
+pub extend FvarTable with ToJson::{to_json}
 
 ///|
 pub fn FvarTable::axes(self : FvarTable) -> ArrayView[AxisRecord] {

@@ -19,6 +19,12 @@ pub struct CvarTable {
 } derive(Debug, ToJson)
 
 ///|
+pub extend CvarTable with @debug.Debug::{to_repr}
+
+///|
+pub extend CvarTable with ToJson::{to_json}
+
+///|
 pub fn CvarTable::parse(
   data : BytesView,
   axis_count : Int,

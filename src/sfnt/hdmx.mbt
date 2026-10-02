@@ -21,11 +21,23 @@ pub struct HdmxRecord {
 } derive(Debug, ToJson)
 
 ///|
+pub extend HdmxRecord with @debug.Debug::{to_repr}
+
+///|
+pub extend HdmxRecord with ToJson::{to_json}
+
+///|
 /// Parsed hdmx table.
 pub struct HdmxTable {
   version : Int
   records : Array[HdmxRecord]
 } derive(Debug, ToJson)
+
+///|
+pub extend HdmxTable with @debug.Debug::{to_repr}
+
+///|
+pub extend HdmxTable with ToJson::{to_json}
 
 ///|
 /// Parse hdmx table bytes.

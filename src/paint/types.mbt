@@ -30,6 +30,15 @@ pub struct Color {
 } derive(Eq, Debug, ToJson)
 
 ///|
+pub extend Color with Eq::{not_equal, equal}
+
+///|
+pub extend Color with @debug.Debug::{to_repr}
+
+///|
+pub extend Color with ToJson::{to_json}
+
+///|
 /// Helper to build a color from BGRA bytes.
 pub fn Color::from_bgra(b : Int, g : Int, r : Int, a : Int) -> Color {
   { r, g, b, a, }
@@ -45,11 +54,30 @@ pub(all) struct ColorStop {
 } derive(Eq, Debug, ToJson)
 
 ///|
-/// Color line for gradients. Extend is raw enum value (0..2).
+pub extend ColorStop with Eq::{not_equal, equal}
+
+///|
+pub extend ColorStop with @debug.Debug::{to_repr}
+
+///|
+pub extend ColorStop with ToJson::{to_json}
+
+///|
+/// Color line for gradients. `extend_mode` is the raw `Extend` enum value
+/// (0..2). It was named `extend`, which is now a reserved word.
 pub(all) struct ColorLine {
-  extend : Int
+  extend_mode : Int
   stops : Array[ColorStop]
 } derive(Eq, Debug, ToJson)
+
+///|
+pub extend ColorLine with Eq::{not_equal, equal}
+
+///|
+pub extend ColorLine with @debug.Debug::{to_repr}
+
+///|
+pub extend ColorLine with ToJson::{to_json}
 
 ///|
 /// Affine transform (F16DOT16 values), with optional VarIdx base for variation.
@@ -62,3 +90,12 @@ pub(all) struct Affine2x3 {
   dy : Int
   var_idx_base : VarIdx?
 } derive(Eq, Debug, ToJson)
+
+///|
+pub extend Affine2x3 with Eq::{not_equal, equal}
+
+///|
+pub extend Affine2x3 with @debug.Debug::{to_repr}
+
+///|
+pub extend Affine2x3 with ToJson::{to_json}

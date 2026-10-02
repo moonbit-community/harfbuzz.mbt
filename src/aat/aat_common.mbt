@@ -19,6 +19,15 @@ pub suberror AatError {
 } derive(Eq, Debug, ToJson)
 
 ///|
+pub extend AatError with Eq::{not_equal, equal}
+
+///|
+pub extend AatError with @debug.Debug::{to_repr}
+
+///|
+pub extend AatError with ToJson::{to_json}
+
+///|
 fn read_u16(data : BytesView, offset : Int) -> Result[UInt, AatError] {
   if offset < 0 || offset + 2 > data.length() {
     return Err(UnexpectedEof)

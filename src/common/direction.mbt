@@ -19,6 +19,15 @@ pub struct Direction {
 } derive(Eq, Debug, ToJson)
 
 ///|
+pub extend Direction with Eq::{not_equal, equal}
+
+///|
+pub extend Direction with @debug.Debug::{to_repr}
+
+///|
+pub extend Direction with ToJson::{to_json}
+
+///|
 /// Unset direction.
 pub let direction_invalid : Direction = { raw: 0U, }
 

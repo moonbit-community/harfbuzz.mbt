@@ -24,6 +24,12 @@ pub struct VarcTable {
 } derive(Debug, ToJson)
 
 ///|
+pub extend VarcTable with @debug.Debug::{to_repr}
+
+///|
+pub extend VarcTable with ToJson::{to_json}
+
+///|
 pub enum VarcCondition {
   AxisRange(Int, Int, Int)
   Value(Int, Int)
@@ -33,12 +39,24 @@ pub enum VarcCondition {
 } derive(Debug, ToJson)
 
 ///|
+pub extend VarcCondition with @debug.Debug::{to_repr}
+
+///|
+pub extend VarcCondition with ToJson::{to_json}
+
+///|
 struct CffIndex {
   count : Int
   off_size : Int
   offsets : Array[Int]
   data : Bytes
 } derive(Debug, ToJson)
+
+///|
+pub extend CffIndex with @debug.Debug::{to_repr}
+
+///|
+pub extend CffIndex with ToJson::{to_json}
 
 ///|
 fn validate_offset(offset : Int, length : Int) -> Result[Unit, VarError] {

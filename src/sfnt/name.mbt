@@ -23,10 +23,22 @@ pub struct NameRecord {
 } derive(Debug, ToJson)
 
 ///|
+pub extend NameRecord with @debug.Debug::{to_repr}
+
+///|
+pub extend NameRecord with ToJson::{to_json}
+
+///|
 /// Parsed name table (subset).
 pub struct NameTable {
   records : Array[NameRecord]
 } derive(Debug, ToJson)
+
+///|
+pub extend NameTable with @debug.Debug::{to_repr}
+
+///|
+pub extend NameTable with ToJson::{to_json}
 
 ///|
 /// Parse name table bytes (format 0/1; string decoding is caller's responsibility).

@@ -26,6 +26,12 @@ pub struct VarcTransform {
 } derive(Debug, ToJson)
 
 ///|
+pub extend VarcTransform with @debug.Debug::{to_repr}
+
+///|
+pub extend VarcTransform with ToJson::{to_json}
+
+///|
 pub fn VarcTransform::apply_to_point(
   self : VarcTransform,
   x : Double,
@@ -106,6 +112,12 @@ pub struct VarcComponent {
   coords : Array[Int]
   transform : VarcTransform
 } derive(Debug, ToJson)
+
+///|
+pub extend VarcComponent with @debug.Debug::{to_repr}
+
+///|
+pub extend VarcComponent with ToJson::{to_json}
 
 ///|
 priv struct VarcTransformRaw {

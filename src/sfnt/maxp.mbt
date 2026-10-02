@@ -19,6 +19,15 @@ pub struct MaxpTable {
 } derive(Eq, Debug, ToJson)
 
 ///|
+pub extend MaxpTable with Eq::{not_equal, equal}
+
+///|
+pub extend MaxpTable with @debug.Debug::{to_repr}
+
+///|
+pub extend MaxpTable with ToJson::{to_json}
+
+///|
 /// Parse maxp table bytes.
 pub fn MaxpTable::parse(data : BytesView) -> Result[MaxpTable, SfntError] {
   match read_u16_int(data, 4) {

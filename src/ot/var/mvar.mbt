@@ -19,10 +19,25 @@ pub struct MvarRecord {
 } derive(Eq, Debug, ToJson)
 
 ///|
+pub extend MvarRecord with Eq::{not_equal, equal}
+
+///|
+pub extend MvarRecord with @debug.Debug::{to_repr}
+
+///|
+pub extend MvarRecord with ToJson::{to_json}
+
+///|
 pub struct MvarTable {
   records : Array[MvarRecord]
   var_store : ItemVariationStore
 } derive(Debug, ToJson)
+
+///|
+pub extend MvarTable with @debug.Debug::{to_repr}
+
+///|
+pub extend MvarTable with ToJson::{to_json}
 
 ///|
 pub fn MvarTable::parse(data : BytesView) -> Result[MvarTable, VarError] {

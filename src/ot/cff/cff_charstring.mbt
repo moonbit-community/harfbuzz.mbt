@@ -21,6 +21,15 @@ pub struct CffBounds {
 } derive(Eq, Debug, ToJson)
 
 ///|
+pub extend CffBounds with Eq::{not_equal, equal}
+
+///|
+pub extend CffBounds with @debug.Debug::{to_repr}
+
+///|
+pub extend CffBounds with ToJson::{to_json}
+
+///|
 priv struct CffBoundsBuilder {
   mut has_bounds : Bool
   mut min_x : Double

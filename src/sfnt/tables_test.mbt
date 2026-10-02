@@ -520,7 +520,7 @@ test "head table parse" {
   bytes[19] = 0xe8
   bytes[50] = 0x00
   bytes[51] = 0x01
-  let head = match HeadTable::parse(Bytes::from_array(bytes)[:]) {
+  let head = match @sfnt.HeadTable::parse(Bytes::from_array(bytes)[:]) {
     Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -533,7 +533,7 @@ test "maxp table parse" {
   let bytes = build_bytes(6)
   bytes[4] = 0x00
   bytes[5] = 0x0a
-  let maxp = match MaxpTable::parse(Bytes::from_array(bytes)[:]) {
+  let maxp = match @sfnt.MaxpTable::parse(Bytes::from_array(bytes)[:]) {
     Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -545,7 +545,7 @@ test "hhea table parse" {
   let bytes = build_bytes(36)
   bytes[34] = 0x00
   bytes[35] = 0x05
-  let hhea = match HheaTable::parse(Bytes::from_array(bytes)[:]) {
+  let hhea = match @sfnt.HheaTable::parse(Bytes::from_array(bytes)[:]) {
     Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -557,7 +557,7 @@ test "hmtx table parse" {
   let bytes : Array[Byte] = [
     0x00, 0xc8, 0x00, 0x0a, 0x01, 0x2c, 0x00, 0x14, 0x00, 0x1e,
   ]
-  let hmtx = match HmtxTable::parse(Bytes::from_array(bytes)[:], 3, 2) {
+  let hmtx = match @sfnt.HmtxTable::parse(Bytes::from_array(bytes)[:], 3, 2) {
     Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -567,7 +567,7 @@ test "hmtx table parse" {
 
 ///|
 test "vhea table parse" {
-  let vhea = match VheaTable::parse(build_vhea_table()[:]) {
+  let vhea = match @sfnt.VheaTable::parse(build_vhea_table()[:]) {
     Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -576,7 +576,7 @@ test "vhea table parse" {
 
 ///|
 test "vmtx table parse" {
-  let vmtx = match VmtxTable::parse(build_vmtx_table()[:], 3, 2) {
+  let vmtx = match @sfnt.VmtxTable::parse(build_vmtx_table()[:], 3, 2) {
     Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -588,7 +588,7 @@ test "vmtx table parse" {
 test "cmap format 12" {
   let subtable = build_cmap_format12(0x41U, 0x41U, 5U)
   let cmap_bytes = build_cmap_table(subtable, 3, 10)
-  let cmap = match CmapTable::parse(@blob.Blob::from_bytes(cmap_bytes)) {
+  let cmap = match @sfnt.CmapTable::parse(@blob.Blob::from_bytes(cmap_bytes)) {
     Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -604,7 +604,7 @@ test "cmap format 12" {
 test "cmap format 4" {
   let subtable = build_cmap_format4()
   let cmap_bytes = build_cmap_table(subtable, 3, 1)
-  let cmap = match CmapTable::parse(@blob.Blob::from_bytes(cmap_bytes)) {
+  let cmap = match @sfnt.CmapTable::parse(@blob.Blob::from_bytes(cmap_bytes)) {
     Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -618,7 +618,7 @@ test "cmap format 4" {
 
 ///|
 test "kern table parse" {
-  let kern = match KernTable::parse(build_kern_table()[:]) {
+  let kern = match @sfnt.KernTable::parse(build_kern_table()[:]) {
     Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -628,7 +628,7 @@ test "kern table parse" {
 
 ///|
 test "kern table format2 parse" {
-  let kern = match KernTable::parse(build_kern_table_format2()[:]) {
+  let kern = match @sfnt.KernTable::parse(build_kern_table_format2()[:]) {
     Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -638,7 +638,7 @@ test "kern table format2 parse" {
 
 ///|
 test "kern table format3 parse" {
-  let kern = match KernTable::parse(build_kern_table_format3()[:]) {
+  let kern = match @sfnt.KernTable::parse(build_kern_table_format3()[:]) {
     Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -648,7 +648,7 @@ test "kern table format3 parse" {
 
 ///|
 test "os2 table parse v0" {
-  let os2 = match Os2Table::parse(build_os2_table_v0()[:]) {
+  let os2 = match @sfnt.Os2Table::parse(build_os2_table_v0()[:]) {
     Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -663,7 +663,7 @@ test "os2 table parse v0" {
 
 ///|
 test "os2 table parse v2" {
-  let os2 = match Os2Table::parse(build_os2_table_v2()[:]) {
+  let os2 = match @sfnt.Os2Table::parse(build_os2_table_v2()[:]) {
     Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -678,7 +678,7 @@ test "os2 table parse v2" {
 
 ///|
 test "name table parse" {
-  let name = match NameTable::parse(build_name_table()[:]) {
+  let name = match @sfnt.NameTable::parse(build_name_table()[:]) {
     Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -692,7 +692,7 @@ test "name table parse" {
 
 ///|
 test "post table parse v2" {
-  let post = match PostTable::parse(build_post_table_v2()[:]) {
+  let post = match @sfnt.PostTable::parse(build_post_table_v2()[:]) {
     Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -718,7 +718,7 @@ test "post table parse v2" {
 
 ///|
 test "gasp table parse" {
-  let gasp = match GaspTable::parse(build_gasp_table()[:]) {
+  let gasp = match @sfnt.GaspTable::parse(build_gasp_table()[:]) {
     Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -730,7 +730,7 @@ test "gasp table parse" {
 
 ///|
 test "meta table parse" {
-  let meta = match MetaTable::parse(build_meta_table()[:]) {
+  let meta = match @sfnt.MetaTable::parse(build_meta_table()[:]) {
     Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -744,7 +744,7 @@ test "meta table parse" {
 
 ///|
 test "vorg table parse" {
-  let vorg = match VorgTable::parse(build_vorg_table()[:]) {
+  let vorg = match @sfnt.VorgTable::parse(build_vorg_table()[:]) {
     Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -756,7 +756,7 @@ test "vorg table parse" {
 
 ///|
 test "hdmx table parse" {
-  let hdmx = match HdmxTable::parse(build_hdmx_table()[:]) {
+  let hdmx = match @sfnt.HdmxTable::parse(build_hdmx_table()[:]) {
     Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -769,7 +769,7 @@ test "hdmx table parse" {
 
 ///|
 test "stat table parse" {
-  let stat = match StatTable::parse(build_stat_table()[:]) {
+  let stat = match @sfnt.StatTable::parse(build_stat_table()[:]) {
     Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -790,7 +790,7 @@ test "stat table parse" {
 
 ///|
 test "base table parse" {
-  let base = match BaseTable::parse(build_base_table()[:]) {
+  let base = match @sfnt.BaseTable::parse(build_base_table()[:]) {
     Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -829,7 +829,7 @@ test "base table parse" {
 
 ///|
 test "jstf table parse" {
-  let jstf = match JstfTable::parse(build_jstf_table()[:]) {
+  let jstf = match @sfnt.JstfTable::parse(build_jstf_table()[:]) {
     Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -850,7 +850,7 @@ test "jstf table parse" {
 
 ///|
 test "math table parse" {
-  let math = match MathTable::parse(build_math_table()[:]) {
+  let math = match @sfnt.MathTable::parse(build_math_table()[:]) {
     Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }

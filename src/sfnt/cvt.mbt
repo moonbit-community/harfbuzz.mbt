@@ -19,6 +19,12 @@ pub struct CvtTable {
 } derive(Debug, ToJson)
 
 ///|
+pub extend CvtTable with @debug.Debug::{to_repr}
+
+///|
+pub extend CvtTable with ToJson::{to_json}
+
+///|
 pub fn CvtTable::values(self : CvtTable) -> ArrayView[Int] {
   self.values[:]
 }

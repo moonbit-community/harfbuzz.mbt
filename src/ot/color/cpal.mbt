@@ -27,6 +27,12 @@ pub struct CpalTable {
 } derive(Debug, ToJson)
 
 ///|
+pub extend CpalTable with @debug.Debug::{to_repr}
+
+///|
+pub extend CpalTable with ToJson::{to_json}
+
+///|
 /// Parse CPAL table data.
 pub fn CpalTable::parse(data : BytesView) -> Result[CpalTable, ColorError] {
   let version = read_u16_int(data, 0)

@@ -22,6 +22,12 @@ pub struct JustificationHeader {
 } derive(Debug, ToJson)
 
 ///|
+pub extend JustificationHeader with @debug.Debug::{to_repr}
+
+///|
+pub extend JustificationHeader with ToJson::{to_json}
+
+///|
 /// Parsed just table (shallow).
 pub struct JustTable {
   version : Int
@@ -29,6 +35,12 @@ pub struct JustTable {
   horiz : JustificationHeader?
   vert : JustificationHeader?
 } derive(Debug, ToJson)
+
+///|
+pub extend JustTable with @debug.Debug::{to_repr}
+
+///|
+pub extend JustTable with ToJson::{to_json}
 
 ///|
 pub fn JustTable::has_data(self : JustTable) -> Bool {

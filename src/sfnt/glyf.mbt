@@ -23,6 +23,15 @@ pub struct GlyphBounds {
 } derive(Eq, Debug, ToJson)
 
 ///|
+pub extend GlyphBounds with Eq::{not_equal, equal}
+
+///|
+pub extend GlyphBounds with @debug.Debug::{to_repr}
+
+///|
+pub extend GlyphBounds with ToJson::{to_json}
+
+///|
 /// Outline point from glyf data.
 pub struct GlyphPoint {
   mut x : Double
@@ -30,6 +39,12 @@ pub struct GlyphPoint {
   flag : Int
   mut is_end_point : Bool
 } derive(Debug, ToJson)
+
+///|
+pub extend GlyphPoint with @debug.Debug::{to_repr}
+
+///|
+pub extend GlyphPoint with ToJson::{to_json}
 
 ///|
 pub fn GlyphPoint::new(
@@ -89,6 +104,12 @@ pub struct GlyfTable {
 } derive(Debug, ToJson)
 
 ///|
+pub extend GlyfTable with @debug.Debug::{to_repr}
+
+///|
+pub extend GlyfTable with ToJson::{to_json}
+
+///|
 pub struct CompositeComponent {
   glyph : Int
   flags : Int
@@ -104,6 +125,12 @@ pub struct CompositeComponent {
   use_my_metrics : Bool
   scaled_offset : Bool
 } derive(Debug, ToJson)
+
+///|
+pub extend CompositeComponent with @debug.Debug::{to_repr}
+
+///|
+pub extend CompositeComponent with ToJson::{to_json}
 
 ///|
 /// Parse glyf table from its blob.

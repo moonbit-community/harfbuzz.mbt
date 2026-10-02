@@ -20,6 +20,12 @@ pub struct VmtxTable {
 } derive(Debug, ToJson)
 
 ///|
+pub extend VmtxTable with @debug.Debug::{to_repr}
+
+///|
+pub extend VmtxTable with ToJson::{to_json}
+
+///|
 /// Parse vmtx table bytes.
 pub fn VmtxTable::parse(
   data : BytesView,

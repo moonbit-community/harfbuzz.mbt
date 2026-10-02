@@ -29,6 +29,15 @@ pub struct FeatSettingName {
 } derive(Eq, Debug, ToJson)
 
 ///|
+pub extend FeatSettingName with Eq::{not_equal, equal}
+
+///|
+pub extend FeatSettingName with @debug.Debug::{to_repr}
+
+///|
+pub extend FeatSettingName with ToJson::{to_json}
+
+///|
 /// Feature name record.
 pub struct FeatFeatureName {
   feature : Int
@@ -38,11 +47,26 @@ pub struct FeatFeatureName {
 } derive(Eq, Debug, ToJson)
 
 ///|
+pub extend FeatFeatureName with Eq::{not_equal, equal}
+
+///|
+pub extend FeatFeatureName with @debug.Debug::{to_repr}
+
+///|
+pub extend FeatFeatureName with ToJson::{to_json}
+
+///|
 /// Parsed feat table.
 pub struct FeatTable {
   version : Int
   features : Array[FeatFeatureName]
 } derive(Debug, ToJson)
+
+///|
+pub extend FeatTable with @debug.Debug::{to_repr}
+
+///|
+pub extend FeatTable with ToJson::{to_json}
 
 ///|
 pub fn FeatTable::has_data(self : FeatTable) -> Bool {

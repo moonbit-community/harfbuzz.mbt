@@ -19,14 +19,41 @@ pub struct SparseVarRegionAxis {
 } derive(Eq, Debug, ToJson)
 
 ///|
+pub extend SparseVarRegionAxis with Eq::{not_equal, equal}
+
+///|
+pub extend SparseVarRegionAxis with @debug.Debug::{to_repr}
+
+///|
+pub extend SparseVarRegionAxis with ToJson::{to_json}
+
+///|
 pub struct SparseVariationRegion {
   axes : Array[SparseVarRegionAxis]
 } derive(Eq, Debug, ToJson)
 
 ///|
+pub extend SparseVariationRegion with Eq::{not_equal, equal}
+
+///|
+pub extend SparseVariationRegion with @debug.Debug::{to_repr}
+
+///|
+pub extend SparseVariationRegion with ToJson::{to_json}
+
+///|
 pub struct SparseVarRegionList {
   regions : Array[SparseVariationRegion]
 } derive(Eq, Debug, ToJson)
+
+///|
+pub extend SparseVarRegionList with Eq::{not_equal, equal}
+
+///|
+pub extend SparseVarRegionList with @debug.Debug::{to_repr}
+
+///|
+pub extend SparseVarRegionList with ToJson::{to_json}
 
 ///|
 pub struct MultiVarData {
@@ -35,10 +62,22 @@ pub struct MultiVarData {
 } derive(Debug, ToJson)
 
 ///|
+pub extend MultiVarData with @debug.Debug::{to_repr}
+
+///|
+pub extend MultiVarData with ToJson::{to_json}
+
+///|
 pub struct MultiItemVariationStore {
   region_list : SparseVarRegionList
   data_sets : Array[MultiVarData]
 } derive(Debug, ToJson)
+
+///|
+pub extend MultiItemVariationStore with @debug.Debug::{to_repr}
+
+///|
+pub extend MultiItemVariationStore with ToJson::{to_json}
 
 ///|
 fn SparseVariationRegion::evaluate(

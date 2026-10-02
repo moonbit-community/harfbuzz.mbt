@@ -54,6 +54,15 @@ pub struct Cff1Table {
 } derive(Eq, Debug, ToJson)
 
 ///|
+pub extend Cff1Table with Eq::{not_equal, equal}
+
+///|
+pub extend Cff1Table with @debug.Debug::{to_repr}
+
+///|
+pub extend Cff1Table with ToJson::{to_json}
+
+///|
 pub fn Cff1Table::parse(data : BytesView) -> Result[Cff1Table, CffError] {
   if data.length() < 4 {
     return Err(UnexpectedEof)
@@ -301,7 +310,7 @@ pub fn Cff1Table::seac_components(
 fn clone_entries(
   entries : Map[Int, Array[CffNumber]],
 ) -> Map[Int, Array[CffNumber]] {
-  let next : Map[Int, Array[CffNumber]] = {}
+  let next : Map[Int, Array[CffNumber]] = Map([])
   entries.eachi((_, key, value) => next[key] = value.copy())
   next
 }

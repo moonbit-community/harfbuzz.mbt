@@ -21,6 +21,15 @@ pub struct GlyphInfo {
 } derive(Eq, Debug, ToJson)
 
 ///|
+pub extend GlyphInfo with Eq::{not_equal, equal}
+
+///|
+pub extend GlyphInfo with @debug.Debug::{to_repr}
+
+///|
+pub extend GlyphInfo with ToJson::{to_json}
+
+///|
 /// Glyph positioning data.
 pub struct GlyphPosition {
   x_advance : Int
@@ -30,16 +39,40 @@ pub struct GlyphPosition {
 } derive(Eq, Debug, ToJson)
 
 ///|
+pub extend GlyphPosition with Eq::{not_equal, equal}
+
+///|
+pub extend GlyphPosition with @debug.Debug::{to_repr}
+
+///|
+pub extend GlyphPosition with ToJson::{to_json}
+
+///|
 struct FeatureValues {
   tag : @common.Tag
   values : Array[Int]
 } derive(Debug, ToJson)
 
 ///|
+pub extend FeatureValues with @debug.Debug::{to_repr}
+
+///|
+pub extend FeatureValues with ToJson::{to_json}
+
+///|
 pub suberror ShapeError {
   Font(@font.FontError)
   Layout(@ot_tables.OtLayoutError)
 } derive(Eq, Debug, ToJson)
+
+///|
+pub extend ShapeError with Eq::{not_equal, equal}
+
+///|
+pub extend ShapeError with @debug.Debug::{to_repr}
+
+///|
+pub extend ShapeError with ToJson::{to_json}
 
 ///|
 /// Text buffer for shaping.
@@ -58,6 +91,12 @@ pub struct Buffer {
   mut remove_default_ignorables : Bool
   mut not_found_variation_selector : UInt?
 } derive(Debug, ToJson)
+
+///|
+pub extend Buffer with @debug.Debug::{to_repr}
+
+///|
+pub extend Buffer with ToJson::{to_json}
 
 ///|
 /// Create an empty buffer.
@@ -664,7 +703,7 @@ pub fn Buffer::normalize(self : Buffer) -> Unit {
       break
     }
   }
-  let vs_clusters : Map[Int, Bool] = {}
+  let vs_clusters : Map[Int, Bool] = Map([])
   if has_vs {
     merge_variation_selector_clusters(self)
     for info in self.infos {
@@ -1238,7 +1277,7 @@ pub fn Buffer::apply_morx(
     return Ok(())
   }
   let horizontal = self.direction.is_horizontal()
-  let cluster_unicode : Map[Int, UInt] = {}
+  let cluster_unicode : Map[Int, UInt] = Map([])
   for info in self.infos {
     if !cluster_unicode.contains(info.cluster) {
       cluster_unicode[info.cluster] = info.unicode

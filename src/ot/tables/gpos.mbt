@@ -22,11 +22,29 @@ pub struct ValueRecord {
 } derive(Eq, Debug, ToJson)
 
 ///|
+pub extend ValueRecord with Eq::{not_equal, equal}
+
+///|
+pub extend ValueRecord with @debug.Debug::{to_repr}
+
+///|
+pub extend ValueRecord with ToJson::{to_json}
+
+///|
 /// Pair adjustment result.
 pub struct PairAdjust {
   first : ValueRecord
   second : ValueRecord
 } derive(Eq, Debug, ToJson)
+
+///|
+pub extend PairAdjust with Eq::{not_equal, equal}
+
+///|
+pub extend PairAdjust with @debug.Debug::{to_repr}
+
+///|
+pub extend PairAdjust with ToJson::{to_json}
 
 ///|
 fn value_record_zero() -> ValueRecord {
