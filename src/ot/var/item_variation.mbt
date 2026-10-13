@@ -14,9 +14,9 @@
 
 ///|
 pub(all) struct VarRegionAxis {
-  start_coord : Int
-  peak_coord : Int
-  end_coord : Int
+  start_coord : Int32
+  peak_coord : Int32
+  end_coord : Int32
 } derive(Eq, Debug, ToJson)
 
 ///|
@@ -30,8 +30,8 @@ pub extend VarRegionAxis with ToJson::{to_json}
 
 ///|
 pub(all) struct VarRegionList {
-  axis_count : Int
-  region_count : Int
+  axis_count : Int32
+  region_count : Int32
   axes : Array[VarRegionAxis]
 } derive(Eq, Debug, ToJson)
 
@@ -46,10 +46,10 @@ pub extend VarRegionList with ToJson::{to_json}
 
 ///|
 pub(all) struct VarData {
-  item_count : Int
-  word_count : Int
+  item_count : Int32
+  word_count : Int32
   long_words : Bool
-  region_indices : Array[Int]
+  region_indices : Array[Int32]
   deltas : Bytes
 } derive(Eq, Debug, ToJson)
 
@@ -78,7 +78,7 @@ pub extend ItemVariationStore with @debug.Debug::{to_repr}
 pub extend ItemVariationStore with ToJson::{to_json}
 
 ///|
-fn VarRegionAxis::evaluate(self : VarRegionAxis, coord : Int) -> Double {
+fn VarRegionAxis::evaluate(self : VarRegionAxis, coord : Int32) -> Double {
   let peak = self.peak_coord
   if peak == 0 || coord == peak {
     return 1.0
@@ -107,8 +107,8 @@ fn VarRegionAxis::evaluate(self : VarRegionAxis, coord : Int) -> Double {
 ///|
 fn VarRegionList::evaluate(
   self : VarRegionList,
-  region_index : Int,
-  coords : ArrayView[Int],
+  region_index : Int32,
+  coords : ArrayView[Int32],
 ) -> Double {
   if region_index < 0 || region_index >= self.region_count {
     return 0.0
@@ -128,13 +128,13 @@ fn VarRegionList::evaluate(
 }
 
 ///|
-fn VarData::row_size(self : VarData) -> Int {
+fn VarData::row_size(self : VarData) -> Int32 {
   let count = self.region_indices.length()
   (self.word_count + count) * (if self.long_words { 2 } else { 1 })
 }
 
 ///|
-fn read_i8(bytes : BytesView, offset : Int) -> Result[Int, VarError] {
+fn read_i8(bytes : BytesView, offset : Int32) -> Result[Int32, VarError] {
   if offset < 0 || offset + 1 > bytes.length() {
     return Err(UnexpectedEof)
   }
@@ -147,7 +147,7 @@ fn read_i8(bytes : BytesView, offset : Int) -> Result[Int, VarError] {
 }
 
 ///|
-fn read_i16_be(bytes : BytesView, offset : Int) -> Result[Int, VarError] {
+fn read_i16_be(bytes : BytesView, offset : Int32) -> Result[Int32, VarError] {
   let hi = read_u16(bytes, offset)
   match hi {
     Err(err) => Err(err)
@@ -163,7 +163,7 @@ fn read_i16_be(bytes : BytesView, offset : Int) -> Result[Int, VarError] {
 }
 
 ///|
-fn read_i32_be(bytes : BytesView, offset : Int) -> Result[Int, VarError] {
+fn read_i32_be(bytes : BytesView, offset : Int32) -> Result[Int32, VarError] {
   match read_u32(bytes, offset) {
     Err(err) => Err(err)
     Ok(value) => Ok(value.reinterpret_as_int())
@@ -173,8 +173,8 @@ fn read_i32_be(bytes : BytesView, offset : Int) -> Result[Int, VarError] {
 ///|
 fn VarData::get_delta(
   self : VarData,
-  inner : Int,
-  coords : ArrayView[Int],
+  inner : Int32,
+  coords : ArrayView[Int32],
   regions : VarRegionList,
 ) -> Double {
   if inner < 0 || inner >= self.item_count {
@@ -246,7 +246,7 @@ fn VarData::get_delta(
 ///|
 fn parse_region_list(
   data : BytesView,
-  offset : Int,
+  offset : Int32,
 ) -> Result[VarRegionList, VarError] {
   let axis_count = read_u16_int(data, offset)
   let region_count = read_u16_int(data, offset + 2)
@@ -279,7 +279,10 @@ fn parse_region_list(
 }
 
 ///|
-fn parse_var_data(data : BytesView, offset : Int) -> Result[VarData, VarError] {
+fn parse_var_data(
+  data : BytesView,
+  offset : Int32,
+) -> Result[VarData, VarError] {
   let item_count = read_u16_int(data, offset)
   let word_size_count = read_u16_int(data, offset + 2)
   let region_index_count = read_u16_int(data, offset + 4)
@@ -295,7 +298,7 @@ fn parse_var_data(data : BytesView, offset : Int) -> Result[VarData, VarError] {
         word_count > region_index_count {
         return Err(InvalidFormat)
       }
-      let region_indices : Array[Int] = []
+      let region_indices : Array[Int32] = []
       let mut region_offset = offset + 6
       for _ in 0..<region_index_count {
         let value = read_u16_int(data, region_offset)
@@ -367,8 +370,8 @@ pub fn ItemVariationStore::parse(
 ///|
 pub fn ItemVariationStore::get_delta(
   self : ItemVariationStore,
-  var_idx : UInt,
-  coords : Array[Int],
+  var_idx : UInt32,
+  coords : Array[Int32],
 ) -> Double {
   let outer = ((var_idx >> 16) & 0xFFFFU).reinterpret_as_int()
   let inner = (var_idx & 0xFFFFU).reinterpret_as_int()
@@ -381,8 +384,8 @@ pub fn ItemVariationStore::get_delta(
 ///|
 pub fn ItemVariationStore::region_count(
   self : ItemVariationStore,
-  outer : Int,
-) -> Int? {
+  outer : Int32,
+) -> Int32? {
   if outer < 0 || outer >= self.data_sets.length() {
     return None
   }
@@ -392,8 +395,8 @@ pub fn ItemVariationStore::region_count(
 ///|
 pub fn ItemVariationStore::region_scalars(
   self : ItemVariationStore,
-  outer : Int,
-  coords : Array[Int],
+  outer : Int32,
+  coords : Array[Int32],
 ) -> Array[Double]? {
   if outer < 0 || outer >= self.data_sets.length() {
     return None

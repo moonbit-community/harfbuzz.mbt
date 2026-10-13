@@ -14,9 +14,9 @@
 
 ///|
 pub struct DeltaSetIndexMap {
-  map_count : Int
-  width : Int
-  inner_bit_count : Int
+  map_count : Int32
+  width : Int32
+  inner_bit_count : Int32
   map_data : Bytes
 } derive(Eq, Debug, ToJson)
 
@@ -32,8 +32,8 @@ pub extend DeltaSetIndexMap with ToJson::{to_json}
 ///|
 fn parse_format0(
   data : BytesView,
-  offset : Int,
-  entry_format : Int,
+  offset : Int32,
+  entry_format : Int32,
 ) -> Result[DeltaSetIndexMap, VarError] {
   let map_count = read_u16_int(data, offset + 2)
   match map_count {
@@ -55,8 +55,8 @@ fn parse_format0(
 ///|
 fn parse_format1(
   data : BytesView,
-  offset : Int,
-  entry_format : Int,
+  offset : Int32,
+  entry_format : Int32,
 ) -> Result[DeltaSetIndexMap, VarError] {
   let map_count = read_u32_int(data, offset + 2)
   match map_count {
@@ -78,7 +78,7 @@ fn parse_format1(
 ///|
 pub fn DeltaSetIndexMap::parse(
   data : BytesView,
-  offset : Int,
+  offset : Int32,
 ) -> Result[DeltaSetIndexMap, VarError] {
   let format = read_u8_int(data, offset)
   let entry_format = read_u8_int(data, offset + 1)
@@ -95,7 +95,7 @@ pub fn DeltaSetIndexMap::parse(
 }
 
 ///|
-pub fn DeltaSetIndexMap::map(self : DeltaSetIndexMap, value : UInt) -> UInt {
+pub fn DeltaSetIndexMap::map(self : DeltaSetIndexMap, value : UInt32) -> UInt32 {
   if self.map_count == 0 {
     return value
   }
@@ -106,7 +106,7 @@ pub fn DeltaSetIndexMap::map(self : DeltaSetIndexMap, value : UInt) -> UInt {
   if index >= self.map_count {
     index = self.map_count - 1
   }
-  let mut u : UInt = 0
+  let mut u : UInt32 = 0
   let offset = index * self.width
   for i in 0..<self.width {
     let byte = self.map_data[offset + i].to_uint()

@@ -40,7 +40,7 @@ pub extend BufferSerializeMode with @debug.Debug::{to_repr}
 ///|
 pub fn BufferSerializeMode::from_string(
   s : String,
-  len? : Int = -1,
+  len~ : Int32 = -1,
 ) -> BufferSerializeMode {
   if s is "" || len == 0 {
     return Glyphs
@@ -66,7 +66,7 @@ pub fn BufferSerializeMode::from_string(
 ///|
 pub fn BufferSerializeFormat::from_string(
   s : String,
-  len? : Int = -1,
+  len~ : Int32 = -1,
 ) -> BufferSerializeFormat {
   if s is "" || len == 0 {
     return Invalid
@@ -103,13 +103,13 @@ pub fn BufferSerializeFormat::to_string(
 }
 
 ///|
-fn hex_digit(value : Int) -> Char {
+fn hex_digit(value : Int32) -> Char {
   let code = if value < 10 { 48 + value } else { 55 + value }
   code.unsafe_to_char()
 }
 
 ///|
-fn format_hex(value : UInt, min_width : Int) -> String {
+fn format_hex(value : UInt32, min_width : Int32) -> String {
   let digits : Array[Char] = []
   let mut v = value
   if v == 0U {
@@ -134,12 +134,12 @@ fn format_hex(value : UInt, min_width : Int) -> String {
 }
 
 ///|
-fn append_int(sb : StringBuilder, value : Int) -> Unit {
+fn append_int(sb : StringBuilder, value : Int32) -> Unit {
   sb.write_string("\{value}")
 }
 
 ///|
-fn append_uint(sb : StringBuilder, value : UInt) -> Unit {
+fn append_uint(sb : StringBuilder, value : UInt32) -> Unit {
   sb.write_string("\{value}")
 }
 
@@ -147,8 +147,8 @@ fn append_uint(sb : StringBuilder, value : UInt) -> Unit {
 fn serialize_text(
   buffer : Buffer,
   mode : BufferSerializeMode,
-  start : Int,
-  end : Int,
+  start : Int32,
+  end : Int32,
   include_clusters : Bool,
   include_positions : Bool,
   include_advances : Bool,
@@ -205,8 +205,8 @@ fn serialize_text(
 fn serialize_json(
   buffer : Buffer,
   mode : BufferSerializeMode,
-  start : Int,
-  end : Int,
+  start : Int32,
+  end : Int32,
   include_clusters : Bool,
   include_positions : Bool,
   include_advances : Bool,
@@ -259,13 +259,13 @@ fn serialize_json(
 ///|
 pub fn Buffer::serialize(
   self : Buffer,
-  format? : BufferSerializeFormat = Text,
-  mode? : BufferSerializeMode = Glyphs,
-  start? : Int = 0,
-  end? : Int = -1,
-  no_positions? : Bool = false,
-  no_clusters? : Bool = false,
-  no_advances? : Bool = false,
+  format~ : BufferSerializeFormat = Text,
+  mode~ : BufferSerializeMode = Glyphs,
+  start~ : Int32 = 0,
+  end~ : Int32 = -1,
+  no_positions~ : Bool = false,
+  no_clusters~ : Bool = false,
+  no_advances~ : Bool = false,
 ) -> String {
   let len = self.infos.length()
   let mut start = start

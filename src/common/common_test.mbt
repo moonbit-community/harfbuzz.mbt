@@ -190,7 +190,11 @@ test "script horizontal direction mapping" {
 }
 
 ///|
-fn expect_parse_int(result : (Int, Int)?, value : Int, idx : Int) -> Unit raise {
+fn expect_parse_int(
+  result : (Int32, Int32)?,
+  value : Int32,
+  idx : Int32,
+) -> Unit raise {
   match result {
     None => fail("expected int parse")
     Some((parsed, next_idx)) => {
@@ -202,9 +206,9 @@ fn expect_parse_int(result : (Int, Int)?, value : Int, idx : Int) -> Unit raise 
 
 ///|
 fn expect_parse_uint(
-  result : (UInt, Int)?,
-  value : UInt,
-  idx : Int,
+  result : (UInt32, Int32)?,
+  value : UInt32,
+  idx : Int32,
 ) -> Unit raise {
   match result {
     None => fail("expected uint parse")
@@ -217,9 +221,9 @@ fn expect_parse_uint(
 
 ///|
 fn expect_parse_double(
-  result : (Double, Int)?,
-  thousand : Int,
-  idx : Int,
+  result : (Double, Int32)?,
+  thousand : Int32,
+  idx : Int32,
 ) -> Unit raise {
   match result {
     None => fail("expected double parse")

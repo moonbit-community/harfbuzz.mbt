@@ -13,7 +13,7 @@
 // limitations under the License.
 
 ///|
-fn is_zero_width_mark(u : UInt) -> Bool {
+fn is_zero_width_mark(u : UInt32) -> Bool {
   let cat = @unicode.general_category(u)
   cat == @unicode.gc_non_spacing_mark || cat == @unicode.gc_enclosing_mark
 }
@@ -53,9 +53,9 @@ priv enum ZeroWidthMarks {
 ///|
 fn collect_mark_fallback_data(
   infos : Array[GlyphInfo],
-) -> (Array[Bool], Array[Int]) {
+) -> (Array[Bool], Array[Int32]) {
   let marks = mark_flags_from_infos(infos)
-  let combining_classes : Array[Int] = []
+  let combining_classes : Array[Int32] = []
   for info in infos {
     let klass = @unicode.modified_combining_class(info.codepoint).reinterpret_as_int()
     combining_classes.push(recategorize_combining_class(info.codepoint, klass))
@@ -65,158 +65,158 @@ fn collect_mark_fallback_data(
 
 ///|
 struct GlyphExtents {
-  mut x_bearing : Int
-  mut y_bearing : Int
-  mut width : Int
-  mut height : Int
+  mut x_bearing : Int32
+  mut y_bearing : Int32
+  mut width : Int32
+  mut height : Int32
 } derive(Debug)
 
 ///|
 pub extend GlyphExtents with @debug.Debug::{to_repr}
 
 ///|
-let cc_attached_below_left : Int = 200
+let cc_attached_below_left : Int32 = 200
 
 ///|
-let cc_attached_below : Int = 202
+let cc_attached_below : Int32 = 202
 
 ///|
-let cc_attached_above : Int = 214
+let cc_attached_above : Int32 = 214
 
 ///|
-let cc_attached_above_right : Int = 216
+let cc_attached_above_right : Int32 = 216
 
 ///|
-let cc_below_left : Int = 218
+let cc_below_left : Int32 = 218
 
 ///|
-let cc_below : Int = 220
+let cc_below : Int32 = 220
 
 ///|
-let cc_below_right : Int = 222
+let cc_below_right : Int32 = 222
 
 ///|
-let cc_left : Int = 224
+let cc_left : Int32 = 224
 
 ///|
-let cc_right : Int = 226
+let cc_right : Int32 = 226
 
 ///|
-let cc_above_left : Int = 228
+let cc_above_left : Int32 = 228
 
 ///|
-let cc_above : Int = 230
+let cc_above : Int32 = 230
 
 ///|
-let cc_above_right : Int = 232
+let cc_above_right : Int32 = 232
 
 ///|
-let cc_double_below : Int = 233
+let cc_double_below : Int32 = 233
 
 ///|
-let cc_double_above : Int = 234
+let cc_double_above : Int32 = 234
 
 ///|
-let mcc_ccc10 : Int = 22
+let mcc_ccc10 : Int32 = 22
 
 ///|
-let mcc_ccc11 : Int = 15
+let mcc_ccc11 : Int32 = 15
 
 ///|
-let mcc_ccc12 : Int = 16
+let mcc_ccc12 : Int32 = 16
 
 ///|
-let mcc_ccc13 : Int = 17
+let mcc_ccc13 : Int32 = 17
 
 ///|
-let mcc_ccc14 : Int = 23
+let mcc_ccc14 : Int32 = 23
 
 ///|
-let mcc_ccc15 : Int = 18
+let mcc_ccc15 : Int32 = 18
 
 ///|
-let mcc_ccc16 : Int = 19
+let mcc_ccc16 : Int32 = 19
 
 ///|
-let mcc_ccc17 : Int = 20
+let mcc_ccc17 : Int32 = 20
 
 ///|
-let mcc_ccc18 : Int = 21
+let mcc_ccc18 : Int32 = 21
 
 ///|
-let mcc_ccc19 : Int = 14
+let mcc_ccc19 : Int32 = 14
 
 ///|
-let mcc_ccc20 : Int = 24
+let mcc_ccc20 : Int32 = 24
 
 ///|
-let mcc_ccc22 : Int = 25
+let mcc_ccc22 : Int32 = 25
 
 ///|
-let mcc_ccc23 : Int = 13
+let mcc_ccc23 : Int32 = 13
 
 ///|
-let mcc_ccc24 : Int = 10
+let mcc_ccc24 : Int32 = 10
 
 ///|
-let mcc_ccc25 : Int = 11
+let mcc_ccc25 : Int32 = 11
 
 ///|
-let mcc_ccc26 : Int = 26
+let mcc_ccc26 : Int32 = 26
 
 ///|
-let mcc_ccc27 : Int = 28
+let mcc_ccc27 : Int32 = 28
 
 ///|
-let mcc_ccc28 : Int = 29
+let mcc_ccc28 : Int32 = 29
 
 ///|
-let mcc_ccc29 : Int = 30
+let mcc_ccc29 : Int32 = 30
 
 ///|
-let mcc_ccc30 : Int = 31
+let mcc_ccc30 : Int32 = 31
 
 ///|
-let mcc_ccc31 : Int = 32
+let mcc_ccc31 : Int32 = 32
 
 ///|
-let mcc_ccc32 : Int = 33
+let mcc_ccc32 : Int32 = 33
 
 ///|
-let mcc_ccc33 : Int = 27
+let mcc_ccc33 : Int32 = 27
 
 ///|
-let mcc_ccc34 : Int = 34
+let mcc_ccc34 : Int32 = 34
 
 ///|
-let mcc_ccc35 : Int = 35
+let mcc_ccc35 : Int32 = 35
 
 ///|
-let mcc_ccc36 : Int = 36
+let mcc_ccc36 : Int32 = 36
 
 ///|
-let mcc_ccc103 : Int = 3
+let mcc_ccc103 : Int32 = 3
 
 ///|
-let mcc_ccc107 : Int = 107
+let mcc_ccc107 : Int32 = 107
 
 ///|
-let mcc_ccc118 : Int = 118
+let mcc_ccc118 : Int32 = 118
 
 ///|
-let mcc_ccc122 : Int = 122
+let mcc_ccc122 : Int32 = 122
 
 ///|
-let mcc_ccc129 : Int = 129
+let mcc_ccc129 : Int32 = 129
 
 ///|
-let mcc_ccc130 : Int = 132
+let mcc_ccc130 : Int32 = 132
 
 ///|
-let mcc_ccc132 : Int = 131
+let mcc_ccc132 : Int32 = 131
 
 ///|
-fn recategorize_combining_class(u : UInt, klass : Int) -> Int {
+fn recategorize_combining_class(u : UInt32, klass : Int32) -> Int32 {
   if klass >= 200 {
     return klass
   }
@@ -310,7 +310,7 @@ fn recategorize_combining_class(u : UInt, klass : Int) -> Int {
 }
 
 ///|
-fn scale_value(value : Int, scale : Int, upem : Int) -> Int {
+fn scale_value(value : Int32, scale : Int32, upem : Int32) -> Int32 {
   if upem == 0 {
     return value
   }
@@ -320,7 +320,7 @@ fn scale_value(value : Int, scale : Int, upem : Int) -> Int {
 ///|
 fn glyph_extents(
   font : @font.Font,
-  glyph : UInt,
+  glyph : UInt32,
 ) -> Result[GlyphExtents?, ShapeError] {
   let bounds = match font.glyph_bounds(glyph) {
     Err(_) => return Ok(None)
@@ -352,9 +352,9 @@ fn position_mark_fallback(
   font : @font.Font,
   buffer : Buffer,
   extents : GlyphExtents,
-  mark_index : Int,
-  combining_class : Int,
-  y_gap : Int,
+  mark_index : Int32,
+  combining_class : Int32,
+  y_gap : Int32,
 ) -> Result[GlyphExtents, ShapeError] {
   if combining_class == 0 ||
     combining_class == cc_left ||
@@ -463,7 +463,7 @@ fn fallback_mark_position(
   font : @font.Font,
   buffer : Buffer,
   marks : Array[Bool],
-  combining_classes : Array[Int],
+  combining_classes : Array[Int32],
 ) -> Result[Unit, ShapeError] {
   if marks.length() != buffer.infos.length() ||
     combining_classes.length() != buffer.infos.length() {
@@ -531,7 +531,7 @@ fn fallback_mark_position(
 fn zero_mark_advances_with_flags(
   buffer : Buffer,
   marks : Array[Bool],
-  adjust_offsets? : Bool = false,
+  adjust_offsets~ : Bool = false,
 ) -> Unit {
   if buffer.infos.length() != buffer.positions.length() ||
     buffer.infos.length() != marks.length() {

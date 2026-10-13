@@ -13,28 +13,28 @@
 // limitations under the License.
 
 ///|
-let arabic_action_isol : Int = 0
+let arabic_action_isol : Int32 = 0
 
 ///|
-let arabic_action_fina : Int = 1
+let arabic_action_fina : Int32 = 1
 
 ///|
-let arabic_action_fin2 : Int = 2
+let arabic_action_fin2 : Int32 = 2
 
 ///|
-let arabic_action_fin3 : Int = 3
+let arabic_action_fin3 : Int32 = 3
 
 ///|
-let arabic_action_medi : Int = 4
+let arabic_action_medi : Int32 = 4
 
 ///|
-let arabic_action_med2 : Int = 5
+let arabic_action_med2 : Int32 = 5
 
 ///|
-let arabic_action_init : Int = 6
+let arabic_action_init : Int32 = 6
 
 ///|
-let arabic_action_none : Int = 7
+let arabic_action_none : Int32 = 7
 
 ///|
 let arabic_feature_tags : Array[@common.Tag] = [
@@ -49,9 +49,9 @@ let arabic_feature_tags : Array[@common.Tag] = [
 
 ///|
 priv struct ArabicStateEntry {
-  prev_action : Int
-  curr_action : Int
-  next_state : Int
+  prev_action : Int32
+  curr_action : Int32
+  next_state : Int32
 }
 
 ///|
@@ -283,9 +283,9 @@ let arabic_state_table : Array[Array[ArabicStateEntry]] = [
 ]
 
 ///|
-fn arabic_joining_actions(buffer : Buffer) -> Array[Int] {
+fn arabic_joining_actions(buffer : Buffer) -> Array[Int32] {
   let infos = buffer.infos
-  let actions : Array[Int] = Array::make(infos.length(), arabic_action_none)
+  let actions : Array[Int32] = Array::make(infos.length(), arabic_action_none)
   let mut state = 0
   let mut prev = -1
   for i in 0..<infos.length() {
@@ -311,13 +311,13 @@ fn arabic_joining_actions(buffer : Buffer) -> Array[Int] {
 }
 
 ///|
-fn is_mongolian_variation_selector(u : UInt) -> Bool {
+fn is_mongolian_variation_selector(u : UInt32) -> Bool {
   (u >= 0x180BU && u <= 0x180DU) || u == 0x180FU
 }
 
 ///|
 fn apply_mongolian_variation_selectors(
-  actions : Array[Int],
+  actions : Array[Int32],
   infos : Array[GlyphInfo],
 ) -> Unit {
   if actions.length() != infos.length() {
@@ -334,8 +334,8 @@ fn apply_mongolian_variation_selectors(
 }
 
 ///|
-fn build_action_mask(actions : Array[Int], target : Int) -> Array[UInt] {
-  let masks : Array[UInt] = Array::make(actions.length(), 0U)
+fn build_action_mask(actions : Array[Int32], target : Int32) -> Array[UInt32] {
+  let masks : Array[UInt32] = Array::make(actions.length(), 0U)
   for i in 0..<actions.length() {
     if actions[i] == target {
       masks[i] = 1U
@@ -345,7 +345,7 @@ fn build_action_mask(actions : Array[Int], target : Int) -> Array[UInt] {
 }
 
 ///|
-fn arabic_action_column(action : Int) -> Int? {
+fn arabic_action_column(action : Int32) -> Int32? {
   if action == arabic_action_init {
     return Some(0)
   }
@@ -364,7 +364,7 @@ fn arabic_action_column(action : Int) -> Int? {
 }
 
 ///|
-fn apply_arabic_fallback(buffer : Buffer, actions : Array[Int]) -> Unit {
+fn apply_arabic_fallback(buffer : Buffer, actions : Array[Int32]) -> Unit {
   if actions.length() != buffer.infos.length() {
     return ()
   }
@@ -395,11 +395,11 @@ fn apply_arabic_fallback(buffer : Buffer, actions : Array[Int]) -> Unit {
 fn apply_gpos(
   font : @font.Font,
   buffer : Buffer,
-  zero_width_marks? : ZeroWidthMarks = Disabled,
-  fallback_position? : Bool = false,
-  unicode_mark_flags? : Array[Bool] = [],
-  combining_classes? : Array[Int] = [],
-  gpos_tag? : @common.Tag? = None,
+  zero_width_marks~ : ZeroWidthMarks = Disabled,
+  fallback_position~ : Bool = false,
+  unicode_mark_flags~ : Array[Bool] = [],
+  combining_classes~ : Array[Int32] = [],
+  gpos_tag~ : @common.Tag? = None,
 ) -> Result[Unit, ShapeError] {
   let gpos = match font.gpos() {
     Err(err) => return Err(Font(err))
@@ -417,7 +417,7 @@ fn apply_gpos(
           }
       }
   }
-  let mut gpos_lookups : Array[Int] = []
+  let mut gpos_lookups : Array[Int32] = []
   if gpos_to_use is Some(gpos) {
     let script_tag = match gpos_tag {
       None => buffer.script.to_tag()
@@ -484,14 +484,14 @@ fn apply_gpos(
       Err(err) => return Err(Font(err))
       Ok(value) => value
     }
-    let glyphs : Array[UInt] = []
-    let clusters : Array[Int] = []
+    let glyphs : Array[UInt32] = []
+    let clusters : Array[Int32] = []
     for info in buffer.infos {
       glyphs.push(info.codepoint)
       clusters.push(info.cluster)
     }
-    let advances_x : Array[Int] = []
-    let advances_y : Array[Int] = []
+    let advances_x : Array[Int32] = []
+    let advances_y : Array[Int32] = []
     for pos in buffer.positions {
       advances_x.push(pos.x_advance)
       advances_y.push(pos.y_advance)
@@ -633,9 +633,9 @@ pub fn Buffer::shape_arabic(
       combining_classes~,
     )
   }
-  let mut current_glyphs : Array[UInt] = []
-  let mut current_clusters : Array[Int] = []
-  let mut current_unicodes : Array[UInt] = []
+  let mut current_glyphs : Array[UInt32] = []
+  let mut current_clusters : Array[Int32] = []
+  let mut current_unicodes : Array[UInt32] = []
   let mut changed = false
   let mut has_gsub_features = false
   if gsub is Some(gsub) {

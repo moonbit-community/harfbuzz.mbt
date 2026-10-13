@@ -19,7 +19,7 @@ test "vowel constraints insert dotted circle for devanagari pair" {
   buffer.add_codepoint(0x0905U)
   buffer.add_codepoint(0x093EU)
   preprocess_vowel_constraints(buffer)
-  let cps : Array[UInt] = []
+  let cps : Array[UInt32] = []
   for info in buffer.infos() {
     cps.push(info.codepoint)
   }
@@ -34,7 +34,7 @@ test "vowel constraints insert dotted circle after devanagari ra virama" {
   buffer.add_codepoint(0x094DU)
   buffer.add_codepoint(0x0907U)
   preprocess_vowel_constraints(buffer)
-  let cps : Array[UInt] = []
+  let cps : Array[UInt32] = []
   for info in buffer.infos() {
     cps.push(info.codepoint)
   }

@@ -34,94 +34,94 @@ let indic_feature_tags : Array[@common.Tag] = [
 ]
 
 ///|
-let indic_cat_c : Int = 1
+let indic_cat_c : Int32 = 1
 
 ///|
-let indic_cat_cs : Int = 18
+let indic_cat_cs : Int32 = 18
 
 ///|
-let indic_cat_ra : Int = 15
+let indic_cat_ra : Int32 = 15
 
 ///|
-let indic_cat_cm : Int = 16
+let indic_cat_cm : Int32 = 16
 
 ///|
-let indic_cat_repha : Int = 14
+let indic_cat_repha : Int32 = 14
 
 ///|
-let indic_cat_v : Int = 2
+let indic_cat_v : Int32 = 2
 
 ///|
-let indic_cat_placeholder : Int = 10
+let indic_cat_placeholder : Int32 = 10
 
 ///|
-let indic_cat_dotted_circle : Int = 11
+let indic_cat_dotted_circle : Int32 = 11
 
 ///|
-let indic_cat_h : Int = 4
+let indic_cat_h : Int32 = 4
 
 ///|
-let indic_cat_zwj : Int = 6
+let indic_cat_zwj : Int32 = 6
 
 ///|
-let indic_cat_zwnj : Int = 5
+let indic_cat_zwnj : Int32 = 5
 
 ///|
-let indic_cat_n : Int = 3
+let indic_cat_n : Int32 = 3
 
 ///|
-let indic_cat_rs : Int = 12
+let indic_cat_rs : Int32 = 12
 
 ///|
-let indic_cat_mpst : Int = 13
+let indic_cat_mpst : Int32 = 13
 
 ///|
-let indic_cat_sm : Int = 8
+let indic_cat_sm : Int32 = 8
 
 ///|
-let indic_pos_start : Int = 0
+let indic_pos_start : Int32 = 0
 
 ///|
-let indic_pos_pre_c : Int = 3
+let indic_pos_pre_c : Int32 = 3
 
 ///|
-let indic_pos_base_c : Int = 4
+let indic_pos_base_c : Int32 = 4
 
 ///|
-let indic_pos_below_c : Int = 8
+let indic_pos_below_c : Int32 = 8
 
 ///|
-let indic_pos_post_c : Int = 11
+let indic_pos_post_c : Int32 = 11
 
 ///|
-let indic_pos_smvd : Int = 13
+let indic_pos_smvd : Int32 = 13
 
 ///|
-let indic_pos_end : Int = 14
+let indic_pos_end : Int32 = 14
 
 ///|
-let indic_feature_rphf : Int = 2
+let indic_feature_rphf : Int32 = 2
 
 ///|
-let indic_feature_pref : Int = 4
+let indic_feature_pref : Int32 = 4
 
 ///|
-let indic_feature_blwf : Int = 5
+let indic_feature_blwf : Int32 = 5
 
 ///|
-let indic_feature_abvf : Int = 6
+let indic_feature_abvf : Int32 = 6
 
 ///|
-let indic_feature_half : Int = 7
+let indic_feature_half : Int32 = 7
 
 ///|
-let indic_feature_pstf : Int = 8
+let indic_feature_pstf : Int32 = 8
 
 ///|
-let indic_feature_vatu : Int = 9
+let indic_feature_vatu : Int32 = 9
 
 ///|
-let indic_feature_init : Int = 11
+let indic_feature_init : Int32 = 11
 
 ///|
 fn indic_blwf_pre_and_post(script : @common.Script) -> Bool {
@@ -160,9 +160,9 @@ fn indic_script_tag_3(script_tag : @common.Tag) -> @common.Tag {
 
 ///|
 fn indic_has_consonant_after(
-  categories : Array[Int],
-  start : Int,
-  end : Int,
+  categories : Array[Int32],
+  start : Int32,
+  end : Int32,
 ) -> Bool {
   if start < 0 || end > categories.length() || start >= end {
     return false
@@ -178,11 +178,11 @@ fn indic_has_consonant_after(
 ///|
 fn indic_reph_limit(
   script : @common.Script,
-  categories : Array[Int],
-  start : Int,
-  end : Int,
+  categories : Array[Int32],
+  start : Int32,
+  end : Int32,
   has_rphf : Bool,
-) -> Int {
+) -> Int32 {
   if start < 0 || end > categories.length() || start >= end {
     return start
   }
@@ -227,7 +227,7 @@ fn indic_reph_limit(
 }
 
 ///|
-fn indic_virama_codepoint(script : @common.Script) -> UInt? {
+fn indic_virama_codepoint(script : @common.Script) -> UInt32? {
   if script == @common.script_devanagari {
     return Some(0x094DU)
   }
@@ -259,7 +259,7 @@ fn indic_virama_codepoint(script : @common.Script) -> UInt? {
 }
 
 ///|
-fn is_consonant_indic(category : Int) -> Bool {
+fn is_consonant_indic(category : Int32) -> Bool {
   category == indic_cat_c ||
   category == indic_cat_cs ||
   category == indic_cat_ra ||
@@ -270,7 +270,7 @@ fn is_consonant_indic(category : Int) -> Bool {
 }
 
 ///|
-fn is_joiner_or_mark_indic(category : Int) -> Bool {
+fn is_joiner_or_mark_indic(category : Int32) -> Bool {
   category == indic_cat_zwj ||
   category == indic_cat_zwnj ||
   category == indic_cat_n ||
@@ -282,16 +282,16 @@ fn is_joiner_or_mark_indic(category : Int) -> Bool {
 ///|
 fn reorder_range_by_positions_indic(
   buffer : Buffer,
-  categories : Array[Int],
-  positions : Array[Int],
-  start : Int,
-  end : Int,
-) -> (Array[Int], Array[Int]) {
+  categories : Array[Int32],
+  positions : Array[Int32],
+  start : Int32,
+  end : Int32,
+) -> (Array[Int32], Array[Int32]) {
   if start < 0 || end > buffer.infos.length() || start >= end {
     return (categories, positions)
   }
   let range_len = end - start
-  let order : Array[Int] = []
+  let order : Array[Int32] = []
   for pos in indic_pos_start..<=indic_pos_end {
     for rel in 0..<range_len {
       if positions[start + rel] == pos {
@@ -301,8 +301,8 @@ fn reorder_range_by_positions_indic(
   }
   let next_infos : Array[GlyphInfo] = []
   let next_positions : Array[GlyphPosition] = []
-  let next_categories : Array[Int] = []
-  let next_pos_values : Array[Int] = []
+  let next_categories : Array[Int32] = []
+  let next_pos_values : Array[Int32] = []
   for i in 0..<start {
     next_infos.push(buffer.infos[i])
     next_positions.push(buffer.positions[i])
@@ -331,12 +331,12 @@ fn reorder_range_by_positions_indic(
 fn reorder_indic_syllables(
   buffer : Buffer,
   script : @common.Script,
-  categories : Array[Int],
-  positions : Array[Int],
-  syllables : Array[Int],
+  categories : Array[Int32],
+  positions : Array[Int32],
+  syllables : Array[Int32],
   gsub : @ot_tables.GsubTable?,
-  glyphs : Array[UInt],
-  rphf_lookups : Array[Int],
+  glyphs : Array[UInt32],
+  rphf_lookups : Array[Int32],
 ) -> Unit {
   if categories.length() != buffer.infos.length() ||
     positions.length() != buffer.infos.length() ||
@@ -426,12 +426,12 @@ fn reorder_indic_syllables(
 
 ///|
 fn find_base_indic_with_limit(
-  categories : Array[Int],
-  positions : Array[Int],
-  start : Int,
-  end : Int,
-  limit : Int,
-) -> Int {
+  categories : Array[Int32],
+  positions : Array[Int32],
+  start : Int32,
+  end : Int32,
+  limit : Int32,
+) -> Int32 {
   if start < 0 || end > categories.length() || start >= end {
     return start
   }
@@ -468,10 +468,10 @@ fn find_base_indic_with_limit(
 ///|
 fn indic_would_substitute(
   gsub : @ot_tables.GsubTable?,
-  lookup_offsets : Array[Int],
-  glyphs : Array[UInt],
-  start : Int,
-  length : Int,
+  lookup_offsets : Array[Int32],
+  glyphs : Array[UInt32],
+  start : Int32,
+  length : Int32,
 ) -> Bool {
   if lookup_offsets.is_empty() ||
     length <= 0 ||
@@ -483,7 +483,7 @@ fn indic_would_substitute(
     None => return false
     Some(value) => value
   }
-  let sub_glyphs : Array[UInt] = []
+  let sub_glyphs : Array[UInt32] = []
   for i in start..<(start + length) {
     sub_glyphs.push(glyphs[i])
   }
@@ -506,14 +506,14 @@ fn indic_would_substitute(
 fn build_indic_feature_masks(
   script : @common.Script,
   is_old_spec : Bool,
-  categories : Array[Int],
-  positions : Array[Int],
-  syllables : Array[Int],
-  glyphs : Array[UInt],
+  categories : Array[Int32],
+  positions : Array[Int32],
+  syllables : Array[Int32],
+  glyphs : Array[UInt32],
   gsub : @ot_tables.GsubTable?,
-  rphf_lookups : Array[Int],
-  pref_lookups : Array[Int],
-) -> Array[UInt] {
+  rphf_lookups : Array[Int32],
+  pref_lookups : Array[Int32],
+) -> Array[UInt32] {
   let len = categories.length()
   let masks = Array::make(len, 0U)
   let rphf_bit = 1U << indic_feature_rphf
@@ -621,14 +621,14 @@ fn build_indic_feature_masks(
 
 ///|
 fn update_indic_positions_from_face(
-  positions : Array[Int],
-  glyphs : Array[UInt],
+  positions : Array[Int32],
+  glyphs : Array[UInt32],
   gsub : @ot_tables.GsubTable?,
-  virama_glyph : UInt,
-  blwf_lookups : Array[Int],
-  pstf_lookups : Array[Int],
-  vatu_lookups : Array[Int],
-  pref_lookups : Array[Int],
+  virama_glyph : UInt32,
+  blwf_lookups : Array[Int32],
+  pstf_lookups : Array[Int32],
+  vatu_lookups : Array[Int32],
+  pref_lookups : Array[Int32],
 ) -> Unit {
   if positions.length() != glyphs.length() {
     return ()
@@ -647,8 +647,8 @@ fn update_indic_positions_from_face(
       continue
     }
     let consonant = glyphs[i]
-    let seq1 : Array[UInt] = [virama_glyph, consonant]
-    let seq2 : Array[UInt] = [consonant, virama_glyph]
+    let seq1 : Array[UInt32] = [virama_glyph, consonant]
+    let seq2 : Array[UInt32] = [consonant, virama_glyph]
     if indic_would_substitute(gsub, blwf_lookups, seq1, 0, 2) ||
       indic_would_substitute(gsub, blwf_lookups, seq2, 0, 2) ||
       indic_would_substitute(gsub, vatu_lookups, seq1, 0, 2) ||
@@ -705,8 +705,8 @@ pub fn Buffer::shape_indic(
     }
   }
   preprocess_vowel_constraints(self)
-  let categories : Array[UInt] = []
-  let categories_i : Array[Int] = []
+  let categories : Array[UInt32] = []
+  let categories_i : Array[Int32] = []
   for info in self.infos {
     let category = indic_category(indic_get_categories(info.codepoint))
     categories.push(category)
@@ -720,9 +720,9 @@ pub fn Buffer::shape_indic(
     Err(err) => return Err(err)
     Ok(_) => ()
   }
-  let categories_after_u : Array[UInt] = []
-  let categories_after_i : Array[Int] = []
-  let positions_after : Array[Int] = []
+  let categories_after_u : Array[UInt32] = []
+  let categories_after_i : Array[Int32] = []
+  let positions_after : Array[Int32] = []
   for info in self.infos {
     let packed = indic_get_categories(info.codepoint)
     categories_after_u.push(indic_category(packed))
@@ -730,11 +730,11 @@ pub fn Buffer::shape_indic(
     positions_after.push(indic_position(packed))
   }
   let syllables_after = find_syllables_indic(categories_after_u)
-  let mut rphf_lookups : Array[Int] = []
-  let mut pref_lookups : Array[Int] = []
-  let mut blwf_lookups : Array[Int] = []
-  let mut pstf_lookups : Array[Int] = []
-  let mut vatu_lookups : Array[Int] = []
+  let mut rphf_lookups : Array[Int32] = []
+  let mut pref_lookups : Array[Int32] = []
+  let mut blwf_lookups : Array[Int32] = []
+  let mut pstf_lookups : Array[Int32] = []
+  let mut vatu_lookups : Array[Int32] = []
   if gsub is Some(gsub) {
     rphf_lookups = match
       gsub
@@ -797,7 +797,7 @@ pub fn Buffer::shape_indic(
       Ok(value) => value
     }
   }
-  let glyphs_for_positions : Array[UInt] = []
+  let glyphs_for_positions : Array[UInt32] = []
   for info in self.infos {
     let glyph = match font.glyph_for_codepoint(info.codepoint) {
       Err(err) => return Err(Font(err))
@@ -830,8 +830,8 @@ pub fn Buffer::shape_indic(
     glyphs_for_positions,
     rphf_lookups,
   )
-  let reordered_categories : Array[Int] = []
-  let reordered_positions : Array[Int] = []
+  let reordered_categories : Array[Int32] = []
+  let reordered_positions : Array[Int32] = []
   for info in self.infos {
     let packed = indic_get_categories(info.codepoint)
     reordered_categories.push(indic_category(packed).reinterpret_as_int())
@@ -841,7 +841,7 @@ pub fn Buffer::shape_indic(
     Err(err) => return Err(err)
     Ok(_) => ()
   }
-  let glyphs : Array[UInt] = []
+  let glyphs : Array[UInt32] = []
   for info in self.infos {
     glyphs.push(info.codepoint)
   }

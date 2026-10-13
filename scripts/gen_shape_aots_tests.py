@@ -204,7 +204,7 @@ def emit_cases() -> None:
     lines.append("]")
     lines.append("")
     lines.append("///|")
-    lines.append("pub let aots_skipped_cases : Int = ")
+    lines.append("pub let aots_skipped_cases : Int32 = ")
     lines.append(f"  {skipped}")
     lines.append("")
     OUT_CASES.write_text("\n".join(lines))

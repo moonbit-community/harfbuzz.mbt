@@ -13,13 +13,13 @@
 // limitations under the License.
 
 ///|
-fn push_u16_tv(bytes : Array[Byte], value : Int) -> Unit {
+fn push_u16_tv(bytes : Array[Byte], value : Int32) -> Unit {
   bytes.push(((value >> 8) & 0xff).to_byte())
   bytes.push((value & 0xff).to_byte())
 }
 
 ///|
-fn push_i16_tv(bytes : Array[Byte], value : Int) -> Unit {
+fn push_i16_tv(bytes : Array[Byte], value : Int32) -> Unit {
   let adjusted = if value < 0 { value + 0x10000 } else { value }
   push_u16_tv(bytes, adjusted)
 }

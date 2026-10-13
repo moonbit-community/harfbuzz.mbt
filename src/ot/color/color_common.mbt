@@ -29,7 +29,7 @@ pub extend ColorError with @debug.Debug::{to_repr}
 pub extend ColorError with ToJson::{to_json}
 
 ///|
-fn read_u8_int(data : BytesView, offset : Int) -> Result[Int, ColorError] {
+fn read_u8_int(data : BytesView, offset : Int32) -> Result[Int32, ColorError] {
   if offset < 0 || offset + 1 > data.length() {
     return Err(UnexpectedEof)
   }
@@ -37,7 +37,7 @@ fn read_u8_int(data : BytesView, offset : Int) -> Result[Int, ColorError] {
 }
 
 ///|
-fn read_u16_int(data : BytesView, offset : Int) -> Result[Int, ColorError] {
+fn read_u16_int(data : BytesView, offset : Int32) -> Result[Int32, ColorError] {
   if offset < 0 || offset + 2 > data.length() {
     return Err(UnexpectedEof)
   }
@@ -53,7 +53,7 @@ fn read_u16_int(data : BytesView, offset : Int) -> Result[Int, ColorError] {
 }
 
 ///|
-fn read_i16(data : BytesView, offset : Int) -> Result[Int, ColorError] {
+fn read_i16(data : BytesView, offset : Int32) -> Result[Int32, ColorError] {
   match read_u16_int(data, offset) {
     Err(err) => Err(err)
     Ok(value) => if value >= 0x8000 { Ok(value - 0x10000) } else { Ok(value) }
@@ -61,7 +61,7 @@ fn read_i16(data : BytesView, offset : Int) -> Result[Int, ColorError] {
 }
 
 ///|
-fn read_u24_int(data : BytesView, offset : Int) -> Result[Int, ColorError] {
+fn read_u24_int(data : BytesView, offset : Int32) -> Result[Int32, ColorError] {
   if offset < 0 || offset + 3 > data.length() {
     return Err(UnexpectedEof)
   }
@@ -77,7 +77,7 @@ fn read_u24_int(data : BytesView, offset : Int) -> Result[Int, ColorError] {
 }
 
 ///|
-fn read_u32(data : BytesView, offset : Int) -> Result[UInt, ColorError] {
+fn read_u32(data : BytesView, offset : Int32) -> Result[UInt32, ColorError] {
   if offset < 0 || offset + 4 > data.length() {
     return Err(UnexpectedEof)
   }
@@ -89,7 +89,7 @@ fn read_u32(data : BytesView, offset : Int) -> Result[UInt, ColorError] {
 }
 
 ///|
-fn read_u32_int(data : BytesView, offset : Int) -> Result[Int, ColorError] {
+fn read_u32_int(data : BytesView, offset : Int32) -> Result[Int32, ColorError] {
   match read_u32(data, offset) {
     Err(err) => Err(err)
     Ok(value) => Ok(value.reinterpret_as_int())
@@ -97,7 +97,7 @@ fn read_u32_int(data : BytesView, offset : Int) -> Result[Int, ColorError] {
 }
 
 ///|
-fn read_i32(data : BytesView, offset : Int) -> Result[Int, ColorError] {
+fn read_i32(data : BytesView, offset : Int32) -> Result[Int32, ColorError] {
   match read_u32(data, offset) {
     Err(err) => Err(err)
     Ok(value) => Ok(value.reinterpret_as_int())

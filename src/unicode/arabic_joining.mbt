@@ -14,31 +14,31 @@
 
 ///|
 /// Arabic joining type constants.
-pub let arabic_joining_type_u : UInt = 0U
+pub let arabic_joining_type_u : UInt32 = 0U
 
 ///|
-pub let arabic_joining_type_l : UInt = 1U
+pub let arabic_joining_type_l : UInt32 = 1U
 
 ///|
-pub let arabic_joining_type_r : UInt = 2U
+pub let arabic_joining_type_r : UInt32 = 2U
 
 ///|
-pub let arabic_joining_type_d : UInt = 3U
+pub let arabic_joining_type_d : UInt32 = 3U
 
 ///|
-pub let arabic_joining_group_alaph : UInt = 4U
+pub let arabic_joining_group_alaph : UInt32 = 4U
 
 ///|
-pub let arabic_joining_group_dalath_rish : UInt = 5U
+pub let arabic_joining_group_dalath_rish : UInt32 = 5U
 
 ///|
-pub let arabic_joining_type_t : UInt = 7U
+pub let arabic_joining_type_t : UInt32 = 7U
 
 ///|
-pub let arabic_joining_type_x : UInt = 8U
+pub let arabic_joining_type_x : UInt32 = 8U
 
 ///|
-let arabic_joining_table : Array[UInt] = [
+let arabic_joining_table : Array[UInt32] = [
   0U, 0U, 0U, 0U, 0U, 0U, 8U, 8U, 0U, 8U, 8U, 0U, 8U, 8U, 8U, 8U, 8U, 8U, 8U, 8U,
   8U, 8U, 8U, 8U, 8U, 8U, 8U, 8U, 8U, 8U, 8U, 8U, 3U, 0U, 2U, 2U, 2U, 2U, 3U, 2U,
   3U, 2U, 3U, 3U, 3U, 3U, 3U, 2U, 2U, 2U, 2U, 3U, 3U, 3U, 3U, 3U, 3U, 3U, 3U, 3U,
@@ -115,7 +115,7 @@ let arabic_joining_table : Array[UInt] = [
 
 ///|
 /// Return joining type from ArabicShaping data.
-pub fn arabic_joining_type_raw(u : UInt) -> UInt {
+pub fn arabic_joining_type_raw(u : UInt32) -> UInt32 {
   let block = (u >> 12).reinterpret_as_int()
   match block {
     0 =>
@@ -166,7 +166,7 @@ pub fn arabic_joining_type_raw(u : UInt) -> UInt {
 
 ///|
 /// Return joining type with transparent marks mapped to T.
-pub fn arabic_joining_type(u : UInt) -> UInt {
+pub fn arabic_joining_type(u : UInt32) -> UInt32 {
   let raw = arabic_joining_type_raw(u)
   if raw != arabic_joining_type_x {
     return raw

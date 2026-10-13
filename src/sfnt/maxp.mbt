@@ -15,7 +15,7 @@
 ///|
 /// Parsed maxp table (subset).
 pub struct MaxpTable {
-  num_glyphs : Int
+  num_glyphs : Int32
 } derive(Eq, Debug, ToJson)
 
 ///|

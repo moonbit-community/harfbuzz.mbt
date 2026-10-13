@@ -14,13 +14,13 @@
 
 ///|
 /// Arabic shaping table range.
-pub let arabic_shaping_first : UInt = 0x0621U
+pub let arabic_shaping_first : UInt32 = 0x0621U
 
 ///|
-pub let arabic_shaping_last : UInt = 0x06D3U
+pub let arabic_shaping_last : UInt32 = 0x06D3U
 
 ///|
-let arabic_shaping_table : Array[UInt] = [
+let arabic_shaping_table : Array[UInt32] = [
   0x0000U, 0x0000U, 0x0000U, 0xFE80U, 0x0000U, 0x0000U, 0xFE82U, 0xFE81U, 0x0000U,
   0x0000U, 0xFE84U, 0xFE83U, 0x0000U, 0x0000U, 0xFE86U, 0xFE85U, 0x0000U, 0x0000U,
   0xFE88U, 0xFE87U, 0xFE8BU, 0xFE8CU, 0xFE8AU, 0xFE89U, 0x0000U, 0x0000U, 0xFE8EU,
@@ -105,7 +105,7 @@ let arabic_shaping_table : Array[UInt] = [
 
 ///|
 /// Return Arabic presentation form for a column (0=init,1=medi,2=fina,3=isol).
-pub fn arabic_shaping_form(u : UInt, column : Int) -> UInt? {
+pub fn arabic_shaping_form(u : UInt32, column : Int32) -> UInt32? {
   if u < arabic_shaping_first || u > arabic_shaping_last {
     return None
   }

@@ -15,7 +15,7 @@
 ///|
 /// Tag identifier (four bytes).
 pub struct Tag {
-  value : UInt
+  value : UInt32
 } derive(Eq, Debug, ToJson, Hash)
 
 ///|
@@ -56,7 +56,7 @@ pub fn Tag::from_chars(c1 : Char, c2 : Char, c3 : Char, c4 : Char) -> Tag {
 
 ///|
 /// Construct a tag from a string, padding with spaces when shorter than 4.
-pub fn Tag::from_string(s : String, len? : Int = -1) -> Tag {
+pub fn Tag::from_string(s : String, len~ : Int32 = -1) -> Tag {
   if s is "" || len == 0 {
     return tag_none
   }
@@ -108,7 +108,7 @@ pub impl Show for Tag with fn output(self, logger) {
 
 ///|
 /// Return the raw 32-bit value of the tag.
-pub fn Tag::to_uint(self : Tag) -> UInt {
+pub fn Tag::to_uint(self : Tag) -> UInt32 {
   self.value
 }
 

@@ -13,13 +13,13 @@
 // limitations under the License.
 
 ///|
-fn push_u16_cvar(bytes : Array[Byte], value : Int) -> Unit {
+fn push_u16_cvar(bytes : Array[Byte], value : Int32) -> Unit {
   bytes.push(((value >> 8) & 0xff).to_byte())
   bytes.push((value & 0xff).to_byte())
 }
 
 ///|
-fn push_u32_cvar(bytes : Array[Byte], value : Int) -> Unit {
+fn push_u32_cvar(bytes : Array[Byte], value : Int32) -> Unit {
   bytes.push(((value >> 24) & 0xff).to_byte())
   bytes.push(((value >> 16) & 0xff).to_byte())
   bytes.push(((value >> 8) & 0xff).to_byte())
@@ -27,7 +27,7 @@ fn push_u32_cvar(bytes : Array[Byte], value : Int) -> Unit {
 }
 
 ///|
-fn push_i16_cvar(bytes : Array[Byte], value : Int) -> Unit {
+fn push_i16_cvar(bytes : Array[Byte], value : Int32) -> Unit {
   let adjusted = if value < 0 { value + 0x10000 } else { value }
   push_u16_cvar(bytes, adjusted)
 }
@@ -54,7 +54,7 @@ test "cvar apply deltas" {
     Err(err) => fail("parse failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  let cvt : Array[Int] = [100, 200, 300]
+  let cvt : Array[Int32] = [100, 200, 300]
   let applied = match cvar.apply_to_cvt(cvt, [16384]) {
     Err(err) => fail("apply failed: \{@debug.to_string(err)}")
     Ok(value) => value

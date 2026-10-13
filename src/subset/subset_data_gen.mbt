@@ -160,7 +160,7 @@ fn merge_byte_maps(parts : Array[Map[String, Bytes]]) -> Map[String, Bytes] {
 }
 
 ///|
-pub let subset_data_case_count : Int = 38
+pub let subset_data_case_count : Int32 = 38
 
 ///|
 fn subset_data_fonts_entry_7_piece_0() -> Bytes {

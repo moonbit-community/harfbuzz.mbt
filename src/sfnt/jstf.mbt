@@ -15,7 +15,7 @@
 ///|
 /// Justification modification list.
 pub struct JstfModList {
-  indices : Array[Int]
+  indices : Array[Int32]
 } derive(Debug, ToJson)
 
 ///|
@@ -27,7 +27,7 @@ pub extend JstfModList with ToJson::{to_json}
 ///|
 /// Justification max table (offsets to GPOS lookups).
 pub struct JstfMax {
-  lookup_offsets : Array[Int]
+  lookup_offsets : Array[Int32]
 } derive(Debug, ToJson)
 
 ///|
@@ -85,7 +85,7 @@ pub extend JstfLangSysRecord with ToJson::{to_json}
 ///|
 /// Justification script table.
 pub struct JstfScript {
-  extender_glyphs : Array[Int]
+  extender_glyphs : Array[Int32]
   default_lang_sys : JstfLangSys?
   lang_sys_records : Array[JstfLangSysRecord]
 } derive(Debug, ToJson)
@@ -112,8 +112,8 @@ pub extend JstfScriptRecord with ToJson::{to_json}
 ///|
 /// Parsed JSTF table.
 pub struct JstfTable {
-  major_version : Int
-  minor_version : Int
+  major_version : Int32
+  minor_version : Int32
   scripts : Array[JstfScriptRecord]
 } derive(Debug, ToJson)
 
@@ -126,7 +126,7 @@ pub extend JstfTable with ToJson::{to_json}
 ///|
 fn parse_jstf_mod_list(
   data : BytesView,
-  offset : Int,
+  offset : Int32,
 ) -> Result[JstfModList, SfntError] {
   let count = read_u16_int(data, offset)
   match count {
@@ -135,7 +135,7 @@ fn parse_jstf_mod_list(
       if count < 0 {
         return Err(InvalidFormat)
       }
-      let indices : Array[Int] = []
+      let indices : Array[Int32] = []
       let base = offset + 2
       if base + count * 2 > data.length() {
         return Err(UnexpectedEof)
@@ -153,7 +153,10 @@ fn parse_jstf_mod_list(
 }
 
 ///|
-fn parse_jstf_max(data : BytesView, offset : Int) -> Result[JstfMax, SfntError] {
+fn parse_jstf_max(
+  data : BytesView,
+  offset : Int32,
+) -> Result[JstfMax, SfntError] {
   let count = read_u16_int(data, offset)
   match count {
     Err(err) => Err(err)
@@ -161,7 +164,7 @@ fn parse_jstf_max(data : BytesView, offset : Int) -> Result[JstfMax, SfntError] 
       if count < 0 {
         return Err(InvalidFormat)
       }
-      let offsets : Array[Int] = []
+      let offsets : Array[Int32] = []
       let base = offset + 2
       if base + count * 2 > data.length() {
         return Err(UnexpectedEof)
@@ -181,8 +184,8 @@ fn parse_jstf_max(data : BytesView, offset : Int) -> Result[JstfMax, SfntError] 
 ///|
 fn parse_jstf_mod_optional(
   data : BytesView,
-  base : Int,
-  value : Int,
+  base : Int32,
+  value : Int32,
 ) -> Result[JstfModList?, SfntError] {
   if value < 0 {
     return Err(InvalidFormat)
@@ -200,8 +203,8 @@ fn parse_jstf_mod_optional(
 ///|
 fn parse_jstf_max_optional(
   data : BytesView,
-  base : Int,
-  value : Int,
+  base : Int32,
+  value : Int32,
 ) -> Result[JstfMax?, SfntError] {
   if value < 0 {
     return Err(InvalidFormat)
@@ -219,9 +222,9 @@ fn parse_jstf_max_optional(
 ///|
 fn parse_jstf_priority(
   data : BytesView,
-  offset : Int,
+  offset : Int32,
 ) -> Result[JstfPriority, SfntError] {
-  let offsets : Array[Int] = []
+  let offsets : Array[Int32] = []
   for i in 0..<10 {
     let value = read_u16_int(data, offset + i * 2)
     match value {
@@ -297,7 +300,7 @@ fn parse_jstf_priority(
 ///|
 fn parse_jstf_lang_sys(
   data : BytesView,
-  offset : Int,
+  offset : Int32,
 ) -> Result[JstfLangSys, SfntError] {
   let count = read_u16_int(data, offset)
   match count {
@@ -339,8 +342,8 @@ fn parse_jstf_lang_sys(
 ///|
 fn parse_extender_glyphs(
   data : BytesView,
-  offset : Int,
-) -> Result[Array[Int], SfntError] {
+  offset : Int32,
+) -> Result[Array[Int32], SfntError] {
   let count = read_u16_int(data, offset)
   match count {
     Err(err) => Err(err)
@@ -348,7 +351,7 @@ fn parse_extender_glyphs(
       if count < 0 {
         return Err(InvalidFormat)
       }
-      let glyphs : Array[Int] = []
+      let glyphs : Array[Int32] = []
       let base = offset + 2
       if base + count * 2 > data.length() {
         return Err(UnexpectedEof)
@@ -368,8 +371,8 @@ fn parse_extender_glyphs(
 ///|
 fn parse_jstf_lang_sys_record(
   data : BytesView,
-  offset : Int,
-  base : Int,
+  offset : Int32,
+  base : Int32,
 ) -> Result[JstfLangSysRecord, SfntError] {
   if offset < 0 || offset + 6 > data.length() {
     return Err(UnexpectedEof)
@@ -405,7 +408,7 @@ fn parse_jstf_lang_sys_record(
 ///|
 fn parse_jstf_script(
   data : BytesView,
-  offset : Int,
+  offset : Int32,
 ) -> Result[JstfScript, SfntError] {
   let extender_offset = read_u16_int(data, offset)
   let default_lang_sys_offset = read_u16_int(data, offset + 2)
@@ -418,7 +421,7 @@ fn parse_jstf_script(
       if extender_offset < 0 || default_lang_sys_offset < 0 || count < 0 {
         return Err(InvalidFormat)
       }
-      let extender_glyphs : Array[Int] = if extender_offset == 0 {
+      let extender_glyphs : Array[Int32] = if extender_offset == 0 {
         []
       } else {
         match parse_extender_glyphs(data, offset + extender_offset) {

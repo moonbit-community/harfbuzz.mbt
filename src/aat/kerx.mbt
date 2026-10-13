@@ -26,9 +26,9 @@ let coverage_type_mask = 0xffU
 
 ///|
 pub struct KerxPair {
-  left : UInt
-  right : UInt
-  value : Int
+  left : UInt32
+  right : UInt32
+  value : Int32
 } derive(Eq, Debug, ToJson)
 
 ///|
@@ -43,7 +43,7 @@ pub extend KerxPair with ToJson::{to_json}
 ///|
 pub struct KerxFormat1 {
   table : StateTable
-  actions : Array[Int]
+  actions : Array[Int32]
 } derive(Debug, ToJson)
 
 ///|
@@ -54,10 +54,10 @@ pub extend KerxFormat1 with ToJson::{to_json}
 
 ///|
 pub struct KerxFormat2 {
-  row_width : Int
+  row_width : Int32
   left : LookupTable
   right : LookupTable
-  values : Array[Int]
+  values : Array[Int32]
 } derive(Debug, ToJson)
 
 ///|
@@ -69,8 +69,8 @@ pub extend KerxFormat2 with ToJson::{to_json}
 ///|
 pub struct KerxFormat4 {
   table : StateTable
-  flags : UInt
-  actions : Array[Int]
+  flags : UInt32
+  actions : Array[Int32]
 } derive(Debug, ToJson)
 
 ///|
@@ -83,7 +83,7 @@ pub extend KerxFormat4 with ToJson::{to_json}
 pub struct KerxFormat6 {
   row_index : LookupTable
   column_index : LookupTable
-  values : Array[Int]
+  values : Array[Int32]
   long_values : Bool
 } derive(Debug, ToJson)
 
@@ -95,10 +95,10 @@ pub extend KerxFormat6 with ToJson::{to_json}
 
 ///|
 pub struct KerxAdjustment {
-  x_advance : Int
-  y_advance : Int
-  x_offset : Int
-  y_offset : Int
+  x_advance : Int32
+  y_advance : Int32
+  x_offset : Int32
+  y_offset : Int32
 } derive(Eq, Debug, ToJson)
 
 ///|
@@ -112,8 +112,8 @@ pub extend KerxAdjustment with ToJson::{to_json}
 
 ///|
 pub struct KerxSubtableHeader {
-  coverage : UInt
-  tuple_count : Int
+  coverage : UInt32
+  tuple_count : Int32
 } derive(Eq, Debug, ToJson)
 
 ///|
@@ -142,7 +142,7 @@ pub extend KerxSubtable with ToJson::{to_json}
 
 ///|
 pub struct KerxTable {
-  version : Int
+  version : Int32
   subtables : Array[KerxSubtable]
 } derive(Debug, ToJson)
 
@@ -153,32 +153,32 @@ pub extend KerxTable with @debug.Debug::{to_repr}
 pub extend KerxTable with ToJson::{to_json}
 
 ///|
-fn coverage_type(coverage : UInt) -> Int {
+fn coverage_type(coverage : UInt32) -> Int32 {
   (coverage & coverage_type_mask).reinterpret_as_int()
 }
 
 ///|
-fn coverage_is_horizontal(coverage : UInt) -> Bool {
+fn coverage_is_horizontal(coverage : UInt32) -> Bool {
   (coverage & coverage_vertical) == 0U
 }
 
 ///|
-fn coverage_is_cross_stream(coverage : UInt) -> Bool {
+fn coverage_is_cross_stream(coverage : UInt32) -> Bool {
   (coverage & coverage_cross_stream) != 0U
 }
 
 ///|
-fn coverage_is_backwards(coverage : UInt) -> Bool {
+fn coverage_is_backwards(coverage : UInt32) -> Bool {
   (coverage & coverage_backwards) != 0U
 }
 
 ///|
 fn resolve_tuple_value(
   data : BytesView,
-  base : Int,
-  tuple_count : Int,
-  value : Int,
-) -> Int {
+  base : Int32,
+  tuple_count : Int32,
+  value : Int32,
+) -> Int32 {
   if tuple_count <= 0 {
     return value
   }
@@ -196,7 +196,7 @@ fn resolve_tuple_value(
 }
 
 ///|
-fn scale_value(value : Int, scale : Int, upem : Int) -> Int {
+fn scale_value(value : Int32, scale : Int32, upem : Int32) -> Int32 {
   if upem == 0 {
     value
   } else {
@@ -205,7 +205,7 @@ fn scale_value(value : Int, scale : Int, upem : Int) -> Int {
 }
 
 ///|
-fn make_adjustments(len : Int) -> Array[KerxAdjustment] {
+fn make_adjustments(len : Int32) -> Array[KerxAdjustment] {
   let adjustments : Array[KerxAdjustment] = []
   for _ in 0..<len {
     adjustments.push({ x_advance: 0, y_advance: 0, x_offset: 0, y_offset: 0, })
@@ -216,8 +216,8 @@ fn make_adjustments(len : Int) -> Array[KerxAdjustment] {
 ///|
 fn parse_kerx_format0(
   data : BytesView,
-  offset : Int,
-  length : Int,
+  offset : Int32,
+  length : Int32,
   header : KerxSubtableHeader,
 ) -> Result[KerxSubtable, AatError] {
   let pair_count = read_u32_non_negative(data, offset + 12)
@@ -257,10 +257,10 @@ fn parse_kerx_format0(
 ///|
 fn parse_kerx_format1(
   data : BytesView,
-  offset : Int,
-  length : Int,
+  offset : Int32,
+  length : Int32,
   header : KerxSubtableHeader,
-  num_glyphs : Int,
+  num_glyphs : Int32,
 ) -> Result[KerxSubtable, AatError] {
   let machine_start = offset + 12
   let table_end = offset + length
@@ -286,7 +286,7 @@ fn parse_kerx_format1(
     return Err(InvalidFormat)
   }
   let action_count = bytes_len / 2
-  let actions : Array[Int] = []
+  let actions : Array[Int32] = []
   for i in 0..<action_count {
     let value = read_i16(data, action_base + i * 2)
     match value {
@@ -300,10 +300,10 @@ fn parse_kerx_format1(
 ///|
 fn parse_kerx_format2(
   data : BytesView,
-  offset : Int,
-  length : Int,
+  offset : Int32,
+  length : Int32,
   header : KerxSubtableHeader,
-  num_glyphs : Int,
+  num_glyphs : Int32,
 ) -> Result[KerxSubtable, AatError] {
   let row_width = read_u32_non_negative(data, offset + 12)
   let left_offset = read_u32_non_negative(data, offset + 16)
@@ -337,7 +337,7 @@ fn parse_kerx_format2(
         return Err(InvalidFormat)
       }
       let value_count = bytes_len / 2
-      let values : Array[Int] = []
+      let values : Array[Int32] = []
       for i in 0..<value_count {
         let value = read_i16(data, array_base + i * 2)
         match value {
@@ -368,10 +368,10 @@ fn parse_kerx_format2(
 ///|
 fn parse_kerx_format4(
   data : BytesView,
-  offset : Int,
-  length : Int,
+  offset : Int32,
+  length : Int32,
   header : KerxSubtableHeader,
-  num_glyphs : Int,
+  num_glyphs : Int32,
 ) -> Result[KerxSubtable, AatError] {
   let machine_start = offset + 12
   let table_end = offset + length
@@ -398,7 +398,7 @@ fn parse_kerx_format4(
     return Err(InvalidFormat)
   }
   let action_count = bytes_len / 2
-  let actions : Array[Int] = []
+  let actions : Array[Int32] = []
   for i in 0..<action_count {
     let value = read_i16(data, action_base + i * 2)
     match value {
@@ -412,10 +412,10 @@ fn parse_kerx_format4(
 ///|
 fn parse_kerx_format6(
   data : BytesView,
-  offset : Int,
-  length : Int,
+  offset : Int32,
+  length : Int32,
   header : KerxSubtableHeader,
-  num_glyphs : Int,
+  num_glyphs : Int32,
 ) -> Result[KerxSubtable, AatError] {
   let flags = read_u32_int(data, offset + 12)
   let row_count = read_u16_int(data, offset + 16)
@@ -488,7 +488,7 @@ fn parse_kerx_format6(
       } else {
         -1
       }
-      let values : Array[Int] = []
+      let values : Array[Int32] = []
       for i in 0..<value_count {
         let value = if long_values {
           read_i32(data, array_base + i * 4)
@@ -520,7 +520,7 @@ fn parse_kerx_format6(
 }
 
 ///|
-fn lookup_value(lookup : LookupTable, glyph : UInt) -> Int {
+fn lookup_value(lookup : LookupTable, glyph : UInt32) -> Int32 {
   match lookup.value_for(glyph) {
     None => 0
     Some(value) => value.reinterpret_as_int()
@@ -530,9 +530,9 @@ fn lookup_value(lookup : LookupTable, glyph : UInt) -> Int {
 ///|
 fn KerxSubtable::value_for(
   self : KerxSubtable,
-  left : UInt,
-  right : UInt,
-) -> Int {
+  left : UInt32,
+  right : UInt32,
+) -> Int32 {
   match self {
     Format0(_, pairs) => {
       for pair in pairs {
@@ -581,7 +581,7 @@ fn KerxSubtable::header(self : KerxSubtable) -> KerxSubtableHeader {
 ///|
 pub fn KerxTable::parse(
   data : BytesView,
-  num_glyphs : Int,
+  num_glyphs : Int32,
 ) -> Result[KerxTable, AatError] {
   let version = read_u16_int(data, 0)
   let table_count = read_u32_non_negative(data, 4)
@@ -658,10 +658,10 @@ pub fn KerxTable::has_data(self : KerxTable) -> Bool {
 ///|
 pub fn KerxTable::kern_value(
   self : KerxTable,
-  left : UInt,
-  right : UInt,
+  left : UInt32,
+  right : UInt32,
   horizontal : Bool,
-) -> Int {
+) -> Int32 {
   let mut value = 0
   for subtable in self.subtables {
     let header = subtable.header()
@@ -681,7 +681,7 @@ pub fn KerxTable::kern_value(
 }
 
 ///|
-fn map_index(idx : Int, len : Int, backwards : Bool) -> Int {
+fn map_index(idx : Int32, len : Int32, backwards : Bool) -> Int32 {
   if backwards {
     len - 1 - idx
   } else {
@@ -693,10 +693,10 @@ fn map_index(idx : Int, len : Int, backwards : Bool) -> Int {
 fn apply_pair_kerning(
   subtable : KerxSubtable,
   header : KerxSubtableHeader,
-  glyphs : Array[UInt],
+  glyphs : Array[UInt32],
   horizontal : Bool,
-  scale : Int,
-  upem : Int,
+  scale : Int32,
+  upem : Int32,
   adjustments : Array[KerxAdjustment],
 ) -> Bool {
   if glyphs.length() < 2 {
@@ -781,10 +781,10 @@ let format1_reset = 0x2000
 fn apply_format1(
   header : KerxSubtableHeader,
   format1 : KerxFormat1,
-  glyphs : Array[UInt],
+  glyphs : Array[UInt32],
   horizontal : Bool,
-  scale : Int,
-  upem : Int,
+  scale : Int32,
+  upem : Int32,
   adjustments : Array[KerxAdjustment],
 ) -> Bool {
   if format1.table.n_classes <= 0 {
@@ -797,7 +797,7 @@ fn apply_format1(
   let mut state = 0
   let mut idx = 0
   let len = glyphs.length()
-  let stack : Array[Int] = [0, 0, 0, 0, 0, 0, 0, 0]
+  let stack : Array[Int32] = [0, 0, 0, 0, 0, 0, 0, 0]
   let mut depth = 0
   while true {
     let klass = if idx < len {
@@ -895,13 +895,13 @@ let format4_dont_advance = 0x4000
 fn apply_format4(
   header : KerxSubtableHeader,
   format4 : KerxFormat4,
-  glyphs : Array[UInt],
-  scale_x : Int,
-  scale_y : Int,
-  upem : Int,
+  glyphs : Array[UInt32],
+  scale_x : Int32,
+  scale_y : Int32,
+  upem : Int32,
   adjustments : Array[KerxAdjustment],
   ankr : AnkrTable?,
-  contour_point : (UInt, Int) -> (Int, Int)?,
+  contour_point : (UInt32, Int32) -> (Int32, Int32)?,
 ) -> Bool {
   if format4.table.n_classes <= 0 {
     return false
@@ -1025,13 +1025,13 @@ fn apply_format4(
 ///|
 pub fn KerxTable::apply_scaled(
   self : KerxTable,
-  glyphs : Array[UInt],
+  glyphs : Array[UInt32],
   horizontal : Bool,
-  scale_x : Int,
-  scale_y : Int,
-  upem : Int,
+  scale_x : Int32,
+  scale_y : Int32,
+  upem : Int32,
   ankr : AnkrTable?,
-  contour_point? : (UInt, Int) -> (Int, Int)? = (_, _) => None,
+  contour_point~ : (UInt32, Int32) -> (Int32, Int32)? = (_, _) => None,
 ) -> Array[KerxAdjustment] {
   let adjustments = make_adjustments(glyphs.length())
   if self.version == 0 || glyphs.is_empty() {

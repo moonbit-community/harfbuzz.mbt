@@ -13,19 +13,19 @@
 // limitations under the License.
 
 ///|
-fn push_u16(bytes : Array[Byte], value : Int) -> Unit {
+fn push_u16(bytes : Array[Byte], value : Int32) -> Unit {
   bytes.push(((value >> 8) & 0xff).to_byte())
   bytes.push((value & 0xff).to_byte())
 }
 
 ///|
-fn push_i16(bytes : Array[Byte], value : Int) -> Unit {
+fn push_i16(bytes : Array[Byte], value : Int32) -> Unit {
   let adjusted = if value < 0 { value + 0x10000 } else { value }
   push_u16(bytes, adjusted)
 }
 
 ///|
-fn push_u32(bytes : Array[Byte], value : Int) -> Unit {
+fn push_u32(bytes : Array[Byte], value : Int32) -> Unit {
   bytes.push(((value >> 24) & 0xff).to_byte())
   bytes.push(((value >> 16) & 0xff).to_byte())
   bytes.push(((value >> 8) & 0xff).to_byte())
@@ -41,7 +41,7 @@ fn build_sfnt(tables : Array[(@common.Tag, Bytes)]) -> Bytes {
   push_u16(bytes, 0)
   push_u16(bytes, 0)
   let mut offset = 12 + tables.length() * 16
-  let records : Array[(@common.Tag, Int, Int)] = []
+  let records : Array[(@common.Tag, Int32, Int32)] = []
   for entry in tables {
     let (tag, table) = entry
     records.push((tag, offset, table.length()))
@@ -68,7 +68,7 @@ fn build_sfnt(tables : Array[(@common.Tag, Bytes)]) -> Bytes {
 }
 
 ///|
-fn build_head(upem : Int, loc_format : Int) -> Bytes {
+fn build_head(upem : Int32, loc_format : Int32) -> Bytes {
   let bytes : Array[Byte] = Array::make(54, b'\x00')
   bytes[18] = ((upem >> 8) & 0xff).to_byte()
   bytes[19] = (upem & 0xff).to_byte()
@@ -78,7 +78,7 @@ fn build_head(upem : Int, loc_format : Int) -> Bytes {
 }
 
 ///|
-fn build_maxp(num_glyphs : Int) -> Bytes {
+fn build_maxp(num_glyphs : Int32) -> Bytes {
   let bytes : Array[Byte] = Array::make(6, b'\x00')
   bytes[4] = ((num_glyphs >> 8) & 0xff).to_byte()
   bytes[5] = (num_glyphs & 0xff).to_byte()
@@ -86,7 +86,7 @@ fn build_maxp(num_glyphs : Int) -> Bytes {
 }
 
 ///|
-fn build_hhea(number_of_hmetrics : Int) -> Bytes {
+fn build_hhea(number_of_hmetrics : Int32) -> Bytes {
   let bytes : Array[Byte] = Array::make(36, b'\x00')
   bytes[34] = ((number_of_hmetrics >> 8) & 0xff).to_byte()
   bytes[35] = (number_of_hmetrics & 0xff).to_byte()
@@ -94,7 +94,7 @@ fn build_hhea(number_of_hmetrics : Int) -> Bytes {
 }
 
 ///|
-fn build_vhea(number_of_vmetrics : Int) -> Bytes {
+fn build_vhea(number_of_vmetrics : Int32) -> Bytes {
   let bytes : Array[Byte] = Array::make(36, b'\x00')
   bytes[34] = ((number_of_vmetrics >> 8) & 0xff).to_byte()
   bytes[35] = (number_of_vmetrics & 0xff).to_byte()
@@ -172,7 +172,7 @@ fn build_vmtx_three() -> Bytes {
 }
 
 ///|
-fn build_loca_short(offsets : Array[Int]) -> Bytes {
+fn build_loca_short(offsets : Array[Int32]) -> Bytes {
   let bytes : Array[Byte] = []
   for offset in offsets {
     push_u16(bytes, offset / 2)
@@ -361,7 +361,7 @@ fn build_gvar_table_composite(tuple_data : Bytes) -> Bytes {
 ///|
 fn build_font_bytes_gvar_composite() -> Bytes {
   let glyf = build_glyf_table_composite()
-  let offsets : Array[Int] = [
+  let offsets : Array[Int32] = [
     0,
     0,
     glyf.length() - build_glyf_composite_one_component().length(),
@@ -419,7 +419,11 @@ fn build_cmap_table(subtable : Bytes) -> Bytes {
 }
 
 ///|
-fn build_cmap_format12(start : UInt, end : UInt, start_gid : UInt) -> Bytes {
+fn build_cmap_format12(
+  start : UInt32,
+  end : UInt32,
+  start_gid : UInt32,
+) -> Bytes {
   let bytes : Array[Byte] = []
   push_u16(bytes, 12)
   push_u16(bytes, 0)
@@ -433,7 +437,7 @@ fn build_cmap_format12(start : UInt, end : UInt, start_gid : UInt) -> Bytes {
 }
 
 ///|
-fn push_u32var(bytes : Array[Byte], value : UInt) -> Unit {
+fn push_u32var(bytes : Array[Byte], value : UInt32) -> Unit {
   if value < 0x80U {
     bytes.push(value.reinterpret_as_int().to_byte())
     return

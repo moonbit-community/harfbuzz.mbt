@@ -13,20 +13,20 @@
 // limitations under the License.
 
 ///|
-fn push_u16(bytes : Array[Byte], value : Int) -> Unit {
+fn push_u16(bytes : Array[Byte], value : Int32) -> Unit {
   let v = value & 0xffff
   bytes.push(((v >> 8) & 0xff).to_byte())
   bytes.push((v & 0xff).to_byte())
 }
 
 ///|
-fn push_i16(bytes : Array[Byte], value : Int) -> Unit {
+fn push_i16(bytes : Array[Byte], value : Int32) -> Unit {
   let v = if value < 0 { value + 0x10000 } else { value }
   push_u16(bytes, v)
 }
 
 ///|
-fn push_u32(bytes : Array[Byte], value : Int) -> Unit {
+fn push_u32(bytes : Array[Byte], value : Int32) -> Unit {
   let v = value.reinterpret_as_uint()
   bytes.push(((v >> 24) & 0xffU).to_byte())
   bytes.push(((v >> 16) & 0xffU).to_byte())
@@ -35,7 +35,7 @@ fn push_u32(bytes : Array[Byte], value : Int) -> Unit {
 }
 
 ///|
-fn push_i32(bytes : Array[Byte], value : Int) -> Unit {
+fn push_i32(bytes : Array[Byte], value : Int32) -> Unit {
   push_u32(bytes, value)
 }
 
@@ -81,7 +81,7 @@ fn build_kerx_format1() -> Bytes {
   // kernAction offset
   push_u32(bytes, 68)
   // state array (2 states * 5 classes)
-  let state_values : Array[Int] = [0, 0, 0, 0, 1, 0, 0, 0, 0, 2]
+  let state_values : Array[Int32] = [0, 0, 0, 0, 1, 0, 0, 0, 0, 2]
   for value in state_values {
     push_u16(bytes, value)
   }
@@ -128,7 +128,7 @@ fn build_kerx_format4() -> Bytes {
   // flags (action type 1, offset 68)
   push_u32(bytes, 0x40000044)
   // state array
-  let state_values : Array[Int] = [0, 0, 0, 0, 1, 0, 0, 0, 0, 2]
+  let state_values : Array[Int32] = [0, 0, 0, 0, 1, 0, 0, 0, 0, 2]
   for value in state_values {
     push_u16(bytes, value)
   }
@@ -176,7 +176,7 @@ fn build_kerx_format4_control_points() -> Bytes {
   // flags (action type 0, offset 68)
   push_u32(bytes, 0x00000044)
   // state array
-  let state_values : Array[Int] = [0, 0, 0, 0, 1, 0, 0, 0, 0, 2]
+  let state_values : Array[Int32] = [0, 0, 0, 0, 1, 0, 0, 0, 0, 2]
   for value in state_values {
     push_u16(bytes, value)
   }
@@ -286,7 +286,7 @@ test "aat kerx format1" {
     Err(err) => fail("kerx parse failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  let glyphs : Array[UInt] = [1U, 2U]
+  let glyphs : Array[UInt32] = [1U, 2U]
   let adjustments = kerx.apply_scaled(glyphs, true, 1, 1, 1, None)
   @debug.debug_inspect(adjustments[0].x_advance, content="-50")
   @debug.debug_inspect(adjustments[0].x_offset, content="-50")
@@ -304,7 +304,7 @@ test "aat kerx format4 anchor" {
     Err(err) => fail("ankr parse failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  let glyphs : Array[UInt] = [1U, 2U]
+  let glyphs : Array[UInt32] = [1U, 2U]
   let adjustments = kerx.apply_scaled(glyphs, true, 1, 1, 1, Some(ankr))
   @debug.debug_inspect(adjustments[1].x_offset, content="-5")
   @debug.debug_inspect(adjustments[1].y_offset, content="15")
@@ -317,7 +317,7 @@ test "aat kerx format4 control points" {
     Err(err) => fail("kerx parse failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  let glyphs : Array[UInt] = [1U, 2U]
+  let glyphs : Array[UInt32] = [1U, 2U]
   let contour_point = (glyph, point_index) => {
     if glyph == 1U && point_index == 0 {
       Some((0, 0))
@@ -347,7 +347,7 @@ test "aat kerx format6 long values" {
     Err(err) => fail("kerx parse failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  let glyphs : Array[UInt] = [1U, 2U]
+  let glyphs : Array[UInt32] = [1U, 2U]
   let adjustments = kerx.apply_scaled(glyphs, true, 1, 1, 1, None)
   @debug.debug_inspect(adjustments[0].x_advance, content="1500")
   @debug.debug_inspect(adjustments[1].x_advance, content="1500")

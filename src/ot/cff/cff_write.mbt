@@ -13,13 +13,13 @@
 // limitations under the License.
 
 ///|
-fn push_u16(bytes : Array[Byte], value : Int) -> Unit {
+fn push_u16(bytes : Array[Byte], value : Int32) -> Unit {
   bytes.push(((value >> 8) & 0xff).to_byte())
   bytes.push((value & 0xff).to_byte())
 }
 
 ///|
-fn push_u32(bytes : Array[Byte], value : Int) -> Unit {
+fn push_u32(bytes : Array[Byte], value : Int32) -> Unit {
   bytes.push(((value >> 24) & 0xff).to_byte())
   bytes.push(((value >> 16) & 0xff).to_byte())
   bytes.push(((value >> 8) & 0xff).to_byte())
@@ -29,8 +29,8 @@ fn push_u32(bytes : Array[Byte], value : Int) -> Unit {
 ///|
 fn push_count(
   bytes : Array[Byte],
-  count : Int,
-  count_bytes : Int,
+  count : Int32,
+  count_bytes : Int32,
 ) -> Result[Unit, CffError] {
   if count < 0 {
     return Err(InvalidFormat)
@@ -50,7 +50,7 @@ fn push_count(
 }
 
 ///|
-fn offset_size_for(value : Int) -> Result[Int, CffError] {
+fn offset_size_for(value : Int32) -> Result[Int32, CffError] {
   if value <= 0 {
     return Err(InvalidFormat)
   }
@@ -72,8 +72,8 @@ fn offset_size_for(value : Int) -> Result[Int, CffError] {
 ///|
 fn push_offset(
   bytes : Array[Byte],
-  value : Int,
-  size : Int,
+  value : Int32,
+  size : Int32,
 ) -> Result[Unit, CffError] {
   if value < 0 {
     return Err(InvalidFormat)
@@ -91,7 +91,7 @@ fn push_offset(
 ///|
 fn write_cff_index(
   items : Array[Bytes],
-  count_bytes : Int,
+  count_bytes : Int32,
 ) -> Result[Bytes, CffError] {
   let bytes : Array[Byte] = []
   let count = items.length()
@@ -102,7 +102,7 @@ fn write_cff_index(
   if count == 0 {
     return Ok(Bytes::from_array(bytes))
   }
-  let offsets : Array[Int] = []
+  let offsets : Array[Int32] = []
   let mut current = 1
   offsets.push(current)
   for item in items {
@@ -129,7 +129,7 @@ fn write_cff_index(
 }
 
 ///|
-fn write_cff_int(bytes : Array[Byte], value : Int) -> Unit {
+fn write_cff_int(bytes : Array[Byte], value : Int32) -> Unit {
   if value >= -107 && value <= 107 {
     bytes.push((value + 139).to_byte())
     return
@@ -173,7 +173,7 @@ fn write_cff_real(
     return Err(InvalidFormat)
   }
   let chars = text.to_array()
-  let nibbles : Array[Int] = []
+  let nibbles : Array[Int32] = []
   let mut i = 0
   while i < chars.length() {
     let ch = chars[i]
@@ -229,7 +229,7 @@ fn write_cff_number(
 }
 
 ///|
-fn sort_ints(values : Array[Int]) -> Array[Int] {
+fn sort_ints(values : Array[Int32]) -> Array[Int32] {
   let sorted = values.copy()
   let n = sorted.length()
   for i in 1..<n {
@@ -246,7 +246,7 @@ fn sort_ints(values : Array[Int]) -> Array[Int] {
 
 ///|
 fn write_cff_dict(
-  entries : Map[Int, Array[CffNumber]],
+  entries : Map[Int32, Array[CffNumber]],
 ) -> Result[Bytes, CffError] {
   let ops = sort_ints(entries.keys().to_array())
   let bytes : Array[Byte] = []

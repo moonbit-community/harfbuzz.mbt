@@ -13,7 +13,7 @@
 // limitations under the License.
 
 ///|
-fn build_bytes(len : Int) -> Array[Byte] {
+fn build_bytes(len : Int32) -> Array[Byte] {
   let bytes : Array[Byte] = []
   for _ in 0..<len {
     bytes.push(0x00)
@@ -22,24 +22,24 @@ fn build_bytes(len : Int) -> Array[Byte] {
 }
 
 ///|
-fn push_u16(bytes : Array[Byte], value : Int) -> Unit {
+fn push_u16(bytes : Array[Byte], value : Int32) -> Unit {
   bytes.push(((value >> 8) & 0xff).to_byte())
   bytes.push((value & 0xff).to_byte())
 }
 
 ///|
-fn push_u8(bytes : Array[Byte], value : Int) -> Unit {
+fn push_u8(bytes : Array[Byte], value : Int32) -> Unit {
   bytes.push((value & 0xff).to_byte())
 }
 
 ///|
-fn push_i16(bytes : Array[Byte], value : Int) -> Unit {
+fn push_i16(bytes : Array[Byte], value : Int32) -> Unit {
   let adjusted = if value < 0 { value + 0x10000 } else { value }
   push_u16(bytes, adjusted)
 }
 
 ///|
-fn push_u32(bytes : Array[Byte], value : Int) -> Unit {
+fn push_u32(bytes : Array[Byte], value : Int32) -> Unit {
   bytes.push(((value >> 24) & 0xff).to_byte())
   bytes.push(((value >> 16) & 0xff).to_byte())
   bytes.push(((value >> 8) & 0xff).to_byte())
@@ -58,19 +58,19 @@ fn push_tag(bytes : Array[Byte], tag : @common.Tag) -> Unit {
 ///|
 
 ///|
-fn write_u16_at(bytes : Array[Byte], offset : Int, value : Int) -> Unit {
+fn write_u16_at(bytes : Array[Byte], offset : Int32, value : Int32) -> Unit {
   bytes[offset] = ((value >> 8) & 0xff).to_byte()
   bytes[offset + 1] = (value & 0xff).to_byte()
 }
 
 ///|
-fn write_i16_at(bytes : Array[Byte], offset : Int, value : Int) -> Unit {
+fn write_i16_at(bytes : Array[Byte], offset : Int32, value : Int32) -> Unit {
   let adjusted = if value < 0 { value + 0x10000 } else { value }
   write_u16_at(bytes, offset, adjusted)
 }
 
 ///|
-fn write_u32_at(bytes : Array[Byte], offset : Int, value : Int) -> Unit {
+fn write_u32_at(bytes : Array[Byte], offset : Int32, value : Int32) -> Unit {
   bytes[offset] = ((value >> 24) & 0xff).to_byte()
   bytes[offset + 1] = ((value >> 16) & 0xff).to_byte()
   bytes[offset + 2] = ((value >> 8) & 0xff).to_byte()
@@ -80,8 +80,8 @@ fn write_u32_at(bytes : Array[Byte], offset : Int, value : Int) -> Unit {
 ///|
 fn build_cmap_table(
   subtable : Bytes,
-  platform_id : Int,
-  encoding_id : Int,
+  platform_id : Int32,
+  encoding_id : Int32,
 ) -> Bytes {
   let bytes : Array[Byte] = []
   bytes.push(0x00)
@@ -103,7 +103,11 @@ fn build_cmap_table(
 }
 
 ///|
-fn build_cmap_format12(start : UInt, end : UInt, start_gid : UInt) -> Bytes {
+fn build_cmap_format12(
+  start : UInt32,
+  end : UInt32,
+  start_gid : UInt32,
+) -> Bytes {
   let bytes : Array[Byte] = []
   bytes.push(0x00)
   bytes.push(0x0c)

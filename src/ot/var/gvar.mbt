@@ -14,13 +14,13 @@
 
 ///|
 pub struct GvarTable {
-  axis_count : Int
-  shared_tuple_count : Int
-  shared_tuples_offset : Int
-  glyph_count : Int
-  flags : Int
-  data_offset : Int
-  offsets : Array[Int]
+  axis_count : Int32
+  shared_tuple_count : Int32
+  shared_tuples_offset : Int32
+  glyph_count : Int32
+  flags : Int32
+  data_offset : Int32
+  offsets : Array[Int32]
   data : Bytes
 } derive(Debug, ToJson)
 
@@ -33,12 +33,12 @@ pub extend GvarTable with ToJson::{to_json}
 ///|
 fn parse_offsets(
   data : BytesView,
-  offset : Int,
-  glyph_count : Int,
+  offset : Int32,
+  glyph_count : Int32,
   long_offsets : Bool,
-) -> Result[Array[Int], VarError] {
+) -> Result[Array[Int32], VarError] {
   let count = glyph_count + 1
-  let offsets : Array[Int] = []
+  let offsets : Array[Int32] = []
   if long_offsets {
     let total = count * 4
     if offset < 0 || offset + total > data.length() {
@@ -128,7 +128,10 @@ pub fn GvarTable::parse(data : BytesView) -> Result[GvarTable, VarError] {
 }
 
 ///|
-pub fn GvarTable::glyph_variation_data(self : GvarTable, glyph : Int) -> Bytes? {
+pub fn GvarTable::glyph_variation_data(
+  self : GvarTable,
+  glyph : Int32,
+) -> Bytes? {
   if glyph < 0 || glyph >= self.glyph_count {
     return None
   }
@@ -151,7 +154,7 @@ pub fn GvarTable::glyph_variation_data(self : GvarTable, glyph : Int) -> Bytes? 
 ///|
 pub fn GvarTable::shared_tuples(
   self : GvarTable,
-) -> Result[Array[Int], VarError] {
+) -> Result[Array[Int32], VarError] {
   if self.shared_tuple_count <= 0 {
     return Ok([])
   }
@@ -160,7 +163,7 @@ pub fn GvarTable::shared_tuples(
     return Err(UnexpectedEof)
   }
   let total = self.shared_tuple_count * self.axis_count
-  let tuples : Array[Int] = []
+  let tuples : Array[Int32] = []
   let mut pos = self.shared_tuples_offset
   for _ in 0..<total {
     let value = read_i16(self.data, pos)
@@ -176,7 +179,7 @@ pub fn GvarTable::shared_tuples(
 ///|
 pub fn GvarTable::glyph_tuple_variations(
   self : GvarTable,
-  glyph : Int,
+  glyph : Int32,
 ) -> Result[TupleVariationData?, VarError] {
   let data = self.glyph_variation_data(glyph)
   match data {
@@ -198,9 +201,9 @@ pub fn GvarTable::glyph_tuple_variations(
 ///|
 pub fn GvarTable::glyph_deltas(
   self : GvarTable,
-  glyph : Int,
-  coords : Array[Int],
-  point_count : Int,
+  glyph : Int32,
+  coords : Array[Int32],
+  point_count : Int32,
 ) -> Result[(Array[Double], Array[Double]?), VarError] {
   let tuple_data = match self.glyph_tuple_variations(glyph) {
     Err(err) => return Err(err)

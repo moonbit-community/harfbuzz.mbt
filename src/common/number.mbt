@@ -13,7 +13,7 @@
 // limitations under the License.
 
 ///|
-fn clamp_range(start : Int, end : Int, len : Int) -> (Int, Int) {
+fn clamp_range(start : Int32, end : Int32, len : Int32) -> (Int32, Int32) {
   let mut s = start
   if s < 0 {
     s = 0
@@ -24,7 +24,7 @@ fn clamp_range(start : Int, end : Int, len : Int) -> (Int, Int) {
 }
 
 ///|
-fn digit_value(c : Char) -> Int? {
+fn digit_value(c : Char) -> Int32? {
   let lower = c.to_ascii_lowercase()
   if lower.is_ascii_digit() {
     Some(lower.to_int() - '0'.to_int())
@@ -38,10 +38,10 @@ fn digit_value(c : Char) -> Int? {
 ///|
 fn parse_unsigned(
   s : StringView,
-  start : Int,
-  end : Int,
-  base : Int,
-) -> (UInt, Int, Int)? {
+  start : Int32,
+  end : Int32,
+  base : Int32,
+) -> (UInt32, Int32, Int32)? {
   if base < 2 || base > 36 {
     return None
   }
@@ -77,10 +77,10 @@ fn parse_unsigned(
 /// Parse a signed integer from `s[start:end)`. Returns (value, next_index) on success.
 pub fn parse_int(
   s : StringView,
-  start? : Int = 0,
-  end? : Int = -1,
-  whole? : Bool = false,
-) -> (Int, Int)? {
+  start~ : Int32 = 0,
+  end~ : Int32 = -1,
+  whole~ : Bool = false,
+) -> (Int32, Int32)? {
   let (start, end) = clamp_range(start, end, s.length())
   if start >= end {
     return None
@@ -111,11 +111,11 @@ pub fn parse_int(
 /// Parse an unsigned integer from `s[start:end)` with optional base. Returns (value, next_index).
 pub fn parse_uint(
   s : StringView,
-  start? : Int = 0,
-  end? : Int = -1,
-  whole? : Bool = false,
-  base? : Int = 10,
-) -> (UInt, Int)? {
+  start~ : Int32 = 0,
+  end~ : Int32 = -1,
+  whole~ : Bool = false,
+  base~ : Int32 = 10,
+) -> (UInt32, Int32)? {
   let (start, end) = clamp_range(start, end, s.length())
   if start >= end {
     return None
@@ -139,7 +139,11 @@ pub fn parse_uint(
 }
 
 ///|
-fn parse_exponent(s : StringView, start : Int, end : Int) -> (Int, Int)? {
+fn parse_exponent(
+  s : StringView,
+  start : Int32,
+  end : Int32,
+) -> (Int32, Int32)? {
   let mut idx = start
   if idx >= end {
     return None
@@ -169,10 +173,10 @@ fn parse_exponent(s : StringView, start : Int, end : Int) -> (Int, Int)? {
 /// Parse a double from `s[start:end)`. Returns (value, next_index) on success.
 pub fn parse_double(
   s : StringView,
-  start? : Int = 0,
-  end? : Int = -1,
-  whole? : Bool = false,
-) -> (Double, Int)? {
+  start~ : Int32 = 0,
+  end~ : Int32 = -1,
+  whole~ : Bool = false,
+) -> (Double, Int32)? {
   let (start, end) = clamp_range(start, end, s.length())
   if start >= end {
     return None

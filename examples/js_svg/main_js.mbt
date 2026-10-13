@@ -110,7 +110,7 @@ struct Bounds {
 
 ///|
 fn Bounds::new() -> Bounds {
-  Bounds::{ has: false, min_x: 0.0, min_y: 0.0, max_x: 0.0, max_y: 0.0 }
+  Bounds::{ has: false, min_x: 0.0, min_y: 0.0, max_x: 0.0, max_y: 0.0, }
 }
 
 ///|
@@ -145,7 +145,7 @@ struct SvgContext {
 
 ///|
 fn SvgContext::new() -> SvgContext {
-  SvgContext::{ paths: [], bounds: Bounds::new() }
+  SvgContext::{ paths: [], bounds: Bounds::new(), }
 }
 
 ///|
@@ -163,7 +163,7 @@ fn SvgPen::new(
   offset_x : Double,
   offset_y : Double,
 ) -> SvgPen {
-  SvgPen::{ ctx, sb: StringBuilder::new(), has_cmd: false, offset_x, offset_y }
+  SvgPen::{ ctx, sb: StringBuilder(), has_cmd: false, offset_x, offset_y, }
 }
 
 ///|
@@ -304,7 +304,7 @@ fn render_svg(font_bytes : Bytes, text : String) -> Result[String, String] {
   let buffer = @hb_buffer.Buffer::new()
   buffer.add_string(text)
   match @hb_shape.shape(font, buffer) {
-    Err(err) => return Err(err.to_string())
+    Err(err) => return Err(Repr(err).to_string())
     Ok(_) => ()
   }
   let infos = buffer.infos()
@@ -321,7 +321,7 @@ fn render_svg(font_bytes : Bytes, text : String) -> Result[String, String] {
     let offset_y = -(pen_y + pos.y_offset.to_double() / 64.0)
     let pen = SvgPen::new(ctx, offset_x, offset_y)
     match font.draw_glyph(info.codepoint, funcs, pen) {
-      Err(err) => return Err("draw_glyph failed: \{err}")
+      Err(err) => return Err("draw_glyph failed: \{Repr(err)}")
       Ok(_) => pen.finish()
     }
     pen_x = pen_x + pos.x_advance.to_double() / 64.0
@@ -343,7 +343,7 @@ fn render_svg(font_bytes : Bytes, text : String) -> Result[String, String] {
   if height <= 0.0 {
     height = 1.0
   }
-  let sb = StringBuilder::new()
+  let sb = StringBuilder()
   sb.write_string("<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"")
   sb.write_string(min_x.to_string())
   sb.write_char(' ')
@@ -435,7 +435,7 @@ fn main {
     status: require_element("status"),
     output: require_element("svg-output"),
   }
-  let app = AppState::{ font_bytes: None, font_name: "" }
+  let app = AppState::{ font_bytes: None, font_name: "", }
   element_set_text(ui.status, "Drop a font file to start.")
   add_event_listener(ui.file_input, "change", ev => {
     let file = event_first_file(ev)

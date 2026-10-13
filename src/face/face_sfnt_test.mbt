@@ -52,7 +52,7 @@ fn build_sfnt_with_table(tag : @common.Tag, table_bytes : Bytes) -> Bytes {
 }
 
 ///|
-fn push_u32(bytes : Array[Byte], value : Int) -> Unit {
+fn push_u32(bytes : Array[Byte], value : Int32) -> Unit {
   bytes.push(((value >> 24) & 0xff).to_byte())
   bytes.push(((value >> 16) & 0xff).to_byte())
   bytes.push(((value >> 8) & 0xff).to_byte())
@@ -60,7 +60,7 @@ fn push_u32(bytes : Array[Byte], value : Int) -> Unit {
 }
 
 ///|
-fn push_u16(bytes : Array[Byte], value : Int) -> Unit {
+fn push_u16(bytes : Array[Byte], value : Int32) -> Unit {
   bytes.push(((value >> 8) & 0xff).to_byte())
   bytes.push((value & 0xff).to_byte())
 }
@@ -96,7 +96,7 @@ fn build_sfnt_with_tables(tables : Array[(@common.Tag, Bytes)]) -> Bytes {
 }
 
 ///|
-fn push_i16(bytes : Array[Byte], value : Int) -> Unit {
+fn push_i16(bytes : Array[Byte], value : Int32) -> Unit {
   let adjusted = if value < 0 { value + 0x10000 } else { value }
   push_u16(bytes, adjusted)
 }
@@ -116,7 +116,11 @@ fn build_cmap_table(subtable : Bytes) -> Bytes {
 }
 
 ///|
-fn build_cmap_format12(start : UInt, end : UInt, start_gid : UInt) -> Bytes {
+fn build_cmap_format12(
+  start : UInt32,
+  end : UInt32,
+  start_gid : UInt32,
+) -> Bytes {
   let bytes : Array[Byte] = []
   push_u16(bytes, 12)
   push_u16(bytes, 0)
@@ -130,7 +134,11 @@ fn build_cmap_format12(start : UInt, end : UInt, start_gid : UInt) -> Bytes {
 }
 
 ///|
-fn build_cmap_format4_simple(start : Int, end : Int, start_gid : Int) -> Bytes {
+fn build_cmap_format4_simple(
+  start : Int32,
+  end : Int32,
+  start_gid : Int32,
+) -> Bytes {
   let seg_count = 2
   let length = 16 + 8 * seg_count
   let id_delta = start_gid - start

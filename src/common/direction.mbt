@@ -15,7 +15,7 @@
 ///|
 /// Text direction with HarfBuzz-compatible numeric layout.
 pub struct Direction {
-  raw : UInt
+  raw : UInt32
 } derive(Eq, Debug, ToJson)
 
 ///|
@@ -49,7 +49,7 @@ pub let direction_btt : Direction = { raw: 7U, }
 
 ///|
 /// Convert a string to a direction (matches by first letter).
-pub fn Direction::from_string(s : String, len? : Int = -1) -> Direction {
+pub fn Direction::from_string(s : String, len~ : Int32 = -1) -> Direction {
   if s is "" || len == 0 {
     return direction_invalid
   }
@@ -126,6 +126,6 @@ pub fn Direction::reverse(self : Direction) -> Direction {
 
 ///|
 /// Access the raw numeric representation.
-pub fn Direction::to_uint(self : Direction) -> UInt {
+pub fn Direction::to_uint(self : Direction) -> UInt32 {
   self.raw
 }

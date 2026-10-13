@@ -15,9 +15,9 @@
 ///|
 fn parse_lookup(
   data : BytesView,
-  offset : Int,
-  extension_lookup_type : Int,
-) -> Result[(Int, Int, Int?, Array[Int]), OtLayoutError] {
+  offset : Int32,
+  extension_lookup_type : Int32,
+) -> Result[(Int32, Int32, Int32?, Array[Int32]), OtLayoutError] {
   if offset < 0 || offset + 6 > data.length() {
     return Err(UnexpectedEof)
   }
@@ -33,9 +33,9 @@ fn parse_lookup(
       if offset + header_len > data.length() {
         return Err(UnexpectedEof)
       }
-      let offsets : Array[Int] = []
+      let offsets : Array[Int32] = []
       let mut resolved_type = lookup_type
-      let mut extension_subtable_type : Int? = None
+      let mut extension_subtable_type : Int32? = None
       let base = offset + 6
       for i in 0..<subtable_count {
         let sub_offset = read_u16_int(data, base + i * 2)
@@ -96,8 +96,8 @@ fn parse_lookup(
 ///|
 fn parse_extension_subtable(
   data : BytesView,
-  offset : Int,
-) -> Result[(Int, Int), OtLayoutError] {
+  offset : Int32,
+) -> Result[(Int32, Int32), OtLayoutError] {
   if offset < 0 || offset + 8 > data.length() {
     return Err(UnexpectedEof)
   }

@@ -15,7 +15,7 @@
 ///|
 /// Parsed hhea table (subset).
 pub struct HheaTable {
-  number_of_hmetrics : Int
+  number_of_hmetrics : Int32
 } derive(Eq, Debug, ToJson)
 
 ///|

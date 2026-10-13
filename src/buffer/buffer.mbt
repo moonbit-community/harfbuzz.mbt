@@ -15,9 +15,9 @@
 ///|
 /// Glyph info entry.
 pub struct GlyphInfo {
-  codepoint : UInt
-  cluster : Int
-  unicode : UInt
+  codepoint : UInt32
+  cluster : Int32
+  unicode : UInt32
 } derive(Eq, Debug, ToJson)
 
 ///|
@@ -32,10 +32,10 @@ pub extend GlyphInfo with ToJson::{to_json}
 ///|
 /// Glyph positioning data.
 pub struct GlyphPosition {
-  x_advance : Int
-  y_advance : Int
-  x_offset : Int
-  y_offset : Int
+  x_advance : Int32
+  y_advance : Int32
+  x_offset : Int32
+  y_offset : Int32
 } derive(Eq, Debug, ToJson)
 
 ///|
@@ -50,7 +50,7 @@ pub extend GlyphPosition with ToJson::{to_json}
 ///|
 struct FeatureValues {
   tag : @common.Tag
-  values : Array[Int]
+  values : Array[Int32]
 } derive(Debug, ToJson)
 
 ///|
@@ -89,7 +89,7 @@ pub struct Buffer {
   mut gsub_feature_values : FeatureValues?
   mut preserve_default_ignorables : Bool
   mut remove_default_ignorables : Bool
-  mut not_found_variation_selector : UInt?
+  mut not_found_variation_selector : UInt32?
 } derive(Debug, ToJson)
 
 ///|
@@ -127,7 +127,7 @@ pub fn Buffer::clear(self : Buffer) -> Unit {
 
 ///|
 /// Number of glyphs in the buffer.
-pub fn Buffer::len(self : Buffer) -> Int {
+pub fn Buffer::len(self : Buffer) -> Int32 {
   self.infos.length()
 }
 
@@ -141,8 +141,8 @@ pub fn Buffer::is_empty(self : Buffer) -> Bool {
 /// Append a codepoint with cluster.
 pub fn Buffer::add_codepoint(
   self : Buffer,
-  codepoint : UInt,
-  cluster? : Int = -1,
+  codepoint : UInt32,
+  cluster~ : Int32 = -1,
 ) -> Unit {
   let actual_cluster = if cluster < 0 { self.infos.length() } else { cluster }
   self.infos.push({ codepoint, cluster: actual_cluster, unicode: codepoint, })
@@ -151,7 +151,11 @@ pub fn Buffer::add_codepoint(
 
 ///|
 /// Append a character with cluster.
-pub fn Buffer::add_char(self : Buffer, ch : Char, cluster? : Int = -1) -> Unit {
+pub fn Buffer::add_char(
+  self : Buffer,
+  ch : Char,
+  cluster~ : Int32 = -1,
+) -> Unit {
   self.add_codepoint(ch.to_uint(), cluster~)
 }
 
@@ -181,7 +185,7 @@ pub fn Buffer::positions(self : Buffer) -> ArrayView[GlyphPosition] {
 /// Add tracking adjustment to advances.
 pub fn Buffer::add_tracking(
   self : Buffer,
-  adjustment : Int,
+  adjustment : Int32,
   horizontal : Bool,
 ) -> Unit {
   if adjustment == 0 {
@@ -215,7 +219,7 @@ pub fn Buffer::add_tracking(
 pub fn Buffer::replace_glyphs(
   self : Buffer,
   infos : Array[GlyphInfo],
-  positions? : Array[GlyphPosition] = [],
+  positions~ : Array[GlyphPosition] = [],
 ) -> Bool {
   let mut next_positions = positions
   if next_positions.is_empty() {
@@ -235,7 +239,11 @@ pub fn Buffer::replace_glyphs(
 
 ///|
 /// Merge clusters in the range [start, end).
-pub fn Buffer::merge_clusters(self : Buffer, start : Int, end : Int) -> Unit {
+pub fn Buffer::merge_clusters(
+  self : Buffer,
+  start : Int32,
+  end : Int32,
+) -> Unit {
   if start < 0 || end > self.infos.length() || start >= end {
     return ()
   }
@@ -328,7 +336,7 @@ pub fn Buffer::set_gsub_features(
 pub fn Buffer::set_gsub_feature_values(
   self : Buffer,
   tag : @common.Tag,
-  values : Array[Int],
+  values : Array[Int32],
 ) -> Unit {
   self.gsub_feature_values = Some({ tag, values, })
 }
@@ -374,14 +382,14 @@ pub fn Buffer::set_remove_default_ignorables(
 /// Set the fallback glyph for not-found variation selectors.
 pub fn Buffer::set_not_found_variation_selector(
   self : Buffer,
-  glyph : UInt?,
+  glyph : UInt32?,
 ) -> Unit {
   self.not_found_variation_selector = glyph
 }
 
 ///|
 /// Get the fallback glyph for not-found variation selectors.
-pub fn Buffer::get_not_found_variation_selector(self : Buffer) -> UInt? {
+pub fn Buffer::get_not_found_variation_selector(self : Buffer) -> UInt32? {
   self.not_found_variation_selector
 }
 
@@ -447,8 +455,8 @@ fn update_default_features(buffer : Buffer) -> Unit {
 ///|
 fn fallback_glyph_for_codepoint(
   font : @font.Font,
-  codepoint : UInt,
-) -> Result[(UInt?, @unicode.SpaceFallbackType?), ShapeError] {
+  codepoint : UInt32,
+) -> Result[(UInt32?, @unicode.SpaceFallbackType?), ShapeError] {
   if codepoint == 0x2011U {
     return match font.glyph_for_codepoint(0x2010U) {
       Err(err) => Err(Font(err))
@@ -469,7 +477,7 @@ fn fallback_glyph_for_codepoint(
 }
 
 ///|
-fn space_fallback_divisor(space_type : @unicode.SpaceFallbackType) -> Int? {
+fn space_fallback_divisor(space_type : @unicode.SpaceFallbackType) -> Int32? {
   match space_type {
     SpaceEm => Some(1)
     SpaceEm2 => Some(2)
@@ -485,9 +493,9 @@ fn space_fallback_divisor(space_type : @unicode.SpaceFallbackType) -> Int? {
 ///|
 fn advance_for_codepoint(
   font : @font.Font,
-  codepoint : UInt,
+  codepoint : UInt32,
   horizontal : Bool,
-) -> Result[Int?, ShapeError] {
+) -> Result[Int32?, ShapeError] {
   match font.glyph_for_codepoint(codepoint) {
     Err(err) => Err(Font(err))
     Ok(None) => Ok(None)
@@ -568,7 +576,7 @@ fn adjust_space_fallback_position(
       }
     }
     SpaceFigure => {
-      let mut value : Int? = None
+      let mut value : Int32? = None
       let mut digit = 0x30
       while digit <= 0x39 {
         match
@@ -703,7 +711,7 @@ pub fn Buffer::normalize(self : Buffer) -> Unit {
       break
     }
   }
-  let vs_clusters : Map[Int, Bool] = Map([])
+  let vs_clusters : Map[Int32, Bool] = Map([])
   if has_vs {
     merge_variation_selector_clusters(self)
     for info in self.infos {
@@ -817,7 +825,7 @@ fn merge_variation_selector_clusters(buffer : Buffer) -> Unit {
 }
 
 ///|
-fn reorder_marks_arabic(buffer : Buffer, start : Int, end : Int) -> Unit {
+fn reorder_marks_arabic(buffer : Buffer, start : Int32, end : Int32) -> Unit {
   let mut i = start
   let mut cc = 220
   while cc <= 230 {
@@ -879,7 +887,7 @@ fn reorder_marks_arabic(buffer : Buffer, start : Int, end : Int) -> Unit {
 }
 
 ///|
-fn normalize_hangul(buffer : Buffer, vs_clusters : Map[Int, Bool]) -> Unit {
+fn normalize_hangul(buffer : Buffer, vs_clusters : Map[Int32, Bool]) -> Unit {
   let mut i = 0
   let mut len = buffer.infos.length()
   while i + 1 < len {
@@ -963,38 +971,38 @@ fn reorder_hangul_tone_marks(buffer : Buffer) -> Unit {
 }
 
 ///|
-fn is_hangul_l(u : UInt) -> Bool {
+fn is_hangul_l(u : UInt32) -> Bool {
   u >= 0x1100U && u <= 0x1112U
 }
 
 ///|
-fn is_hangul_v(u : UInt) -> Bool {
+fn is_hangul_v(u : UInt32) -> Bool {
   u >= 0x1161U && u <= 0x1175U
 }
 
 ///|
-fn is_hangul_t(u : UInt) -> Bool {
+fn is_hangul_t(u : UInt32) -> Bool {
   u >= 0x11A8U && u <= 0x11C2U
 }
 
 ///|
-fn is_hangul_lv(u : UInt) -> Bool {
+fn is_hangul_lv(u : UInt32) -> Bool {
   u >= 0xAC00U && u <= 0xD7A3U
 }
 
 ///|
-fn is_hangul_tone(u : UInt) -> Bool {
+fn is_hangul_tone(u : UInt32) -> Bool {
   u == 0x302EU || u == 0x302FU
 }
 
 ///|
-fn is_hangul_syllable(u : UInt) -> Bool {
+fn is_hangul_syllable(u : UInt32) -> Bool {
   is_hangul_lv(u) || is_hangul_l(u) || is_hangul_v(u) || is_hangul_t(u)
 }
 
 ///|
-fn is_modifier_combining_mark(u : UInt) -> Bool {
-  let marks : Array[UInt] = [
+fn is_modifier_combining_mark(u : UInt32) -> Bool {
+  let marks : Array[UInt32] = [
     0x0654U, 0x0655U, 0x0658U, 0x06DCU, 0x06E3U, 0x06E7U, 0x06E8U, 0x08CAU, 0x08CBU,
     0x08CDU, 0x08CEU, 0x08CFU, 0x08D3U, 0x08F3U,
   ]
@@ -1007,8 +1015,8 @@ fn is_modifier_combining_mark(u : UInt) -> Bool {
 }
 
 ///|
-fn compose_hebrew(a : UInt, b : UInt) -> UInt? {
-  let dagesh_forms : Array[UInt] = [
+fn compose_hebrew(a : UInt32, b : UInt32) -> UInt32? {
+  let dagesh_forms : Array[UInt32] = [
     0xFB30U, 0xFB31U, 0xFB32U, 0xFB33U, 0xFB34U, 0xFB35U, 0xFB36U, 0U, 0xFB38U, 0xFB39U,
     0xFB3AU, 0xFB3BU, 0xFB3CU, 0U, 0xFB3EU, 0U, 0xFB40U, 0xFB41U, 0U, 0xFB43U, 0xFB44U,
     0U, 0xFB46U, 0xFB47U, 0xFB48U, 0xFB49U, 0xFB4AU,
@@ -1071,7 +1079,7 @@ fn compose_hebrew(a : UInt, b : UInt) -> UInt? {
 }
 
 ///|
-fn reorder_marks_hebrew(buffer : Buffer, start : Int, end : Int) -> Unit {
+fn reorder_marks_hebrew(buffer : Buffer, start : Int32, end : Int32) -> Unit {
   if end - start < 3 {
     return ()
   }
@@ -1277,14 +1285,14 @@ pub fn Buffer::apply_morx(
     return Ok(())
   }
   let horizontal = self.direction.is_horizontal()
-  let cluster_unicode : Map[Int, UInt] = Map([])
+  let cluster_unicode : Map[Int32, UInt32] = Map([])
   for info in self.infos {
     if !cluster_unicode.contains(info.cluster) {
       cluster_unicode[info.cluster] = info.unicode
     }
   }
-  let glyphs : Array[UInt] = []
-  let clusters : Array[Int] = []
+  let glyphs : Array[UInt32] = []
+  let clusters : Array[Int32] = []
   for info in self.infos {
     glyphs.push(info.codepoint)
     clusters.push(info.cluster)
@@ -1353,8 +1361,8 @@ pub fn Buffer::apply_kerx(
     Err(err) => return Err(Font(err))
     Ok(value) => value
   }
-  let glyphs : Array[UInt] = []
-  let clusters : Array[Int] = []
+  let glyphs : Array[UInt32] = []
+  let clusters : Array[Int32] = []
   for info in self.infos {
     glyphs.push(info.codepoint)
     clusters.push(info.cluster)
@@ -1423,8 +1431,8 @@ pub fn Buffer::has_kerx(
 pub fn Buffer::apply_gpos(
   self : Buffer,
   font : @font.Font,
-  include_all_features? : Bool = false,
-  adjust_mark_offsets? : Bool = true,
+  include_all_features~ : Bool = false,
+  adjust_mark_offsets~ : Bool = true,
 ) -> Result[Bool, ShapeError] {
   let gpos = match font.gpos() {
     Err(err) => return Err(Font(err))
@@ -1438,8 +1446,8 @@ pub fn Buffer::apply_gpos(
     Err(err) => return Err(Font(err))
     Ok(value) => value
   }
-  let glyphs : Array[UInt] = []
-  let clusters : Array[Int] = []
+  let glyphs : Array[UInt32] = []
+  let clusters : Array[Int32] = []
   for info in self.infos {
     glyphs.push(info.codepoint)
     clusters.push(info.cluster)
@@ -1477,8 +1485,8 @@ pub fn Buffer::apply_gpos(
     Err(err) => return Err(Layout(err))
     Ok(value) => value
   }
-  let advances_x : Array[Int] = []
-  let advances_y : Array[Int] = []
+  let advances_x : Array[Int32] = []
+  let advances_y : Array[Int32] = []
   for pos in self.positions {
     advances_x.push(pos.x_advance)
     advances_y.push(pos.y_advance)
@@ -1562,7 +1570,7 @@ pub fn Buffer::apply_gpos(
 pub fn Buffer::shape_ot(
   self : Buffer,
   font : @font.Font,
-  fallback_position? : Bool = true,
+  fallback_position~ : Bool = true,
 ) -> Result[Unit, ShapeError] {
   self.shape_ot_with_options(
     font,
@@ -1575,8 +1583,8 @@ pub fn Buffer::shape_ot(
 fn Buffer::shape_ot_with_options(
   self : Buffer,
   font : @font.Font,
-  fallback_position? : Bool = true,
-  zero_width_marks? : ZeroWidthMarks = ByGdefLate,
+  fallback_position~ : Bool = true,
+  zero_width_marks~ : ZeroWidthMarks = ByGdefLate,
 ) -> Result[Unit, ShapeError] {
   self.guess_segment_properties()
   let (unicode_mark_flags, combining_classes) = collect_mark_fallback_data(
@@ -1637,8 +1645,8 @@ fn Buffer::shape_ot_with_options(
       Err(err) => return Err(Font(err))
       Ok(value) => value
     }
-    let gsub_masks : Array[UInt] = []
-    let mut gsub_alt_values : Array[Int] = []
+    let gsub_masks : Array[UInt32] = []
+    let mut gsub_alt_values : Array[Int32] = []
     match self.gsub_feature_values {
       None => ()
       Some(feature_values) =>
@@ -1651,8 +1659,8 @@ fn Buffer::shape_ot_with_options(
         }
     }
     let use_feature_values = !gsub_masks.is_empty()
-    let glyphs : Array[UInt] = []
-    let clusters : Array[Int] = []
+    let glyphs : Array[UInt32] = []
+    let clusters : Array[Int32] = []
     for info in self.infos {
       glyphs.push(info.codepoint)
       clusters.push(info.cluster)
@@ -1739,14 +1747,14 @@ fn Buffer::shape_ot_with_options(
       Err(err) => return Err(Font(err))
       Ok(value) => value
     }
-    let glyphs : Array[UInt] = []
-    let clusters : Array[Int] = []
+    let glyphs : Array[UInt32] = []
+    let clusters : Array[Int32] = []
     for info in self.infos {
       glyphs.push(info.codepoint)
       clusters.push(info.cluster)
     }
-    let advances_x : Array[Int] = []
-    let advances_y : Array[Int] = []
+    let advances_x : Array[Int32] = []
+    let advances_y : Array[Int32] = []
     for pos in self.positions {
       advances_x.push(pos.x_advance)
       advances_y.push(pos.y_advance)
@@ -1927,7 +1935,7 @@ fn finalize_default_ignorables_and_variation_selectors(buffer : Buffer) -> Unit 
 fn default_position(
   buffer : Buffer,
   font : @font.Font,
-  glyph : UInt,
+  glyph : UInt32,
 ) -> Result[GlyphPosition, ShapeError] {
   if buffer.direction.is_vertical() {
     let advance = match font.glyph_v_advance(glyph) {

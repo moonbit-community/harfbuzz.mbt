@@ -29,48 +29,48 @@ let khmer_feature_tags : Array[@common.Tag] = [
 ]
 
 ///|
-let khmer_feature_pref : Int = 2
+let khmer_feature_pref : Int32 = 2
 
 ///|
-let khmer_feature_blwf : Int = 3
+let khmer_feature_blwf : Int32 = 3
 
 ///|
-let khmer_feature_abvf : Int = 4
+let khmer_feature_abvf : Int32 = 4
 
 ///|
-let khmer_feature_pstf : Int = 5
+let khmer_feature_pstf : Int32 = 5
 
 ///|
-let khmer_feature_cfar : Int = 6
+let khmer_feature_cfar : Int32 = 6
 
 ///|
-let khmer_cat_h : Int = 4
+let khmer_cat_h : Int32 = 4
 
 ///|
-let khmer_cat_ra : Int = 15
+let khmer_cat_ra : Int32 = 15
 
 ///|
-let khmer_cat_vpre : Int = 22
+let khmer_cat_vpre : Int32 = 22
 
 ///|
-fn khmer_category(codepoint : UInt) -> Int {
+fn khmer_category(codepoint : UInt32) -> Int32 {
   indic_category(indic_get_categories(codepoint)).reinterpret_as_int()
 }
 
 ///|
 fn reorder_range_by_order(
   buffer : Buffer,
-  categories : Array[Int],
-  start : Int,
-  order : Array[Int],
-) -> Array[Int] {
+  categories : Array[Int32],
+  start : Int32,
+  order : Array[Int32],
+) -> Array[Int32] {
   let end = start + order.length()
   if start < 0 || end > buffer.infos.length() || start >= end {
     return categories
   }
   let next_infos : Array[GlyphInfo] = []
   let next_positions : Array[GlyphPosition] = []
-  let next_categories : Array[Int] = []
+  let next_categories : Array[Int32] = []
   for i in 0..<start {
     next_infos.push(buffer.infos[i])
     next_positions.push(buffer.positions[i])
@@ -95,10 +95,10 @@ fn reorder_range_by_order(
 ///|
 fn reorder_consonant_syllable_khmer(
   buffer : Buffer,
-  categories : Array[Int],
-  start : Int,
-  end : Int,
-) -> Array[Int] {
+  categories : Array[Int32],
+  start : Int32,
+  end : Int32,
+) -> Array[Int32] {
   if start < 0 || end > buffer.infos.length() || start >= end {
     return categories
   }
@@ -119,7 +119,7 @@ fn reorder_consonant_syllable_khmer(
       }
     }
   }
-  let order : Array[Int] = []
+  let order : Array[Int32] = []
   if coeng_index >= 0 {
     order.push(coeng_index - start)
     order.push(coeng_index + 1 - start)
@@ -146,8 +146,8 @@ fn reorder_consonant_syllable_khmer(
 ///|
 fn reorder_khmer_syllables(
   buffer : Buffer,
-  categories : Array[Int],
-  syllables : Array[Int],
+  categories : Array[Int32],
+  syllables : Array[Int32],
 ) -> Unit {
   if categories.length() != buffer.infos.length() ||
     syllables.length() != buffer.infos.length() {
@@ -174,9 +174,9 @@ fn reorder_khmer_syllables(
 
 ///|
 fn build_khmer_feature_masks(
-  categories : Array[Int],
-  syllables : Array[Int],
-) -> Array[UInt] {
+  categories : Array[Int32],
+  syllables : Array[Int32],
+) -> Array[UInt32] {
   let len = categories.length()
   let masks = Array::make(len, 0U)
   let pref_bit = 1U << khmer_feature_pref
@@ -220,7 +220,7 @@ pub fn Buffer::shape_khmer(
   self : Buffer,
   font : @font.Font,
 ) -> Result[Unit, ShapeError] {
-  let categories : Array[UInt] = []
+  let categories : Array[UInt32] = []
   for info in self.infos {
     categories.push(indic_category(indic_get_categories(info.codepoint)))
   }
@@ -232,8 +232,8 @@ pub fn Buffer::shape_khmer(
     Err(err) => return Err(err)
     Ok(_) => ()
   }
-  let categories_after_u : Array[UInt] = []
-  let categories_after_i : Array[Int] = []
+  let categories_after_u : Array[UInt32] = []
+  let categories_after_i : Array[Int32] = []
   for info in self.infos {
     let category = khmer_category(info.codepoint)
     categories_after_i.push(category)
@@ -241,7 +241,7 @@ pub fn Buffer::shape_khmer(
   }
   let syllables_after = find_syllables_khmer(categories_after_u)
   reorder_khmer_syllables(self, categories_after_i, syllables_after)
-  let reordered_categories : Array[Int] = []
+  let reordered_categories : Array[Int32] = []
   for info in self.infos {
     reordered_categories.push(khmer_category(info.codepoint))
   }

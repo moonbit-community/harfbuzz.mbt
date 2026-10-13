@@ -174,7 +174,7 @@ test "buffer merge clusters" {
   buffer.add_codepoint(0x62U, cluster=3)
   buffer.add_codepoint(0x63U, cluster=7)
   buffer.merge_clusters(0, 3)
-  let clusters : Array[Int] = []
+  let clusters : Array[Int32] = []
   for info in buffer.infos() {
     clusters.push(info.cluster)
   }
@@ -256,7 +256,7 @@ test "buffer normalize combining marks" {
   buffer.add_codepoint(0x0301U)
   buffer.add_codepoint(0x0327U)
   buffer.normalize()
-  let cps : Array[UInt] = []
+  let cps : Array[UInt32] = []
   for info in buffer.infos() {
     cps.push(info.codepoint)
   }
@@ -269,7 +269,7 @@ test "buffer normalize compose" {
   buffer.add_codepoint(0x41U)
   buffer.add_codepoint(0x0301U)
   buffer.normalize()
-  let cps : Array[UInt] = []
+  let cps : Array[UInt32] = []
   for info in buffer.infos() {
     cps.push(info.codepoint)
   }
@@ -283,8 +283,8 @@ test "buffer normalize skips variation selectors" {
   buffer.add_codepoint(0x0301U)
   buffer.add_codepoint(0xFE0FU)
   buffer.normalize()
-  let cps : Array[UInt] = []
-  let clusters : Array[Int] = []
+  let cps : Array[UInt32] = []
+  let clusters : Array[Int32] = []
   for info in buffer.infos() {
     cps.push(info.codepoint)
     clusters.push(info.cluster)
@@ -300,7 +300,7 @@ test "buffer normalize indic compose exception" {
   buffer.add_codepoint(0x09AFU)
   buffer.add_codepoint(0x09BCU)
   buffer.normalize()
-  let cps : Array[UInt] = []
+  let cps : Array[UInt32] = []
   for info in buffer.infos() {
     cps.push(info.codepoint)
   }
@@ -314,7 +314,7 @@ test "buffer normalize indic skip mark-base compose" {
   buffer.add_codepoint(0x0308U)
   buffer.add_codepoint(0x0301U)
   buffer.normalize()
-  let cps : Array[UInt] = []
+  let cps : Array[UInt32] = []
   for info in buffer.infos() {
     cps.push(info.codepoint)
   }
@@ -330,7 +330,7 @@ test "buffer normalize hebrew reorder" {
   buffer.add_codepoint(0x05B0U)
   buffer.add_codepoint(0x05BDU)
   buffer.normalize()
-  let cps : Array[UInt] = []
+  let cps : Array[UInt32] = []
   for info in buffer.infos() {
     cps.push(info.codepoint)
   }
@@ -344,7 +344,7 @@ test "buffer normalize hebrew compose" {
   buffer.add_codepoint(0x05D0U)
   buffer.add_codepoint(0x05BCU)
   buffer.normalize()
-  let cps : Array[UInt] = []
+  let cps : Array[UInt32] = []
   for info in buffer.infos() {
     cps.push(info.codepoint)
   }
@@ -359,7 +359,7 @@ test "buffer normalize arabic reorder" {
   buffer.add_codepoint(0x0652U)
   buffer.add_codepoint(0x0655U)
   buffer.normalize()
-  let cps : Array[UInt] = []
+  let cps : Array[UInt32] = []
   for info in buffer.infos() {
     cps.push(info.codepoint)
   }
@@ -374,7 +374,7 @@ test "buffer normalize hangul compose" {
   buffer.add_codepoint(0x1161U)
   buffer.add_codepoint(0x11A8U)
   buffer.normalize()
-  let cps : Array[UInt] = []
+  let cps : Array[UInt32] = []
   for info in buffer.infos() {
     cps.push(info.codepoint)
   }
@@ -388,7 +388,7 @@ test "buffer normalize hangul tone mark" {
   buffer.add_codepoint(0xAC00U)
   buffer.add_codepoint(0x302EU)
   buffer.normalize()
-  let cps : Array[UInt] = []
+  let cps : Array[UInt32] = []
   for info in buffer.infos() {
     cps.push(info.codepoint)
   }
@@ -396,24 +396,24 @@ test "buffer normalize hangul tone mark" {
 }
 
 ///|
-fn push_u16(bytes : Array[Byte], value : Int) -> Unit {
+fn push_u16(bytes : Array[Byte], value : Int32) -> Unit {
   bytes.push(((value >> 8) & 0xff).to_byte())
   bytes.push((value & 0xff).to_byte())
 }
 
 ///|
-fn push_u8(bytes : Array[Byte], value : Int) -> Unit {
+fn push_u8(bytes : Array[Byte], value : Int32) -> Unit {
   bytes.push((value & 0xff).to_byte())
 }
 
 ///|
-fn push_i16(bytes : Array[Byte], value : Int) -> Unit {
+fn push_i16(bytes : Array[Byte], value : Int32) -> Unit {
   let adjusted = if value < 0 { value + 0x10000 } else { value }
   push_u16(bytes, adjusted)
 }
 
 ///|
-fn push_u32(bytes : Array[Byte], value : Int) -> Unit {
+fn push_u32(bytes : Array[Byte], value : Int32) -> Unit {
   bytes.push(((value >> 24) & 0xff).to_byte())
   bytes.push(((value >> 16) & 0xff).to_byte())
   bytes.push(((value >> 8) & 0xff).to_byte())
@@ -421,7 +421,7 @@ fn push_u32(bytes : Array[Byte], value : Int) -> Unit {
 }
 
 ///|
-fn push_u24(bytes : Array[Byte], value : Int) -> Unit {
+fn push_u24(bytes : Array[Byte], value : Int32) -> Unit {
   bytes.push(((value >> 16) & 0xff).to_byte())
   bytes.push(((value >> 8) & 0xff).to_byte())
   bytes.push((value & 0xff).to_byte())
@@ -436,7 +436,7 @@ fn build_sfnt(tables : Array[(@common.Tag, Bytes)]) -> Bytes {
   push_u16(bytes, 0)
   push_u16(bytes, 0)
   let mut offset = 12 + tables.length() * 16
-  let records : Array[(@common.Tag, Int, Int)] = []
+  let records : Array[(@common.Tag, Int32, Int32)] = []
   for entry in tables {
     let (tag, table) = entry
     records.push((tag, offset, table.length()))
@@ -463,7 +463,7 @@ fn build_sfnt(tables : Array[(@common.Tag, Bytes)]) -> Bytes {
 }
 
 ///|
-fn build_head(upem : Int, loc_format : Int) -> Bytes {
+fn build_head(upem : Int32, loc_format : Int32) -> Bytes {
   let bytes : Array[Byte] = Array::make(54, b'\x00')
   bytes[18] = ((upem >> 8) & 0xff).to_byte()
   bytes[19] = (upem & 0xff).to_byte()
@@ -473,7 +473,7 @@ fn build_head(upem : Int, loc_format : Int) -> Bytes {
 }
 
 ///|
-fn build_maxp(num_glyphs : Int) -> Bytes {
+fn build_maxp(num_glyphs : Int32) -> Bytes {
   let bytes : Array[Byte] = Array::make(6, b'\x00')
   bytes[4] = ((num_glyphs >> 8) & 0xff).to_byte()
   bytes[5] = (num_glyphs & 0xff).to_byte()
@@ -481,7 +481,7 @@ fn build_maxp(num_glyphs : Int) -> Bytes {
 }
 
 ///|
-fn build_hhea(number_of_hmetrics : Int) -> Bytes {
+fn build_hhea(number_of_hmetrics : Int32) -> Bytes {
   let bytes : Array[Byte] = Array::make(36, b'\x00')
   bytes[34] = ((number_of_hmetrics >> 8) & 0xff).to_byte()
   bytes[35] = (number_of_hmetrics & 0xff).to_byte()
@@ -489,7 +489,7 @@ fn build_hhea(number_of_hmetrics : Int) -> Bytes {
 }
 
 ///|
-fn build_vhea(number_of_vmetrics : Int) -> Bytes {
+fn build_vhea(number_of_vmetrics : Int32) -> Bytes {
   let bytes : Array[Byte] = Array::make(36, b'\x00')
   bytes[34] = ((number_of_vmetrics >> 8) & 0xff).to_byte()
   bytes[35] = (number_of_vmetrics & 0xff).to_byte()
@@ -531,7 +531,7 @@ fn build_hmtx_ot() -> Bytes {
 }
 
 ///|
-fn build_loca_short(offsets : Array[Int]) -> Bytes {
+fn build_loca_short(offsets : Array[Int32]) -> Bytes {
   let bytes : Array[Byte] = []
   for offset in offsets {
     push_u16(bytes, offset / 2)
@@ -595,7 +595,7 @@ fn build_script_list_for(tag : @common.Tag) -> Bytes {
 }
 
 ///|
-fn build_script_table(feature_indices : Array[Int]) -> Bytes {
+fn build_script_table(feature_indices : Array[Int32]) -> Bytes {
   let bytes : Array[Byte] = []
   push_u16(bytes, 4)
   push_u16(bytes, 0)
@@ -738,7 +738,7 @@ fn build_layout_table_with_script_list(
 }
 
 ///|
-fn build_gsub_subtable(target : Int, substitute : Int) -> Bytes {
+fn build_gsub_subtable(target : Int32, substitute : Int32) -> Bytes {
   let bytes : Array[Byte] = []
   push_u16(bytes, 2)
   push_u16(bytes, 8)
@@ -863,7 +863,11 @@ fn build_cmap_table(subtable : Bytes) -> Bytes {
 }
 
 ///|
-fn build_cmap_format12(start : UInt, end : UInt, start_gid : UInt) -> Bytes {
+fn build_cmap_format12(
+  start : UInt32,
+  end : UInt32,
+  start_gid : UInt32,
+) -> Bytes {
   let bytes : Array[Byte] = []
   push_u16(bytes, 12)
   push_u16(bytes, 0)
@@ -877,7 +881,9 @@ fn build_cmap_format12(start : UInt, end : UInt, start_gid : UInt) -> Bytes {
 }
 
 ///|
-fn build_cmap_format12_groups(groups : Array[(UInt, UInt, UInt)]) -> Bytes {
+fn build_cmap_format12_groups(
+  groups : Array[(UInt32, UInt32, UInt32)],
+) -> Bytes {
   let bytes : Array[Byte] = []
   let length = 16 + groups.length() * 12
   push_u16(bytes, 12)
@@ -896,8 +902,8 @@ fn build_cmap_format12_groups(groups : Array[(UInt, UInt, UInt)]) -> Bytes {
 
 ///|
 fn build_cmap_format14_non_default(
-  selector : UInt,
-  mappings : Array[(UInt, UInt)],
+  selector : UInt32,
+  mappings : Array[(UInt32, UInt32)],
 ) -> Bytes {
   let bytes : Array[Byte] = []
   let non_default_offset = 21
@@ -919,8 +925,8 @@ fn build_cmap_format14_non_default(
 
 ///|
 fn build_cmap_format14_default(
-  selector : UInt,
-  ranges : Array[(UInt, UInt)],
+  selector : UInt32,
+  ranges : Array[(UInt32, UInt32)],
 ) -> Bytes {
   let bytes : Array[Byte] = []
   let default_offset = 21
@@ -1464,7 +1470,7 @@ test "buffer shape ot default ignorable zeroed snapshot" {
   }
   let infos = buffer.infos()
   let positions = buffer.positions()
-  let snapshot : Array[(UInt, Int, Int, Int, Int)] = []
+  let snapshot : Array[(UInt32, Int32, Int32, Int32, Int32)] = []
   for i in 0..<infos.length() {
     snapshot.push(
       (
@@ -1507,7 +1513,7 @@ test "buffer shape ot preserve default ignorable snapshot" {
   }
   let infos = buffer.infos()
   let positions = buffer.positions()
-  let snapshot : Array[(UInt, Int, Int, Int, Int)] = []
+  let snapshot : Array[(UInt32, Int32, Int32, Int32, Int32)] = []
   for i in 0..<infos.length() {
     snapshot.push(
       (
@@ -1555,7 +1561,7 @@ test "buffer shape ot variation selector fallback snapshot" {
   }
   let infos = buffer.infos()
   let positions = buffer.positions()
-  let snapshot : Array[(UInt, Int, Int, Int, Int)] = []
+  let snapshot : Array[(UInt32, Int32, Int32, Int32, Int32)] = []
   for i in 0..<infos.length() {
     snapshot.push(
       (
@@ -1583,7 +1589,7 @@ test "buffer shape ot variation selector mapping snapshot" {
   }
   let infos = buffer.infos()
   let positions = buffer.positions()
-  let snapshot : Array[(UInt, Int, Int, Int, Int)] = []
+  let snapshot : Array[(UInt32, Int32, Int32, Int32, Int32)] = []
   for i in 0..<infos.length() {
     snapshot.push(
       (
@@ -1613,7 +1619,7 @@ test "buffer shape ot variation selector default snapshot" {
   }
   let infos = buffer.infos()
   let positions = buffer.positions()
-  let snapshot : Array[(UInt, Int, Int, Int, Int)] = []
+  let snapshot : Array[(UInt32, Int32, Int32, Int32, Int32)] = []
   for i in 0..<infos.length() {
     snapshot.push(
       (
@@ -1690,7 +1696,7 @@ test "buffer shape ot snapshot" {
   }
   let infos = buffer.infos()
   let positions = buffer.positions()
-  let snapshot : Array[(UInt, Int, Int, Int, Int)] = []
+  let snapshot : Array[(UInt32, Int32, Int32, Int32, Int32)] = []
   for i in 0..<infos.length() {
     snapshot.push(
       (
@@ -1740,7 +1746,7 @@ test "buffer shape ot feature filter snapshot" {
   }
   let infos = buffer.infos()
   let positions = buffer.positions()
-  let snapshot : Array[(UInt, Int, Int, Int, Int)] = []
+  let snapshot : Array[(UInt32, Int32, Int32, Int32, Int32)] = []
   for i in 0..<infos.length() {
     snapshot.push(
       (
@@ -1784,7 +1790,7 @@ test "buffer shape ot single pos snapshot" {
   }
   let infos = buffer.infos()
   let positions = buffer.positions()
-  let snapshot : Array[(UInt, Int, Int, Int, Int)] = []
+  let snapshot : Array[(UInt32, Int32, Int32, Int32, Int32)] = []
   for i in 0..<infos.length() {
     snapshot.push(
       (
@@ -1827,7 +1833,7 @@ test "buffer shape ot kern fallback snapshot" {
   }
   let infos = buffer.infos()
   let positions = buffer.positions()
-  let snapshot : Array[(UInt, Int, Int, Int, Int)] = []
+  let snapshot : Array[(UInt32, Int32, Int32, Int32, Int32)] = []
   for i in 0..<infos.length() {
     snapshot.push(
       (
@@ -1903,7 +1909,7 @@ test "buffer shape ot gdef mark class snapshot" {
   }
   let infos = buffer.infos()
   let positions = buffer.positions()
-  let snapshot : Array[(UInt, Int, Int, Int, Int)] = []
+  let snapshot : Array[(UInt32, Int32, Int32, Int32, Int32)] = []
   for i in 0..<infos.length() {
     snapshot.push(
       (
@@ -1948,7 +1954,7 @@ test "buffer shape ot fallback mark positioning snapshot" {
   }
   let infos = buffer.infos()
   let positions = buffer.positions()
-  let snapshot : Array[(UInt, Int, Int, Int, Int)] = []
+  let snapshot : Array[(UInt32, Int32, Int32, Int32, Int32)] = []
   for i in 0..<infos.length() {
     snapshot.push(
       (
@@ -1991,7 +1997,7 @@ test "buffer shape ot skips kern for vertical snapshot" {
   }
   let infos = buffer.infos()
   let positions = buffer.positions()
-  let snapshot : Array[(UInt, Int, Int, Int, Int)] = []
+  let snapshot : Array[(UInt32, Int32, Int32, Int32, Int32)] = []
   for i in 0..<infos.length() {
     snapshot.push(
       (
@@ -2034,7 +2040,7 @@ test "buffer shape myanmar fallback snapshot" {
   }
   let infos = buffer.infos()
   let positions = buffer.positions()
-  let snapshot : Array[(UInt, Int, Int, Int, Int)] = []
+  let snapshot : Array[(UInt32, Int32, Int32, Int32, Int32)] = []
   for i in 0..<infos.length() {
     snapshot.push(
       (
@@ -2077,7 +2083,7 @@ test "buffer shape myanmar prefers mym2 over dflt snapshot" {
   }
   let infos = buffer.infos()
   let positions = buffer.positions()
-  let snapshot : Array[(UInt, Int, Int, Int, Int)] = []
+  let snapshot : Array[(UInt32, Int32, Int32, Int32, Int32)] = []
   for i in 0..<infos.length() {
     snapshot.push(
       (
@@ -2120,7 +2126,7 @@ test "buffer shape indic fallback snapshot" {
   }
   let infos = buffer.infos()
   let positions = buffer.positions()
-  let snapshot : Array[(UInt, Int, Int, Int, Int)] = []
+  let snapshot : Array[(UInt32, Int32, Int32, Int32, Int32)] = []
   for i in 0..<infos.length() {
     snapshot.push(
       (
@@ -2163,7 +2169,7 @@ test "buffer shape indic routes to use for dev3 gsub snapshot" {
   }
   let infos = buffer.infos()
   let positions = buffer.positions()
-  let snapshot : Array[(UInt, Int, Int, Int, Int)] = []
+  let snapshot : Array[(UInt32, Int32, Int32, Int32, Int32)] = []
   for i in 0..<infos.length() {
     snapshot.push(
       (
@@ -2215,7 +2221,7 @@ test "buffer shape indic prefers dev2 over dflt snapshot" {
   }
   let infos = buffer.infos()
   let positions = buffer.positions()
-  let snapshot : Array[(UInt, Int, Int, Int, Int)] = []
+  let snapshot : Array[(UInt32, Int32, Int32, Int32, Int32)] = []
   for i in 0..<infos.length() {
     snapshot.push(
       (
@@ -2262,7 +2268,7 @@ test "buffer shape arabic syriac uses gsub snapshot" {
   }
   let infos = buffer.infos()
   let positions = buffer.positions()
-  let snapshot : Array[(UInt, Int, Int, Int, Int)] = []
+  let snapshot : Array[(UInt32, Int32, Int32, Int32, Int32)] = []
   for i in 0..<infos.length() {
     snapshot.push(
       (
@@ -2305,7 +2311,7 @@ test "buffer shape arabic syriac dflt gsub snapshot" {
   }
   let infos = buffer.infos()
   let positions = buffer.positions()
-  let snapshot : Array[(UInt, Int, Int, Int, Int)] = []
+  let snapshot : Array[(UInt32, Int32, Int32, Int32, Int32)] = []
   for i in 0..<infos.length() {
     snapshot.push(
       (
@@ -2348,7 +2354,7 @@ test "buffer shape use fallback snapshot" {
   }
   let infos = buffer.infos()
   let positions = buffer.positions()
-  let snapshot : Array[(UInt, Int, Int, Int, Int)] = []
+  let snapshot : Array[(UInt32, Int32, Int32, Int32, Int32)] = []
   for i in 0..<infos.length() {
     snapshot.push(
       (
@@ -2396,7 +2402,7 @@ test "buffer shape hebrew skips gpos without hebr snapshot" {
   }
   let infos = buffer.infos()
   let positions = buffer.positions()
-  let snapshot : Array[(UInt, Int, Int, Int, Int)] = []
+  let snapshot : Array[(UInt32, Int32, Int32, Int32, Int32)] = []
   for i in 0..<infos.length() {
     snapshot.push(
       (
@@ -2442,7 +2448,7 @@ test "buffer shape hebrew applies hebr gpos snapshot" {
   }
   let infos = buffer.infos()
   let positions = buffer.positions()
-  let snapshot : Array[(UInt, Int, Int, Int, Int)] = []
+  let snapshot : Array[(UInt32, Int32, Int32, Int32, Int32)] = []
   for i in 0..<infos.length() {
     snapshot.push(
       (

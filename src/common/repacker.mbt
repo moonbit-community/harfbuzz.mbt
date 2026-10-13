@@ -14,18 +14,18 @@
 
 ///|
 priv struct OrderEdge {
-  target : Int
-  width : Int
+  target : Int32
+  width : Int32
 }
 
 ///|
 pub struct OverflowRecord {
-  parent : Int
-  child : Int
-  offset : Int
-  min : Int
-  max : Int
-  width : Int
+  parent : Int32
+  child : Int32
+  offset : Int32
+  min : Int32
+  max : Int32
+  width : Int32
   is_signed : Bool
 } derive(Eq, Debug)
 
@@ -42,7 +42,7 @@ let inf_distance : Int64 = Int64::from_int(1) << 60
 let space_stride : Int64 = Int64::from_int(1) << 32
 
 ///|
-fn edge_weight(width : Int, child_size : Int) -> Int64 {
+fn edge_weight(width : Int32, child_size : Int32) -> Int64 {
   let size = Int64::from_int(child_size)
   if width <= 0 {
     return size
@@ -54,10 +54,10 @@ fn edge_weight(width : Int, child_size : Int) -> Int64 {
 ///|
 fn collect_order_edges(
   objects : ArrayView[SerializeObject],
-) -> Result[(Array[Array[OrderEdge]], Array[Int]), SerializeError] {
+) -> Result[(Array[Array[OrderEdge]], Array[Int32]), SerializeError] {
   let count = objects.length()
   let edges : Array[Array[OrderEdge]] = []
-  let indegree : Array[Int] = Array::make(count, 0)
+  let indegree : Array[Int32] = Array::make(count, 0)
   for _ in 0..<count {
     edges.push([])
   }
@@ -93,11 +93,11 @@ fn collect_order_edges(
 }
 
 ///|
-fn assign_spaces(edges : Array[Array[OrderEdge]]) -> Array[Int] {
+fn assign_spaces(edges : Array[Array[OrderEdge]]) -> Array[Int32] {
   let count = edges.length()
-  let spaces : Array[Int] = Array::make(count, 0)
+  let spaces : Array[Int32] = Array::make(count, 0)
   let reachable : Array[Bool] = Array::make(count, false)
-  let queue : Array[Int] = []
+  let queue : Array[Int32] = []
   for i in 0..<count {
     for edge in edges[i] {
       if edge.width >= 4 {
@@ -122,7 +122,7 @@ fn assign_spaces(edges : Array[Array[OrderEdge]]) -> Array[Int] {
   if queue.length() == 0 {
     return spaces
   }
-  let undirected : Array[Array[Int]] = []
+  let undirected : Array[Array[Int32]] = []
   for _ in 0..<count {
     undirected.push([])
   }
@@ -136,7 +136,7 @@ fn assign_spaces(edges : Array[Array[OrderEdge]]) -> Array[Int] {
   let mut space_id = 1
   for i in 0..<count {
     if reachable[i] && !visited[i] {
-      let component : Array[Int] = [i]
+      let component : Array[Int32] = [i]
       visited[i] = true
       let mut head = 0
       while head < component.length() {
@@ -160,7 +160,7 @@ fn assign_spaces(edges : Array[Array[OrderEdge]]) -> Array[Int] {
 fn compute_shortest_dist(
   objects : ArrayView[SerializeObject],
   edges : Array[Array[OrderEdge]],
-  indegree : Array[Int],
+  indegree : Array[Int32],
 ) -> Array[Int64] {
   let count = objects.length()
   let dist : Array[Int64] = Array::make(count, inf_distance)
@@ -197,18 +197,18 @@ fn compute_shortest_dist(
 ///|
 fn topo_sort(
   edges : Array[Array[OrderEdge]],
-  indegree : Array[Int],
+  indegree : Array[Int32],
   scores : Array[Int64],
-) -> Result[Array[Int], SerializeError] {
+) -> Result[Array[Int32], SerializeError] {
   let count = edges.length()
   let indeg = indegree.copy()
-  let ready : Array[Int] = []
+  let ready : Array[Int32] = []
   for i in 0..<count {
     if indeg[i] == 0 {
       ready.push(i)
     }
   }
-  let order : Array[Int] = []
+  let order : Array[Int32] = []
   while ready.length() > 0 {
     let mut best_idx = 0
     let mut best_node = ready[0]
@@ -240,13 +240,13 @@ fn topo_sort(
 ///|
 fn compute_starts(
   objects : ArrayView[SerializeObject],
-  order : ArrayView[Int],
-) -> Result[Array[Int], SerializeError] {
+  order : ArrayView[Int32],
+) -> Result[Array[Int32], SerializeError] {
   let count = objects.length()
   if order.length() != count {
     return Err(InvalidLink)
   }
-  let starts : Array[Int] = Array::make(count, 0)
+  let starts : Array[Int32] = Array::make(count, 0)
   let seen : Array[Bool] = Array::make(count, false)
   let mut offset = 0
   for idx in order {
@@ -266,7 +266,7 @@ fn compute_starts(
 ///|
 fn collect_overflows(
   objects : ArrayView[SerializeObject],
-  order : ArrayView[Int],
+  order : ArrayView[Int32],
 ) -> Result[Array[OverflowRecord], SerializeError] {
   let count = objects.length()
   let starts = match compute_starts(objects, order) {
@@ -333,7 +333,7 @@ fn collect_overflows(
 }
 
 ///|
-fn priority_delta(width : Int, child_size : Int) -> Int64 {
+fn priority_delta(width : Int32, child_size : Int32) -> Int64 {
   if width <= 0 {
     return Int64::from_int(1)
   }
@@ -343,8 +343,8 @@ fn priority_delta(width : Int, child_size : Int) -> Int64 {
 ///|
 pub fn repack_object_order(
   objects : ArrayView[SerializeObject],
-  max_iterations? : Int = 32,
-) -> Result[Array[Int], SerializeError] {
+  max_iterations~ : Int32 = 32,
+) -> Result[Array[Int32], SerializeError] {
   let count = objects.length()
   if count == 0 {
     return Ok([])
@@ -387,7 +387,7 @@ pub fn repack_object_order(
 ///|
 pub fn serialize_objects_repacked(
   objects : ArrayView[SerializeObject],
-  max_iterations? : Int = 32,
+  max_iterations~ : Int32 = 32,
 ) -> Result[Bytes, SerializeError] {
   let order = match repack_object_order(objects, max_iterations~) {
     Ok(value) => value
@@ -399,8 +399,8 @@ pub fn serialize_objects_repacked(
 ///|
 pub fn serialize_objects_repacked_with_order(
   objects : ArrayView[SerializeObject],
-  max_iterations? : Int = 32,
-) -> Result[(Bytes, Array[Int]), SerializeError] {
+  max_iterations~ : Int32 = 32,
+) -> Result[(Bytes, Array[Int32]), SerializeError] {
   let order = match repack_object_order(objects, max_iterations~) {
     Ok(value) => value
     Err(err) => return Err(err)

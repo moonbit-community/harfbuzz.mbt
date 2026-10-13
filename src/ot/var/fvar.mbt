@@ -18,8 +18,8 @@ pub struct AxisRecord {
   min_value : Double
   default_value : Double
   max_value : Double
-  flags : Int
-  name_id : Int
+  flags : Int32
+  name_id : Int32
 } derive(Eq, Debug, ToJson)
 
 ///|
@@ -33,10 +33,10 @@ pub extend AxisRecord with ToJson::{to_json}
 
 ///|
 pub struct InstanceRecord {
-  subfamily_name_id : Int
-  flags : Int
+  subfamily_name_id : Int32
+  flags : Int32
   coordinates : Array[Double]
-  postscript_name_id : Int?
+  postscript_name_id : Int32?
 } derive(Eq, Debug, ToJson)
 
 ///|
@@ -101,7 +101,7 @@ pub fn AxisRecord::normalize_value(self : AxisRecord, value : Double) -> Double 
 ///|
 pub fn FvarTable::normalize_axis_value(
   self : FvarTable,
-  axis_index : Int,
+  axis_index : Int32,
   value : Double,
 ) -> Double {
   if axis_index < 0 || axis_index >= self.axes.length() {
@@ -111,7 +111,7 @@ pub fn FvarTable::normalize_axis_value(
 }
 
 ///|
-pub fn FvarTable::axis_index(self : FvarTable, tag : @common.Tag) -> Int? {
+pub fn FvarTable::axis_index(self : FvarTable, tag : @common.Tag) -> Int32? {
   for i in 0..<self.axes.length() {
     if self.axes[i].tag == tag {
       return Some(i)
@@ -124,9 +124,9 @@ pub fn FvarTable::axis_index(self : FvarTable, tag : @common.Tag) -> Int? {
 pub fn FvarTable::normalize_design_coords(
   self : FvarTable,
   coords : Array[Double],
-) -> Array[Int] {
+) -> Array[Int32] {
   let axis_count = self.axes.length()
-  let out : Array[Int] = Array::make(axis_count, 0)
+  let out : Array[Int32] = Array::make(axis_count, 0)
   for i in 0..<axis_count {
     let axis = self.axes[i]
     let value = if i < coords.length() { coords[i] } else { axis.default_value }
@@ -246,7 +246,7 @@ pub fn FvarTable::parse(data : BytesView) -> Result[FvarTable, VarError] {
                 Ok(raw) => coords.push(fixed16_to_double(raw))
               }
             }
-            let mut postscript_name_id : Int? = None
+            let mut postscript_name_id : Int32? = None
             let ps_offset = coords_offset + axis_count * 4
             if instance_size >= axis_count * 4 + 6 {
               let ps = read_u16_int(data, ps_offset)

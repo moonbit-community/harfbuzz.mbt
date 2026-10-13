@@ -164,16 +164,16 @@ fn split_extension(value : String) -> (String, String) {
 }
 
 ///|
-fn parse_hex_uint(hex : String) -> UInt? {
+fn parse_hex_uint(hex : String) -> UInt32? {
   if hex.is_empty() {
     return None
   }
-  let mut value : UInt = 0U
+  let mut value : UInt32 = 0U
   for ch in hex {
     let digit = match ch {
-      '0'..='9' => ch.to_int() - '0'.to_int()
-      'A'..='F' => ch.to_int() - 'A'.to_int() + 10
-      'a'..='f' => ch.to_int() - 'a'.to_int() + 10
+      '0'..<='9' => ch.to_int() - '0'.to_int()
+      'A'..<='F' => ch.to_int() - 'A'.to_int() + 10
+      'a'..<='f' => ch.to_int() - 'a'.to_int() + 10
       _ => return None
     }
     value = value * 16U + digit.reinterpret_as_uint()
@@ -182,12 +182,12 @@ fn parse_hex_uint(hex : String) -> UInt? {
 }
 
 ///|
-fn subset_codepoints(spec : String) -> Array[UInt]? {
+fn subset_codepoints(spec : String) -> Array[UInt32]? {
   if spec == "*" || spec == "no-unicodes" {
     return None
   }
   if spec.has_prefix("U+") {
-    let values : Array[UInt] = []
+    let values : Array[UInt32] = []
     for part_view in spec.split(",") {
       let part = part_view.trim().to_owned()
       if part.is_empty() {
@@ -207,7 +207,7 @@ fn subset_codepoints(spec : String) -> Array[UInt]? {
     }
     return Some(values)
   }
-  let values : Array[UInt] = []
+  let values : Array[UInt32] = []
   for ch in spec {
     values.push(ch.to_uint())
   }
@@ -215,7 +215,7 @@ fn subset_codepoints(spec : String) -> Array[UInt]? {
 }
 
 ///|
-fn codepoints_hex(codepoints : Array[UInt]) -> String {
+fn codepoints_hex(codepoints : Array[UInt32]) -> String {
   let sb = StringBuilder()
   for i in 0..<codepoints.length() {
     if i > 0 {
@@ -227,7 +227,7 @@ fn codepoints_hex(codepoints : Array[UInt]) -> String {
 }
 
 ///|
-fn expected_unicode_label(spec : String, codepoints : Array[UInt]) -> String {
+fn expected_unicode_label(spec : String, codepoints : Array[UInt32]) -> String {
   if spec == "*" {
     return "all"
   }
@@ -266,7 +266,7 @@ fn instance_suffix(instance : String, iup_optimize : Bool) -> String {
 }
 
 ///|
-fn expected_key(case : SubsetDataCase, codepoints : Array[UInt]) -> String {
+fn expected_key(case : SubsetDataCase, codepoints : Array[UInt32]) -> String {
   let (suite_base, _) = split_extension(case.suite)
   let (font_base, font_ext) = split_extension(case.font)
   let (profile_base, _) = split_extension(case.profile)
@@ -276,7 +276,7 @@ fn expected_key(case : SubsetDataCase, codepoints : Array[UInt]) -> String {
 }
 
 ///|
-fn read_u16_dbg(data : BytesView, offset : Int) -> Int? {
+fn read_u16_dbg(data : BytesView, offset : Int32) -> Int32? {
   if offset < 0 || offset + 2 > data.length() {
     return None
   }
@@ -286,7 +286,7 @@ fn read_u16_dbg(data : BytesView, offset : Int) -> Int? {
 }
 
 ///|
-fn read_u32_dbg(data : BytesView, offset : Int) -> Int? {
+fn read_u32_dbg(data : BytesView, offset : Int32) -> Int32? {
   if offset < 0 || offset + 4 > data.length() {
     return None
   }
@@ -298,7 +298,7 @@ fn read_u32_dbg(data : BytesView, offset : Int) -> Int? {
 }
 
 ///|
-fn read_tag_dbg(data : BytesView, offset : Int) -> String? {
+fn read_tag_dbg(data : BytesView, offset : Int32) -> String? {
   if offset < 0 || offset + 4 > data.length() {
     return None
   }
@@ -582,9 +582,9 @@ fn cmap_header_summary(data : Bytes) -> String {
 }
 
 ///|
-fn cmap_records(data : Bytes) -> Array[(Int, Int, Int, Bytes)] {
+fn cmap_records(data : Bytes) -> Array[(Int32, Int32, Int32, Bytes)] {
   let cmap = table_slice(data, "cmap")
-  let records : Array[(Int, Int, Int, Bytes)] = []
+  let records : Array[(Int32, Int32, Int32, Bytes)] = []
   match cmap {
     None => ()
     Some(cmap) => {

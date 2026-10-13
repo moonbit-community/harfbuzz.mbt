@@ -42,13 +42,13 @@ test "arabic joining actions mongolian variation selector" {
 }
 
 ///|
-fn arabic_test_push_u16(bytes : Array[Byte], value : Int) -> Unit {
+fn arabic_test_push_u16(bytes : Array[Byte], value : Int32) -> Unit {
   bytes.push(((value >> 8) & 0xff).to_byte())
   bytes.push((value & 0xff).to_byte())
 }
 
 ///|
-fn arabic_test_push_u32(bytes : Array[Byte], value : Int) -> Unit {
+fn arabic_test_push_u32(bytes : Array[Byte], value : Int32) -> Unit {
   bytes.push(((value >> 24) & 0xff).to_byte())
   bytes.push(((value >> 16) & 0xff).to_byte())
   bytes.push(((value >> 8) & 0xff).to_byte())
@@ -64,7 +64,7 @@ fn arabic_test_build_sfnt(tables : Array[(@common.Tag, Bytes)]) -> Bytes {
   arabic_test_push_u16(bytes, 0)
   arabic_test_push_u16(bytes, 0)
   let mut offset = 12 + tables.length() * 16
-  let records : Array[(@common.Tag, Int, Int)] = []
+  let records : Array[(@common.Tag, Int32, Int32)] = []
   for entry in tables {
     let (tag, table) = entry
     records.push((tag, offset, table.length()))
@@ -91,7 +91,7 @@ fn arabic_test_build_sfnt(tables : Array[(@common.Tag, Bytes)]) -> Bytes {
 }
 
 ///|
-fn arabic_test_build_head(upem : Int, loc_format : Int) -> Bytes {
+fn arabic_test_build_head(upem : Int32, loc_format : Int32) -> Bytes {
   let bytes : Array[Byte] = Array::make(54, b'\x00')
   bytes[18] = ((upem >> 8) & 0xff).to_byte()
   bytes[19] = (upem & 0xff).to_byte()
@@ -101,7 +101,7 @@ fn arabic_test_build_head(upem : Int, loc_format : Int) -> Bytes {
 }
 
 ///|
-fn arabic_test_build_maxp(num_glyphs : Int) -> Bytes {
+fn arabic_test_build_maxp(num_glyphs : Int32) -> Bytes {
   let bytes : Array[Byte] = Array::make(6, b'\x00')
   bytes[4] = ((num_glyphs >> 8) & 0xff).to_byte()
   bytes[5] = (num_glyphs & 0xff).to_byte()
@@ -109,7 +109,7 @@ fn arabic_test_build_maxp(num_glyphs : Int) -> Bytes {
 }
 
 ///|
-fn arabic_test_build_hhea(number_of_hmetrics : Int) -> Bytes {
+fn arabic_test_build_hhea(number_of_hmetrics : Int32) -> Bytes {
   let bytes : Array[Byte] = Array::make(36, b'\x00')
   bytes[34] = ((number_of_hmetrics >> 8) & 0xff).to_byte()
   bytes[35] = (number_of_hmetrics & 0xff).to_byte()
@@ -117,7 +117,7 @@ fn arabic_test_build_hhea(number_of_hmetrics : Int) -> Bytes {
 }
 
 ///|
-fn arabic_test_build_vhea(number_of_vmetrics : Int) -> Bytes {
+fn arabic_test_build_vhea(number_of_vmetrics : Int32) -> Bytes {
   let bytes : Array[Byte] = Array::make(36, b'\x00')
   bytes[34] = ((number_of_vmetrics >> 8) & 0xff).to_byte()
   bytes[35] = (number_of_vmetrics & 0xff).to_byte()
@@ -135,7 +135,7 @@ fn arabic_test_build_hmtx() -> Bytes {
 }
 
 ///|
-fn arabic_test_build_hmtx_n(count : Int, advance : Int) -> Bytes {
+fn arabic_test_build_hmtx_n(count : Int32, advance : Int32) -> Bytes {
   let bytes : Array[Byte] = []
   let mut i = 0
   while i < count {
@@ -172,9 +172,9 @@ fn arabic_test_build_cmap_table(subtable : Bytes) -> Bytes {
 
 ///|
 fn arabic_test_build_cmap_format12(
-  start : UInt,
-  end : UInt,
-  start_gid : UInt,
+  start : UInt32,
+  end : UInt32,
+  start_gid : UInt32,
 ) -> Bytes {
   let bytes : Array[Byte] = []
   arabic_test_push_u16(bytes, 12)
@@ -190,7 +190,7 @@ fn arabic_test_build_cmap_format12(
 
 ///|
 fn arabic_test_build_cmap_format12_groups(
-  groups : Array[(UInt, UInt, UInt)],
+  groups : Array[(UInt32, UInt32, UInt32)],
 ) -> Bytes {
   let bytes : Array[Byte] = []
   let length = 16 + groups.length() * 12
@@ -303,7 +303,7 @@ test "arabic fallback snapshot" {
   }
   let infos = buffer.infos()
   let positions = buffer.positions()
-  let snapshot : Array[(UInt, Int, Int, Int, Int)] = []
+  let snapshot : Array[(UInt32, Int32, Int32, Int32, Int32)] = []
   for i in 0..<infos.length() {
     snapshot.push(
       (

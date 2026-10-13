@@ -14,7 +14,7 @@
 
 ///|
 pub struct SparseVarRegionAxis {
-  axis_index : Int
+  axis_index : Int32
   axis : VarRegionAxis
 } derive(Eq, Debug, ToJson)
 
@@ -57,7 +57,7 @@ pub extend SparseVarRegionList with ToJson::{to_json}
 
 ///|
 pub struct MultiVarData {
-  region_indices : Array[Int]
+  region_indices : Array[Int32]
   delta_sets : CffIndex
 } derive(Debug, ToJson)
 
@@ -82,7 +82,7 @@ pub extend MultiItemVariationStore with ToJson::{to_json}
 ///|
 fn SparseVariationRegion::evaluate(
   self : SparseVariationRegion,
-  coords : ArrayView[Int],
+  coords : ArrayView[Int32],
 ) -> Double {
   let mut scalar = 1.0
   for axis in self.axes {
@@ -103,8 +103,8 @@ fn SparseVariationRegion::evaluate(
 ///|
 fn SparseVarRegionList::evaluate(
   self : SparseVarRegionList,
-  region_index : Int,
-  coords : ArrayView[Int],
+  region_index : Int32,
+  coords : ArrayView[Int32],
 ) -> Double {
   if region_index < 0 || region_index >= self.regions.length() {
     return 0.0
@@ -115,7 +115,7 @@ fn SparseVarRegionList::evaluate(
 ///|
 fn parse_sparse_variation_region(
   data : BytesView,
-  offset : Int,
+  offset : Int32,
 ) -> Result[SparseVariationRegion, VarError] {
   let count = read_u16_int(data, offset)
   match count {
@@ -157,7 +157,7 @@ fn parse_sparse_variation_region(
 ///|
 fn parse_sparse_var_region_list(
   data : BytesView,
-  offset : Int,
+  offset : Int32,
 ) -> Result[SparseVarRegionList, VarError] {
   let count = read_u16_int(data, offset)
   match count {
@@ -198,7 +198,7 @@ fn parse_sparse_var_region_list(
 ///|
 fn parse_multi_var_data(
   data : BytesView,
-  offset : Int,
+  offset : Int32,
 ) -> Result[MultiVarData, VarError] {
   let format = read_u8_int(data, offset)
   match format {
@@ -219,7 +219,7 @@ fn parse_multi_var_data(
           if indices_base < 0 || indices_base + total > data.length() {
             return Err(UnexpectedEof)
           }
-          let region_indices : Array[Int] = []
+          let region_indices : Array[Int32] = []
           let mut pos = indices_base
           for _ in 0..<count {
             let value = read_u16_int(data, pos)
@@ -243,8 +243,8 @@ fn parse_multi_var_data(
 ///|
 fn MultiVarData::add_delta(
   self : MultiVarData,
-  inner : Int,
-  coords : ArrayView[Int],
+  inner : Int32,
+  coords : ArrayView[Int32],
   regions : SparseVarRegionList,
   out : Array[Double],
 ) -> Unit {
@@ -324,8 +324,8 @@ pub fn MultiItemVariationStore::parse(
 ///|
 pub fn MultiItemVariationStore::get_delta(
   self : MultiItemVariationStore,
-  var_idx : UInt,
-  coords : Array[Int],
+  var_idx : UInt32,
+  coords : Array[Int32],
   out : Array[Double],
 ) -> Unit {
   let outer = ((var_idx >> 16) & 0xFFFFU).reinterpret_as_int()

@@ -14,11 +14,11 @@
 
 ///|
 struct TupleHeader {
-  data_size : Int
-  tuple_index : Int
-  peak : Array[Int]
-  start : Array[Int]?
-  end : Array[Int]?
+  data_size : Int32
+  tuple_index : Int32
+  peak : Array[Int32]
+  start : Array[Int32]?
+  end : Array[Int32]?
 } derive(Debug, ToJson)
 
 ///|
@@ -34,12 +34,12 @@ fn TupleHeader::has_private_points(self : TupleHeader) -> Bool {
 
 ///|
 pub struct TupleVariation {
-  peak : Array[Int]
-  start : Array[Int]?
-  end : Array[Int]?
-  indices : Array[Int]?
-  deltas_x : Array[Int]
-  deltas_y : Array[Int]?
+  peak : Array[Int32]
+  start : Array[Int32]?
+  end : Array[Int32]?
+  indices : Array[Int32]?
+  deltas_x : Array[Int32]
+  deltas_y : Array[Int32]?
 } derive(Debug, ToJson)
 
 ///|
@@ -49,7 +49,7 @@ pub extend TupleVariation with @debug.Debug::{to_repr}
 pub extend TupleVariation with ToJson::{to_json}
 
 ///|
-fn coord_at(coords : Array[Int], index : Int) -> Int {
+fn coord_at(coords : Array[Int32], index : Int32) -> Int32 {
   if index < 0 || index >= coords.length() {
     0
   } else {
@@ -60,7 +60,7 @@ fn coord_at(coords : Array[Int], index : Int) -> Int {
 ///|
 pub fn TupleVariation::scalar(
   self : TupleVariation,
-  coords : Array[Int],
+  coords : Array[Int32],
 ) -> Double {
   let axis_count = self.peak.length()
   let mut scalar = 1.0
@@ -115,11 +115,11 @@ pub fn TupleVariation::scalar(
 
 ///|
 pub struct TupleVariationData {
-  axis_count : Int
+  axis_count : Int32
   tuple_headers : Array[TupleHeader]
-  shared_points : Array[Int]?
-  shared_points_size : Int
-  data_offset : Int
+  shared_points : Array[Int32]?
+  shared_points_size : Int32
+  data_offset : Int32
   data : Bytes
 } derive(Debug, ToJson)
 
@@ -130,8 +130,8 @@ pub extend TupleVariationData with @debug.Debug::{to_repr}
 pub extend TupleVariationData with ToJson::{to_json}
 
 ///|
-fn clone_int_array(values : Array[Int]) -> Array[Int] {
-  let out : Array[Int] = []
+fn clone_int_array(values : Array[Int32]) -> Array[Int32] {
+  let out : Array[Int32] = []
   for v in values {
     out.push(v)
   }
@@ -141,10 +141,10 @@ fn clone_int_array(values : Array[Int]) -> Array[Int] {
 ///|
 fn read_f2dot14_array(
   data : BytesView,
-  offset : Int,
-  axis_count : Int,
-) -> Result[(Array[Int], Int), VarError] {
-  let values : Array[Int] = []
+  offset : Int32,
+  axis_count : Int32,
+) -> Result[(Array[Int32], Int32), VarError] {
+  let values : Array[Int32] = []
   let mut pos = offset
   for _ in 0..<axis_count {
     let value = read_i16(data, pos)
@@ -159,15 +159,15 @@ fn read_f2dot14_array(
 
 ///|
 fn slice_shared_tuple(
-  shared_tuples : Array[Int],
-  index : Int,
-  axis_count : Int,
-) -> Result[Array[Int], VarError] {
+  shared_tuples : Array[Int32],
+  index : Int32,
+  axis_count : Int32,
+) -> Result[Array[Int32], VarError] {
   let start = index * axis_count
   if start < 0 || start + axis_count > shared_tuples.length() {
     return Err(InvalidFormat)
   }
-  let out : Array[Int] = []
+  let out : Array[Int32] = []
   for i in 0..<axis_count {
     out.push(shared_tuples[start + i])
   }
@@ -177,10 +177,10 @@ fn slice_shared_tuple(
 ///|
 fn parse_tuple_header(
   data : BytesView,
-  offset : Int,
-  axis_count : Int,
-  shared_tuples : Array[Int],
-) -> Result[(TupleHeader, Int), VarError] {
+  offset : Int32,
+  axis_count : Int32,
+  shared_tuples : Array[Int32],
+) -> Result[(TupleHeader, Int32), VarError] {
   let data_size = read_u16_int(data, offset)
   let tuple_index = read_u16_int(data, offset + 2)
   match (data_size, tuple_index) {
@@ -240,9 +240,9 @@ fn parse_tuple_header(
 ///|
 fn decode_point_numbers(
   data : BytesView,
-  offset : Int,
-  end : Int,
-) -> Result[(Array[Int], Int), VarError] {
+  offset : Int32,
+  end : Int32,
+) -> Result[(Array[Int32], Int32), VarError] {
   if offset < 0 || offset >= end {
     return Err(UnexpectedEof)
   }
@@ -256,7 +256,7 @@ fn decode_point_numbers(
     count = ((count & 0x7F) << 8) | data[pos].to_int()
     pos = pos + 1
   }
-  let points : Array[Int] = []
+  let points : Array[Int32] = []
   let mut n = 0
   let mut i = 0
   while i < count {
@@ -303,7 +303,7 @@ fn decode_point_numbers(
 }
 
 ///|
-fn int8_from_byte(value : Byte) -> Int {
+fn int8_from_byte(value : Byte) -> Int32 {
   let v = value.to_int()
   if v >= 0x80 {
     v - 0x100
@@ -315,10 +315,10 @@ fn int8_from_byte(value : Byte) -> Int {
 ///|
 fn decode_values(
   data : BytesView,
-  offset : Int,
-  end : Int,
-  count : Int,
-) -> Result[(Array[Int], Int), VarError] {
+  offset : Int32,
+  end : Int32,
+  count : Int32,
+) -> Result[(Array[Int32], Int32), VarError] {
   if count < 0 {
     return Err(InvalidFormat)
   }
@@ -329,7 +329,7 @@ fn decode_values(
     return Err(UnexpectedEof)
   }
   let mut pos = offset
-  let values : Array[Int] = []
+  let values : Array[Int32] = []
   let mut i = 0
   while i < count {
     if pos >= end {
@@ -390,8 +390,8 @@ fn decode_values(
 ///|
 pub fn TupleVariationData::parse(
   data : BytesView,
-  axis_count : Int,
-  shared_tuples : Array[Int],
+  axis_count : Int32,
+  shared_tuples : Array[Int32],
 ) -> Result[TupleVariationData, VarError] {
   let tuple_var_count = read_u16_int(data, 0)
   let data_offset = read_u16_int(data, 2)
@@ -416,7 +416,7 @@ pub fn TupleVariationData::parse(
           }
         }
       }
-      let mut shared_points : Array[Int]? = None
+      let mut shared_points : Array[Int32]? = None
       let mut shared_points_size = 0
       if has_shared_points {
         let decoded = decode_point_numbers(data, data_offset, data.length())
@@ -443,7 +443,7 @@ pub fn TupleVariationData::parse(
 ///|
 pub fn TupleVariationData::decode(
   self : TupleVariationData,
-  point_count : Int,
+  point_count : Int32,
   is_gvar : Bool,
 ) -> Result[Array[TupleVariation], VarError] {
   if point_count < 0 {
@@ -460,7 +460,7 @@ pub fn TupleVariationData::decode(
     if end < pos || end > data.length() {
       return Err(UnexpectedEof)
     }
-    let mut points : Array[Int] = []
+    let mut points : Array[Int32] = []
     if header.has_private_points() {
       let decoded = decode_point_numbers(data, pos, end)
       match decoded {
@@ -486,7 +486,7 @@ pub fn TupleVariationData::decode(
         values
       }
     }
-    let mut deltas_y : Array[Int]? = None
+    let mut deltas_y : Array[Int32]? = None
     if is_gvar {
       let decoded_y = decode_values(data, pos, end, num_deltas)
       match decoded_y {
@@ -519,8 +519,8 @@ pub fn TupleVariationData::decode(
 ///|
 pub fn TupleVariationData::apply(
   self : TupleVariationData,
-  coords : Array[Int],
-  point_count : Int,
+  coords : Array[Int32],
+  point_count : Int32,
   is_gvar : Bool,
 ) -> Result[(Array[Double], Array[Double]?), VarError] {
   let tuples = match self.decode(point_count, is_gvar) {

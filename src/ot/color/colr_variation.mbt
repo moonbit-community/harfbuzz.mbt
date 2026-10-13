@@ -21,7 +21,7 @@ let f16dot16_scale : Double = 1.0 / 65536.0
 ///|
 /// COLRv1 variation instancer.
 pub struct ColrVarInstancer {
-  coords : Array[Int]
+  coords : Array[Int32]
   var_store : @ot_var.ItemVariationStore?
   var_idx_map : @ot_var.DeltaSetIndexMap?
 }
@@ -30,7 +30,7 @@ pub struct ColrVarInstancer {
 /// Build a variation instancer for COLRv1 data.
 pub fn ColrTable::var_instancer(
   self : ColrTable,
-  coords : Array[Int],
+  coords : Array[Int32],
 ) -> ColrVarInstancer {
   { coords, var_store: self.var_store, var_idx_map: self.var_idx_map, }
 }
@@ -40,7 +40,7 @@ pub fn ColrTable::var_instancer(
 pub fn ColrVarInstancer::delta(
   self : ColrVarInstancer,
   var_idx_base : @paint.VarIdx?,
-  offset : Int,
+  offset : Int32,
 ) -> Double {
   if offset < 0 {
     return 0.0
@@ -71,9 +71,9 @@ pub fn ColrVarInstancer::delta(
 /// Apply a variation delta to an FWORD value (returns float).
 pub fn ColrVarInstancer::fword(
   self : ColrVarInstancer,
-  value : Int,
+  value : Int32,
   var_idx_base : @paint.VarIdx?,
-  offset : Int,
+  offset : Int32,
 ) -> Double {
   value.to_double() + self.delta(var_idx_base, offset)
 }
@@ -82,9 +82,9 @@ pub fn ColrVarInstancer::fword(
 /// Apply a variation delta to an F2DOT14 value (returns float).
 pub fn ColrVarInstancer::f2dot14(
   self : ColrVarInstancer,
-  value : Int,
+  value : Int32,
   var_idx_base : @paint.VarIdx?,
-  offset : Int,
+  offset : Int32,
 ) -> Double {
   (value.to_double() + self.delta(var_idx_base, offset)) * f2dot14_scale
 }
@@ -93,9 +93,9 @@ pub fn ColrVarInstancer::f2dot14(
 /// Apply a variation delta to an F16DOT16 value (returns float).
 pub fn ColrVarInstancer::f16dot16(
   self : ColrVarInstancer,
-  value : Int,
+  value : Int32,
   var_idx_base : @paint.VarIdx?,
-  offset : Int,
+  offset : Int32,
 ) -> Double {
   (value.to_double() + self.delta(var_idx_base, offset)) * f16dot16_scale
 }

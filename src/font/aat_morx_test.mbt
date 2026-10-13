@@ -153,15 +153,15 @@ test "aat morx parse and apply" {
   }
   assert_true(morx.has_data())
   let num_glyphs = font.get_face().get_glyph_count()
-  let glyphs : Array[UInt] = []
-  let clusters : Array[Int] = []
+  let glyphs : Array[UInt32] = []
+  let clusters : Array[Int32] = []
   for i in 0..<num_glyphs {
     glyphs.push(i.reinterpret_as_uint())
     clusters.push(i)
   }
   let changed = morx.apply(glyphs, clusters, true)
   assert_true(changed)
-  let changes : Array[(Int, UInt)] = []
+  let changes : Array[(Int32, UInt32)] = []
   for i in 0..<glyphs.length() {
     let original = i.reinterpret_as_uint()
     if glyphs[i] != original {

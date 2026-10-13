@@ -49,7 +49,7 @@ let post_standard_names : Array[String] = [
 ]
 
 ///|
-fn post_standard_name(index : Int) -> String? {
+fn post_standard_name(index : Int32) -> String? {
   if index < 0 || index >= post_standard_names.length() {
     None
   } else {
@@ -58,7 +58,7 @@ fn post_standard_name(index : Int) -> String? {
 }
 
 ///|
-fn post_standard_index(name : String) -> Int? {
+fn post_standard_index(name : String) -> Int32? {
   for i in 0..<post_standard_names.length() {
     if post_standard_names[i] == name {
       return Some(i)
@@ -68,7 +68,7 @@ fn post_standard_index(name : String) -> Int? {
 }
 
 ///|
-pub fn PostTable::glyph_name(self : PostTable, glyph : Int) -> String? {
+pub fn PostTable::glyph_name(self : PostTable, glyph : Int32) -> String? {
   if glyph < 0 {
     return None
   }
@@ -108,7 +108,7 @@ pub fn PostTable::glyph_name(self : PostTable, glyph : Int) -> String? {
 }
 
 ///|
-pub fn PostTable::glyph_from_name(self : PostTable, name : String) -> Int? {
+pub fn PostTable::glyph_from_name(self : PostTable, name : String) -> Int32? {
   if name == "" {
     return None
   }

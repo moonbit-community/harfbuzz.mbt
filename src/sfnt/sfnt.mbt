@@ -32,8 +32,8 @@ pub extend SfntError with ToJson::{to_json}
 /// Table directory entry.
 pub struct TableRecord {
   tag : @common.Tag
-  offset : Int
-  length : Int
+  offset : Int32
+  length : Int32
 } derive(Eq, Debug, ToJson)
 
 ///|
@@ -59,7 +59,7 @@ pub extend Sfnt with @debug.Debug::{to_repr}
 pub extend Sfnt with ToJson::{to_json}
 
 ///|
-fn read_u16(data : BytesView, offset : Int) -> Result[UInt, SfntError] {
+fn read_u16(data : BytesView, offset : Int32) -> Result[UInt32, SfntError] {
   if offset + 2 > data.length() {
     return Err(UnexpectedEof)
   }
@@ -69,7 +69,7 @@ fn read_u16(data : BytesView, offset : Int) -> Result[UInt, SfntError] {
 }
 
 ///|
-fn read_u24(data : BytesView, offset : Int) -> Result[UInt, SfntError] {
+fn read_u24(data : BytesView, offset : Int32) -> Result[UInt32, SfntError] {
   if offset + 3 > data.length() {
     return Err(UnexpectedEof)
   }
@@ -80,7 +80,7 @@ fn read_u24(data : BytesView, offset : Int) -> Result[UInt, SfntError] {
 }
 
 ///|
-fn read_u32(data : BytesView, offset : Int) -> Result[UInt, SfntError] {
+fn read_u32(data : BytesView, offset : Int32) -> Result[UInt32, SfntError] {
   if offset + 4 > data.length() {
     return Err(UnexpectedEof)
   }
@@ -92,7 +92,7 @@ fn read_u32(data : BytesView, offset : Int) -> Result[UInt, SfntError] {
 }
 
 ///|
-fn u16_to_int(value : UInt) -> Int {
+fn u16_to_int(value : UInt32) -> Int32 {
   let v = value.reinterpret_as_int()
   if v < 0 {
     v + 0x10000
@@ -102,7 +102,7 @@ fn u16_to_int(value : UInt) -> Int {
 }
 
 ///|
-fn read_u16_int(data : BytesView, offset : Int) -> Result[Int, SfntError] {
+fn read_u16_int(data : BytesView, offset : Int32) -> Result[Int32, SfntError] {
   match read_u16(data, offset) {
     Err(err) => Err(err)
     Ok(value) => Ok(u16_to_int(value))
@@ -110,7 +110,7 @@ fn read_u16_int(data : BytesView, offset : Int) -> Result[Int, SfntError] {
 }
 
 ///|
-fn read_u32_int(data : BytesView, offset : Int) -> Result[Int, SfntError] {
+fn read_u32_int(data : BytesView, offset : Int32) -> Result[Int32, SfntError] {
   match read_u32(data, offset) {
     Err(err) => Err(err)
     Ok(value) => {
@@ -125,7 +125,7 @@ fn read_u32_int(data : BytesView, offset : Int) -> Result[Int, SfntError] {
 }
 
 ///|
-fn read_i16(data : BytesView, offset : Int) -> Result[Int, SfntError] {
+fn read_i16(data : BytesView, offset : Int32) -> Result[Int32, SfntError] {
   match read_u16_int(data, offset) {
     Err(err) => Err(err)
     Ok(value) => if value >= 0x8000 { Ok(value - 0x10000) } else { Ok(value) }
@@ -134,7 +134,10 @@ fn read_i16(data : BytesView, offset : Int) -> Result[Int, SfntError] {
 
 ///|
 /// Parse a SFNT directory from a blob at a byte offset.
-pub fn Sfnt::parse_at(blob : @blob.Blob, base : Int) -> Result[Sfnt, SfntError] {
+pub fn Sfnt::parse_at(
+  blob : @blob.Blob,
+  base : Int32,
+) -> Result[Sfnt, SfntError] {
   if base < 0 {
     return Err(InvalidFormat)
   }

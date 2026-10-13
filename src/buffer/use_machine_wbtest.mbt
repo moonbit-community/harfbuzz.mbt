@@ -14,7 +14,7 @@
 
 ///|
 test "use machine symbol cluster for other" {
-  let categories : Array[UInt] = [use_syllable_machine_ex_O]
+  let categories : Array[UInt32] = [use_syllable_machine_ex_O]
   let marks : Array[Bool] = [false]
   let syllables = find_syllables_use(categories, marks)
   inspect(syllables.length(), content="1")

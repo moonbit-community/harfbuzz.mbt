@@ -338,7 +338,7 @@ def emit() -> None:
     lines.append("}")
     lines.append("")
     lines.append("///|")
-    lines.append(f"pub let subset_data_case_count : Int = {case_count}")
+    lines.append(f"pub let subset_data_case_count : Int32 = {case_count}")
     lines.append("")
 
     font_entries: list[tuple[str, bytes]] = []

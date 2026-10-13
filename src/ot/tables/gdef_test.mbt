@@ -13,13 +13,13 @@
 // limitations under the License.
 
 ///|
-fn push_u16_gdef(bytes : Array[Byte], value : Int) -> Unit {
+fn push_u16_gdef(bytes : Array[Byte], value : Int32) -> Unit {
   bytes.push(((value >> 8) & 0xff).to_byte())
   bytes.push((value & 0xff).to_byte())
 }
 
 ///|
-fn push_u32_gdef(bytes : Array[Byte], value : Int) -> Unit {
+fn push_u32_gdef(bytes : Array[Byte], value : Int32) -> Unit {
   bytes.push(((value >> 24) & 0xff).to_byte())
   bytes.push(((value >> 16) & 0xff).to_byte())
   bytes.push(((value >> 8) & 0xff).to_byte())

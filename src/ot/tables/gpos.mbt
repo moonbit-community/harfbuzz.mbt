@@ -15,10 +15,10 @@
 ///|
 /// Value record for GPOS adjustments.
 pub struct ValueRecord {
-  x_placement : Int
-  y_placement : Int
-  x_advance : Int
-  y_advance : Int
+  x_placement : Int32
+  y_placement : Int32
+  x_advance : Int32
+  y_advance : Int32
 } derive(Eq, Debug, ToJson)
 
 ///|
@@ -64,11 +64,11 @@ fn add_value_record(a : ValueRecord, b : ValueRecord) -> ValueRecord {
 ///|
 fn sum_advances_between(
   deltas : Array[ValueRecord],
-  advances_x : ArrayView[Int],
-  advances_y : ArrayView[Int],
-  start_index : Int,
-  end_index : Int,
-) -> (Int, Int) {
+  advances_x : ArrayView[Int32],
+  advances_y : ArrayView[Int32],
+  start_index : Int32,
+  end_index : Int32,
+) -> (Int32, Int32) {
   if end_index <= start_index {
     return (0, 0)
   }
@@ -88,11 +88,11 @@ fn sum_advances_between(
 
 ///|
 fn ligature_component_index(
-  clusters : ArrayView[Int],
-  ligature_index : Int,
-  mark_index : Int,
-  component_count : Int,
-) -> Int {
+  clusters : ArrayView[Int32],
+  ligature_index : Int32,
+  mark_index : Int32,
+  component_count : Int32,
+) -> Int32 {
   if component_count <= 0 {
     return 0
   }
@@ -120,7 +120,7 @@ fn ligature_component_index(
 /// Compute GPOS positioning deltas for a glyph sequence.
 pub fn GposTable::position_deltas(
   self : GposTable,
-  glyphs : ArrayView[UInt],
+  glyphs : ArrayView[UInt32],
 ) -> Result[Array[ValueRecord], OtLayoutError] {
   let layout = self.layout
   self.position_deltas_with_lookups(glyphs, layout.lookup_list.offsets[:])
@@ -129,12 +129,12 @@ pub fn GposTable::position_deltas(
 ///|
 pub fn GposTable::position_deltas_with_lookups(
   self : GposTable,
-  glyphs : ArrayView[UInt],
-  lookup_offsets : ArrayView[Int],
+  glyphs : ArrayView[UInt32],
+  lookup_offsets : ArrayView[Int32],
   gdef? : GdefTable,
-  clusters? : ArrayView[Int] = [],
-  advances_x? : ArrayView[Int] = [],
-  advances_y? : ArrayView[Int] = [],
+  clusters~ : ArrayView[Int32] = [],
+  advances_x~ : ArrayView[Int32] = [],
+  advances_y~ : ArrayView[Int32] = [],
 ) -> Result[Array[ValueRecord], OtLayoutError] {
   let deltas : Array[ValueRecord] = Array::make(
     glyphs.length(),
@@ -292,7 +292,7 @@ pub fn GposTable::position_deltas_with_lookups(
 /// Compute pair adjustment deltas for a glyph sequence.
 pub fn GposTable::pair_adjust_deltas(
   self : GposTable,
-  glyphs : ArrayView[UInt],
+  glyphs : ArrayView[UInt32],
 ) -> Result[Array[ValueRecord], OtLayoutError] {
   let layout = self.layout
   self.pair_adjust_deltas_with_lookups(glyphs, layout.lookup_list.offsets[:])
@@ -301,8 +301,8 @@ pub fn GposTable::pair_adjust_deltas(
 ///|
 pub fn GposTable::pair_adjust_deltas_with_lookups(
   self : GposTable,
-  glyphs : ArrayView[UInt],
-  lookup_offsets : ArrayView[Int],
+  glyphs : ArrayView[UInt32],
+  lookup_offsets : ArrayView[Int32],
   gdef? : GdefTable,
 ) -> Result[Array[ValueRecord], OtLayoutError] {
   let deltas : Array[ValueRecord] = Array::make(
@@ -338,11 +338,11 @@ pub fn GposTable::pair_adjust_deltas_with_lookups(
 ///|
 fn apply_pair_format1(
   data : BytesView,
-  offset : Int,
-  glyphs : ArrayView[UInt],
+  offset : Int32,
+  glyphs : ArrayView[UInt32],
   deltas : Array[ValueRecord],
-  lookup_flag : Int,
-  mark_filtering_set : Int?,
+  lookup_flag : Int32,
+  mark_filtering_set : Int32?,
   gdef : GdefTable?,
 ) -> Result[Unit, OtLayoutError] {
   if glyphs.length() < 2 {
@@ -399,11 +399,11 @@ fn apply_pair_format1(
 ///|
 fn apply_pair_format2(
   data : BytesView,
-  offset : Int,
-  glyphs : ArrayView[UInt],
+  offset : Int32,
+  glyphs : ArrayView[UInt32],
   deltas : Array[ValueRecord],
-  lookup_flag : Int,
-  mark_filtering_set : Int?,
+  lookup_flag : Int32,
+  mark_filtering_set : Int32?,
   gdef : GdefTable?,
 ) -> Result[Unit, OtLayoutError] {
   if glyphs.length() < 2 {
@@ -460,11 +460,11 @@ fn apply_pair_format2(
 ///|
 fn apply_pair_subtable(
   data : BytesView,
-  offset : Int,
-  glyphs : ArrayView[UInt],
+  offset : Int32,
+  glyphs : ArrayView[UInt32],
   deltas : Array[ValueRecord],
-  lookup_flag : Int,
-  mark_filtering_set : Int?,
+  lookup_flag : Int32,
+  mark_filtering_set : Int32?,
   gdef : GdefTable?,
 ) -> Result[Unit, OtLayoutError] {
   let format = read_u16_int(data, offset)
@@ -488,16 +488,16 @@ fn apply_pair_subtable(
 ///|
 fn apply_context_pos_subtable(
   data : BytesView,
-  offset : Int,
-  glyphs : ArrayView[UInt],
+  offset : Int32,
+  glyphs : ArrayView[UInt32],
   deltas : Array[ValueRecord],
-  lookup_list_offsets : ArrayView[Int],
-  lookup_flag : Int,
-  mark_filtering_set : Int?,
+  lookup_list_offsets : ArrayView[Int32],
+  lookup_flag : Int32,
+  mark_filtering_set : Int32?,
   gdef : GdefTable?,
-  clusters? : ArrayView[Int] = [],
-  advances_x? : ArrayView[Int] = [],
-  advances_y? : ArrayView[Int] = [],
+  clusters~ : ArrayView[Int32] = [],
+  advances_x~ : ArrayView[Int32] = [],
+  advances_y~ : ArrayView[Int32] = [],
 ) -> Result[Bool, OtLayoutError] {
   if offset < 0 || offset + 2 > data.length() {
     return Err(UnexpectedEof)
@@ -557,16 +557,16 @@ fn apply_context_pos_subtable(
 ///|
 fn apply_context_pos_subtable_format1(
   data : BytesView,
-  offset : Int,
-  glyphs : ArrayView[UInt],
+  offset : Int32,
+  glyphs : ArrayView[UInt32],
   deltas : Array[ValueRecord],
-  lookup_list_offsets : ArrayView[Int],
-  lookup_flag : Int,
-  mark_filtering_set : Int?,
+  lookup_list_offsets : ArrayView[Int32],
+  lookup_flag : Int32,
+  mark_filtering_set : Int32?,
   gdef : GdefTable?,
-  clusters? : ArrayView[Int] = [],
-  advances_x? : ArrayView[Int] = [],
-  advances_y? : ArrayView[Int] = [],
+  clusters~ : ArrayView[Int32] = [],
+  advances_x~ : ArrayView[Int32] = [],
+  advances_y~ : ArrayView[Int32] = [],
 ) -> Result[Bool, OtLayoutError] {
   if offset < 0 || offset + 6 > data.length() {
     return Err(UnexpectedEof)
@@ -696,16 +696,16 @@ fn apply_context_pos_subtable_format1(
 ///|
 fn apply_context_pos_subtable_format2(
   data : BytesView,
-  offset : Int,
-  glyphs : ArrayView[UInt],
+  offset : Int32,
+  glyphs : ArrayView[UInt32],
   deltas : Array[ValueRecord],
-  lookup_list_offsets : ArrayView[Int],
-  lookup_flag : Int,
-  mark_filtering_set : Int?,
+  lookup_list_offsets : ArrayView[Int32],
+  lookup_flag : Int32,
+  mark_filtering_set : Int32?,
   gdef : GdefTable?,
-  clusters? : ArrayView[Int] = [],
-  advances_x? : ArrayView[Int] = [],
-  advances_y? : ArrayView[Int] = [],
+  clusters~ : ArrayView[Int32] = [],
+  advances_x~ : ArrayView[Int32] = [],
+  advances_y~ : ArrayView[Int32] = [],
 ) -> Result[Bool, OtLayoutError] {
   if offset < 0 || offset + 8 > data.length() {
     return Err(UnexpectedEof)
@@ -849,16 +849,16 @@ fn apply_context_pos_subtable_format2(
 ///|
 fn apply_context_pos_subtable_format3(
   data : BytesView,
-  offset : Int,
-  glyphs : ArrayView[UInt],
+  offset : Int32,
+  glyphs : ArrayView[UInt32],
   deltas : Array[ValueRecord],
-  lookup_list_offsets : ArrayView[Int],
-  lookup_flag : Int,
-  mark_filtering_set : Int?,
+  lookup_list_offsets : ArrayView[Int32],
+  lookup_flag : Int32,
+  mark_filtering_set : Int32?,
   gdef : GdefTable?,
-  clusters? : ArrayView[Int] = [],
-  advances_x? : ArrayView[Int] = [],
-  advances_y? : ArrayView[Int] = [],
+  clusters~ : ArrayView[Int32] = [],
+  advances_x~ : ArrayView[Int32] = [],
+  advances_y~ : ArrayView[Int32] = [],
 ) -> Result[Bool, OtLayoutError] {
   if offset < 0 || offset + 6 > data.length() {
     return Err(UnexpectedEof)
@@ -958,29 +958,29 @@ fn apply_context_pos_subtable_format3(
 priv struct PosApplyResult {
   matched : Bool
   changed : Bool
-  next_index : Int
+  next_index : Int32
 }
 
 ///|
-fn pos_no_match(index : Int) -> PosApplyResult {
+fn pos_no_match(index : Int32) -> PosApplyResult {
   { matched: false, changed: false, next_index: index + 1, }
 }
 
 ///|
 fn apply_context_pos_class_rule(
   data : BytesView,
-  offset : Int,
-  glyphs : ArrayView[UInt],
+  offset : Int32,
+  glyphs : ArrayView[UInt32],
   deltas : Array[ValueRecord],
-  index : Int,
-  class_def_base : Int,
-  lookup_list_offsets : ArrayView[Int],
-  lookup_flag : Int,
-  mark_filtering_set : Int?,
+  index : Int32,
+  class_def_base : Int32,
+  lookup_list_offsets : ArrayView[Int32],
+  lookup_flag : Int32,
+  mark_filtering_set : Int32?,
   gdef : GdefTable?,
-  clusters? : ArrayView[Int] = [],
-  advances_x? : ArrayView[Int] = [],
-  advances_y? : ArrayView[Int] = [],
+  clusters~ : ArrayView[Int32] = [],
+  advances_x~ : ArrayView[Int32] = [],
+  advances_y~ : ArrayView[Int32] = [],
 ) -> Result[PosApplyResult, OtLayoutError] {
   if offset < 0 || offset + 4 > data.length() {
     return Err(UnexpectedEof)
@@ -1063,18 +1063,18 @@ fn apply_context_pos_class_rule(
 ///|
 fn apply_pos_lookup_records(
   data : BytesView,
-  record_base : Int,
-  pos_count : Int,
-  glyph_count : Int,
-  glyphs : ArrayView[UInt],
+  record_base : Int32,
+  pos_count : Int32,
+  glyph_count : Int32,
+  glyphs : ArrayView[UInt32],
   deltas : Array[ValueRecord],
-  index : Int,
-  lookup_list_offsets : ArrayView[Int],
-  input_indices : Array[Int]?,
+  index : Int32,
+  lookup_list_offsets : ArrayView[Int32],
+  input_indices : Array[Int32]?,
   gdef : GdefTable?,
-  clusters? : ArrayView[Int] = [],
-  advances_x? : ArrayView[Int] = [],
-  advances_y? : ArrayView[Int] = [],
+  clusters~ : ArrayView[Int32] = [],
+  advances_x~ : ArrayView[Int32] = [],
+  advances_y~ : ArrayView[Int32] = [],
 ) -> Result[Bool, OtLayoutError] {
   if pos_count < 0 {
     return Err(InvalidFormat)
@@ -1138,17 +1138,17 @@ fn apply_pos_lookup_records(
 ///|
 fn apply_context_pos_rule(
   data : BytesView,
-  offset : Int,
-  glyphs : ArrayView[UInt],
+  offset : Int32,
+  glyphs : ArrayView[UInt32],
   deltas : Array[ValueRecord],
-  index : Int,
-  lookup_list_offsets : ArrayView[Int],
-  lookup_flag : Int,
-  mark_filtering_set : Int?,
+  index : Int32,
+  lookup_list_offsets : ArrayView[Int32],
+  lookup_flag : Int32,
+  mark_filtering_set : Int32?,
   gdef : GdefTable?,
-  clusters? : ArrayView[Int] = [],
-  advances_x? : ArrayView[Int] = [],
-  advances_y? : ArrayView[Int] = [],
+  clusters~ : ArrayView[Int32] = [],
+  advances_x~ : ArrayView[Int32] = [],
+  advances_y~ : ArrayView[Int32] = [],
 ) -> Result[PosApplyResult, OtLayoutError] {
   if offset < 0 || offset + 4 > data.length() {
     return Err(UnexpectedEof)
@@ -1221,16 +1221,16 @@ fn apply_context_pos_rule(
 ///|
 fn apply_chain_pos_subtable(
   data : BytesView,
-  offset : Int,
-  glyphs : ArrayView[UInt],
+  offset : Int32,
+  glyphs : ArrayView[UInt32],
   deltas : Array[ValueRecord],
-  lookup_list_offsets : ArrayView[Int],
-  lookup_flag : Int,
-  mark_filtering_set : Int?,
+  lookup_list_offsets : ArrayView[Int32],
+  lookup_flag : Int32,
+  mark_filtering_set : Int32?,
   gdef : GdefTable?,
-  clusters? : ArrayView[Int] = [],
-  advances_x? : ArrayView[Int] = [],
-  advances_y? : ArrayView[Int] = [],
+  clusters~ : ArrayView[Int32] = [],
+  advances_x~ : ArrayView[Int32] = [],
+  advances_y~ : ArrayView[Int32] = [],
 ) -> Result[Bool, OtLayoutError] {
   if offset < 0 || offset + 2 > data.length() {
     return Err(UnexpectedEof)
@@ -1290,16 +1290,16 @@ fn apply_chain_pos_subtable(
 ///|
 fn apply_chain_pos_subtable_format1(
   data : BytesView,
-  offset : Int,
-  glyphs : ArrayView[UInt],
+  offset : Int32,
+  glyphs : ArrayView[UInt32],
   deltas : Array[ValueRecord],
-  lookup_list_offsets : ArrayView[Int],
-  lookup_flag : Int,
-  mark_filtering_set : Int?,
+  lookup_list_offsets : ArrayView[Int32],
+  lookup_flag : Int32,
+  mark_filtering_set : Int32?,
   gdef : GdefTable?,
-  clusters? : ArrayView[Int] = [],
-  advances_x? : ArrayView[Int] = [],
-  advances_y? : ArrayView[Int] = [],
+  clusters~ : ArrayView[Int32] = [],
+  advances_x~ : ArrayView[Int32] = [],
+  advances_y~ : ArrayView[Int32] = [],
 ) -> Result[Bool, OtLayoutError] {
   if offset < 0 || offset + 6 > data.length() {
     return Err(UnexpectedEof)
@@ -1429,16 +1429,16 @@ fn apply_chain_pos_subtable_format1(
 ///|
 fn apply_chain_pos_subtable_format2(
   data : BytesView,
-  offset : Int,
-  glyphs : ArrayView[UInt],
+  offset : Int32,
+  glyphs : ArrayView[UInt32],
   deltas : Array[ValueRecord],
-  lookup_list_offsets : ArrayView[Int],
-  lookup_flag : Int,
-  mark_filtering_set : Int?,
+  lookup_list_offsets : ArrayView[Int32],
+  lookup_flag : Int32,
+  mark_filtering_set : Int32?,
   gdef : GdefTable?,
-  clusters? : ArrayView[Int] = [],
-  advances_x? : ArrayView[Int] = [],
-  advances_y? : ArrayView[Int] = [],
+  clusters~ : ArrayView[Int32] = [],
+  advances_x~ : ArrayView[Int32] = [],
+  advances_y~ : ArrayView[Int32] = [],
 ) -> Result[Bool, OtLayoutError] {
   if offset < 0 || offset + 12 > data.length() {
     return Err(UnexpectedEof)
@@ -1609,16 +1609,16 @@ fn apply_chain_pos_subtable_format2(
 ///|
 fn apply_chain_pos_subtable_format3(
   data : BytesView,
-  offset : Int,
-  glyphs : ArrayView[UInt],
+  offset : Int32,
+  glyphs : ArrayView[UInt32],
   deltas : Array[ValueRecord],
-  lookup_list_offsets : ArrayView[Int],
-  lookup_flag : Int,
-  mark_filtering_set : Int?,
+  lookup_list_offsets : ArrayView[Int32],
+  lookup_flag : Int32,
+  mark_filtering_set : Int32?,
   gdef : GdefTable?,
-  clusters? : ArrayView[Int] = [],
-  advances_x? : ArrayView[Int] = [],
-  advances_y? : ArrayView[Int] = [],
+  clusters~ : ArrayView[Int32] = [],
+  advances_x~ : ArrayView[Int32] = [],
+  advances_y~ : ArrayView[Int32] = [],
 ) -> Result[Bool, OtLayoutError] {
   if offset < 0 || offset + 4 > data.length() {
     return Err(UnexpectedEof)
@@ -1634,7 +1634,7 @@ fn apply_chain_pos_subtable_format3(
       if cursor < 0 || cursor + backtrack_count * 2 > data.length() {
         return Err(UnexpectedEof)
       }
-      let backtrack_bases : Array[Int] = []
+      let backtrack_bases : Array[Int32] = []
       for i in 0..<backtrack_count {
         let cov_offset = read_u16_int(data, cursor + i * 2)
         match cov_offset {
@@ -1666,7 +1666,7 @@ fn apply_chain_pos_subtable_format3(
           if cursor < 0 || cursor + input_count * 2 > data.length() {
             return Err(UnexpectedEof)
           }
-          let input_bases : Array[Int] = []
+          let input_bases : Array[Int32] = []
           for i in 0..<input_count {
             let cov_offset = read_u16_int(data, cursor + i * 2)
             match cov_offset {
@@ -1698,7 +1698,7 @@ fn apply_chain_pos_subtable_format3(
               if cursor < 0 || cursor + lookahead_count * 2 > data.length() {
                 return Err(UnexpectedEof)
               }
-              let lookahead_bases : Array[Int] = []
+              let lookahead_bases : Array[Int32] = []
               for i in 0..<lookahead_count {
                 let cov_offset = read_u16_int(data, cursor + i * 2)
                 match cov_offset {
@@ -1878,20 +1878,20 @@ fn apply_chain_pos_subtable_format3(
 ///|
 fn apply_chain_pos_class_rule(
   data : BytesView,
-  offset : Int,
-  glyphs : ArrayView[UInt],
+  offset : Int32,
+  glyphs : ArrayView[UInt32],
   deltas : Array[ValueRecord],
-  index : Int,
-  backtrack_class_def_base : Int,
-  input_class_def_base : Int,
-  lookahead_class_def_base : Int,
-  lookup_list_offsets : ArrayView[Int],
-  lookup_flag : Int,
-  mark_filtering_set : Int?,
+  index : Int32,
+  backtrack_class_def_base : Int32,
+  input_class_def_base : Int32,
+  lookahead_class_def_base : Int32,
+  lookup_list_offsets : ArrayView[Int32],
+  lookup_flag : Int32,
+  mark_filtering_set : Int32?,
   gdef : GdefTable?,
-  clusters? : ArrayView[Int] = [],
-  advances_x? : ArrayView[Int] = [],
-  advances_y? : ArrayView[Int] = [],
+  clusters~ : ArrayView[Int32] = [],
+  advances_x~ : ArrayView[Int32] = [],
+  advances_y~ : ArrayView[Int32] = [],
 ) -> Result[PosApplyResult, OtLayoutError] {
   if offset < 0 || offset + 2 > data.length() {
     return Err(UnexpectedEof)
@@ -1907,7 +1907,7 @@ fn apply_chain_pos_class_rule(
       if cursor < 0 || cursor + backtrack_count * 2 > data.length() {
         return Err(UnexpectedEof)
       }
-      let backtrack : Array[Int] = []
+      let backtrack : Array[Int32] = []
       for _ in 0..<backtrack_count {
         let value = read_u16_int(data, cursor)
         cursor = cursor + 2
@@ -1933,7 +1933,7 @@ fn apply_chain_pos_class_rule(
           if cursor < 0 || cursor + (input_count - 1) * 2 > data.length() {
             return Err(UnexpectedEof)
           }
-          let input : Array[Int] = []
+          let input : Array[Int32] = []
           for _ in 0..<(input_count - 1) {
             let value = read_u16_int(data, cursor)
             cursor = cursor + 2
@@ -1956,7 +1956,7 @@ fn apply_chain_pos_class_rule(
               if cursor < 0 || cursor + lookahead_count * 2 > data.length() {
                 return Err(UnexpectedEof)
               }
-              let lookahead : Array[Int] = []
+              let lookahead : Array[Int32] = []
               for _ in 0..<lookahead_count {
                 let value = read_u16_int(data, cursor)
                 cursor = cursor + 2
@@ -2100,17 +2100,17 @@ fn apply_chain_pos_class_rule(
 ///|
 fn apply_chain_pos_rule(
   data : BytesView,
-  offset : Int,
-  glyphs : ArrayView[UInt],
+  offset : Int32,
+  glyphs : ArrayView[UInt32],
   deltas : Array[ValueRecord],
-  index : Int,
-  lookup_list_offsets : ArrayView[Int],
-  lookup_flag : Int,
-  mark_filtering_set : Int?,
+  index : Int32,
+  lookup_list_offsets : ArrayView[Int32],
+  lookup_flag : Int32,
+  mark_filtering_set : Int32?,
   gdef : GdefTable?,
-  clusters? : ArrayView[Int] = [],
-  advances_x? : ArrayView[Int] = [],
-  advances_y? : ArrayView[Int] = [],
+  clusters~ : ArrayView[Int32] = [],
+  advances_x~ : ArrayView[Int32] = [],
+  advances_y~ : ArrayView[Int32] = [],
 ) -> Result[PosApplyResult, OtLayoutError] {
   if offset < 0 || offset + 2 > data.length() {
     return Err(UnexpectedEof)
@@ -2126,7 +2126,7 @@ fn apply_chain_pos_rule(
       if cursor < 0 || cursor + backtrack_count * 2 > data.length() {
         return Err(UnexpectedEof)
       }
-      let backtrack : Array[Int] = []
+      let backtrack : Array[Int32] = []
       for _ in 0..<backtrack_count {
         let value = read_u16_int(data, cursor)
         cursor = cursor + 2
@@ -2152,7 +2152,7 @@ fn apply_chain_pos_rule(
           if cursor < 0 || cursor + (input_count - 1) * 2 > data.length() {
             return Err(UnexpectedEof)
           }
-          let input : Array[Int] = []
+          let input : Array[Int32] = []
           for _ in 0..<(input_count - 1) {
             let value = read_u16_int(data, cursor)
             cursor = cursor + 2
@@ -2175,7 +2175,7 @@ fn apply_chain_pos_rule(
               if cursor < 0 || cursor + lookahead_count * 2 > data.length() {
                 return Err(UnexpectedEof)
               }
-              let lookahead : Array[Int] = []
+              let lookahead : Array[Int32] = []
               for _ in 0..<lookahead_count {
                 let value = read_u16_int(data, cursor)
                 cursor = cursor + 2
@@ -2293,14 +2293,14 @@ fn apply_chain_pos_rule(
 ///|
 fn apply_pos_lookup_at(
   data : BytesView,
-  lookup_offset : Int,
-  glyphs : ArrayView[UInt],
+  lookup_offset : Int32,
+  glyphs : ArrayView[UInt32],
   deltas : Array[ValueRecord],
-  index : Int,
+  index : Int32,
   gdef : GdefTable?,
-  clusters? : ArrayView[Int] = [],
-  advances_x? : ArrayView[Int] = [],
-  advances_y? : ArrayView[Int] = [],
+  clusters~ : ArrayView[Int32] = [],
+  advances_x~ : ArrayView[Int32] = [],
+  advances_y~ : ArrayView[Int32] = [],
 ) -> Result[Bool, OtLayoutError] {
   let parsed = parse_lookup(data, lookup_offset, 9)
   match parsed {
@@ -2379,10 +2379,10 @@ fn apply_pos_lookup_at(
 ///|
 fn apply_single_pos_at(
   data : BytesView,
-  offsets : Array[Int],
-  glyphs : ArrayView[UInt],
+  offsets : Array[Int32],
+  glyphs : ArrayView[UInt32],
   deltas : Array[ValueRecord],
-  index : Int,
+  index : Int32,
 ) -> Result[Bool, OtLayoutError] {
   if index < 0 || index >= glyphs.length() {
     return Err(InvalidFormat)
@@ -2481,12 +2481,12 @@ fn apply_single_pos_at(
 ///|
 fn apply_pair_pos_at(
   data : BytesView,
-  offsets : Array[Int],
-  glyphs : ArrayView[UInt],
+  offsets : Array[Int32],
+  glyphs : ArrayView[UInt32],
   deltas : Array[ValueRecord],
-  index : Int,
-  lookup_flag : Int,
-  mark_filtering_set : Int?,
+  index : Int32,
+  lookup_flag : Int32,
+  mark_filtering_set : Int32?,
   gdef : GdefTable?,
 ) -> Result[Bool, OtLayoutError] {
   if index < 0 || index >= glyphs.length() {
@@ -2539,12 +2539,12 @@ fn apply_pair_pos_at(
 ///|
 fn apply_cursive_at(
   data : BytesView,
-  offsets : Array[Int],
-  glyphs : ArrayView[UInt],
+  offsets : Array[Int32],
+  glyphs : ArrayView[UInt32],
   deltas : Array[ValueRecord],
-  index : Int,
-  lookup_flag : Int,
-  mark_filtering_set : Int?,
+  index : Int32,
+  lookup_flag : Int32,
+  mark_filtering_set : Int32?,
   gdef : GdefTable?,
 ) -> Result[Bool, OtLayoutError] {
   if index < 0 || index >= glyphs.length() {
@@ -2654,13 +2654,13 @@ fn apply_cursive_at(
 ///|
 fn find_prev_coverage_index(
   data : BytesView,
-  coverage_base : Int,
-  glyphs : ArrayView[UInt],
-  start_index : Int,
-  lookup_flag : Int,
-  mark_filtering_set : Int?,
+  coverage_base : Int32,
+  glyphs : ArrayView[UInt32],
+  start_index : Int32,
+  lookup_flag : Int32,
+  mark_filtering_set : Int32?,
   gdef : GdefTable?,
-) -> Result[(Int, Int)?, OtLayoutError] {
+) -> Result[(Int32, Int32)?, OtLayoutError] {
   if start_index <= 0 {
     return Ok(None)
   }
@@ -2691,15 +2691,15 @@ fn find_prev_coverage_index(
 ///|
 fn apply_mark_to_base_at(
   data : BytesView,
-  offsets : Array[Int],
-  glyphs : ArrayView[UInt],
+  offsets : Array[Int32],
+  glyphs : ArrayView[UInt32],
   deltas : Array[ValueRecord],
-  index : Int,
-  lookup_flag : Int,
-  mark_filtering_set : Int?,
+  index : Int32,
+  lookup_flag : Int32,
+  mark_filtering_set : Int32?,
   gdef : GdefTable?,
-  advances_x? : ArrayView[Int] = [],
-  advances_y? : ArrayView[Int] = [],
+  advances_x~ : ArrayView[Int32] = [],
+  advances_y~ : ArrayView[Int32] = [],
 ) -> Result[Bool, OtLayoutError] {
   if index <= 0 || index >= glyphs.length() {
     return Ok(false)
@@ -2899,16 +2899,16 @@ fn apply_mark_to_base_at(
 ///|
 fn apply_mark_to_ligature_at(
   data : BytesView,
-  offsets : Array[Int],
-  glyphs : ArrayView[UInt],
+  offsets : Array[Int32],
+  glyphs : ArrayView[UInt32],
   deltas : Array[ValueRecord],
-  index : Int,
-  lookup_flag : Int,
-  mark_filtering_set : Int?,
+  index : Int32,
+  lookup_flag : Int32,
+  mark_filtering_set : Int32?,
   gdef : GdefTable?,
-  clusters? : ArrayView[Int] = [],
-  advances_x? : ArrayView[Int] = [],
-  advances_y? : ArrayView[Int] = [],
+  clusters~ : ArrayView[Int32] = [],
+  advances_x~ : ArrayView[Int32] = [],
+  advances_y~ : ArrayView[Int32] = [],
 ) -> Result[Bool, OtLayoutError] {
   if index <= 0 || index >= glyphs.length() {
     return Ok(false)
@@ -3154,11 +3154,11 @@ fn apply_mark_to_ligature_at(
 ///|
 fn apply_cursive_subtable(
   data : BytesView,
-  offset : Int,
-  glyphs : ArrayView[UInt],
+  offset : Int32,
+  glyphs : ArrayView[UInt32],
   deltas : Array[ValueRecord],
-  lookup_flag : Int,
-  mark_filtering_set : Int?,
+  lookup_flag : Int32,
+  mark_filtering_set : Int32?,
   gdef : GdefTable?,
 ) -> Result[Unit, OtLayoutError] {
   let format = read_u16_int(data, offset)
@@ -3178,11 +3178,11 @@ fn apply_cursive_subtable(
 ///|
 fn apply_cursive_format1(
   data : BytesView,
-  offset : Int,
-  glyphs : ArrayView[UInt],
+  offset : Int32,
+  glyphs : ArrayView[UInt32],
   deltas : Array[ValueRecord],
-  lookup_flag : Int,
-  mark_filtering_set : Int?,
+  lookup_flag : Int32,
+  mark_filtering_set : Int32?,
   gdef : GdefTable?,
 ) -> Result[Unit, OtLayoutError] {
   if glyphs.length() < 2 {
@@ -3283,14 +3283,14 @@ fn apply_cursive_format1(
 ///|
 fn apply_mark_subtable(
   data : BytesView,
-  offset : Int,
-  glyphs : ArrayView[UInt],
+  offset : Int32,
+  glyphs : ArrayView[UInt32],
   deltas : Array[ValueRecord],
-  lookup_flag : Int,
-  mark_filtering_set : Int?,
+  lookup_flag : Int32,
+  mark_filtering_set : Int32?,
   gdef : GdefTable?,
-  advances_x? : ArrayView[Int] = [],
-  advances_y? : ArrayView[Int] = [],
+  advances_x~ : ArrayView[Int32] = [],
+  advances_y~ : ArrayView[Int32] = [],
 ) -> Result[Unit, OtLayoutError] {
   let format = read_u16_int(data, offset)
   match format {
@@ -3317,14 +3317,14 @@ fn apply_mark_subtable(
 ///|
 fn apply_mark_to_base_format1(
   data : BytesView,
-  offset : Int,
-  glyphs : ArrayView[UInt],
+  offset : Int32,
+  glyphs : ArrayView[UInt32],
   deltas : Array[ValueRecord],
-  lookup_flag : Int,
-  mark_filtering_set : Int?,
+  lookup_flag : Int32,
+  mark_filtering_set : Int32?,
   gdef : GdefTable?,
-  advances_x? : ArrayView[Int] = [],
-  advances_y? : ArrayView[Int] = [],
+  advances_x~ : ArrayView[Int32] = [],
+  advances_y~ : ArrayView[Int32] = [],
 ) -> Result[Unit, OtLayoutError] {
   if glyphs.length() < 2 {
     return Ok(())
@@ -3496,15 +3496,15 @@ fn apply_mark_to_base_format1(
 ///|
 fn apply_mark_to_ligature_subtable(
   data : BytesView,
-  offset : Int,
-  glyphs : ArrayView[UInt],
+  offset : Int32,
+  glyphs : ArrayView[UInt32],
   deltas : Array[ValueRecord],
-  lookup_flag : Int,
-  mark_filtering_set : Int?,
+  lookup_flag : Int32,
+  mark_filtering_set : Int32?,
   gdef : GdefTable?,
-  clusters? : ArrayView[Int] = [],
-  advances_x? : ArrayView[Int] = [],
-  advances_y? : ArrayView[Int] = [],
+  clusters~ : ArrayView[Int32] = [],
+  advances_x~ : ArrayView[Int32] = [],
+  advances_y~ : ArrayView[Int32] = [],
 ) -> Result[Unit, OtLayoutError] {
   let format = read_u16_int(data, offset)
   match format {
@@ -3532,15 +3532,15 @@ fn apply_mark_to_ligature_subtable(
 ///|
 fn apply_mark_to_ligature_format1(
   data : BytesView,
-  offset : Int,
-  glyphs : ArrayView[UInt],
+  offset : Int32,
+  glyphs : ArrayView[UInt32],
   deltas : Array[ValueRecord],
-  lookup_flag : Int,
-  mark_filtering_set : Int?,
+  lookup_flag : Int32,
+  mark_filtering_set : Int32?,
   gdef : GdefTable?,
-  clusters? : ArrayView[Int] = [],
-  advances_x? : ArrayView[Int] = [],
-  advances_y? : ArrayView[Int] = [],
+  clusters~ : ArrayView[Int32] = [],
+  advances_x~ : ArrayView[Int32] = [],
+  advances_y~ : ArrayView[Int32] = [],
 ) -> Result[Unit, OtLayoutError] {
   if glyphs.length() < 2 {
     return Ok(())
@@ -3769,15 +3769,15 @@ fn apply_mark_to_ligature_format1(
 ///|
 fn apply_mark_to_mark_at(
   data : BytesView,
-  offsets : Array[Int],
-  glyphs : ArrayView[UInt],
+  offsets : Array[Int32],
+  glyphs : ArrayView[UInt32],
   deltas : Array[ValueRecord],
-  index : Int,
-  lookup_flag : Int,
-  mark_filtering_set : Int?,
+  index : Int32,
+  lookup_flag : Int32,
+  mark_filtering_set : Int32?,
   gdef : GdefTable?,
-  advances_x? : ArrayView[Int] = [],
-  advances_y? : ArrayView[Int] = [],
+  advances_x~ : ArrayView[Int32] = [],
+  advances_y~ : ArrayView[Int32] = [],
 ) -> Result[Bool, OtLayoutError] {
   if index <= 0 || index >= glyphs.length() {
     return Ok(false)
@@ -3977,14 +3977,14 @@ fn apply_mark_to_mark_at(
 ///|
 fn apply_mark_to_mark_subtable(
   data : BytesView,
-  offset : Int,
-  glyphs : ArrayView[UInt],
+  offset : Int32,
+  glyphs : ArrayView[UInt32],
   deltas : Array[ValueRecord],
-  lookup_flag : Int,
-  mark_filtering_set : Int?,
+  lookup_flag : Int32,
+  mark_filtering_set : Int32?,
   gdef : GdefTable?,
-  advances_x? : ArrayView[Int] = [],
-  advances_y? : ArrayView[Int] = [],
+  advances_x~ : ArrayView[Int32] = [],
+  advances_y~ : ArrayView[Int32] = [],
 ) -> Result[Unit, OtLayoutError] {
   let format = read_u16_int(data, offset)
   match format {
@@ -4011,14 +4011,14 @@ fn apply_mark_to_mark_subtable(
 ///|
 fn apply_mark_to_mark_format1(
   data : BytesView,
-  offset : Int,
-  glyphs : ArrayView[UInt],
+  offset : Int32,
+  glyphs : ArrayView[UInt32],
   deltas : Array[ValueRecord],
-  lookup_flag : Int,
-  mark_filtering_set : Int?,
+  lookup_flag : Int32,
+  mark_filtering_set : Int32?,
   gdef : GdefTable?,
-  advances_x? : ArrayView[Int] = [],
-  advances_y? : ArrayView[Int] = [],
+  advances_x~ : ArrayView[Int32] = [],
+  advances_y~ : ArrayView[Int32] = [],
 ) -> Result[Unit, OtLayoutError] {
   if glyphs.length() < 2 {
     return Ok(())
@@ -4191,8 +4191,8 @@ fn apply_mark_to_mark_format1(
 ///|
 fn read_anchor(
   data : BytesView,
-  offset : Int,
-) -> Result[(Int, Int), OtLayoutError] {
+  offset : Int32,
+) -> Result[(Int32, Int32), OtLayoutError] {
   if offset < 0 || offset + 6 > data.length() {
     return Err(UnexpectedEof)
   }
@@ -4217,11 +4217,11 @@ fn read_anchor(
 ///|
 fn apply_single_pos_subtable(
   data : BytesView,
-  offset : Int,
-  glyphs : ArrayView[UInt],
+  offset : Int32,
+  glyphs : ArrayView[UInt32],
   deltas : Array[ValueRecord],
-  lookup_flag : Int,
-  mark_filtering_set : Int?,
+  lookup_flag : Int32,
+  mark_filtering_set : Int32?,
   gdef : GdefTable?,
 ) -> Result[Unit, OtLayoutError] {
   let format = read_u16_int(data, offset)
@@ -4245,11 +4245,11 @@ fn apply_single_pos_subtable(
 ///|
 fn apply_single_pos_format1(
   data : BytesView,
-  offset : Int,
-  glyphs : ArrayView[UInt],
+  offset : Int32,
+  glyphs : ArrayView[UInt32],
   deltas : Array[ValueRecord],
-  lookup_flag : Int,
-  mark_filtering_set : Int?,
+  lookup_flag : Int32,
+  mark_filtering_set : Int32?,
   gdef : GdefTable?,
 ) -> Result[Unit, OtLayoutError] {
   if offset < 0 || offset + 6 > data.length() {
@@ -4298,11 +4298,11 @@ fn apply_single_pos_format1(
 ///|
 fn apply_single_pos_format2(
   data : BytesView,
-  offset : Int,
-  glyphs : ArrayView[UInt],
+  offset : Int32,
+  glyphs : ArrayView[UInt32],
   deltas : Array[ValueRecord],
-  lookup_flag : Int,
-  mark_filtering_set : Int?,
+  lookup_flag : Int32,
+  mark_filtering_set : Int32?,
   gdef : GdefTable?,
 ) -> Result[Unit, OtLayoutError] {
   if offset < 0 || offset + 8 > data.length() {
@@ -4361,9 +4361,9 @@ fn apply_single_pos_format2(
 ///|
 fn pair_adjust_format1(
   data : BytesView,
-  offset : Int,
-  first : UInt,
-  second : UInt,
+  offset : Int32,
+  first : UInt32,
+  second : UInt32,
 ) -> Result[PairAdjust?, OtLayoutError] {
   if offset < 0 || offset + 10 > data.length() {
     return Err(UnexpectedEof)
@@ -4460,9 +4460,9 @@ fn pair_adjust_format1(
 ///|
 fn pair_adjust_format2(
   data : BytesView,
-  offset : Int,
-  first : UInt,
-  second : UInt,
+  offset : Int32,
+  first : UInt32,
+  second : UInt32,
 ) -> Result[PairAdjust?, OtLayoutError] {
   if offset < 0 || offset + 16 > data.length() {
     return Err(UnexpectedEof)
@@ -4558,7 +4558,7 @@ fn pair_adjust_format2(
 }
 
 ///|
-fn value_record_size(format : Int) -> Int {
+fn value_record_size(format : Int32) -> Int32 {
   let mut size = 0
   if (format & 0x0001) != 0 {
     size = size + 2
@@ -4590,9 +4590,9 @@ fn value_record_size(format : Int) -> Int {
 ///|
 fn read_value_record(
   data : BytesView,
-  offset : Int,
-  format : Int,
-) -> Result[(ValueRecord, Int), OtLayoutError] {
+  offset : Int32,
+  format : Int32,
+) -> Result[(ValueRecord, Int32), OtLayoutError] {
   let mut current = offset
   let mut record = value_record_zero()
   if (format & 0x0001) != 0 {
@@ -4689,9 +4689,9 @@ fn read_value_record(
 ///|
 fn class_def_value(
   data : BytesView,
-  offset : Int,
-  glyph : UInt,
-) -> Result[Int, OtLayoutError] {
+  offset : Int32,
+  glyph : UInt32,
+) -> Result[Int32, OtLayoutError] {
   if glyph > 0xffffU {
     return Ok(0)
   }
@@ -4715,9 +4715,9 @@ fn class_def_value(
 ///|
 fn class_def_format1(
   data : BytesView,
-  offset : Int,
-  glyph : UInt,
-) -> Result[Int, OtLayoutError] {
+  offset : Int32,
+  glyph : UInt32,
+) -> Result[Int32, OtLayoutError] {
   if offset < 0 || offset + 6 > data.length() {
     return Err(UnexpectedEof)
   }
@@ -4751,9 +4751,9 @@ fn class_def_format1(
 ///|
 fn class_def_format2(
   data : BytesView,
-  offset : Int,
-  glyph : UInt,
-) -> Result[Int, OtLayoutError] {
+  offset : Int32,
+  glyph : UInt32,
+) -> Result[Int32, OtLayoutError] {
   if offset < 0 || offset + 4 > data.length() {
     return Err(UnexpectedEof)
   }

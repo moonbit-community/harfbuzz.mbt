@@ -15,11 +15,11 @@
 ///|
 /// COLR table (v0/v1) parsed data.
 pub struct ColrTable {
-  version : Int
+  version : Int32
   base_glyphs : Array[ColrBaseGlyph]
   layers : Array[ColrLayer]
   base_glyph_paints : Array[BaseGlyphPaintRecord]
-  layer_paint_offsets : Array[Int]
+  layer_paint_offsets : Array[Int32]
   clip_list : ClipList?
   var_idx_map : @ot_var.DeltaSetIndexMap?
   var_store : @ot_var.ItemVariationStore?
@@ -100,7 +100,7 @@ pub fn ColrTable::parse(data : BytesView) -> Result[ColrTable, ColorError] {
       }
 
       let base_glyph_paints : Array[BaseGlyphPaintRecord] = []
-      let layer_paint_offsets : Array[Int] = []
+      let layer_paint_offsets : Array[Int32] = []
       let mut clip_list : ClipList? = None
       let mut var_idx_map : @ot_var.DeltaSetIndexMap? = None
       let mut var_store : @ot_var.ItemVariationStore? = None
@@ -276,7 +276,7 @@ pub fn ColrTable::has_v1(self : ColrTable) -> Bool {
 /// Get COLRv0 layers for a glyph.
 pub fn ColrTable::glyph_layers(
   self : ColrTable,
-  glyph_id : Int,
+  glyph_id : Int32,
 ) -> Array[ColrLayer]? {
   for record in self.base_glyphs {
     if record.glyph_id == glyph_id {
@@ -299,7 +299,7 @@ pub fn ColrTable::glyph_layers(
 /// Parse a paint table at an absolute offset.
 pub fn ColrTable::paint_at(
   self : ColrTable,
-  offset : Int,
+  offset : Int32,
 ) -> Result[@paint.Paint, ColorError] {
   if offset < 0 || offset >= self.data.length() {
     return Err(UnexpectedEof)
@@ -311,7 +311,7 @@ pub fn ColrTable::paint_at(
 /// Get COLRv1 paint for a glyph, if present.
 pub fn ColrTable::paint_for_glyph(
   self : ColrTable,
-  glyph_id : Int,
+  glyph_id : Int32,
 ) -> Result[@paint.Paint?, ColorError] {
   for record in self.base_glyph_paints {
     if record.glyph_id == glyph_id {
@@ -329,7 +329,7 @@ pub fn ColrTable::paint_for_glyph(
 /// Get COLRv1 layer paint by index.
 pub fn ColrTable::layer_paint(
   self : ColrTable,
-  index : Int,
+  index : Int32,
 ) -> Result[@paint.Paint?, ColorError] {
   if index < 0 || index >= self.layer_paint_offsets.length() {
     return Ok(None)
@@ -346,7 +346,7 @@ pub fn ColrTable::layer_paint(
 /// Get COLRv1 clip box for a glyph, if present.
 pub fn ColrTable::clip_box_for_glyph(
   self : ColrTable,
-  glyph_id : Int,
+  glyph_id : Int32,
 ) -> ClipBox? {
   match self.clip_list {
     None => None
@@ -365,8 +365,8 @@ pub fn ColrTable::clip_box_for_glyph(
 /// Get COLRv1 clip extents for a glyph, applying variation if available.
 pub fn ColrTable::clip_extents_for_glyph(
   self : ColrTable,
-  glyph_id : Int,
-  coords? : Array[Int] = [],
+  glyph_id : Int32,
+  coords~ : Array[Int32] = [],
 ) -> ClipExtents? {
   let clip_box = self.clip_box_for_glyph(glyph_id)
   match clip_box {
@@ -396,7 +396,7 @@ pub fn ColrTable::clip_extents_for_glyph(
 ///|
 fn parse_clip_box(
   data : BytesView,
-  offset : Int,
+  offset : Int32,
 ) -> Result[ClipBox, ColorError] {
   let format = read_u8_int(data, offset)
   match format {
@@ -448,7 +448,7 @@ fn parse_clip_box(
 ///|
 fn parse_clip_list(
   data : BytesView,
-  offset : Int,
+  offset : Int32,
 ) -> Result[ClipList, ColorError] {
   let format = read_u8_int(data, offset)
   let count = read_u32_int(data, offset + 1)

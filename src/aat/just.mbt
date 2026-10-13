@@ -15,9 +15,9 @@
 ///|
 /// Parsed justification header (shallow).
 pub struct JustificationHeader {
-  class_table_offset : Int
-  wdc_table_offset : Int
-  pc_table_offset : Int
+  class_table_offset : Int32
+  wdc_table_offset : Int32
+  pc_table_offset : Int32
   lookup : LookupTable?
 } derive(Debug, ToJson)
 
@@ -30,8 +30,8 @@ pub extend JustificationHeader with ToJson::{to_json}
 ///|
 /// Parsed just table (shallow).
 pub struct JustTable {
-  version : Int
-  format : Int
+  version : Int32
+  format : Int32
   horiz : JustificationHeader?
   vert : JustificationHeader?
 } derive(Debug, ToJson)
@@ -50,8 +50,8 @@ pub fn JustTable::has_data(self : JustTable) -> Bool {
 ///|
 fn parse_justification_header(
   data : BytesView,
-  offset : Int,
-  num_glyphs : Int,
+  offset : Int32,
+  num_glyphs : Int32,
 ) -> Result[JustificationHeader, AatError] {
   if offset < 0 || offset + 8 > data.length() {
     return Err(UnexpectedEof)
@@ -106,7 +106,7 @@ fn parse_justification_header(
 /// Parse a just table (shallow).
 pub fn JustTable::parse(
   data : BytesView,
-  num_glyphs : Int,
+  num_glyphs : Int32,
 ) -> Result[JustTable, AatError] {
   if num_glyphs < 0 {
     return Err(InvalidFormat)

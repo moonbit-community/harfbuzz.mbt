@@ -13,16 +13,16 @@
 // limitations under the License.
 
 ///|
-let hangul_action_ljmo : Int = 0
+let hangul_action_ljmo : Int32 = 0
 
 ///|
-let hangul_action_vjmo : Int = 1
+let hangul_action_vjmo : Int32 = 1
 
 ///|
-let hangul_action_tjmo : Int = 2
+let hangul_action_tjmo : Int32 = 2
 
 ///|
-let hangul_action_none : Int = 3
+let hangul_action_none : Int32 = 3
 
 ///|
 let hangul_feature_tags : Array[@common.Tag] = [
@@ -32,8 +32,8 @@ let hangul_feature_tags : Array[@common.Tag] = [
 ]
 
 ///|
-fn hangul_actions(buffer : Buffer) -> Array[Int] {
-  let actions : Array[Int] = Array::make(
+fn hangul_actions(buffer : Buffer) -> Array[Int32] {
+  let actions : Array[Int32] = Array::make(
     buffer.infos.length(),
     hangul_action_none,
   )
@@ -51,7 +51,7 @@ fn hangul_actions(buffer : Buffer) -> Array[Int] {
 }
 
 ///|
-fn decompose_hangul_syllable(u : UInt) -> Array[UInt] {
+fn decompose_hangul_syllable(u : UInt32) -> Array[UInt32] {
   if !is_hangul_lv(u) {
     return [u]
   }
@@ -76,7 +76,7 @@ fn decompose_hangul_syllable(u : UInt) -> Array[UInt] {
 ///|
 fn hangul_components_available(
   font : @font.Font,
-  components : Array[UInt],
+  components : Array[UInt32],
 ) -> Result[Bool, ShapeError] {
   for component in components {
     match font.glyph_for_codepoint(component) {
@@ -156,9 +156,9 @@ pub fn Buffer::shape_hangul(
     Err(err) => return Err(Font(err))
     Ok(value) => value
   }
-  let mut current_glyphs : Array[UInt] = []
-  let mut current_clusters : Array[Int] = []
-  let mut current_unicodes : Array[UInt] = []
+  let mut current_glyphs : Array[UInt32] = []
+  let mut current_clusters : Array[Int32] = []
+  let mut current_unicodes : Array[UInt32] = []
   for info in self.infos {
     current_glyphs.push(info.codepoint)
     current_clusters.push(info.cluster)

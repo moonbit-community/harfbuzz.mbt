@@ -14,7 +14,7 @@
 
 ///|
 pub enum CffNumber {
-  Int(Int)
+  Int(Int32)
   Real(Double)
 } derive(Eq, Debug, ToJson)
 
@@ -29,7 +29,7 @@ pub extend CffNumber with ToJson::{to_json}
 
 ///|
 pub struct CffDict {
-  entries : Map[Int, Array[CffNumber]]
+  entries : Map[Int32, Array[CffNumber]]
 } derive(Eq, Debug, ToJson)
 
 ///|
@@ -45,7 +45,7 @@ pub extend CffDict with ToJson::{to_json}
 pub fn parse_cff_dict(data : BytesView) -> Result[CffDict, CffError] {
   let mut pos = 0
   let mut operands : Array[CffNumber] = []
-  let entries : Map[Int, Array[CffNumber]] = Map([])
+  let entries : Map[Int32, Array[CffNumber]] = Map([])
   while pos < data.length() {
     let b0 = data[pos].to_int()
     if b0 == 12 {
@@ -78,19 +78,23 @@ pub fn parse_cff_dict(data : BytesView) -> Result[CffDict, CffError] {
 }
 
 ///|
-pub fn CffDict::get_numbers(self : CffDict, op : Int) -> Array[CffNumber]? {
+pub fn CffDict::get_numbers(self : CffDict, op : Int32) -> Array[CffNumber]? {
   self.entries.get(op)
 }
 
 ///|
-pub fn CffDict::entries_map(self : CffDict) -> Map[Int, Array[CffNumber]] {
-  let next : Map[Int, Array[CffNumber]] = Map([])
+pub fn CffDict::entries_map(self : CffDict) -> Map[Int32, Array[CffNumber]] {
+  let next : Map[Int32, Array[CffNumber]] = Map([])
   self.entries.eachi((_, key, value) => next[key] = value.copy())
   next
 }
 
 ///|
-pub fn CffDict::get_int(self : CffDict, op : Int, index? : Int = 0) -> Int? {
+pub fn CffDict::get_int(
+  self : CffDict,
+  op : Int32,
+  index~ : Int32 = 0,
+) -> Int32? {
   match self.entries.get(op) {
     None => None
     Some(values) => {
@@ -106,7 +110,11 @@ pub fn CffDict::get_int(self : CffDict, op : Int, index? : Int = 0) -> Int? {
 }
 
 ///|
-pub fn CffDict::get_real(self : CffDict, op : Int, index? : Int = 0) -> Double? {
+pub fn CffDict::get_real(
+  self : CffDict,
+  op : Int32,
+  index~ : Int32 = 0,
+) -> Double? {
   match self.entries.get(op) {
     None => None
     Some(values) => {
@@ -124,8 +132,8 @@ pub fn CffDict::get_real(self : CffDict, op : Int, index? : Int = 0) -> Double? 
 ///|
 fn parse_cff_number(
   data : BytesView,
-  pos : Int,
-) -> Result[(CffNumber, Int), CffError] {
+  pos : Int32,
+) -> Result[(CffNumber, Int32), CffError] {
   if pos < 0 || pos >= data.length() {
     return Err(UnexpectedEof)
   }
@@ -179,8 +187,8 @@ fn parse_cff_number(
 ///|
 fn parse_cff_real(
   data : BytesView,
-  pos : Int,
-) -> Result[(CffNumber, Int), CffError] {
+  pos : Int32,
+) -> Result[(CffNumber, Int32), CffError] {
   let digits : Array[Char] = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
   let chars : Array[Char] = []
   let mut idx = pos + 1
@@ -189,7 +197,7 @@ fn parse_cff_real(
     let byte = data[idx].to_int()
     let hi = (byte >> 4) & 0xF
     let lo = byte & 0xF
-    let nibbles : Array[Int] = [hi, lo]
+    let nibbles : Array[Int32] = [hi, lo]
     for nib in nibbles {
       if done {
         break

@@ -14,8 +14,8 @@
 
 ///|
 pub struct AvarMapping {
-  from_raw : Int
-  to_raw : Int
+  from_raw : Int32
+  to_raw : Int32
 } derive(Eq, Debug, ToJson)
 
 ///|
@@ -56,15 +56,15 @@ pub extend AvarTable with @debug.Debug::{to_repr}
 pub extend AvarTable with ToJson::{to_json}
 
 ///|
-pub fn AvarTable::axis_count(self : AvarTable) -> Int {
+pub fn AvarTable::axis_count(self : AvarTable) -> Int32 {
   self.axes.length()
 }
 
 ///|
 pub fn AvarTable::map_coords_16_16(
   self : AvarTable,
-  coords : Array[Int],
-) -> Array[Int] {
+  coords : Array[Int32],
+) -> Array[Int32] {
   let out = coords.copy()
   let count = if out.length() < self.axes.length() {
     out.length()

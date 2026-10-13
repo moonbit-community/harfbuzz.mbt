@@ -16,8 +16,8 @@
 /// STAT design axis record.
 pub struct StatAxisRecord {
   tag : @common.Tag
-  name_id : Int
-  ordering : Int
+  name_id : Int32
+  ordering : Int32
 } derive(Eq, Debug, ToJson)
 
 ///|
@@ -32,8 +32,8 @@ pub extend StatAxisRecord with ToJson::{to_json}
 ///|
 /// Axis value record used by format 4.
 pub struct AxisValueRecord {
-  axis_index : Int
-  value : Int
+  axis_index : Int32
+  value : Int32
 } derive(Eq, Debug, ToJson)
 
 ///|
@@ -48,10 +48,10 @@ pub extend AxisValueRecord with ToJson::{to_json}
 ///|
 /// Axis value table formats.
 pub enum AxisValue {
-  Format1(Int, Int, Int, Int)
-  Format2(Int, Int, Int, Int, Int, Int)
-  Format3(Int, Int, Int, Int, Int)
-  Format4(Int, Int, Array[AxisValueRecord])
+  Format1(Int32, Int32, Int32, Int32)
+  Format2(Int32, Int32, Int32, Int32, Int32, Int32)
+  Format3(Int32, Int32, Int32, Int32, Int32)
+  Format4(Int32, Int32, Array[AxisValueRecord])
 } derive(Debug, ToJson)
 
 ///|
@@ -63,11 +63,11 @@ pub extend AxisValue with ToJson::{to_json}
 ///|
 /// Parsed STAT table.
 pub struct StatTable {
-  version : Int
-  design_axis_size : Int
+  version : Int32
+  design_axis_size : Int32
   design_axes : Array[StatAxisRecord]
   axis_values : Array[AxisValue]
-  elided_fallback_name_id : Int
+  elided_fallback_name_id : Int32
 } derive(Debug, ToJson)
 
 ///|
@@ -77,7 +77,10 @@ pub extend StatTable with @debug.Debug::{to_repr}
 pub extend StatTable with ToJson::{to_json}
 
 ///|
-fn read_fixed_16_16(data : BytesView, offset : Int) -> Result[Int, SfntError] {
+fn read_fixed_16_16(
+  data : BytesView,
+  offset : Int32,
+) -> Result[Int32, SfntError] {
   match read_u32(data, offset) {
     Err(err) => Err(err)
     Ok(value) => Ok(value.reinterpret_as_int())
@@ -87,7 +90,7 @@ fn read_fixed_16_16(data : BytesView, offset : Int) -> Result[Int, SfntError] {
 ///|
 fn parse_axis_value(
   data : BytesView,
-  offset : Int,
+  offset : Int32,
 ) -> Result[AxisValue, SfntError] {
   let format = read_u16_int(data, offset)
   match format {

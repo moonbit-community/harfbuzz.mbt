@@ -13,19 +13,19 @@
 // limitations under the License.
 
 ///|
-fn push_u16(bytes : Array[Byte], value : Int) -> Unit {
+fn push_u16(bytes : Array[Byte], value : Int32) -> Unit {
   bytes.push(((value >> 8) & 0xff).to_byte())
   bytes.push((value & 0xff).to_byte())
 }
 
 ///|
-fn push_i16(bytes : Array[Byte], value : Int) -> Unit {
+fn push_i16(bytes : Array[Byte], value : Int32) -> Unit {
   let adjusted = if value < 0 { value + 0x10000 } else { value }
   push_u16(bytes, adjusted)
 }
 
 ///|
-fn push_u32(bytes : Array[Byte], value : Int) -> Unit {
+fn push_u32(bytes : Array[Byte], value : Int32) -> Unit {
   bytes.push(((value >> 24) & 0xff).to_byte())
   bytes.push(((value >> 16) & 0xff).to_byte())
   bytes.push(((value >> 8) & 0xff).to_byte())
@@ -152,7 +152,7 @@ fn build_layout_table_with_lookups(
 }
 
 ///|
-fn build_gsub_subtable(target : Int, substitute : Int) -> Bytes {
+fn build_gsub_subtable(target : Int32, substitute : Int32) -> Bytes {
   let bytes : Array[Byte] = []
   push_u16(bytes, 2)
   push_u16(bytes, 8)
@@ -179,7 +179,7 @@ fn build_gsub_lookup() -> Bytes {
 }
 
 ///|
-fn build_gsub_single_lookup(target : Int, substitute : Int) -> Bytes {
+fn build_gsub_single_lookup(target : Int32, substitute : Int32) -> Bytes {
   let subtable = build_gsub_subtable(target, substitute)
   let bytes : Array[Byte] = []
   push_u16(bytes, 1)
@@ -288,7 +288,7 @@ fn build_gpos_subtable() -> Bytes {
 }
 
 ///|
-fn build_gpos_pair_subtable_format1(first : Int, second : Int) -> Bytes {
+fn build_gpos_pair_subtable_format1(first : Int32, second : Int32) -> Bytes {
   let bytes : Array[Byte] = []
   push_u16(bytes, 1)
   push_u16(bytes, 12)
@@ -1615,8 +1615,8 @@ fn build_gsub_context_lookup_format3() -> Bytes {
 
 ///|
 fn build_gsub_context_subtable_format3_input(
-  first : Int,
-  second : Int,
+  first : Int32,
+  second : Int32,
 ) -> Bytes {
   let bytes : Array[Byte] = []
   push_u16(bytes, 3)
@@ -1640,8 +1640,8 @@ fn build_gsub_context_subtable_format3_input(
 
 ///|
 fn build_gsub_context_lookup_format3_mark_filter(
-  first : Int,
-  second : Int,
+  first : Int32,
+  second : Int32,
 ) -> Bytes {
   let subtable = build_gsub_context_subtable_format3_input(first, second)
   let bytes : Array[Byte] = []
@@ -1986,7 +1986,7 @@ test "gsub single substitution apply" {
     Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  let glyphs : Array[UInt] = [1U, 2U]
+  let glyphs : Array[UInt32] = [1U, 2U]
   let changed = match gsub.apply_single(glyphs) {
     Err(err) => fail("apply error: \{@debug.to_string(err)}")
     Ok(value) => value
@@ -2007,8 +2007,8 @@ test "gsub single substitution apply mask" {
     Ok(value) => value
   }
   let lookup_offsets = gsub.layout().lookup_list().offsets()
-  let glyphs : Array[UInt] = [1U, 1U]
-  let masks : Array[UInt] = [0U, 1U]
+  let glyphs : Array[UInt32] = [1U, 1U]
+  let masks : Array[UInt32] = [0U, 1U]
   let changed = match
     gsub.apply_single_with_lookups(
       glyphs,
@@ -2042,8 +2042,8 @@ test "gsub single lookup mark filtering set" {
     Ok(value) => value
   }
   let lookup_offsets = [gsub.layout().lookup_list().offsets()[0]]
-  let glyphs1 : Array[UInt] = [5U]
-  let clusters1 : Array[Int] = [0]
+  let glyphs1 : Array[UInt32] = [5U]
+  let clusters1 : Array[Int32] = [0]
   let result1 = match
     gsub.apply_with_lookups(glyphs1, clusters1, lookup_offsets[:], gdef~) {
     Err(err) => fail("apply error: \{@debug.to_string(err)}")
@@ -2052,8 +2052,8 @@ test "gsub single lookup mark filtering set" {
   let (new_glyphs1, _, changed1) = result1
   @debug.debug_inspect(changed1, content="false")
   @debug.debug_inspect(new_glyphs1, content="[5]")
-  let glyphs2 : Array[UInt] = [6U]
-  let clusters2 : Array[Int] = [0]
+  let glyphs2 : Array[UInt32] = [6U]
+  let clusters2 : Array[Int32] = [0]
   let result2 = match
     gsub.apply_with_lookups(glyphs2, clusters2, lookup_offsets[:], gdef~) {
     Err(err) => fail("apply error: \{@debug.to_string(err)}")
@@ -2083,8 +2083,8 @@ test "gsub single lookup mark attachment type" {
     Ok(value) => value
   }
   let lookup_offsets = [gsub.layout().lookup_list().offsets()[0]]
-  let glyphs1 : Array[UInt] = [5U]
-  let clusters1 : Array[Int] = [0]
+  let glyphs1 : Array[UInt32] = [5U]
+  let clusters1 : Array[Int32] = [0]
   let result1 = match
     gsub.apply_with_lookups(glyphs1, clusters1, lookup_offsets[:], gdef~) {
     Err(err) => fail("apply error: \{@debug.to_string(err)}")
@@ -2093,8 +2093,8 @@ test "gsub single lookup mark attachment type" {
   let (new_glyphs1, _, changed1) = result1
   @debug.debug_inspect(changed1, content="true")
   @debug.debug_inspect(new_glyphs1, content="[9]")
-  let glyphs2 : Array[UInt] = [6U]
-  let clusters2 : Array[Int] = [0]
+  let glyphs2 : Array[UInt32] = [6U]
+  let clusters2 : Array[Int32] = [0]
   let result2 = match
     gsub.apply_with_lookups(glyphs2, clusters2, lookup_offsets[:], gdef~) {
     Err(err) => fail("apply error: \{@debug.to_string(err)}")
@@ -2124,8 +2124,8 @@ test "gsub lookup ignore base glyphs" {
     Ok(value) => value
   }
   let lookup_offsets = [gsub.layout().lookup_list().offsets()[0]]
-  let glyphs : Array[UInt] = [3U]
-  let clusters : Array[Int] = [0]
+  let glyphs : Array[UInt32] = [3U]
+  let clusters : Array[Int32] = [0]
   let result = match
     gsub.apply_with_lookups(glyphs, clusters, lookup_offsets[:], gdef~) {
     Err(err) => fail("apply error: \{@debug.to_string(err)}")
@@ -2155,8 +2155,8 @@ test "gsub lookup ignore ligature glyphs" {
     Ok(value) => value
   }
   let lookup_offsets = [gsub.layout().lookup_list().offsets()[0]]
-  let glyphs : Array[UInt] = [4U]
-  let clusters : Array[Int] = [0]
+  let glyphs : Array[UInt32] = [4U]
+  let clusters : Array[Int32] = [0]
   let result = match
     gsub.apply_with_lookups(glyphs, clusters, lookup_offsets[:], gdef~) {
     Err(err) => fail("apply error: \{@debug.to_string(err)}")
@@ -2178,7 +2178,7 @@ test "gpos pair adjust deltas" {
     Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  let glyphs : Array[UInt] = [3U, 2U]
+  let glyphs : Array[UInt32] = [3U, 2U]
   let deltas = match gpos.pair_adjust_deltas(glyphs[:]) {
     Err(err) => fail("apply error: \{@debug.to_string(err)}")
     Ok(value) => value
@@ -2208,7 +2208,7 @@ test "gpos pair lookup ignore marks" {
     Ok(value) => value
   }
   let lookup_offsets = [gpos.layout().lookup_list().offsets()[0]]
-  let glyphs : Array[UInt] = [5U, 2U]
+  let glyphs : Array[UInt32] = [5U, 2U]
   let deltas = match
     gpos.position_deltas_with_lookups(glyphs[:], lookup_offsets[:], gdef~) {
     Err(err) => fail("apply error: \{@debug.to_string(err)}")
@@ -2239,7 +2239,7 @@ test "gpos pair lookup ignore ligatures" {
     Ok(value) => value
   }
   let lookup_offsets = [gpos.layout().lookup_list().offsets()[0]]
-  let glyphs : Array[UInt] = [4U, 2U]
+  let glyphs : Array[UInt32] = [4U, 2U]
   let deltas = match
     gpos.position_deltas_with_lookups(glyphs[:], lookup_offsets[:], gdef~) {
     Err(err) => fail("apply error: \{@debug.to_string(err)}")
@@ -2270,7 +2270,7 @@ test "gpos pair lookup ignore base glyphs" {
     Ok(value) => value
   }
   let lookup_offsets = [gpos.layout().lookup_list().offsets()[0]]
-  let glyphs : Array[UInt] = [3U, 2U]
+  let glyphs : Array[UInt32] = [3U, 2U]
   let deltas = match
     gpos.position_deltas_with_lookups(glyphs[:], lookup_offsets[:], gdef~) {
     Err(err) => fail("apply error: \{@debug.to_string(err)}")
@@ -2301,7 +2301,7 @@ test "gpos pair lookup mark filtering set" {
     Ok(value) => value
   }
   let lookup_offsets = [gpos.layout().lookup_list().offsets()[0]]
-  let glyphs1 : Array[UInt] = [3U, 5U, 2U]
+  let glyphs1 : Array[UInt32] = [3U, 5U, 2U]
   let deltas1 = match
     gpos.position_deltas_with_lookups(glyphs1[:], lookup_offsets[:], gdef~) {
     Err(err) => fail("apply error: \{@debug.to_string(err)}")
@@ -2311,7 +2311,7 @@ test "gpos pair lookup mark filtering set" {
   @debug.debug_inspect(deltas1[0].x_placement, content="5")
   @debug.debug_inspect(deltas1[0].x_advance, content="-20")
   @debug.debug_inspect(deltas1[2].x_advance, content="10")
-  let glyphs2 : Array[UInt] = [3U, 6U, 2U]
+  let glyphs2 : Array[UInt32] = [3U, 6U, 2U]
   let deltas2 = match
     gpos.position_deltas_with_lookups(glyphs2[:], lookup_offsets[:], gdef~) {
     Err(err) => fail("apply error: \{@debug.to_string(err)}")
@@ -2334,7 +2334,7 @@ test "gpos pair adjust format2" {
     Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  let glyphs : Array[UInt] = [3U, 4U]
+  let glyphs : Array[UInt32] = [3U, 4U]
   let deltas = match gpos.pair_adjust_deltas(glyphs[:]) {
     Err(err) => fail("apply error: \{@debug.to_string(err)}")
     Ok(value) => value
@@ -2356,7 +2356,7 @@ test "gpos single adjust format1" {
     Ok(value) => value
   }
   let lookup_offsets = [gpos.layout().lookup_list().offsets()[0]]
-  let glyphs : Array[UInt] = [3U, 4U]
+  let glyphs : Array[UInt32] = [3U, 4U]
   let deltas = match
     gpos.position_deltas_with_lookups(glyphs[:], lookup_offsets[:]) {
     Err(err) => fail("apply error: \{@debug.to_string(err)}")
@@ -2387,7 +2387,7 @@ test "gpos single lookup ignore marks" {
     Ok(value) => value
   }
   let lookup_offsets = [gpos.layout().lookup_list().offsets()[0]]
-  let glyphs : Array[UInt] = [5U]
+  let glyphs : Array[UInt32] = [5U]
   let deltas = match
     gpos.position_deltas_with_lookups(glyphs[:], lookup_offsets[:], gdef~) {
     Err(err) => fail("apply error: \{@debug.to_string(err)}")
@@ -2410,7 +2410,7 @@ test "gpos single adjust format2" {
     Ok(value) => value
   }
   let lookup_offsets = [gpos.layout().lookup_list().offsets()[0]]
-  let glyphs : Array[UInt] = [3U, 4U]
+  let glyphs : Array[UInt32] = [3U, 4U]
   let deltas = match
     gpos.position_deltas_with_lookups(glyphs[:], lookup_offsets[:]) {
     Err(err) => fail("apply error: \{@debug.to_string(err)}")
@@ -2432,7 +2432,7 @@ test "gpos cursive format1" {
     Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  let glyphs : Array[UInt] = [9U, 10U]
+  let glyphs : Array[UInt32] = [9U, 10U]
   let deltas = match gpos.position_deltas(glyphs[:]) {
     Err(err) => fail("apply error: \{@debug.to_string(err)}")
     Ok(value) => value
@@ -2462,7 +2462,7 @@ test "gpos cursive lookup ignore marks" {
     Ok(value) => value
   }
   let lookup_offsets = [gpos.layout().lookup_list().offsets()[0]]
-  let glyphs : Array[UInt] = [5U, 10U]
+  let glyphs : Array[UInt32] = [5U, 10U]
   let deltas = match
     gpos.position_deltas_with_lookups(glyphs[:], lookup_offsets[:], gdef~) {
     Err(err) => fail("apply error: \{@debug.to_string(err)}")
@@ -2485,7 +2485,7 @@ test "gpos context format1" {
     Ok(value) => value
   }
   let lookup_offsets = [gpos.layout().lookup_list().offsets()[0]]
-  let glyphs : Array[UInt] = [3U, 4U]
+  let glyphs : Array[UInt32] = [3U, 4U]
   let deltas = match
     gpos.position_deltas_with_lookups(glyphs[:], lookup_offsets[:]) {
     Err(err) => fail("apply error: \{@debug.to_string(err)}")
@@ -2519,7 +2519,7 @@ test "gpos context ignore base glyphs" {
     Ok(value) => value
   }
   let lookup_offsets = [gpos.layout().lookup_list().offsets()[0]]
-  let glyphs : Array[UInt] = [3U, 4U]
+  let glyphs : Array[UInt32] = [3U, 4U]
   let deltas = match
     gpos.position_deltas_with_lookups(glyphs[:], lookup_offsets[:], gdef~) {
     Err(err) => fail("apply error: \{@debug.to_string(err)}")
@@ -2546,7 +2546,7 @@ test "gpos context mark to base format1" {
     Ok(value) => value
   }
   let lookup_offsets = [gpos.layout().lookup_list().offsets()[0]]
-  let glyphs : Array[UInt] = [3U, 5U]
+  let glyphs : Array[UInt32] = [3U, 5U]
   let deltas = match
     gpos.position_deltas_with_lookups(glyphs[:], lookup_offsets[:]) {
     Err(err) => fail("apply error: \{@debug.to_string(err)}")
@@ -2570,7 +2570,7 @@ test "gpos chain format1" {
     Ok(value) => value
   }
   let lookup_offsets = [gpos.layout().lookup_list().offsets()[0]]
-  let glyphs : Array[UInt] = [1U, 3U, 4U, 5U, 2U]
+  let glyphs : Array[UInt32] = [1U, 3U, 4U, 5U, 2U]
   let deltas = match
     gpos.position_deltas_with_lookups(glyphs[:], lookup_offsets[:]) {
     Err(err) => fail("apply error: \{@debug.to_string(err)}")
@@ -2594,7 +2594,7 @@ test "gpos context format2" {
     Ok(value) => value
   }
   let lookup_offsets = [gpos.layout().lookup_list().offsets()[0]]
-  let glyphs : Array[UInt] = [3U, 4U]
+  let glyphs : Array[UInt32] = [3U, 4U]
   let deltas = match
     gpos.position_deltas_with_lookups(glyphs[:], lookup_offsets[:]) {
     Err(err) => fail("apply error: \{@debug.to_string(err)}")
@@ -2618,7 +2618,7 @@ test "gpos context format3" {
     Ok(value) => value
   }
   let lookup_offsets = [gpos.layout().lookup_list().offsets()[0]]
-  let glyphs : Array[UInt] = [3U, 4U]
+  let glyphs : Array[UInt32] = [3U, 4U]
   let deltas = match
     gpos.position_deltas_with_lookups(glyphs[:], lookup_offsets[:]) {
     Err(err) => fail("apply error: \{@debug.to_string(err)}")
@@ -2642,7 +2642,7 @@ test "gpos chain format2" {
     Ok(value) => value
   }
   let lookup_offsets = [gpos.layout().lookup_list().offsets()[0]]
-  let glyphs : Array[UInt] = [1U, 3U, 4U, 2U]
+  let glyphs : Array[UInt32] = [1U, 3U, 4U, 2U]
   let deltas = match
     gpos.position_deltas_with_lookups(glyphs[:], lookup_offsets[:]) {
     Err(err) => fail("apply error: \{@debug.to_string(err)}")
@@ -2666,7 +2666,7 @@ test "gpos chain format3" {
     Ok(value) => value
   }
   let lookup_offsets = [gpos.layout().lookup_list().offsets()[0]]
-  let glyphs : Array[UInt] = [1U, 3U, 4U, 2U]
+  let glyphs : Array[UInt32] = [1U, 3U, 4U, 2U]
   let deltas = match
     gpos.position_deltas_with_lookups(glyphs[:], lookup_offsets[:]) {
     Err(err) => fail("apply error: \{@debug.to_string(err)}")
@@ -2700,7 +2700,7 @@ test "gpos chain format3 mark filtering set" {
     Ok(value) => value
   }
   let lookup_offsets = [gpos.layout().lookup_list().offsets()[0]]
-  let glyphs1 : Array[UInt] = [1U, 3U, 5U, 4U, 2U]
+  let glyphs1 : Array[UInt32] = [1U, 3U, 5U, 4U, 2U]
   let deltas1 = match
     gpos.position_deltas_with_lookups(glyphs1[:], lookup_offsets[:], gdef~) {
     Err(err) => fail("apply error: \{@debug.to_string(err)}")
@@ -2709,7 +2709,7 @@ test "gpos chain format3 mark filtering set" {
   @debug.debug_inspect(deltas1.length(), content="5")
   @debug.debug_inspect(deltas1[1].x_placement, content="7")
   @debug.debug_inspect(deltas1[1].x_advance, content="15")
-  let glyphs2 : Array[UInt] = [1U, 3U, 6U, 4U, 2U]
+  let glyphs2 : Array[UInt32] = [1U, 3U, 6U, 4U, 2U]
   let deltas2 = match
     gpos.position_deltas_with_lookups(glyphs2[:], lookup_offsets[:], gdef~) {
     Err(err) => fail("apply error: \{@debug.to_string(err)}")
@@ -2731,7 +2731,7 @@ test "gpos mark to base format1" {
     Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  let glyphs : Array[UInt] = [3U, 5U]
+  let glyphs : Array[UInt32] = [3U, 5U]
   let deltas = match gpos.position_deltas(glyphs[:]) {
     Err(err) => fail("apply error: \{@debug.to_string(err)}")
     Ok(value) => value
@@ -2753,7 +2753,7 @@ test "gpos mark to base skips intervening marks" {
     Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  let glyphs : Array[UInt] = [3U, 5U, 5U]
+  let glyphs : Array[UInt32] = [3U, 5U, 5U]
   let deltas = match gpos.position_deltas(glyphs[:]) {
     Err(err) => fail("apply error: \{@debug.to_string(err)}")
     Ok(value) => value
@@ -2785,7 +2785,7 @@ test "gpos mark to base mark filtering set" {
     Ok(value) => value
   }
   let lookup_offsets = [gpos.layout().lookup_list().offsets()[0]]
-  let glyphs1 : Array[UInt] = [3U, 5U]
+  let glyphs1 : Array[UInt32] = [3U, 5U]
   let deltas1 = match
     gpos.position_deltas_with_lookups(glyphs1[:], lookup_offsets[:], gdef~) {
     Err(err) => fail("apply error: \{@debug.to_string(err)}")
@@ -2794,7 +2794,7 @@ test "gpos mark to base mark filtering set" {
   @debug.debug_inspect(deltas1.length(), content="2")
   @debug.debug_inspect(deltas1[1].x_placement, content="0")
   @debug.debug_inspect(deltas1[1].y_placement, content="0")
-  let glyphs2 : Array[UInt] = [3U, 6U]
+  let glyphs2 : Array[UInt32] = [3U, 6U]
   let deltas2 = match
     gpos.position_deltas_with_lookups(glyphs2[:], lookup_offsets[:], gdef~) {
     Err(err) => fail("apply error: \{@debug.to_string(err)}")
@@ -2824,7 +2824,7 @@ test "gpos mark to base mark attachment type" {
     Ok(value) => value
   }
   let lookup_offsets = [gpos.layout().lookup_list().offsets()[0]]
-  let glyphs1 : Array[UInt] = [3U, 5U]
+  let glyphs1 : Array[UInt32] = [3U, 5U]
   let deltas1 = match
     gpos.position_deltas_with_lookups(glyphs1[:], lookup_offsets[:], gdef~) {
     Err(err) => fail("apply error: \{@debug.to_string(err)}")
@@ -2833,7 +2833,7 @@ test "gpos mark to base mark attachment type" {
   @debug.debug_inspect(deltas1.length(), content="2")
   @debug.debug_inspect(deltas1[1].x_placement, content="5")
   @debug.debug_inspect(deltas1[1].y_placement, content="15")
-  let glyphs2 : Array[UInt] = [3U, 6U]
+  let glyphs2 : Array[UInt32] = [3U, 6U]
   let deltas2 = match
     gpos.position_deltas_with_lookups(glyphs2[:], lookup_offsets[:], gdef~) {
     Err(err) => fail("apply error: \{@debug.to_string(err)}")
@@ -2855,7 +2855,7 @@ test "gpos mark to mark format1" {
     Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  let glyphs : Array[UInt] = [7U, 5U]
+  let glyphs : Array[UInt32] = [7U, 5U]
   let deltas = match gpos.position_deltas(glyphs[:]) {
     Err(err) => fail("apply error: \{@debug.to_string(err)}")
     Ok(value) => value
@@ -2885,7 +2885,7 @@ test "gpos mark to mark mark filtering set" {
     Ok(value) => value
   }
   let lookup_offsets = [gpos.layout().lookup_list().offsets()[0]]
-  let glyphs1 : Array[UInt] = [6U, 5U]
+  let glyphs1 : Array[UInt32] = [6U, 5U]
   let deltas1 = match
     gpos.position_deltas_with_lookups(glyphs1[:], lookup_offsets[:], gdef~) {
     Err(err) => fail("apply error: \{@debug.to_string(err)}")
@@ -2894,7 +2894,7 @@ test "gpos mark to mark mark filtering set" {
   @debug.debug_inspect(deltas1.length(), content="2")
   @debug.debug_inspect(deltas1[1].x_placement, content="0")
   @debug.debug_inspect(deltas1[1].y_placement, content="0")
-  let glyphs2 : Array[UInt] = [6U, 6U]
+  let glyphs2 : Array[UInt32] = [6U, 6U]
   let deltas2 = match
     gpos.position_deltas_with_lookups(glyphs2[:], lookup_offsets[:], gdef~) {
     Err(err) => fail("apply error: \{@debug.to_string(err)}")
@@ -2924,7 +2924,7 @@ test "gpos mark to mark mark attachment type" {
     Ok(value) => value
   }
   let lookup_offsets = [gpos.layout().lookup_list().offsets()[0]]
-  let glyphs1 : Array[UInt] = [5U, 5U]
+  let glyphs1 : Array[UInt32] = [5U, 5U]
   let deltas1 = match
     gpos.position_deltas_with_lookups(glyphs1[:], lookup_offsets[:], gdef~) {
     Err(err) => fail("apply error: \{@debug.to_string(err)}")
@@ -2933,7 +2933,7 @@ test "gpos mark to mark mark attachment type" {
   @debug.debug_inspect(deltas1.length(), content="2")
   @debug.debug_inspect(deltas1[1].x_placement, content="5")
   @debug.debug_inspect(deltas1[1].y_placement, content="6")
-  let glyphs2 : Array[UInt] = [5U, 6U]
+  let glyphs2 : Array[UInt32] = [5U, 6U]
   let deltas2 = match
     gpos.position_deltas_with_lookups(glyphs2[:], lookup_offsets[:], gdef~) {
     Err(err) => fail("apply error: \{@debug.to_string(err)}")
@@ -2955,7 +2955,7 @@ test "gpos mark to ligature format1" {
     Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  let glyphs : Array[UInt] = [8U, 5U]
+  let glyphs : Array[UInt32] = [8U, 5U]
   let deltas = match gpos.position_deltas(glyphs[:]) {
     Err(err) => fail("apply error: \{@debug.to_string(err)}")
     Ok(value) => value
@@ -2985,7 +2985,7 @@ test "gpos mark to ligature mark filtering set" {
     Ok(value) => value
   }
   let lookup_offsets = [gpos.layout().lookup_list().offsets()[0]]
-  let glyphs1 : Array[UInt] = [8U, 5U]
+  let glyphs1 : Array[UInt32] = [8U, 5U]
   let deltas1 = match
     gpos.position_deltas_with_lookups(glyphs1[:], lookup_offsets[:], gdef~) {
     Err(err) => fail("apply error: \{@debug.to_string(err)}")
@@ -2994,7 +2994,7 @@ test "gpos mark to ligature mark filtering set" {
   @debug.debug_inspect(deltas1.length(), content="2")
   @debug.debug_inspect(deltas1[1].x_placement, content="0")
   @debug.debug_inspect(deltas1[1].y_placement, content="0")
-  let glyphs2 : Array[UInt] = [8U, 6U]
+  let glyphs2 : Array[UInt32] = [8U, 6U]
   let deltas2 = match
     gpos.position_deltas_with_lookups(glyphs2[:], lookup_offsets[:], gdef~) {
     Err(err) => fail("apply error: \{@debug.to_string(err)}")
@@ -3024,7 +3024,7 @@ test "gpos mark to ligature mark attachment type" {
     Ok(value) => value
   }
   let lookup_offsets = [gpos.layout().lookup_list().offsets()[0]]
-  let glyphs1 : Array[UInt] = [8U, 5U]
+  let glyphs1 : Array[UInt32] = [8U, 5U]
   let deltas1 = match
     gpos.position_deltas_with_lookups(glyphs1[:], lookup_offsets[:], gdef~) {
     Err(err) => fail("apply error: \{@debug.to_string(err)}")
@@ -3033,7 +3033,7 @@ test "gpos mark to ligature mark attachment type" {
   @debug.debug_inspect(deltas1.length(), content="2")
   @debug.debug_inspect(deltas1[1].x_placement, content="9")
   @debug.debug_inspect(deltas1[1].y_placement, content="11")
-  let glyphs2 : Array[UInt] = [8U, 6U]
+  let glyphs2 : Array[UInt32] = [8U, 6U]
   let deltas2 = match
     gpos.position_deltas_with_lookups(glyphs2[:], lookup_offsets[:], gdef~) {
     Err(err) => fail("apply error: \{@debug.to_string(err)}")
@@ -3055,8 +3055,8 @@ test "gsub ligature substitution apply" {
     Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  let glyphs : Array[UInt] = [3U, 4U, 5U]
-  let clusters : Array[Int] = [0, 1, 2]
+  let glyphs : Array[UInt32] = [3U, 4U, 5U]
+  let clusters : Array[Int32] = [0, 1, 2]
   let result = match
     gsub.apply_with_lookups(
       glyphs,
@@ -3083,9 +3083,9 @@ test "gsub ligature substitution apply mask" {
     Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  let glyphs : Array[UInt] = [3U, 4U, 5U]
-  let clusters : Array[Int] = [0, 1, 2]
-  let masks : Array[UInt] = [1U, 0U, 1U]
+  let glyphs : Array[UInt32] = [3U, 4U, 5U]
+  let clusters : Array[Int32] = [0, 1, 2]
+  let masks : Array[UInt32] = [1U, 0U, 1U]
   let result = match
     gsub.apply_with_lookups(
       glyphs,
@@ -3114,9 +3114,9 @@ test "gsub ligature substitution mask propagation" {
     Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  let glyphs : Array[UInt] = [3U, 4U]
-  let clusters : Array[Int] = [0, 1]
-  let masks : Array[UInt] = [1U, 1U]
+  let glyphs : Array[UInt32] = [3U, 4U]
+  let clusters : Array[Int32] = [0, 1]
+  let masks : Array[UInt32] = [1U, 1U]
   let result = match
     gsub.apply_with_lookups(
       glyphs,
@@ -3145,8 +3145,8 @@ test "gsub multiple substitution apply" {
     Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  let glyphs : Array[UInt] = [3U, 4U]
-  let clusters : Array[Int] = [0, 1]
+  let glyphs : Array[UInt32] = [3U, 4U]
+  let clusters : Array[Int32] = [0, 1]
   let result = match
     gsub.apply_with_lookups(
       glyphs,
@@ -3173,9 +3173,9 @@ test "gsub multiple substitution mask propagation" {
     Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  let glyphs : Array[UInt] = [3U]
-  let clusters : Array[Int] = [0]
-  let masks : Array[UInt] = [1U]
+  let glyphs : Array[UInt32] = [3U]
+  let clusters : Array[Int32] = [0]
+  let masks : Array[UInt32] = [1U]
   let result = match
     gsub.apply_with_lookups(
       glyphs,
@@ -3204,8 +3204,8 @@ test "gsub alternate substitution apply" {
     Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  let glyphs : Array[UInt] = [3U, 4U]
-  let clusters : Array[Int] = [0, 1]
+  let glyphs : Array[UInt32] = [3U, 4U]
+  let clusters : Array[Int32] = [0, 1]
   let result = match
     gsub.apply_with_lookups(
       glyphs,
@@ -3232,7 +3232,7 @@ test "gsub extension lookup apply" {
     Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  let glyphs : Array[UInt] = [1U, 2U]
+  let glyphs : Array[UInt32] = [1U, 2U]
   let changed = match gsub.apply_single(glyphs) {
     Err(err) => fail("apply error: \{@debug.to_string(err)}")
     Ok(value) => value
@@ -3252,7 +3252,7 @@ test "gpos extension lookup apply" {
     Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  let glyphs : Array[UInt] = [3U, 2U]
+  let glyphs : Array[UInt32] = [3U, 2U]
   let deltas = match gpos.pair_adjust_deltas(glyphs[:]) {
     Err(err) => fail("apply error: \{@debug.to_string(err)}")
     Ok(value) => value
@@ -3274,8 +3274,8 @@ test "gsub reverse chain substitution apply" {
     Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  let glyphs : Array[UInt] = [1U, 3U, 2U]
-  let clusters : Array[Int] = [0, 1, 2]
+  let glyphs : Array[UInt32] = [1U, 3U, 2U]
+  let clusters : Array[Int32] = [0, 1, 2]
   let result = match
     gsub.apply_with_lookups(
       glyphs,
@@ -3310,8 +3310,8 @@ test "gsub reverse chain lookup mark filtering set" {
     Ok(value) => value
   }
   let lookup_offsets = [gsub.layout().lookup_list().offsets()[0]]
-  let glyphs1 : Array[UInt] = [1U, 5U, 3U, 2U]
-  let clusters1 : Array[Int] = [0, 1, 2, 3]
+  let glyphs1 : Array[UInt32] = [1U, 5U, 3U, 2U]
+  let clusters1 : Array[Int32] = [0, 1, 2, 3]
   let result1 = match
     gsub.apply_with_lookups(glyphs1, clusters1, lookup_offsets[:], gdef~) {
     Err(err) => fail("apply error: \{@debug.to_string(err)}")
@@ -3321,8 +3321,8 @@ test "gsub reverse chain lookup mark filtering set" {
   @debug.debug_inspect(changed1, content="true")
   @debug.debug_inspect(new_glyphs1, content="[1, 5, 5, 2]")
   @debug.debug_inspect(new_clusters1, content="[0, 1, 2, 3]")
-  let glyphs2 : Array[UInt] = [1U, 6U, 3U, 2U]
-  let clusters2 : Array[Int] = [0, 1, 2, 3]
+  let glyphs2 : Array[UInt32] = [1U, 6U, 3U, 2U]
+  let clusters2 : Array[Int32] = [0, 1, 2, 3]
   let result2 = match
     gsub.apply_with_lookups(glyphs2, clusters2, lookup_offsets[:], gdef~) {
     Err(err) => fail("apply error: \{@debug.to_string(err)}")
@@ -3347,8 +3347,8 @@ test "gsub contextual substitution apply" {
     Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  let glyphs : Array[UInt] = [3U, 4U, 5U]
-  let clusters : Array[Int] = [0, 1, 2]
+  let glyphs : Array[UInt32] = [3U, 4U, 5U]
+  let clusters : Array[Int32] = [0, 1, 2]
   let result = match
     gsub.apply_with_lookups(
       glyphs,
@@ -3384,8 +3384,8 @@ test "gsub contextual ignore marks" {
     Err(err) => fail("gdef parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  let glyphs : Array[UInt] = [3U, 5U, 4U]
-  let clusters : Array[Int] = [0, 1, 2]
+  let glyphs : Array[UInt32] = [3U, 5U, 4U]
+  let clusters : Array[Int32] = [0, 1, 2]
   let result = match
     gsub.apply_with_lookups(
       glyphs,
@@ -3415,8 +3415,8 @@ test "gsub chaining substitution apply" {
     Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  let glyphs : Array[UInt] = [1U, 3U, 4U, 5U, 2U]
-  let clusters : Array[Int] = [0, 1, 2, 3, 4]
+  let glyphs : Array[UInt32] = [1U, 3U, 4U, 5U, 2U]
+  let clusters : Array[Int32] = [0, 1, 2, 3, 4]
   let result = match
     gsub.apply_with_lookups(
       glyphs,
@@ -3452,8 +3452,8 @@ test "gsub chaining ignore marks" {
     Err(err) => fail("gdef parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  let glyphs : Array[UInt] = [1U, 3U, 5U, 4U, 2U]
-  let clusters : Array[Int] = [0, 1, 2, 3, 4]
+  let glyphs : Array[UInt32] = [1U, 3U, 5U, 4U, 2U]
+  let clusters : Array[Int32] = [0, 1, 2, 3, 4]
   let result = match
     gsub.apply_with_lookups(
       glyphs,
@@ -3483,8 +3483,8 @@ test "gsub contextual substitution format2" {
     Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  let glyphs : Array[UInt] = [3U, 4U, 5U]
-  let clusters : Array[Int] = [0, 1, 2]
+  let glyphs : Array[UInt32] = [3U, 4U, 5U]
+  let clusters : Array[Int32] = [0, 1, 2]
   let result = match
     gsub.apply_with_lookups(
       glyphs,
@@ -3513,8 +3513,8 @@ test "gsub chaining substitution format2" {
     Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  let glyphs : Array[UInt] = [1U, 3U, 4U, 2U]
-  let clusters : Array[Int] = [0, 1, 2, 3]
+  let glyphs : Array[UInt32] = [1U, 3U, 4U, 2U]
+  let clusters : Array[Int32] = [0, 1, 2, 3]
   let result = match
     gsub.apply_with_lookups(
       glyphs,
@@ -3550,8 +3550,8 @@ test "gsub chaining format2 ignore marks" {
     Err(err) => fail("gdef parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  let glyphs : Array[UInt] = [1U, 3U, 5U, 4U, 2U]
-  let clusters : Array[Int] = [0, 1, 2, 3, 4]
+  let glyphs : Array[UInt32] = [1U, 3U, 5U, 4U, 2U]
+  let clusters : Array[Int32] = [0, 1, 2, 3, 4]
   let result = match
     gsub.apply_with_lookups(
       glyphs,
@@ -3588,8 +3588,8 @@ test "gsub chaining format2 ignore base glyphs" {
     Err(err) => fail("gdef parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  let glyphs : Array[UInt] = [1U, 3U, 4U, 2U]
-  let clusters : Array[Int] = [0, 1, 2, 3]
+  let glyphs : Array[UInt32] = [1U, 3U, 4U, 2U]
+  let clusters : Array[Int32] = [0, 1, 2, 3]
   let result = match
     gsub.apply_with_lookups(
       glyphs,
@@ -3626,8 +3626,8 @@ test "gsub chaining format2 ignore ligature glyphs" {
     Err(err) => fail("gdef parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  let glyphs : Array[UInt] = [1U, 3U, 4U, 2U]
-  let clusters : Array[Int] = [0, 1, 2, 3]
+  let glyphs : Array[UInt32] = [1U, 3U, 4U, 2U]
+  let clusters : Array[Int32] = [0, 1, 2, 3]
   let result = match
     gsub.apply_with_lookups(
       glyphs,
@@ -3657,8 +3657,8 @@ test "gsub contextual substitution format3" {
     Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  let glyphs : Array[UInt] = [3U, 4U, 5U]
-  let clusters : Array[Int] = [0, 1, 2]
+  let glyphs : Array[UInt32] = [3U, 4U, 5U]
+  let clusters : Array[Int32] = [0, 1, 2]
   let result = match
     gsub.apply_with_lookups(
       glyphs,
@@ -3695,8 +3695,8 @@ test "gsub lookup flags mark filtering set" {
     Ok(value) => value
   }
   let lookup_offsets = [gsub.layout().lookup_list().offsets()[0]]
-  let glyphs1 : Array[UInt] = [1U, 5U, 2U]
-  let clusters1 : Array[Int] = [0, 1, 2]
+  let glyphs1 : Array[UInt32] = [1U, 5U, 2U]
+  let clusters1 : Array[Int32] = [0, 1, 2]
   let result1 = match
     gsub.apply_with_lookups(glyphs1, clusters1, lookup_offsets[:], gdef~) {
     Err(err) => fail("apply error: \{@debug.to_string(err)}")
@@ -3706,8 +3706,8 @@ test "gsub lookup flags mark filtering set" {
   @debug.debug_inspect(changed1, content="true")
   @debug.debug_inspect(new_glyphs1, content="[1, 5, 9]")
   @debug.debug_inspect(new_clusters1, content="[0, 1, 2]")
-  let glyphs2 : Array[UInt] = [1U, 6U, 2U]
-  let clusters2 : Array[Int] = [0, 1, 2]
+  let glyphs2 : Array[UInt32] = [1U, 6U, 2U]
+  let clusters2 : Array[Int32] = [0, 1, 2]
   let result2 = match
     gsub.apply_with_lookups(glyphs2, clusters2, lookup_offsets[:], gdef~) {
     Err(err) => fail("apply error: \{@debug.to_string(err)}")
@@ -3732,8 +3732,8 @@ test "gsub chaining substitution format3" {
     Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  let glyphs : Array[UInt] = [1U, 3U, 4U, 2U]
-  let clusters : Array[Int] = [0, 1, 2, 3]
+  let glyphs : Array[UInt32] = [1U, 3U, 4U, 2U]
+  let clusters : Array[Int32] = [0, 1, 2, 3]
   let result = match
     gsub.apply_with_lookups(
       glyphs,
@@ -3769,8 +3769,8 @@ test "gsub chaining format3 ignore marks" {
     Err(err) => fail("gdef parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  let glyphs : Array[UInt] = [1U, 3U, 5U, 4U, 2U]
-  let clusters : Array[Int] = [0, 1, 2, 3, 4]
+  let glyphs : Array[UInt32] = [1U, 3U, 5U, 4U, 2U]
+  let clusters : Array[Int32] = [0, 1, 2, 3, 4]
   let result = match
     gsub.apply_with_lookups(
       glyphs,
@@ -3807,8 +3807,8 @@ test "gsub chaining format3 ignore base glyphs" {
     Err(err) => fail("gdef parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  let glyphs : Array[UInt] = [1U, 3U, 4U, 2U]
-  let clusters : Array[Int] = [0, 1, 2, 3]
+  let glyphs : Array[UInt32] = [1U, 3U, 4U, 2U]
+  let clusters : Array[Int32] = [0, 1, 2, 3]
   let result = match
     gsub.apply_with_lookups(
       glyphs,
@@ -3845,8 +3845,8 @@ test "gsub chaining format3 ignore ligature glyphs" {
     Err(err) => fail("gdef parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  let glyphs : Array[UInt] = [1U, 3U, 4U, 2U]
-  let clusters : Array[Int] = [0, 1, 2, 3]
+  let glyphs : Array[UInt32] = [1U, 3U, 4U, 2U]
+  let clusters : Array[Int32] = [0, 1, 2, 3]
   let result = match
     gsub.apply_with_lookups(
       glyphs,

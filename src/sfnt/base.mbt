@@ -15,9 +15,9 @@
 ///|
 /// Base coordinate formats.
 pub enum BaseCoord {
-  Format1(Int)
-  Format2(Int, Int, Int)
-  Format3(Int, Int)
+  Format1(Int32)
+  Format2(Int32, Int32, Int32)
+  Format3(Int32, Int32)
 } derive(Debug, ToJson)
 
 ///|
@@ -57,7 +57,7 @@ pub extend MinMax with ToJson::{to_json}
 ///|
 /// Base values table.
 pub struct BaseValues {
-  default_index : Int
+  default_index : Int32
   base_coords : Array[BaseCoord?]
 } derive(Debug, ToJson)
 
@@ -147,11 +147,11 @@ pub extend Axis with ToJson::{to_json}
 ///|
 /// Parsed BASE table.
 pub struct BaseTable {
-  major_version : Int
-  minor_version : Int
+  major_version : Int32
+  minor_version : Int32
   h_axis : Axis?
   v_axis : Axis?
-  var_store_offset : Int?
+  var_store_offset : Int32?
 } derive(Debug, ToJson)
 
 ///|
@@ -163,7 +163,7 @@ pub extend BaseTable with ToJson::{to_json}
 ///|
 fn parse_base_coord(
   data : BytesView,
-  offset : Int,
+  offset : Int32,
 ) -> Result[BaseCoord, SfntError] {
   let format = read_u16_int(data, offset)
   match format {
@@ -213,8 +213,8 @@ fn parse_base_coord(
 ///|
 fn parse_feat_min_max_record(
   data : BytesView,
-  offset : Int,
-  base : Int,
+  offset : Int32,
+  base : Int32,
 ) -> Result[FeatMinMaxRecord, SfntError] {
   if offset < 0 || offset + 8 > data.length() {
     return Err(UnexpectedEof)
@@ -260,7 +260,7 @@ fn parse_feat_min_max_record(
 }
 
 ///|
-fn parse_min_max(data : BytesView, offset : Int) -> Result[MinMax, SfntError] {
+fn parse_min_max(data : BytesView, offset : Int32) -> Result[MinMax, SfntError] {
   let min_offset = read_u16_int(data, offset)
   let max_offset = read_u16_int(data, offset + 2)
   let count = read_u16_int(data, offset + 4)
@@ -314,7 +314,7 @@ fn parse_min_max(data : BytesView, offset : Int) -> Result[MinMax, SfntError] {
 ///|
 fn parse_base_values(
   data : BytesView,
-  offset : Int,
+  offset : Int32,
 ) -> Result[BaseValues, SfntError] {
   let default_index = read_u16_int(data, offset)
   let count = read_u16_int(data, offset + 2)
@@ -358,8 +358,8 @@ fn parse_base_values(
 ///|
 fn parse_base_lang_sys_record(
   data : BytesView,
-  offset : Int,
-  base : Int,
+  offset : Int32,
+  base : Int32,
 ) -> Result[BaseLangSysRecord, SfntError] {
   if offset < 0 || offset + 6 > data.length() {
     return Err(UnexpectedEof)
@@ -395,7 +395,7 @@ fn parse_base_lang_sys_record(
 ///|
 fn parse_base_script(
   data : BytesView,
-  offset : Int,
+  offset : Int32,
 ) -> Result[BaseScript, SfntError] {
   let base_values_offset = read_u16_int(data, offset)
   let default_minmax_offset = read_u16_int(data, offset + 2)
@@ -450,7 +450,7 @@ fn parse_base_script(
 ///|
 fn parse_base_script_list(
   data : BytesView,
-  offset : Int,
+  offset : Int32,
 ) -> Result[BaseScriptList, SfntError] {
   let count = read_u16_int(data, offset)
   match count {
@@ -501,7 +501,7 @@ fn parse_base_script_list(
 ///|
 fn parse_base_tag_list(
   data : BytesView,
-  offset : Int,
+  offset : Int32,
 ) -> Result[BaseTagList, SfntError] {
   let count = read_u16_int(data, offset)
   match count {
@@ -531,7 +531,7 @@ fn parse_base_tag_list(
 }
 
 ///|
-fn parse_axis(data : BytesView, offset : Int) -> Result[Axis, SfntError] {
+fn parse_axis(data : BytesView, offset : Int32) -> Result[Axis, SfntError] {
   let base_tag_offset = read_u16_int(data, offset)
   let base_script_offset = read_u16_int(data, offset + 2)
   match (base_tag_offset, base_script_offset) {

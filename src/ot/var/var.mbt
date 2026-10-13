@@ -48,7 +48,7 @@ pub fn AxisCoord::new(tag : @common.Tag, value : Double) -> AxisCoord {
 }
 
 ///|
-fn read_u16(data : BytesView, offset : Int) -> Result[UInt, VarError] {
+fn read_u16(data : BytesView, offset : Int32) -> Result[UInt32, VarError] {
   if offset < 0 || offset + 2 > data.length() {
     return Err(UnexpectedEof)
   }
@@ -58,7 +58,7 @@ fn read_u16(data : BytesView, offset : Int) -> Result[UInt, VarError] {
 }
 
 ///|
-fn u16_to_int(value : UInt) -> Int {
+fn u16_to_int(value : UInt32) -> Int32 {
   let v = value.reinterpret_as_int()
   if v < 0 {
     v + 0x10000
@@ -68,7 +68,7 @@ fn u16_to_int(value : UInt) -> Int {
 }
 
 ///|
-fn read_u16_int(data : BytesView, offset : Int) -> Result[Int, VarError] {
+fn read_u16_int(data : BytesView, offset : Int32) -> Result[Int32, VarError] {
   match read_u16(data, offset) {
     Err(err) => Err(err)
     Ok(value) => Ok(u16_to_int(value))
@@ -76,7 +76,7 @@ fn read_u16_int(data : BytesView, offset : Int) -> Result[Int, VarError] {
 }
 
 ///|
-fn read_u32(data : BytesView, offset : Int) -> Result[UInt, VarError] {
+fn read_u32(data : BytesView, offset : Int32) -> Result[UInt32, VarError] {
   if offset < 0 || offset + 4 > data.length() {
     return Err(UnexpectedEof)
   }
@@ -88,7 +88,7 @@ fn read_u32(data : BytesView, offset : Int) -> Result[UInt, VarError] {
 }
 
 ///|
-fn read_u8_int(data : BytesView, offset : Int) -> Result[Int, VarError] {
+fn read_u8_int(data : BytesView, offset : Int32) -> Result[Int32, VarError] {
   if offset < 0 || offset + 1 > data.length() {
     return Err(UnexpectedEof)
   }
@@ -96,7 +96,7 @@ fn read_u8_int(data : BytesView, offset : Int) -> Result[Int, VarError] {
 }
 
 ///|
-fn read_u32_int(data : BytesView, offset : Int) -> Result[Int, VarError] {
+fn read_u32_int(data : BytesView, offset : Int32) -> Result[Int32, VarError] {
   match read_u32(data, offset) {
     Err(err) => Err(err)
     Ok(value) => Ok(value.reinterpret_as_int())
@@ -104,7 +104,7 @@ fn read_u32_int(data : BytesView, offset : Int) -> Result[Int, VarError] {
 }
 
 ///|
-fn read_i16(data : BytesView, offset : Int) -> Result[Int, VarError] {
+fn read_i16(data : BytesView, offset : Int32) -> Result[Int32, VarError] {
   match read_u16(data, offset) {
     Err(err) => Err(err)
     Ok(value) => {
@@ -119,7 +119,7 @@ fn read_i16(data : BytesView, offset : Int) -> Result[Int, VarError] {
 }
 
 ///|
-fn read_i32(data : BytesView, offset : Int) -> Result[Int, VarError] {
+fn read_i32(data : BytesView, offset : Int32) -> Result[Int32, VarError] {
   match read_u32(data, offset) {
     Err(err) => Err(err)
     Ok(value) => Ok(value.reinterpret_as_int())
@@ -127,7 +127,7 @@ fn read_i32(data : BytesView, offset : Int) -> Result[Int, VarError] {
 }
 
 ///|
-fn read_tag(data : BytesView, offset : Int) -> Result[@common.Tag, VarError] {
+fn read_tag(data : BytesView, offset : Int32) -> Result[@common.Tag, VarError] {
   if offset < 0 || offset + 4 > data.length() {
     return Err(UnexpectedEof)
   }
@@ -142,22 +142,22 @@ fn read_tag(data : BytesView, offset : Int) -> Result[@common.Tag, VarError] {
 }
 
 ///|
-fn fixed16_to_double(raw : Int) -> Double {
+fn fixed16_to_double(raw : Int32) -> Double {
   raw.to_double() / 65536.0
 }
 
 ///|
-fn double_to_fixed16(value : Double) -> Int {
+fn double_to_fixed16(value : Double) -> Int32 {
   (value * 65536.0).round().to_int()
 }
 
 ///|
-fn f2dot14_to_double(raw : Int) -> Double {
+fn f2dot14_to_double(raw : Int32) -> Double {
   raw.to_double() / 16384.0
 }
 
 ///|
-pub fn fixed16_to_f2dot14(raw : Int) -> Int {
+pub fn fixed16_to_f2dot14(raw : Int32) -> Int32 {
   (raw + 2) >> 2
 }
 

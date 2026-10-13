@@ -15,7 +15,7 @@
 ///|
 test "aat morx contextual apply lookup" {
   let class_lookup = LookupTable::Format0([1U, 4U, 4U])
-  let state_array : Array[Int] = [0, 0, 0, 0, 0]
+  let state_array : Array[Int32] = [0, 0, 0, 0, 0]
   let entries : Array[StateEntry] = [
     { new_state: 0, flags: 0, data1: 0xffff, data2: 0, },
   ]
@@ -34,8 +34,8 @@ test "aat morx contextual apply lookup" {
     table,
     substitutions,
   }
-  let glyphs : Array[UInt] = [1U, 2U]
-  let clusters : Array[Int] = [0, 1]
+  let glyphs : Array[UInt32] = [1U, 2U]
+  let clusters : Array[Int32] = [0, 1]
   let changed = subtable.apply(glyphs, clusters, true)
   assert_true(changed)
   @debug.assert_eq(glyphs, [3U, 4U])
@@ -44,7 +44,7 @@ test "aat morx contextual apply lookup" {
 ///|
 test "aat morx ligature apply extended" {
   let class_lookup = LookupTable::Format0([1U, 4U, 4U])
-  let state_array : Array[Int] = Array::make(10, 0)
+  let state_array : Array[Int32] = Array::make(10, 0)
   state_array[4] = 1
   state_array[9] = 2
   let entries : Array[StateEntry] = [
@@ -71,8 +71,8 @@ test "aat morx ligature apply extended" {
     component_offset_words: 0,
     ligature_offset: 0,
   }
-  let glyphs : Array[UInt] = [1U, 2U]
-  let clusters : Array[Int] = [0, 1]
+  let glyphs : Array[UInt32] = [1U, 2U]
+  let clusters : Array[Int32] = [0, 1]
   let changed = subtable.apply(glyphs, clusters, true)
   assert_true(changed)
   @debug.assert_eq(glyphs, [5U])
@@ -82,7 +82,7 @@ test "aat morx ligature apply extended" {
 ///|
 test "aat morx insertion apply" {
   let class_lookup = LookupTable::Format0([1U, 4U])
-  let state_array : Array[Int] = [0, 0, 0, 0, 1]
+  let state_array : Array[Int32] = [0, 0, 0, 0, 1]
   let entries : Array[StateEntry] = [
     { new_state: 0, flags: 0, data1: 0xffff, data2: 0xffff, },
     { new_state: 0, flags: 0x0020, data1: 0, data2: 0xffff, },
@@ -101,8 +101,8 @@ test "aat morx insertion apply" {
     table,
     insertion_action: [9U],
   }
-  let glyphs : Array[UInt] = [1U]
-  let clusters : Array[Int] = [0]
+  let glyphs : Array[UInt32] = [1U]
+  let clusters : Array[Int32] = [0]
   let changed = subtable.apply(glyphs, clusters, true)
   assert_true(changed)
   @debug.assert_eq(glyphs, [1U, 9U])

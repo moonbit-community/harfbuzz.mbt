@@ -148,7 +148,7 @@ def main() -> None:
     content.append("///|\nlet ucd_sc_map : Array[@common.Script] = [\n" + format_list(sc_values) + "\n]\n")
     content.append("///|\nlet ucd_dm1_p0 : Array[UInt16] = [\n" + format_hex(dm1_p0, 4) + "\n]\n")
     content.append("///|\nlet ucd_dm1_p2 : Array[UInt16] = [\n" + format_hex(dm1_p2, 4) + "\n]\n")
-    content.append("///|\nlet ucd_dm2_u32 : Array[UInt] = [\n" + format_hex(dm2_u32, 8) + "\n]\n")
+    content.append("///|\nlet ucd_dm2_u32 : Array[UInt32] = [\n" + format_hex(dm2_u32, 8) + "\n]\n")
     content.append("///|\nlet ucd_dm2_u64 : Array[UInt64] = [\n" + format_hex(dm2_u64, 16) + "\n]\n")
     content.append("///|\nlet ucd_u8 : Bytes = [\n" + format_ints(u8_vals) + "\n]\n")
     content.append("///|\nlet ucd_u16 : Array[UInt16] = [\n" + format_hex(u16_vals, 4) + "\n]\n")

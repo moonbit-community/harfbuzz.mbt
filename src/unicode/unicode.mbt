@@ -14,112 +14,112 @@
 
 ///|
 /// Unicode general category constants (hb-unicode.h order).
-pub let gc_control : UInt = 0U
+pub let gc_control : UInt32 = 0U
 
 ///|
-pub let gc_format : UInt = 1U
+pub let gc_format : UInt32 = 1U
 
 ///|
-pub let gc_unassigned : UInt = 2U
+pub let gc_unassigned : UInt32 = 2U
 
 ///|
-pub let gc_private_use : UInt = 3U
+pub let gc_private_use : UInt32 = 3U
 
 ///|
-pub let gc_surrogate : UInt = 4U
+pub let gc_surrogate : UInt32 = 4U
 
 ///|
-pub let gc_lowercase_letter : UInt = 5U
+pub let gc_lowercase_letter : UInt32 = 5U
 
 ///|
-pub let gc_modifier_letter : UInt = 6U
+pub let gc_modifier_letter : UInt32 = 6U
 
 ///|
-pub let gc_other_letter : UInt = 7U
+pub let gc_other_letter : UInt32 = 7U
 
 ///|
-pub let gc_titlecase_letter : UInt = 8U
+pub let gc_titlecase_letter : UInt32 = 8U
 
 ///|
-pub let gc_uppercase_letter : UInt = 9U
+pub let gc_uppercase_letter : UInt32 = 9U
 
 ///|
-pub let gc_spacing_mark : UInt = 10U
+pub let gc_spacing_mark : UInt32 = 10U
 
 ///|
-pub let gc_enclosing_mark : UInt = 11U
+pub let gc_enclosing_mark : UInt32 = 11U
 
 ///|
-pub let gc_non_spacing_mark : UInt = 12U
+pub let gc_non_spacing_mark : UInt32 = 12U
 
 ///|
-pub let gc_decimal_number : UInt = 13U
+pub let gc_decimal_number : UInt32 = 13U
 
 ///|
-pub let gc_letter_number : UInt = 14U
+pub let gc_letter_number : UInt32 = 14U
 
 ///|
-pub let gc_other_number : UInt = 15U
+pub let gc_other_number : UInt32 = 15U
 
 ///|
-pub let gc_connect_punctuation : UInt = 16U
+pub let gc_connect_punctuation : UInt32 = 16U
 
 ///|
-pub let gc_dash_punctuation : UInt = 17U
+pub let gc_dash_punctuation : UInt32 = 17U
 
 ///|
-pub let gc_close_punctuation : UInt = 18U
+pub let gc_close_punctuation : UInt32 = 18U
 
 ///|
-pub let gc_final_punctuation : UInt = 19U
+pub let gc_final_punctuation : UInt32 = 19U
 
 ///|
-pub let gc_initial_punctuation : UInt = 20U
+pub let gc_initial_punctuation : UInt32 = 20U
 
 ///|
-pub let gc_other_punctuation : UInt = 21U
+pub let gc_other_punctuation : UInt32 = 21U
 
 ///|
-pub let gc_open_punctuation : UInt = 22U
+pub let gc_open_punctuation : UInt32 = 22U
 
 ///|
-pub let gc_currency_symbol : UInt = 23U
+pub let gc_currency_symbol : UInt32 = 23U
 
 ///|
-pub let gc_modifier_symbol : UInt = 24U
+pub let gc_modifier_symbol : UInt32 = 24U
 
 ///|
-pub let gc_math_symbol : UInt = 25U
+pub let gc_math_symbol : UInt32 = 25U
 
 ///|
-pub let gc_other_symbol : UInt = 26U
+pub let gc_other_symbol : UInt32 = 26U
 
 ///|
-pub let gc_line_separator : UInt = 27U
+pub let gc_line_separator : UInt32 = 27U
 
 ///|
-pub let gc_paragraph_separator : UInt = 28U
+pub let gc_paragraph_separator : UInt32 = 28U
 
 ///|
-pub let gc_space_separator : UInt = 29U
+pub let gc_space_separator : UInt32 = 29U
 
 ///|
-fn u8_at(index : Int) -> Int {
+fn u8_at(index : Int32) -> Int32 {
   ucd_u8[index].to_int()
 }
 
 ///|
-fn u16_at(index : Int) -> Int {
+fn u16_at(index : Int32) -> Int32 {
   ucd_u16[index].to_int()
 }
 
 ///|
-fn i16_at(index : Int) -> Int {
+fn i16_at(index : Int32) -> Int32 {
   ucd_i16[index].to_int()
 }
 
 ///|
-fn ucd_gc(u : UInt) -> Int {
+fn ucd_gc(u : UInt32) -> Int32 {
   if u >= 1114110U {
     return 2
   }
@@ -137,7 +137,7 @@ fn ucd_gc(u : UInt) -> Int {
 }
 
 ///|
-fn ucd_ccc(u : UInt) -> Int {
+fn ucd_ccc(u : UInt32) -> Int32 {
   if u >= 125259U {
     return 0
   }
@@ -155,13 +155,13 @@ fn ucd_ccc(u : UInt) -> Int {
 }
 
 ///|
-fn ucd_b4(offset : Int, index : Int) -> Int {
+fn ucd_b4(offset : Int32, index : Int32) -> Int32 {
   let value = u8_at(offset + (index >> 1))
   (value >> ((index & 1) << 2)) & 15
 }
 
 ///|
-fn ucd_bmg(u : UInt) -> Int {
+fn ucd_bmg(u : UInt32) -> Int32 {
   if u >= 65380U {
     return 0
   }
@@ -179,7 +179,7 @@ fn ucd_bmg(u : UInt) -> Int {
 }
 
 ///|
-fn ucd_sc(u : UInt) -> Int {
+fn ucd_sc(u : UInt32) -> Int32 {
   if u >= 918000U {
     return 2
   }
@@ -197,7 +197,7 @@ fn ucd_sc(u : UInt) -> Int {
 }
 
 ///|
-fn ucd_dm(u : UInt) -> Int {
+fn ucd_dm(u : UInt32) -> Int32 {
   if u >= 195102U {
     return 0
   }
@@ -212,51 +212,51 @@ fn ucd_dm(u : UInt) -> Int {
 }
 
 ///|
-fn encode3_11_7_14(a : UInt, b : UInt, c : UInt) -> UInt {
+fn encode3_11_7_14(a : UInt32, b : UInt32, c : UInt32) -> UInt32 {
   ((a & 0x07FFU) << 21) | ((b & 0x007FU) << 14) | (c & 0x3FFFU)
 }
 
 ///|
-fn decode3_11_7_14_1(v : UInt) -> UInt {
+fn decode3_11_7_14_1(v : UInt32) -> UInt32 {
   v >> 21
 }
 
 ///|
-fn decode3_11_7_14_2(v : UInt) -> UInt {
+fn decode3_11_7_14_2(v : UInt32) -> UInt32 {
   ((v >> 14) & 0x007FU) | 0x0300U
 }
 
 ///|
-fn decode3_11_7_14_3(v : UInt) -> UInt {
+fn decode3_11_7_14_3(v : UInt32) -> UInt32 {
   v & 0x3FFFU
 }
 
 ///|
-fn encode3_u64(a : UInt, b : UInt, c : UInt) -> UInt64 {
+fn encode3_u64(a : UInt32, b : UInt32, c : UInt32) -> UInt64 {
   (UInt64::extend_uint(a) << 42) |
   (UInt64::extend_uint(b) << 21) |
   UInt64::extend_uint(c)
 }
 
 ///|
-fn decode3_1(v : UInt64) -> UInt {
+fn decode3_1(v : UInt64) -> UInt32 {
   (v >> 42).to_uint()
 }
 
 ///|
-fn decode3_2(v : UInt64) -> UInt {
+fn decode3_2(v : UInt64) -> UInt32 {
   let mask = UInt64::extend_uint(0x1FFFFFU)
   ((v >> 21) & mask).to_uint()
 }
 
 ///|
-fn decode3_3(v : UInt64) -> UInt {
+fn decode3_3(v : UInt64) -> UInt32 {
   let mask = UInt64::extend_uint(0x1FFFFFU)
   (v & mask).to_uint()
 }
 
 ///|
-fn bsearch_dm2_u32(key : UInt) -> UInt? {
+fn bsearch_dm2_u32(key : UInt32) -> UInt32? {
   let mask = encode3_11_7_14(0x07FFU, 0x007FU, 0U)
   let mut low = 0
   let mut high = ucd_dm2_u32.length()
@@ -296,7 +296,7 @@ fn bsearch_dm2_u64(key : UInt64) -> UInt64? {
 }
 
 ///|
-fn decompose_hangul(ab : UInt) -> (UInt, UInt)? {
+fn decompose_hangul(ab : UInt32) -> (UInt32, UInt32)? {
   let sbase = 0xAC00U
   let lbase = 0x1100U
   let vbase = 0x1161U
@@ -320,7 +320,7 @@ fn decompose_hangul(ab : UInt) -> (UInt, UInt)? {
 }
 
 ///|
-fn compose_hangul(a : UInt, b : UInt) -> UInt? {
+fn compose_hangul(a : UInt32, b : UInt32) -> UInt32? {
   let sbase = 0xAC00U
   let lbase = 0x1100U
   let vbase = 0x1161U
@@ -347,13 +347,13 @@ fn compose_hangul(a : UInt, b : UInt) -> UInt? {
 
 ///|
 /// Get Unicode general category value for a codepoint.
-pub fn general_category(u : UInt) -> UInt {
+pub fn general_category(u : UInt32) -> UInt32 {
   ucd_gc(u).reinterpret_as_uint()
 }
 
 ///|
 /// Return true if the codepoint is in a Unicode mark category.
-pub fn is_mark(u : UInt) -> Bool {
+pub fn is_mark(u : UInt32) -> Bool {
   let cat = general_category(u)
   cat == gc_non_spacing_mark ||
   cat == gc_spacing_mark ||
@@ -362,13 +362,13 @@ pub fn is_mark(u : UInt) -> Bool {
 
 ///|
 /// Get Unicode combining class value for a codepoint.
-pub fn combining_class(u : UInt) -> UInt {
+pub fn combining_class(u : UInt32) -> UInt32 {
   ucd_ccc(u).reinterpret_as_uint()
 }
 
 ///|
 /// Get modified combining class (reorders specific marks for shaping).
-pub fn modified_combining_class(u : UInt) -> UInt {
+pub fn modified_combining_class(u : UInt32) -> UInt32 {
   if u == 0x1A60U {
     return 254U
   }
@@ -389,7 +389,7 @@ pub fn modified_combining_class(u : UInt) -> UInt {
 
 ///|
 /// Map a codepoint to its mirrored counterpart (if any).
-pub fn mirroring(u : UInt) -> UInt {
+pub fn mirroring(u : UInt32) -> UInt32 {
   let offset = ucd_bmg(u)
   let result = u.reinterpret_as_int() + offset
   if result < 0 {
@@ -401,7 +401,7 @@ pub fn mirroring(u : UInt) -> UInt {
 
 ///|
 /// Map a codepoint to a Unicode script.
-pub fn script(u : UInt) -> @common.Script {
+pub fn script(u : UInt32) -> @common.Script {
   let idx = ucd_sc(u)
   if idx < 0 || idx >= ucd_sc_map.length() {
     @common.script_unknown
@@ -412,7 +412,7 @@ pub fn script(u : UInt) -> @common.Script {
 
 ///|
 /// Compose two codepoints (canonical composition). Returns None if not composable.
-pub fn compose(a : UInt, b : UInt) -> UInt? {
+pub fn compose(a : UInt32, b : UInt32) -> UInt32? {
   if a == 0U || b == 0U {
     return None
   }
@@ -451,7 +451,7 @@ pub fn compose(a : UInt, b : UInt) -> UInt? {
 
 ///|
 /// Decompose a codepoint (canonical decomposition). Returns None if no decomposition.
-pub fn decompose(ab : UInt) -> (UInt, UInt)? {
+pub fn decompose(ab : UInt32) -> (UInt32, UInt32)? {
   match decompose_hangul(ab) {
     Some(value) => return Some(value)
     None => ()
@@ -485,7 +485,7 @@ pub fn decompose(ab : UInt) -> (UInt, UInt)? {
 }
 
 ///|
-fn emoji_range_contains(ranges : Array[(UInt, UInt)], u : UInt) -> Bool {
+fn emoji_range_contains(ranges : Array[(UInt32, UInt32)], u : UInt32) -> Bool {
   let mut lo = 0
   let mut hi = ranges.length()
   while lo < hi {
@@ -504,37 +504,37 @@ fn emoji_range_contains(ranges : Array[(UInt, UInt)], u : UInt) -> Bool {
 
 ///|
 /// True when the codepoint is Extended_Pictographic (emoji data table).
-pub fn is_extended_pictographic(u : UInt) -> Bool {
+pub fn is_extended_pictographic(u : UInt32) -> Bool {
   emoji_range_contains(extended_pictographic_ranges, u)
 }
 
 ///|
 /// True when the codepoint has Emoji property (emoji data table).
-pub fn is_emoji(u : UInt) -> Bool {
+pub fn is_emoji(u : UInt32) -> Bool {
   emoji_range_contains(emoji_ranges, u)
 }
 
 ///|
 /// True when the codepoint defaults to emoji presentation.
-pub fn is_emoji_presentation(u : UInt) -> Bool {
+pub fn is_emoji_presentation(u : UInt32) -> Bool {
   emoji_range_contains(emoji_presentation_ranges, u)
 }
 
 ///|
 /// True when the codepoint is an emoji modifier (skin tone).
-pub fn is_emoji_modifier(u : UInt) -> Bool {
+pub fn is_emoji_modifier(u : UInt32) -> Bool {
   emoji_range_contains(emoji_modifier_ranges, u)
 }
 
 ///|
 /// True when the codepoint can take an emoji modifier.
-pub fn is_emoji_modifier_base(u : UInt) -> Bool {
+pub fn is_emoji_modifier_base(u : UInt32) -> Bool {
   emoji_range_contains(emoji_modifier_base_ranges, u)
 }
 
 ///|
 /// True when the codepoint is an emoji component.
-pub fn is_emoji_component(u : UInt) -> Bool {
+pub fn is_emoji_component(u : UInt32) -> Bool {
   emoji_range_contains(emoji_component_ranges, u)
 }
 
@@ -566,7 +566,7 @@ pub extend SpaceFallbackType with ToJson::{to_json}
 
 ///|
 /// Return space fallback type for a codepoint (subset of Zs, excluding OGHAM SPACE MARK).
-pub fn space_fallback_type(u : UInt) -> SpaceFallbackType {
+pub fn space_fallback_type(u : UInt32) -> SpaceFallbackType {
   match u {
     0x0020U => Space
     0x00A0U => Space
@@ -590,13 +590,13 @@ pub fn space_fallback_type(u : UInt) -> SpaceFallbackType {
 
 ///|
 /// True if a codepoint is a Unicode variation selector (excluding Mongolian selectors).
-pub fn is_variation_selector(u : UInt) -> Bool {
+pub fn is_variation_selector(u : UInt32) -> Bool {
   (u >= 0xFE00U && u <= 0xFE0FU) || (u >= 0xE0100U && u <= 0xE01EFU)
 }
 
 ///|
 /// True if a codepoint has Default_Ignorable_Code_Point property (with HarfBuzz exceptions).
-pub fn is_default_ignorable(u : UInt) -> Bool {
+pub fn is_default_ignorable(u : UInt32) -> Bool {
   let plane = u >> 16
   if plane == 0U {
     let page = u >> 8

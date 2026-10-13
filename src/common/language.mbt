@@ -47,7 +47,7 @@ fn canonicalize_language_char(c : Char) -> Char? {
 
 ///|
 /// Convert a string to a language value.
-pub fn Language::from_string(s : String, len? : Int = -1) -> Language {
+pub fn Language::from_string(s : String, len~ : Int32 = -1) -> Language {
   if s is "" || len == 0 {
     return language_invalid
   }

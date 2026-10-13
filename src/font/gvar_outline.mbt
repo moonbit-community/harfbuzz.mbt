@@ -37,7 +37,7 @@ fn clone_points(points : Array[@sfnt.GlyphPoint]) -> Array[@sfnt.GlyphPoint] {
 }
 
 ///|
-fn make_deltas(count : Int) -> Array[PointDelta] {
+fn make_deltas(count : Int32) -> Array[PointDelta] {
   let deltas : Array[PointDelta] = []
   for _ in 0..<count {
     deltas.push({ x: 0.0, y: 0.0, referenced: false, })
@@ -46,7 +46,7 @@ fn make_deltas(count : Int) -> Array[PointDelta] {
 }
 
 ///|
-fn next_index(i : Int, start : Int, end : Int) -> Int {
+fn next_index(i : Int32, start : Int32, end : Int32) -> Int32 {
   if i >= end {
     start
   } else {
@@ -58,9 +58,9 @@ fn next_index(i : Int, start : Int, end : Int) -> Int {
 fn infer_delta(
   orig_points : Array[@sfnt.GlyphPoint],
   deltas : Array[PointDelta],
-  target : Int,
-  prev : Int,
-  next : Int,
+  target : Int32,
+  prev : Int32,
+  next : Int32,
   use_x : Bool,
 ) -> Double {
   let prev_val = if use_x { orig_points[prev].x } else { orig_points[prev].y }
@@ -102,7 +102,7 @@ fn iup_interpolate(
     if end >= count {
       break
     }
-    let refs : Array[Int] = []
+    let refs : Array[Int32] = []
     for i in start..<=end {
       if deltas[i].referenced {
         refs.push(i)
@@ -133,9 +133,9 @@ fn iup_interpolate(
 ///|
 fn apply_gvar_deltas_to_points(
   points : Array[@sfnt.GlyphPoint],
-  coords : Array[Int],
+  coords : Array[Int32],
   gvar : @ot_var.GvarTable,
-  glyph : Int,
+  glyph : Int32,
 ) -> Result[Unit, @ot_var.VarError] {
   let tuple_data = match gvar.glyph_tuple_variations(glyph) {
     Err(err) => return Err(err)
@@ -262,7 +262,7 @@ fn build_phantom_points(
   bounds : @sfnt.GlyphBounds?,
   hmtx : @sfnt.HmtxTable,
   vmtx : @sfnt.VmtxTable?,
-  glyph : Int,
+  glyph : Int32,
 ) -> Result[Array[@sfnt.GlyphPoint], FontError] {
   if glyph < 0 || glyph >= hmtx.advances.length() {
     return Err(GlyphOutOfRange)
@@ -344,8 +344,8 @@ fn ensure_four_phantoms(
 ///|
 fn glyph_bounds_from_points(
   points : Array[@sfnt.GlyphPoint],
-  contour_count : Int,
-  contour_points : Int,
+  contour_count : Int32,
+  contour_points : Int32,
 ) -> @sfnt.GlyphBounds? {
   if contour_points <= 0 || contour_points > points.length() {
     return None
@@ -379,9 +379,9 @@ fn glyph_bounds_from_points(
 ///|
 fn Font::glyph_points_with_gvar_depth(
   self : Font,
-  glyph : UInt,
-  coords : Array[Int],
-  depth : Int,
+  glyph : UInt32,
+  coords : Array[Int32],
+  depth : Int32,
 ) -> Result[Array[@sfnt.GlyphPoint]?, FontError] {
   if depth <= 0 {
     return Ok(None)
@@ -571,8 +571,8 @@ fn Font::glyph_points_with_gvar_depth(
 ///|
 fn Font::glyph_points_with_gvar(
   self : Font,
-  glyph : UInt,
-  coords : Array[Int],
+  glyph : UInt32,
+  coords : Array[Int32],
 ) -> Result[Array[@sfnt.GlyphPoint]?, FontError] {
   self.glyph_points_with_gvar_depth(glyph, coords, 8)
 }
@@ -597,10 +597,10 @@ fn glyph_bounds_from_points_for_font(
 ///|
 fn Font::glyph_gvar_advance(
   self : Font,
-  glyph : UInt,
-  coords : Array[Int],
+  glyph : UInt32,
+  coords : Array[Int32],
   vertical : Bool,
-) -> Result[Int?, FontError] {
+) -> Result[Int32?, FontError] {
   let points = match self.glyph_points_with_gvar(glyph, coords) {
     Err(err) => return Err(err)
     Ok(value) => value
@@ -628,9 +628,9 @@ fn Font::glyph_gvar_advance(
 /// Return glyph contour point in font units if available.
 pub fn Font::glyph_contour_point_for_origin(
   self : Font,
-  glyph : UInt,
-  point_index : Int,
-) -> Result[(Int, Int)?, FontError] {
+  glyph : UInt32,
+  point_index : Int32,
+) -> Result[(Int32, Int32)?, FontError] {
   if point_index < 0 {
     return Ok(None)
   }
@@ -645,7 +645,7 @@ pub fn Font::glyph_contour_point_for_origin(
   if loca_blob is None || glyf_blob is None {
     return Ok(None)
   }
-  let coords : Array[Int] = match self.var_coords_norm {
+  let coords : Array[Int32] = match self.var_coords_norm {
     None => []
     Some(value) => value
   }

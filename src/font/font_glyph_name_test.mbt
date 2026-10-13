@@ -14,7 +14,7 @@
 
 ///|
 fn build_post_format2(
-  indices : Array[Int],
+  indices : Array[Int32],
   custom_names : Array[String],
 ) -> Bytes {
   let bytes : Array[Byte] = []

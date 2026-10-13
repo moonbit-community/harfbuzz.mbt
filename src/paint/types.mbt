@@ -14,7 +14,7 @@
 
 ///|
 /// VarIdx points into an ItemVariationStore (outer:high 16 bits, inner:low 16 bits).
-pub type VarIdx = UInt
+pub type VarIdx = UInt32
 
 ///|
 /// Special value indicating no variation.
@@ -23,10 +23,10 @@ pub let var_idx_none : VarIdx = 0xFFFFFFFFU
 ///|
 /// RGBA color (0..255 per channel).
 pub struct Color {
-  r : Int
-  g : Int
-  b : Int
-  a : Int
+  r : Int32
+  g : Int32
+  b : Int32
+  a : Int32
 } derive(Eq, Debug, ToJson)
 
 ///|
@@ -40,16 +40,16 @@ pub extend Color with ToJson::{to_json}
 
 ///|
 /// Helper to build a color from BGRA bytes.
-pub fn Color::from_bgra(b : Int, g : Int, r : Int, a : Int) -> Color {
+pub fn Color::from_bgra(b : Int32, g : Int32, r : Int32, a : Int32) -> Color {
   { r, g, b, a, }
 }
 
 ///|
 /// Color stop for gradients. Offset/alpha are raw F2DOT14 values.
 pub(all) struct ColorStop {
-  offset : Int
-  palette_index : Int
-  alpha : Int
+  offset : Int32
+  palette_index : Int32
+  alpha : Int32
   var_idx_base : VarIdx?
 } derive(Eq, Debug, ToJson)
 
@@ -66,7 +66,7 @@ pub extend ColorStop with ToJson::{to_json}
 /// Color line for gradients. `extend_mode` is the raw `Extend` enum value
 /// (0..2). It was named `extend`, which is now a reserved word.
 pub(all) struct ColorLine {
-  extend_mode : Int
+  extend_mode : Int32
   stops : Array[ColorStop]
 } derive(Eq, Debug, ToJson)
 
@@ -82,12 +82,12 @@ pub extend ColorLine with ToJson::{to_json}
 ///|
 /// Affine transform (F16DOT16 values), with optional VarIdx base for variation.
 pub(all) struct Affine2x3 {
-  xx : Int
-  yx : Int
-  xy : Int
-  yy : Int
-  dx : Int
-  dy : Int
+  xx : Int32
+  yx : Int32
+  xy : Int32
+  yy : Int32
+  dx : Int32
+  dy : Int32
   var_idx_base : VarIdx?
 } derive(Eq, Debug, ToJson)
 
