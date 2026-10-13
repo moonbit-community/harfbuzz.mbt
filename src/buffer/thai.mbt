@@ -13,81 +13,81 @@
 // limitations under the License.
 
 ///|
-let thai_consonant_nc : Int = 0
+let thai_consonant_nc : Int32 = 0
 
 ///|
-let thai_consonant_ac : Int = 1
+let thai_consonant_ac : Int32 = 1
 
 ///|
-let thai_consonant_rc : Int = 2
+let thai_consonant_rc : Int32 = 2
 
 ///|
-let thai_consonant_dc : Int = 3
+let thai_consonant_dc : Int32 = 3
 
 ///|
-let thai_consonant_not : Int = 4
+let thai_consonant_not : Int32 = 4
 
 ///|
-let thai_mark_av : Int = 0
+let thai_mark_av : Int32 = 0
 
 ///|
-let thai_mark_bv : Int = 1
+let thai_mark_bv : Int32 = 1
 
 ///|
-let thai_mark_t : Int = 2
+let thai_mark_t : Int32 = 2
 
 ///|
-let thai_mark_not : Int = 3
+let thai_mark_not : Int32 = 3
 
 ///|
-let thai_action_nop : Int = 0
+let thai_action_nop : Int32 = 0
 
 ///|
-let thai_action_sd : Int = 1
+let thai_action_sd : Int32 = 1
 
 ///|
-let thai_action_sl : Int = 2
+let thai_action_sl : Int32 = 2
 
 ///|
-let thai_action_sdl : Int = 3
+let thai_action_sdl : Int32 = 3
 
 ///|
-let thai_action_rd : Int = 4
+let thai_action_rd : Int32 = 4
 
 ///|
-let thai_above_t0 : Int = 0
+let thai_above_t0 : Int32 = 0
 
 ///|
-let thai_above_t1 : Int = 1
+let thai_above_t1 : Int32 = 1
 
 ///|
-let thai_above_t2 : Int = 2
+let thai_above_t2 : Int32 = 2
 
 ///|
-let thai_above_t3 : Int = 3
+let thai_above_t3 : Int32 = 3
 
 ///|
-let thai_below_b0 : Int = 0
+let thai_below_b0 : Int32 = 0
 
 ///|
-let thai_below_b1 : Int = 1
+let thai_below_b1 : Int32 = 1
 
 ///|
-let thai_below_b2 : Int = 2
+let thai_below_b2 : Int32 = 2
 
 ///|
 priv struct ThaiStateEdge {
-  action : Int
-  next_state : Int
+  action : Int32
+  next_state : Int32
 }
 
 ///|
-let thai_above_start_state : Array[Int] = [
+let thai_above_start_state : Array[Int32] = [
   thai_above_t0, thai_above_t1, thai_above_t0, thai_above_t0, thai_above_t3,
 ]
 
 ///|
-let thai_below_start_state : Array[Int] = [
+let thai_below_start_state : Array[Int32] = [
   thai_below_b0, thai_below_b0, thai_below_b1, thai_below_b2, thai_below_b2,
 ]
 
@@ -136,9 +136,9 @@ let thai_below_state_machine : Array[Array[ThaiStateEdge]] = [
 
 ///|
 priv struct ThaiPuaMapping {
-  u : UInt
-  win_pua : UInt
-  mac_pua : UInt
+  u : UInt32
+  win_pua : UInt32
+  mac_pua : UInt32
 }
 
 ///|
@@ -185,27 +185,27 @@ let thai_pua_rd : Array[ThaiPuaMapping] = [
 ]
 
 ///|
-fn mask_thai_lao(u : UInt) -> UInt {
+fn mask_thai_lao(u : UInt32) -> UInt32 {
   u & 0xFFFFFF7FU
 }
 
 ///|
-fn is_sara_am(u : UInt) -> Bool {
+fn is_sara_am(u : UInt32) -> Bool {
   mask_thai_lao(u) == 0x0E33U
 }
 
 ///|
-fn nikhahit_from_sara_am(u : UInt) -> UInt {
+fn nikhahit_from_sara_am(u : UInt32) -> UInt32 {
   u - 0x0E33U + 0x0E4DU
 }
 
 ///|
-fn sara_aa_from_sara_am(u : UInt) -> UInt {
+fn sara_aa_from_sara_am(u : UInt32) -> UInt32 {
   u - 1U
 }
 
 ///|
-fn is_above_base_mark(u : UInt) -> Bool {
+fn is_above_base_mark(u : UInt32) -> Bool {
   let v = mask_thai_lao(u)
   (v >= 0x0E34U && v <= 0x0E37U) ||
   (v >= 0x0E47U && v <= 0x0E4EU) ||
@@ -214,7 +214,7 @@ fn is_above_base_mark(u : UInt) -> Bool {
 }
 
 ///|
-fn get_consonant_type(u : UInt) -> Int {
+fn get_consonant_type(u : UInt32) -> Int32 {
   let v = mask_thai_lao(u)
   if v == 0x0E1BU || v == 0x0E1DU || v == 0x0E1FU {
     return thai_consonant_ac
@@ -232,7 +232,7 @@ fn get_consonant_type(u : UInt) -> Int {
 }
 
 ///|
-fn get_mark_type(u : UInt) -> Int {
+fn get_mark_type(u : UInt32) -> Int32 {
   let v = mask_thai_lao(u)
   if v == 0x0E31U ||
     (v >= 0x0E34U && v <= 0x0E37U) ||
@@ -252,8 +252,8 @@ fn get_mark_type(u : UInt) -> Int {
 ///|
 fn merge_clusters_range(
   infos : Array[GlyphInfo],
-  start : Int,
-  end : Int,
+  start : Int32,
+  end : Int32,
 ) -> Unit {
   if start < 0 || start >= end || end > infos.length() {
     return ()
@@ -326,10 +326,10 @@ fn preprocess_thai_sara_am(buffer : Buffer) -> Unit {
 
 ///|
 fn thai_pua_shape(
-  u : UInt,
-  action : Int,
+  u : UInt32,
+  action : Int32,
   font : @font.Font,
-) -> Result[UInt, ShapeError] {
+) -> Result[UInt32, ShapeError] {
   let mappings = if action == thai_action_sd {
     thai_pua_sd
   } else if action == thai_action_sdl {

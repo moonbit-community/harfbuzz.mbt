@@ -15,28 +15,28 @@
 ///|
 /// Generated from refs/harfbuzz/src/hb-ot-shaper-indic-machine.hh.
 ///
-let indic_syllable_type_consonant_syllable : Int = 0
+let indic_syllable_type_consonant_syllable : Int32 = 0
 
 ///|
-let indic_syllable_type_vowel_syllable : Int = 1
+let indic_syllable_type_vowel_syllable : Int32 = 1
 
 ///|
-let indic_syllable_type_standalone_cluster : Int = 2
+let indic_syllable_type_standalone_cluster : Int32 = 2
 
 ///|
-let indic_syllable_type_symbol_cluster : Int = 3
+let indic_syllable_type_symbol_cluster : Int32 = 3
 
 ///|
-let indic_syllable_type_broken_cluster : Int = 4
+let indic_syllable_type_broken_cluster : Int32 = 4
 
 ///|
-let indic_syllable_type_non_cluster : Int = 5
+let indic_syllable_type_non_cluster : Int32 = 5
 
 ///|
-let indic_machine_start : Int = 31
+let indic_machine_start : Int32 = 31
 
 ///|
-let indic_machine_trans_keys : Array[Int] = [
+let indic_machine_trans_keys : Array[Int32] = [
   8, 57, 4, 57, 5, 57, 5, 57, 13, 13, 4, 57, 4, 57, 4, 57, 8, 57, 5, 57, 5, 57, 13,
   13, 4, 57, 4, 57, 4, 57, 4, 57, 8, 57, 5, 57, 5, 57, 13, 13, 4, 57, 4, 57, 4, 57,
   8, 57, 5, 57, 5, 57, 13, 13, 4, 57, 4, 57, 5, 57, 8, 57, 1, 57, 3, 57, 3, 57, 4,
@@ -52,7 +52,7 @@ let indic_machine_trans_keys : Array[Int] = [
 ]
 
 ///|
-let indic_machine_key_spans : Array[Int] = [
+let indic_machine_key_spans : Array[Int32] = [
   50, 54, 53, 53, 1, 54, 54, 54, 50, 53, 53, 1, 54, 54, 54, 54, 50, 53, 53, 1, 54,
   54, 54, 50, 53, 53, 1, 54, 54, 53, 50, 57, 55, 55, 54, 57, 53, 53, 1, 5, 57, 57,
   57, 55, 54, 53, 53, 54, 53, 55, 53, 55, 55, 55, 55, 54, 57, 55, 55, 54, 57, 53,
@@ -63,7 +63,7 @@ let indic_machine_key_spans : Array[Int] = [
 ]
 
 ///|
-let indic_machine_index_offsets : Array[Int] = [
+let indic_machine_index_offsets : Array[Int32] = [
   0, 51, 106, 160, 214, 216, 271, 326, 381, 432, 486, 540, 542, 597, 652, 707, 762,
   813, 867, 921, 923, 978, 1033, 1088, 1139, 1193, 1247, 1249, 1304, 1359, 1413,
   1464, 1522, 1578, 1634, 1689, 1747, 1801, 1855, 1857, 1863, 1921, 1979, 2037, 2093,
@@ -77,7 +77,7 @@ let indic_machine_index_offsets : Array[Int] = [
 ]
 
 ///|
-let indic_machine_indicies : Array[Int] = [
+let indic_machine_indicies : Array[Int32] = [
   1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 2, 3, 3,
   4, 5, 0, 0, 0, 0, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -437,7 +437,7 @@ let indic_machine_indicies : Array[Int] = [
 ]
 
 ///|
-let indic_machine_trans_targs : Array[Int] = [
+let indic_machine_trans_targs : Array[Int32] = [
   31, 37, 42, 2, 43, 46, 4, 50, 51, 31, 60, 9, 66, 69, 61, 11, 74, 75, 78, 31, 83,
   17, 89, 92, 93, 84, 31, 19, 98, 31, 107, 24, 113, 116, 117, 108, 26, 122, 127,
   31, 134, 31, 32, 53, 79, 81, 100, 101, 85, 102, 123, 124, 94, 132, 137, 92, 31,
@@ -449,7 +449,7 @@ let indic_machine_trans_targs : Array[Int] = [
 ]
 
 ///|
-let indic_machine_trans_actions : Array[Int] = [
+let indic_machine_trans_actions : Array[Int32] = [
   1, 0, 2, 0, 2, 0, 0, 2, 2, 3, 2, 0, 2, 0, 0, 0, 2, 2, 2, 4, 2, 0, 5, 5, 5, 0, 6,
   0, 2, 7, 2, 0, 2, 0, 2, 0, 0, 2, 0, 8, 0, 11, 2, 2, 5, 0, 12, 12, 0, 2, 5, 2, 5,
   2, 0, 13, 14, 2, 0, 0, 2, 0, 2, 2, 0, 2, 2, 0, 0, 2, 2, 2, 0, 0, 0, 2, 15, 2, 0,
@@ -459,7 +459,7 @@ let indic_machine_trans_actions : Array[Int] = [
 ]
 
 ///|
-let indic_machine_to_state_actions : Array[Int] = [
+let indic_machine_to_state_actions : Array[Int32] = [
   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
   0, 0, 0, 0, 9, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -469,7 +469,7 @@ let indic_machine_to_state_actions : Array[Int] = [
 ]
 
 ///|
-let indic_machine_from_state_actions : Array[Int] = [
+let indic_machine_from_state_actions : Array[Int32] = [
   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
   0, 0, 0, 0, 10, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -479,7 +479,7 @@ let indic_machine_from_state_actions : Array[Int] = [
 ]
 
 ///|
-let indic_machine_eof_trans : Array[Int] = [
+let indic_machine_eof_trans : Array[Int32] = [
   1, 1, 1, 1, 1, 1, 1, 10, 10, 10, 10, 10, 10, 10, 10, 20, 20, 27, 20, 27, 20, 20,
   30, 30, 30, 30, 30, 30, 30, 1, 40, 0, 57, 57, 57, 57, 57, 57, 57, 57, 57, 57, 57,
   57, 57, 57, 57, 57, 57, 57, 57, 57, 57, 77, 77, 77, 77, 77, 77, 77, 77, 77, 77,
@@ -491,9 +491,9 @@ let indic_machine_eof_trans : Array[Int] = [
 ]
 
 ///|
-fn find_syllables_indic(categories : Array[UInt]) -> Array[Int] {
+fn find_syllables_indic(categories : Array[UInt32]) -> Array[Int32] {
   let len = categories.length()
-  let syllables : Array[Int] = Array::make(len, 0)
+  let syllables : Array[Int32] = Array::make(len, 0)
   let mut cs = indic_machine_start
   let mut ts = 0
   let mut te = 0
@@ -502,7 +502,7 @@ fn find_syllables_indic(categories : Array[UInt]) -> Array[Int] {
   let pe = len
   let eof = len
   let mut syllable_serial = 1
-  fn found_syllable(start : Int, end : Int, syllable_type : Int) -> Unit {
+  fn found_syllable(start : Int32, end : Int32, syllable_type : Int32) -> Unit {
     if start < 0 || end > len || start >= end {
       return ()
     }

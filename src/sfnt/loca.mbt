@@ -15,22 +15,31 @@
 ///|
 /// Parsed loca table (glyph offsets).
 pub struct LocaTable {
-  offsets : Array[Int]
+  offsets : Array[Int32]
 } derive(Eq, Debug, ToJson)
+
+///|
+pub extend LocaTable with Eq::{not_equal, equal}
+
+///|
+pub extend LocaTable with @debug.Debug::{to_repr}
+
+///|
+pub extend LocaTable with ToJson::{to_json}
 
 ///|
 /// Parse loca table bytes.
 /// index_to_loc_format: 0 (short, u16*2) or 1 (long, u32).
 pub fn LocaTable::parse(
   data : BytesView,
-  num_glyphs : Int,
-  index_to_loc_format : Int,
+  num_glyphs : Int32,
+  index_to_loc_format : Int32,
 ) -> Result[LocaTable, SfntError] {
   if num_glyphs < 0 {
     return Err(InvalidFormat)
   }
   let count = num_glyphs + 1
-  let offsets : Array[Int] = []
+  let offsets : Array[Int32] = []
   let mut prev = 0
   if index_to_loc_format == 0 {
     let mut offset = 0

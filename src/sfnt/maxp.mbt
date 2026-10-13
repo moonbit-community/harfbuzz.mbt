@@ -15,8 +15,17 @@
 ///|
 /// Parsed maxp table (subset).
 pub struct MaxpTable {
-  num_glyphs : Int
+  num_glyphs : Int32
 } derive(Eq, Debug, ToJson)
+
+///|
+pub extend MaxpTable with Eq::{not_equal, equal}
+
+///|
+pub extend MaxpTable with @debug.Debug::{to_repr}
+
+///|
+pub extend MaxpTable with ToJson::{to_json}
 
 ///|
 /// Parse maxp table bytes.

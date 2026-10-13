@@ -15,9 +15,9 @@
 ///|
 fn coverage_index(
   data : BytesView,
-  offset : Int,
-  glyph : UInt,
-) -> Result[Int?, OtLayoutError] {
+  offset : Int32,
+  glyph : UInt32,
+) -> Result[Int32?, OtLayoutError] {
   if glyph > 0xffffU {
     return Ok(None)
   }
@@ -39,9 +39,9 @@ fn coverage_index(
 ///|
 fn coverage_format1(
   data : BytesView,
-  offset : Int,
-  glyph : Int,
-) -> Result[Int?, OtLayoutError] {
+  offset : Int32,
+  glyph : Int32,
+) -> Result[Int32?, OtLayoutError] {
   if offset < 0 || offset + 4 > data.length() {
     return Err(UnexpectedEof)
   }
@@ -68,9 +68,9 @@ fn coverage_format1(
 ///|
 fn coverage_format2(
   data : BytesView,
-  offset : Int,
-  glyph : Int,
-) -> Result[Int?, OtLayoutError] {
+  offset : Int32,
+  glyph : Int32,
+) -> Result[Int32?, OtLayoutError] {
   if offset < 0 || offset + 4 > data.length() {
     return Err(UnexpectedEof)
   }

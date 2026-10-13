@@ -15,19 +15,19 @@
 ///|
 /// Generated from refs/harfbuzz/src/hb-ot-shaper-khmer-machine.hh.
 ///
-let khmer_syllable_type_consonant : Int = 0
+let khmer_syllable_type_consonant : Int32 = 0
 
 ///|
-let khmer_syllable_type_broken : Int = 1
+let khmer_syllable_type_broken : Int32 = 1
 
 ///|
-let khmer_syllable_type_non_khmer : Int = 2
+let khmer_syllable_type_non_khmer : Int32 = 2
 
 ///|
-let khmer_machine_start : Int = 21
+let khmer_machine_start : Int32 = 21
 
 ///|
-let khmer_machine_trans_keys : Array[Int] = [
+let khmer_machine_trans_keys : Array[Int32] = [
   5, 26, 5, 26, 1, 15, 5, 26, 5, 26, 5, 26, 5, 26, 5, 26, 5, 26, 5, 26, 5, 26, 5,
   26, 5, 26, 1, 15, 5, 26, 5, 26, 5, 26, 5, 26, 5, 26, 5, 26, 5, 26, 1, 27, 4, 27,
   1, 15, 4, 27, 4, 27, 27, 27, 4, 27, 4, 27, 4, 27, 4, 27, 4, 27, 4, 27, 1, 15, 4,
@@ -35,21 +35,21 @@ let khmer_machine_trans_keys : Array[Int] = [
 ]
 
 ///|
-let khmer_machine_key_spans : Array[Int] = [
+let khmer_machine_key_spans : Array[Int32] = [
   22, 22, 15, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 15, 22, 22, 22, 22, 22, 22,
   22, 27, 24, 15, 24, 24, 1, 24, 24, 24, 24, 24, 24, 15, 24, 24, 1, 24, 24, 24, 24,
   24, 22,
 ]
 
 ///|
-let khmer_machine_index_offsets : Array[Int] = [
+let khmer_machine_index_offsets : Array[Int32] = [
   0, 23, 46, 62, 85, 108, 131, 154, 177, 200, 223, 246, 269, 292, 308, 331, 354,
   377, 400, 423, 446, 469, 497, 522, 538, 563, 588, 590, 615, 640, 665, 690, 715,
   740, 756, 781, 806, 808, 833, 858, 883, 908, 933,
 ]
 
 ///|
-let khmer_machine_indicies : Array[Int] = [
+let khmer_machine_indicies : Array[Int32] = [
   1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 3, 4, 0, 1, 1, 0, 0,
   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 0, 5, 5, 0, 0, 0, 0, 0, 0,
   0, 0, 0, 0, 0, 0, 5, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0,
@@ -98,40 +98,40 @@ let khmer_machine_indicies : Array[Int] = [
 ]
 
 ///|
-let khmer_machine_trans_targs : Array[Int] = [
+let khmer_machine_trans_targs : Array[Int32] = [
   21, 1, 27, 31, 25, 26, 4, 5, 28, 7, 29, 9, 30, 32, 21, 12, 37, 41, 35, 21, 36,
   15, 16, 38, 18, 39, 20, 40, 21, 22, 33, 42, 21, 23, 10, 24, 0, 2, 3, 6, 8, 21,
   34, 11, 13, 14, 17, 19, 21,
 ]
 
 ///|
-let khmer_machine_trans_actions : Array[Int] = [
+let khmer_machine_trans_actions : Array[Int32] = [
   1, 0, 2, 2, 2, 0, 0, 0, 2, 0, 2, 0, 2, 2, 3, 0, 2, 4, 4, 5, 0, 0, 0, 2, 0, 2, 0,
   2, 8, 2, 0, 9, 10, 0, 0, 2, 0, 0, 0, 0, 0, 11, 4, 0, 0, 0, 0, 0, 12,
 ]
 
 ///|
-let khmer_machine_to_state_actions : Array[Int] = [
+let khmer_machine_to_state_actions : Array[Int32] = [
   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6, 0, 0, 0, 0, 0,
   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 ]
 
 ///|
-let khmer_machine_from_state_actions : Array[Int] = [
+let khmer_machine_from_state_actions : Array[Int32] = [
   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 7, 0, 0, 0, 0, 0,
   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 ]
 
 ///|
-let khmer_machine_eof_trans : Array[Int] = [
+let khmer_machine_eof_trans : Array[Int32] = [
   1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 15, 20, 15, 15, 15, 15, 15, 15, 15, 15, 0, 33,
   33, 33, 33, 33, 33, 33, 33, 33, 33, 33, 42, 42, 42, 42, 42, 42, 42, 42, 42, 49,
 ]
 
 ///|
-fn find_syllables_khmer(categories : Array[UInt]) -> Array[Int] {
+fn find_syllables_khmer(categories : Array[UInt32]) -> Array[Int32] {
   let len = categories.length()
-  let syllables : Array[Int] = Array::make(len, 0)
+  let syllables : Array[Int32] = Array::make(len, 0)
   let mut cs = khmer_machine_start
   let mut ts = 0
   let mut te = 0
@@ -140,7 +140,7 @@ fn find_syllables_khmer(categories : Array[UInt]) -> Array[Int] {
   let pe = len
   let eof = len
   let mut syllable_serial = 1
-  fn found_syllable(start : Int, end : Int, syllable_type : Int) -> Unit {
+  fn found_syllable(start : Int32, end : Int32, syllable_type : Int32) -> Unit {
     if start < 0 || end > len || start >= end {
       return ()
     }

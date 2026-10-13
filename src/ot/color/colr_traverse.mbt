@@ -13,11 +13,11 @@
 // limitations under the License.
 
 ///|
-let max_paint_walk_depth : Int = 64
+let max_paint_walk_depth : Int32 = 64
 
 ///|
 /// Visitor callback for COLRv1 paint traversal.
-pub type PaintVisitor = (@paint.Paint, Int) -> Bool
+pub type PaintVisitor = (@paint.Paint, Int32) -> Bool
 
 ///|
 /// Walk a COLRv1 paint graph, visiting each node and returning count.
@@ -25,8 +25,8 @@ pub fn ColrTable::walk_paint(
   self : ColrTable,
   paint : @paint.Paint,
   visit : PaintVisitor,
-  max_depth? : Int = max_paint_walk_depth,
-) -> Result[Int, ColorError] {
+  max_depth~ : Int32 = max_paint_walk_depth,
+) -> Result[Int32, ColorError] {
   walk_paint_impl(self, paint, visit, 0, max_depth)
 }
 
@@ -35,9 +35,9 @@ fn walk_paint_impl(
   colr : ColrTable,
   paint : @paint.Paint,
   visit : PaintVisitor,
-  depth : Int,
-  max_depth : Int,
-) -> Result[Int, ColorError] {
+  depth : Int32,
+  max_depth : Int32,
+) -> Result[Int32, ColorError] {
   if depth > max_depth {
     return Err(InvalidFormat)
   }

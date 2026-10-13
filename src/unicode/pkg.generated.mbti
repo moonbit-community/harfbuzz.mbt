@@ -145,8 +145,11 @@ pub enum SpaceFallbackType {
   SpacePunctuation
   SpaceNarrow
 } derive(Eq, ToJson, @debug.Debug)
+pub fn SpaceFallbackType::equal(Self, Self) -> Bool
+pub fn SpaceFallbackType::not_equal(Self, Self) -> Bool
+pub fn SpaceFallbackType::to_json(Self) -> Json
+pub fn SpaceFallbackType::to_repr(Self) -> @debug.Repr
 
 // Type aliases
 
 // Traits
-

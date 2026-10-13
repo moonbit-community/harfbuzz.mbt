@@ -25,13 +25,22 @@ suberror FontError {
 } derive(Eq, Debug, ToJson)
 
 ///|
+pub extend FontError with Eq::{not_equal, equal}
+
+///|
+pub extend FontError with @debug.Debug::{to_repr}
+
+///|
+pub extend FontError with ToJson::{to_json}
+
+///|
 /// Font ties a face to scale metrics.
 pub struct Font {
   face : @face.Face
-  mut scale_x : Int
-  mut scale_y : Int
-  mut ppem_x : Int
-  mut ppem_y : Int
+  mut scale_x : Int32
+  mut scale_y : Int32
+  mut ppem_x : Int32
+  mut ppem_y : Int32
   mut head : @sfnt.HeadTable?
   mut maxp : @sfnt.MaxpTable?
   mut hhea : @sfnt.HheaTable?
@@ -80,8 +89,14 @@ pub struct Font {
   mut cff1 : @ot_cff.Cff1Table?
   mut cff2 : @ot_cff.Cff2Table?
   mut var_coords_design : Array[Double]?
-  mut var_coords_norm : Array[Int]?
+  mut var_coords_norm : Array[Int32]?
 } derive(Debug, ToJson)
+
+///|
+pub extend Font with @debug.Debug::{to_repr}
+
+///|
+pub extend Font with ToJson::{to_json}
 
 ///|
 let tag_head : @common.Tag = @common.Tag::from_chars('h', 'e', 'a', 'd')
@@ -299,27 +314,27 @@ pub fn Font::get_face(self : Font) -> @face.Face {
 
 ///|
 /// Set scale values (in 26.6 fixed-point like HarfBuzz).
-pub fn Font::set_scale(self : Font, x : Int, y : Int) -> Unit {
+pub fn Font::set_scale(self : Font, x : Int32, y : Int32) -> Unit {
   self.scale_x = x
   self.scale_y = y
 }
 
 ///|
 /// Get scale values.
-pub fn Font::get_scale(self : Font) -> (Int, Int) {
+pub fn Font::get_scale(self : Font) -> (Int32, Int32) {
   (self.scale_x, self.scale_y)
 }
 
 ///|
 /// Set ppem values.
-pub fn Font::set_ppem(self : Font, x : Int, y : Int) -> Unit {
+pub fn Font::set_ppem(self : Font, x : Int32, y : Int32) -> Unit {
   self.ppem_x = x
   self.ppem_y = y
 }
 
 ///|
 /// Get ppem values.
-pub fn Font::get_ppem(self : Font) -> (Int, Int) {
+pub fn Font::get_ppem(self : Font) -> (Int32, Int32) {
   (self.ppem_x, self.ppem_y)
 }
 
@@ -361,7 +376,7 @@ fn Font::ensure_head(self : Font) -> Result[@sfnt.HeadTable, FontError] {
 }
 
 ///|
-fn scale_value(value : Int, scale : Int, upem : Int) -> Int {
+fn scale_value(value : Int32, scale : Int32, upem : Int32) -> Int32 {
   if upem == 0 {
     return value
   }
@@ -1353,7 +1368,7 @@ pub fn Font::cff2(self : Font) -> Result[@ot_cff.Cff2Table?, FontError] {
 ///|
 pub fn Font::varc_components(
   self : Font,
-  glyph : UInt,
+  glyph : UInt32,
 ) -> Result[Array[@ot_var.VarcComponent]?, FontError] {
   let varc = match self.varc() {
     Err(err) => return Err(err)
@@ -1362,7 +1377,7 @@ pub fn Font::varc_components(
   match varc {
     None => Ok(None)
     Some(varc) => {
-      let coords : Array[Int] = match self.var_coords_norm {
+      let coords : Array[Int32] = match self.var_coords_norm {
         None => []
         Some(value) => value
       }
@@ -1431,7 +1446,7 @@ pub fn Font::cvt(self : Font) -> Result[@sfnt.CvtTable?, FontError] {
 }
 
 ///|
-pub fn Font::cvt_values(self : Font) -> Result[Array[Int]?, FontError] {
+pub fn Font::cvt_values(self : Font) -> Result[Array[Int32]?, FontError] {
   let cvt = match self.cvt() {
     Err(err) => return Err(err)
     Ok(None) => return Ok(None)
@@ -1457,8 +1472,8 @@ pub fn Font::cvt_values(self : Font) -> Result[Array[Int]?, FontError] {
 /// Map a codepoint to a glyph id.
 pub fn Font::glyph_for_codepoint(
   self : Font,
-  codepoint : UInt,
-) -> Result[UInt?, FontError] {
+  codepoint : UInt32,
+) -> Result[UInt32?, FontError] {
   match self.ensure_cmap() {
     Err(err) => Err(err)
     Ok(cmap) =>
@@ -1473,9 +1488,9 @@ pub fn Font::glyph_for_codepoint(
 /// Map a codepoint + variation selector to a glyph id, if supported.
 pub fn Font::variation_glyph_for(
   self : Font,
-  codepoint : UInt,
-  selector : UInt,
-) -> Result[(Bool, UInt?), FontError] {
+  codepoint : UInt32,
+  selector : UInt32,
+) -> Result[(Bool, UInt32?), FontError] {
   match self.ensure_cmap() {
     Err(err) => Err(err)
     Ok(cmap) =>
@@ -1489,7 +1504,7 @@ pub fn Font::variation_glyph_for(
 ///|
 pub fn Font::glyph_name(
   self : Font,
-  glyph : UInt,
+  glyph : UInt32,
 ) -> Result[String?, FontError] {
   let maxp = match self.ensure_maxp() {
     Err(err) => return Err(err)
@@ -1529,7 +1544,7 @@ pub fn Font::glyph_name(
 pub fn Font::glyph_from_name(
   self : Font,
   name : String,
-) -> Result[UInt?, FontError] {
+) -> Result[UInt32?, FontError] {
   if name == "" {
     return Ok(None)
   }
@@ -1619,7 +1634,7 @@ pub fn Font::set_variations(
 }
 
 ///|
-pub fn Font::variation_coords(self : Font) -> Array[Int] {
+pub fn Font::variation_coords(self : Font) -> Array[Int32] {
   match self.var_coords_norm {
     None => []
     Some(coords) => coords.copy()
@@ -1630,8 +1645,8 @@ pub fn Font::variation_coords(self : Font) -> Array[Int] {
 /// Return glyph horizontal advance.
 pub fn Font::glyph_h_advance(
   self : Font,
-  glyph : UInt,
-) -> Result[Int, FontError] {
+  glyph : UInt32,
+) -> Result[Int32, FontError] {
   let head = match self.ensure_head() {
     Err(err) => return Err(err)
     Ok(value) => value
@@ -1678,9 +1693,9 @@ pub fn Font::glyph_h_advance(
 /// Return glyph bounds from glyf header (font units).
 pub fn Font::glyph_bounds(
   self : Font,
-  glyph : UInt,
+  glyph : UInt32,
 ) -> Result[@sfnt.GlyphBounds?, FontError] {
-  let coords : Array[Int] = match self.var_coords_norm {
+  let coords : Array[Int32] = match self.var_coords_norm {
     None => []
     Some(value) => value
   }
@@ -1690,9 +1705,9 @@ pub fn Font::glyph_bounds(
 ///|
 fn Font::glyph_bounds_with_coords(
   self : Font,
-  glyph : UInt,
-  coords : Array[Int],
-  depth : Int,
+  glyph : UInt32,
+  coords : Array[Int32],
+  depth : Int32,
 ) -> Result[@sfnt.GlyphBounds?, FontError] {
   if depth <= 0 {
     return self.glyph_bounds_raw(glyph, coords)
@@ -1781,8 +1796,8 @@ fn Font::glyph_bounds_with_coords(
 ///|
 fn Font::glyph_bounds_raw(
   self : Font,
-  glyph : UInt,
-  coords : Array[Int],
+  glyph : UInt32,
+  coords : Array[Int32],
 ) -> Result[@sfnt.GlyphBounds?, FontError] {
   let maxp = match self.ensure_maxp() {
     Err(err) => return Err(err)
@@ -1857,7 +1872,7 @@ fn Font::glyph_bounds_raw(
 ///|
 fn Font::glyph_bounds_cff1(
   self : Font,
-  glyph : Int,
+  glyph : Int32,
 ) -> Result[@sfnt.GlyphBounds?, FontError] {
   let cff1 = match self.cff1() {
     Err(err) => return Err(err)
@@ -1883,8 +1898,8 @@ fn Font::glyph_bounds_cff1(
 ///|
 fn Font::glyph_bounds_cff2(
   self : Font,
-  glyph : Int,
-  coords : Array[Int],
+  glyph : Int32,
+  coords : Array[Int32],
 ) -> Result[@sfnt.GlyphBounds?, FontError] {
   let cff2 = match self.cff2() {
     Err(err) => return Err(err)
@@ -1911,8 +1926,8 @@ fn Font::glyph_bounds_cff2(
 /// Return glyph vertical advance.
 pub fn Font::glyph_v_advance(
   self : Font,
-  glyph : UInt,
-) -> Result[Int, FontError] {
+  glyph : UInt32,
+) -> Result[Int32, FontError] {
   let head = match self.ensure_head() {
     Err(err) => return Err(err)
     Ok(value) => value

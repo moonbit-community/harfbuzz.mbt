@@ -16,15 +16,21 @@
 /// Face holds font data and basic metadata.
 pub struct Face {
   blob : @blob.Blob
-  mut index : Int
-  mut upem : Int
-  mut glyph_count : Int
+  mut index : Int32
+  mut upem : Int32
+  mut glyph_count : Int32
   mut tables : Map[@common.Tag, @blob.Blob]
 } derive(Debug, ToJson)
 
 ///|
+pub extend Face with @debug.Debug::{to_repr}
+
+///|
+pub extend Face with ToJson::{to_json}
+
+///|
 /// Return the number of faces in a blob.
-pub fn face_count(blob : @blob.Blob) -> Int {
+pub fn face_count(blob : @blob.Blob) -> Int32 {
   let data = blob.as_view()
   if data.length() < 4 {
     return 0
@@ -60,13 +66,13 @@ pub fn face_count(blob : @blob.Blob) -> Int {
 
 ///|
 /// Create a face from a blob.
-pub fn Face::new(blob : @blob.Blob, index? : Int = 0) -> Face {
+pub fn Face::new(blob : @blob.Blob, index~ : Int32 = 0) -> Face {
   { blob, index, upem: 0, glyph_count: 0, tables: Map([]), }
 }
 
 ///|
 /// Create a face from raw bytes.
-pub fn Face::from_bytes(bytes : Bytes, index? : Int = 0) -> Face {
+pub fn Face::from_bytes(bytes : Bytes, index~ : Int32 = 0) -> Face {
   Face::new(@blob.Blob::from_bytes(bytes), index~)
 }
 
@@ -78,7 +84,7 @@ pub fn Face::reference_blob(self : Face) -> @blob.Blob {
 
 ///|
 /// Update the face index.
-pub fn Face::set_index(self : Face, index : Int) -> Unit {
+pub fn Face::set_index(self : Face, index : Int32) -> Unit {
   if self.index != index {
     self.index = index
     self.tables = Map([])
@@ -89,31 +95,31 @@ pub fn Face::set_index(self : Face, index : Int) -> Unit {
 
 ///|
 /// Read the face index.
-pub fn Face::get_index(self : Face) -> Int {
+pub fn Face::get_index(self : Face) -> Int32 {
   self.index
 }
 
 ///|
 /// Update units-per-em.
-pub fn Face::set_upem(self : Face, upem : Int) -> Unit {
+pub fn Face::set_upem(self : Face, upem : Int32) -> Unit {
   self.upem = upem
 }
 
 ///|
 /// Read units-per-em.
-pub fn Face::get_upem(self : Face) -> Int {
+pub fn Face::get_upem(self : Face) -> Int32 {
   self.upem
 }
 
 ///|
 /// Update glyph count.
-pub fn Face::set_glyph_count(self : Face, count : Int) -> Unit {
+pub fn Face::set_glyph_count(self : Face, count : Int32) -> Unit {
   self.glyph_count = count
 }
 
 ///|
 /// Read glyph count.
-pub fn Face::get_glyph_count(self : Face) -> Int {
+pub fn Face::get_glyph_count(self : Face) -> Int32 {
   self.glyph_count
 }
 

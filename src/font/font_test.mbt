@@ -13,19 +13,19 @@
 // limitations under the License.
 
 ///|
-fn push_u16(bytes : Array[Byte], value : Int) -> Unit {
+fn push_u16(bytes : Array[Byte], value : Int32) -> Unit {
   bytes.push(((value >> 8) & 0xff).to_byte())
   bytes.push((value & 0xff).to_byte())
 }
 
 ///|
-fn push_i16(bytes : Array[Byte], value : Int) -> Unit {
+fn push_i16(bytes : Array[Byte], value : Int32) -> Unit {
   let adjusted = if value < 0 { value + 0x10000 } else { value }
   push_u16(bytes, adjusted)
 }
 
 ///|
-fn push_u32(bytes : Array[Byte], value : Int) -> Unit {
+fn push_u32(bytes : Array[Byte], value : Int32) -> Unit {
   bytes.push(((value >> 24) & 0xff).to_byte())
   bytes.push(((value >> 16) & 0xff).to_byte())
   bytes.push(((value >> 8) & 0xff).to_byte())
@@ -41,7 +41,7 @@ fn build_sfnt(tables : Array[(@common.Tag, Bytes)]) -> Bytes {
   push_u16(bytes, 0)
   push_u16(bytes, 0)
   let mut offset = 12 + tables.length() * 16
-  let records : Array[(@common.Tag, Int, Int)] = []
+  let records : Array[(@common.Tag, Int32, Int32)] = []
   for entry in tables {
     let (tag, table) = entry
     records.push((tag, offset, table.length()))
@@ -68,7 +68,7 @@ fn build_sfnt(tables : Array[(@common.Tag, Bytes)]) -> Bytes {
 }
 
 ///|
-fn build_head(upem : Int, loc_format : Int) -> Bytes {
+fn build_head(upem : Int32, loc_format : Int32) -> Bytes {
   let bytes : Array[Byte] = Array::make(54, b'\x00')
   bytes[18] = ((upem >> 8) & 0xff).to_byte()
   bytes[19] = (upem & 0xff).to_byte()
@@ -78,7 +78,7 @@ fn build_head(upem : Int, loc_format : Int) -> Bytes {
 }
 
 ///|
-fn build_maxp(num_glyphs : Int) -> Bytes {
+fn build_maxp(num_glyphs : Int32) -> Bytes {
   let bytes : Array[Byte] = Array::make(6, b'\x00')
   bytes[4] = ((num_glyphs >> 8) & 0xff).to_byte()
   bytes[5] = (num_glyphs & 0xff).to_byte()
@@ -86,7 +86,7 @@ fn build_maxp(num_glyphs : Int) -> Bytes {
 }
 
 ///|
-fn build_hhea(number_of_hmetrics : Int) -> Bytes {
+fn build_hhea(number_of_hmetrics : Int32) -> Bytes {
   let bytes : Array[Byte] = Array::make(36, b'\x00')
   bytes[34] = ((number_of_hmetrics >> 8) & 0xff).to_byte()
   bytes[35] = (number_of_hmetrics & 0xff).to_byte()
@@ -94,7 +94,7 @@ fn build_hhea(number_of_hmetrics : Int) -> Bytes {
 }
 
 ///|
-fn build_vhea(number_of_vmetrics : Int) -> Bytes {
+fn build_vhea(number_of_vmetrics : Int32) -> Bytes {
   let bytes : Array[Byte] = Array::make(36, b'\x00')
   bytes[34] = ((number_of_vmetrics >> 8) & 0xff).to_byte()
   bytes[35] = (number_of_vmetrics & 0xff).to_byte()
@@ -172,7 +172,7 @@ fn build_vmtx_three() -> Bytes {
 }
 
 ///|
-fn build_loca_short(offsets : Array[Int]) -> Bytes {
+fn build_loca_short(offsets : Array[Int32]) -> Bytes {
   let bytes : Array[Byte] = []
   for offset in offsets {
     push_u16(bytes, offset / 2)
@@ -361,7 +361,7 @@ fn build_gvar_table_composite(tuple_data : Bytes) -> Bytes {
 ///|
 fn build_font_bytes_gvar_composite() -> Bytes {
   let glyf = build_glyf_table_composite()
-  let offsets : Array[Int] = [
+  let offsets : Array[Int32] = [
     0,
     0,
     glyf.length() - build_glyf_composite_one_component().length(),
@@ -419,7 +419,11 @@ fn build_cmap_table(subtable : Bytes) -> Bytes {
 }
 
 ///|
-fn build_cmap_format12(start : UInt, end : UInt, start_gid : UInt) -> Bytes {
+fn build_cmap_format12(
+  start : UInt32,
+  end : UInt32,
+  start_gid : UInt32,
+) -> Bytes {
   let bytes : Array[Byte] = []
   push_u16(bytes, 12)
   push_u16(bytes, 0)
@@ -433,7 +437,7 @@ fn build_cmap_format12(start : UInt, end : UInt, start_gid : UInt) -> Bytes {
 }
 
 ///|
-fn push_u32var(bytes : Array[Byte], value : UInt) -> Unit {
+fn push_u32var(bytes : Array[Byte], value : UInt32) -> Unit {
   if value < 0x80U {
     bytes.push(value.reinterpret_as_int().to_byte())
     return
@@ -803,7 +807,7 @@ fn build_font_bytes_mvar() -> Bytes {
 
 ///|
 test "font basics" {
-  let font = Font::from_bytes([0x00, 0x01])
+  let font = @font.Font::from_bytes([0x00, 0x01])
   let (sx, sy) = font.get_scale()
   @debug.debug_inspect((sx, sy), content="(0, 0)")
   font.set_scale(1000, 2000)
@@ -814,14 +818,14 @@ test "font basics" {
 
 ///|
 test "font face access" {
-  let font = Font::from_bytes([0x00])
+  let font = @font.Font::from_bytes([0x00])
   let face = font.get_face()
   @debug.debug_inspect(face.get_index(), content="0")
 }
 
 ///|
 test "font variation coords" {
-  let font = Font::from_bytes(build_font_bytes_variations())
+  let font = @font.Font::from_bytes(build_font_bytes_variations())
   let variations : Array[@ot_var.AxisCoord] = [
     @ot_var.AxisCoord::new(@common.Tag::from_chars('w', 'g', 'h', 't'), 0.5),
   ]
@@ -834,7 +838,7 @@ test "font variation coords" {
 
 ///|
 test "font cvar cvt values" {
-  let font = Font::from_bytes(build_font_bytes_cvar())
+  let font = @font.Font::from_bytes(build_font_bytes_cvar())
   let base = match font.cvt_values() {
     Err(err) => fail("cvt error: \{@debug.to_string(err)}")
     Ok(value) => value
@@ -857,7 +861,7 @@ test "font cvar cvt values" {
 ///|
 test "font cmap mapping and advances" {
   let bytes = build_font_bytes()
-  let font = Font::from_bytes(bytes)
+  let font = @font.Font::from_bytes(bytes)
   @debug.debug_inspect(font.get_face().get_glyph_count(), content="0")
   let gid = match font.glyph_for_codepoint(0x41U) {
     Err(err) => fail("lookup error: \{@debug.to_string(err)}")
@@ -876,7 +880,7 @@ test "font cmap mapping and advances" {
 ///|
 test "font vmtx advances" {
   let bytes = build_font_bytes()
-  let font = Font::from_bytes(bytes)
+  let font = @font.Font::from_bytes(bytes)
   let advance = match font.glyph_v_advance(1U) {
     Err(err) => fail("advance error: \{@debug.to_string(err)}")
     Ok(value) => value
@@ -887,7 +891,7 @@ test "font vmtx advances" {
 ///|
 test "font scale applies to advances" {
   let bytes = build_font_bytes()
-  let font = Font::from_bytes(bytes)
+  let font = @font.Font::from_bytes(bytes)
   font.set_scale(2000, 2000)
   let advance = match font.glyph_h_advance(1U) {
     Err(err) => fail("advance error: \{@debug.to_string(err)}")
@@ -899,8 +903,8 @@ test "font scale applies to advances" {
 ///|
 test "font scale negative flips advances" {
   let bytes = build_font_bytes()
-  let font_pos = Font::from_bytes(bytes)
-  let font_neg = Font::from_bytes(bytes)
+  let font_pos = @font.Font::from_bytes(bytes)
+  let font_neg = @font.Font::from_bytes(bytes)
   font_pos.set_scale(2000, 2000)
   font_neg.set_scale(-2000, -2000)
   let advance_pos = match font_pos.glyph_h_advance(1U) {
@@ -917,7 +921,7 @@ test "font scale negative flips advances" {
 ///|
 test "font ppem properties" {
   let bytes = build_font_bytes()
-  let font = Font::from_bytes(bytes)
+  let font = @font.Font::from_bytes(bytes)
   @debug.debug_inspect(font.get_ppem(), content="(0, 0)")
   font.set_ppem(12, 34)
   @debug.debug_inspect(font.get_ppem(), content="(12, 34)")
@@ -926,14 +930,14 @@ test "font ppem properties" {
 ///|
 test "font scale defaults to upem" {
   let bytes = build_font_bytes()
-  let font = Font::from_bytes(bytes)
+  let font = @font.Font::from_bytes(bytes)
   let _ = font.glyph_h_advance(1U)
   @debug.debug_inspect(font.get_scale(), content="(1000, 1000)")
 }
 
 ///|
 test "font hmtx uses last long metric advance" {
-  let font = Font::from_bytes(build_font_bytes_hmtx_long_metrics())
+  let font = @font.Font::from_bytes(build_font_bytes_hmtx_long_metrics())
   let advance0 = match font.glyph_h_advance(0U) {
     Err(err) => fail("advance error: \{@debug.to_string(err)}")
     Ok(value) => value
@@ -964,7 +968,7 @@ test "font hmtx uses last long metric advance" {
 
 ///|
 test "font hvar advance delta" {
-  let font = Font::from_bytes(build_font_bytes_hvar())
+  let font = @font.Font::from_bytes(build_font_bytes_hvar())
   let variations : Array[@ot_var.AxisCoord] = [
     @ot_var.AxisCoord::new(@common.Tag::from_chars('w', 'g', 'h', 't'), 1.0),
   ]
@@ -981,7 +985,7 @@ test "font hvar advance delta" {
 
 ///|
 test "font contour points" {
-  let font = Font::from_bytes(build_font_bytes_gvar_iup())
+  let font = @font.Font::from_bytes(build_font_bytes_gvar_iup())
   let point0 = match font.glyph_contour_point_for_origin(1U, 0) {
     Err(err) => fail("contour point error: \{@debug.to_string(err)}")
     Ok(value) => value
@@ -1001,7 +1005,7 @@ test "font contour points" {
 
 ///|
 test "font gvar outline deltas and phantom points" {
-  let font = Font::from_bytes(build_font_bytes_gvar_iup())
+  let font = @font.Font::from_bytes(build_font_bytes_gvar_iup())
   let variations : Array[@ot_var.AxisCoord] = [
     @ot_var.AxisCoord::new(@common.Tag::from_chars('w', 'g', 'h', 't'), 1.0),
   ]
@@ -1027,7 +1031,7 @@ test "font gvar outline deltas and phantom points" {
 
 ///|
 test "font gvar composite deltas" {
-  let font = Font::from_bytes(build_font_bytes_gvar_composite())
+  let font = @font.Font::from_bytes(build_font_bytes_gvar_composite())
   let variations : Array[@ot_var.AxisCoord] = [
     @ot_var.AxisCoord::new(@common.Tag::from_chars('w', 'g', 'h', 't'), 1.0),
   ]
@@ -1073,7 +1077,7 @@ test "font gvar composite deltas" {
 
 ///|
 test "font vvar advance delta" {
-  let font = Font::from_bytes(build_font_bytes_vvar())
+  let font = @font.Font::from_bytes(build_font_bytes_vvar())
   let variations : Array[@ot_var.AxisCoord] = [
     @ot_var.AxisCoord::new(@common.Tag::from_chars('w', 'g', 'h', 't'), 1.0),
   ]
@@ -1090,7 +1094,7 @@ test "font vvar advance delta" {
 
 ///|
 test "font mvar delta" {
-  let font = Font::from_bytes(build_font_bytes_mvar())
+  let font = @font.Font::from_bytes(build_font_bytes_mvar())
   let variations : Array[@ot_var.AxisCoord] = [
     @ot_var.AxisCoord::new(@common.Tag::from_chars('w', 'g', 'h', 't'), 1.0),
   ]
@@ -1109,7 +1113,7 @@ test "font mvar delta" {
 ///|
 test "font glyph bounds" {
   let bytes = build_font_bytes()
-  let font = Font::from_bytes(bytes)
+  let font = @font.Font::from_bytes(bytes)
   let bounds0 = match font.glyph_bounds(0U) {
     Err(err) => fail("bounds error: \{@debug.to_string(err)}")
     Ok(value) => value
@@ -1130,7 +1134,7 @@ test "font glyph bounds" {
 ///|
 test "font glyph bounds varc composite" {
   let bytes = build_font_bytes_varc_bounds()
-  let font = Font::from_bytes(bytes)
+  let font = @font.Font::from_bytes(bytes)
   let bounds = match font.glyph_bounds(2U) {
     Err(err) => fail("bounds error: \{@debug.to_string(err)}")
     Ok(None) => fail("missing bounds")
@@ -1145,7 +1149,7 @@ test "font glyph bounds varc composite" {
 ///|
 test "font draw glyph simple square" {
   let bytes = build_font_bytes_simple_square()
-  let font = Font::from_bytes(bytes)
+  let font = @font.Font::from_bytes(bytes)
   let ops : Array[String] = []
   let funcs : @draw.DrawFuncs[Array[String]] = @draw.DrawFuncs::new()
   funcs.set_move_to(

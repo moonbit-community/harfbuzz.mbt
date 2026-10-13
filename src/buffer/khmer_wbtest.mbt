@@ -20,16 +20,16 @@ test "khmer reorder coeng ro and vpre" {
   buffer.add_codepoint(12U)
   buffer.add_codepoint(13U)
   buffer.add_codepoint(14U)
-  let categories : Array[Int] = [
+  let categories : Array[Int32] = [
     1, khmer_cat_h, khmer_cat_ra, khmer_cat_vpre, 1,
   ]
-  let syllables : Array[Int] = []
+  let syllables : Array[Int32] = []
   let syllable = (1 << 4) | khmer_syllable_type_consonant
   for _ in 0..<categories.length() {
     syllables.push(syllable)
   }
   reorder_khmer_syllables(buffer, categories, syllables)
-  let result : Array[UInt] = []
+  let result : Array[UInt32] = []
   for info in buffer.infos() {
     result.push(info.codepoint)
   }

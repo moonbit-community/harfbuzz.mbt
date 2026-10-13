@@ -36,8 +36,8 @@ fn has_vowel_constraints(script : @common.Script) -> Bool {
 fn vowel_constraint_match(
   script : @common.Script,
   infos : Array[GlyphInfo],
-  i : Int,
-) -> Int {
+  i : Int32,
+) -> Int32 {
   let len = infos.length()
   if i + 1 >= len {
     return 0

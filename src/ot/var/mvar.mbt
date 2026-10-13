@@ -15,14 +15,29 @@
 ///|
 pub struct MvarRecord {
   tag : @common.Tag
-  var_idx : UInt
+  var_idx : UInt32
 } derive(Eq, Debug, ToJson)
+
+///|
+pub extend MvarRecord with Eq::{not_equal, equal}
+
+///|
+pub extend MvarRecord with @debug.Debug::{to_repr}
+
+///|
+pub extend MvarRecord with ToJson::{to_json}
 
 ///|
 pub struct MvarTable {
   records : Array[MvarRecord]
   var_store : ItemVariationStore
 } derive(Debug, ToJson)
+
+///|
+pub extend MvarTable with @debug.Debug::{to_repr}
+
+///|
+pub extend MvarTable with ToJson::{to_json}
 
 ///|
 pub fn MvarTable::parse(data : BytesView) -> Result[MvarTable, VarError] {
@@ -79,7 +94,7 @@ pub fn MvarTable::parse(data : BytesView) -> Result[MvarTable, VarError] {
 pub fn MvarTable::get_var(
   self : MvarTable,
   tag : @common.Tag,
-  coords : Array[Int],
+  coords : Array[Int32],
 ) -> Double {
   for record in self.records {
     if record.tag == tag {

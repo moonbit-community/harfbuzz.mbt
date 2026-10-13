@@ -15,15 +15,24 @@
 ///|
 /// Kern pair record (format 0).
 pub struct KernPair {
-  left : UInt
-  right : UInt
-  value : Int
+  left : UInt32
+  right : UInt32
+  value : Int32
 } derive(Eq, Debug, ToJson)
+
+///|
+pub extend KernPair with Eq::{not_equal, equal}
+
+///|
+pub extend KernPair with @debug.Debug::{to_repr}
+
+///|
+pub extend KernPair with ToJson::{to_json}
 
 ///|
 /// Parsed kern subtable (format 0/2).
 pub struct KernSubtable {
-  format : Int
+  format : Int32
   horizontal : Bool
   minimum : Bool
   cross_stream : Bool
@@ -34,35 +43,59 @@ pub struct KernSubtable {
 } derive(Debug, ToJson)
 
 ///|
+pub extend KernSubtable with @debug.Debug::{to_repr}
+
+///|
+pub extend KernSubtable with ToJson::{to_json}
+
+///|
 /// Kern class table (format 2).
 pub struct KernClassTable {
-  first_glyph : Int
-  classes : Array[Int]
-  class_count : Int
+  first_glyph : Int32
+  classes : Array[Int32]
+  class_count : Int32
 } derive(Debug, ToJson)
+
+///|
+pub extend KernClassTable with @debug.Debug::{to_repr}
+
+///|
+pub extend KernClassTable with ToJson::{to_json}
 
 ///|
 /// Kern subtable format 2 (class-based).
 pub struct KernSubtableFormat2 {
-  row_width : Int
+  row_width : Int32
   left : KernClassTable
   right : KernClassTable
-  right_class_count : Int
-  values : Array[Int]
+  right_class_count : Int32
+  values : Array[Int32]
 } derive(Debug, ToJson)
+
+///|
+pub extend KernSubtableFormat2 with @debug.Debug::{to_repr}
+
+///|
+pub extend KernSubtableFormat2 with ToJson::{to_json}
 
 ///|
 /// Kern subtable format 3 (class-based, byte indices).
 pub struct KernSubtableFormat3 {
-  glyph_count : Int
-  kern_value_count : Int
-  left_class_count : Int
-  right_class_count : Int
-  values : Array[Int]
-  left_class : Array[Int]
-  right_class : Array[Int]
-  kern_index : Array[Int]
+  glyph_count : Int32
+  kern_value_count : Int32
+  left_class_count : Int32
+  right_class_count : Int32
+  values : Array[Int32]
+  left_class : Array[Int32]
+  right_class : Array[Int32]
+  kern_index : Array[Int32]
 } derive(Debug, ToJson)
+
+///|
+pub extend KernSubtableFormat3 with @debug.Debug::{to_repr}
+
+///|
+pub extend KernSubtableFormat3 with ToJson::{to_json}
 
 ///|
 /// Parsed kern table (subset).
@@ -71,11 +104,17 @@ pub struct KernTable {
 } derive(Debug, ToJson)
 
 ///|
+pub extend KernTable with @debug.Debug::{to_repr}
+
+///|
+pub extend KernTable with ToJson::{to_json}
+
+///|
 fn parse_kern_subtable_format0(
   data : BytesView,
-  offset : Int,
-  length : Int,
-  format : Int,
+  offset : Int32,
+  length : Int32,
+  format : Int32,
   horizontal : Bool,
   minimum : Bool,
   cross_stream : Bool,
@@ -122,7 +161,7 @@ fn parse_kern_subtable_format0(
 }
 
 ///|
-fn read_u8_int(data : BytesView, offset : Int) -> Result[Int, SfntError] {
+fn read_u8_int(data : BytesView, offset : Int32) -> Result[Int32, SfntError] {
   if offset < 0 || offset + 1 > data.length() {
     return Err(UnexpectedEof)
   }
@@ -132,8 +171,8 @@ fn read_u8_int(data : BytesView, offset : Int) -> Result[Int, SfntError] {
 ///|
 fn parse_kern_class_table(
   data : BytesView,
-  offset : Int,
-  limit : Int,
+  offset : Int32,
+  limit : Int32,
 ) -> Result[KernClassTable, SfntError] {
   if offset < 0 || offset + 4 > limit {
     return Err(UnexpectedEof)
@@ -147,7 +186,7 @@ fn parse_kern_class_table(
       if first_glyph < 0 || count < 0 {
         return Err(InvalidFormat)
       }
-      let classes : Array[Int] = []
+      let classes : Array[Int32] = []
       let base = offset + 4
       if base + count * 2 > limit {
         return Err(UnexpectedEof)
@@ -173,9 +212,9 @@ fn parse_kern_class_table(
 ///|
 fn parse_kern_subtable_format2(
   data : BytesView,
-  offset : Int,
-  length : Int,
-  format : Int,
+  offset : Int32,
+  length : Int32,
+  format : Int32,
   horizontal : Bool,
   minimum : Bool,
   cross_stream : Bool,
@@ -221,7 +260,7 @@ fn parse_kern_subtable_format2(
         return Err(UnexpectedEof)
       }
       let total_values = left.class_count * right_class_count
-      let values : Array[Int] = []
+      let values : Array[Int32] = []
       let mut cursor = array_base
       for _ in 0..<total_values {
         let value = read_i16(data, cursor)
@@ -248,9 +287,9 @@ fn parse_kern_subtable_format2(
 ///|
 fn parse_kern_subtable_format3(
   data : BytesView,
-  offset : Int,
-  length : Int,
-  format : Int,
+  offset : Int32,
+  length : Int32,
+  format : Int32,
   horizontal : Bool,
   minimum : Bool,
   cross_stream : Bool,
@@ -290,7 +329,7 @@ fn parse_kern_subtable_format3(
       if values_base < 0 || values_base + values_bytes > limit {
         return Err(UnexpectedEof)
       }
-      let values : Array[Int] = []
+      let values : Array[Int32] = []
       let mut cursor = values_base
       for _ in 0..<kern_value_count {
         let value = read_i16(data, cursor)
@@ -305,7 +344,7 @@ fn parse_kern_subtable_format3(
       if left_base < 0 || left_base + left_len > limit {
         return Err(UnexpectedEof)
       }
-      let left_class : Array[Int] = []
+      let left_class : Array[Int32] = []
       for i in 0..<glyph_count {
         let class_value = read_u8_int(data, left_base + i)
         match class_value {
@@ -318,7 +357,7 @@ fn parse_kern_subtable_format3(
       if right_base < 0 || right_base + right_len > limit {
         return Err(UnexpectedEof)
       }
-      let right_class : Array[Int] = []
+      let right_class : Array[Int32] = []
       for i in 0..<glyph_count {
         let class_value = read_u8_int(data, right_base + i)
         match class_value {
@@ -331,7 +370,7 @@ fn parse_kern_subtable_format3(
       if index_base < 0 || index_base + index_len > limit {
         return Err(UnexpectedEof)
       }
-      let kern_index : Array[Int] = []
+      let kern_index : Array[Int32] = []
       for i in 0..<index_len {
         let idx = read_u8_int(data, index_base + i)
         match idx {
@@ -444,9 +483,9 @@ pub fn KernTable::parse(data : BytesView) -> Result[KernTable, SfntError] {
 /// Lookup kern value for a glyph pair (horizontal format 0/2/3 only).
 pub fn KernTable::kern_value(
   self : KernTable,
-  left : UInt,
-  right : UInt,
-) -> Int? {
+  left : UInt32,
+  right : UInt32,
+) -> Int32? {
   let mut found = false
   let mut value = 0
   for subtable in self.subtables {
@@ -454,7 +493,7 @@ pub fn KernTable::kern_value(
       continue
     }
     if subtable.format == 0 {
-      let mut pair_value : Int? = None
+      let mut pair_value : Int32? = None
       for pair in subtable.pairs {
         if pair.left == left && pair.right == right {
           pair_value = Some(pair.value)
@@ -536,7 +575,7 @@ pub fn KernTable::kern_value(
 }
 
 ///|
-fn kern_class_for(table : KernClassTable, glyph : UInt) -> Int {
+fn kern_class_for(table : KernClassTable, glyph : UInt32) -> Int32 {
   if glyph > 0xffffU {
     return 0
   }
@@ -551,10 +590,10 @@ fn kern_class_for(table : KernClassTable, glyph : UInt) -> Int {
 
 ///|
 fn kern_class_for_u8(
-  classes : Array[Int],
-  glyph_count : Int,
-  glyph : UInt,
-) -> Int {
+  classes : Array[Int32],
+  glyph_count : Int32,
+  glyph : UInt32,
+) -> Int32 {
   if glyph > 0xffffU {
     return 0
   }

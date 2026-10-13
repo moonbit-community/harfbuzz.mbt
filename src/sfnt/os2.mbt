@@ -15,28 +15,34 @@
 ///|
 /// Parsed OS/2 table (subset).
 pub struct Os2Table {
-  version : Int
-  weight_class : Int
-  width_class : Int
-  fs_type : Int
-  typo_ascender : Int
-  typo_descender : Int
-  typo_line_gap : Int
-  win_ascent : Int
-  win_descent : Int
-  code_page_range_1 : UInt?
-  code_page_range_2 : UInt?
-  x_height : Int?
-  cap_height : Int?
-  default_char : Int?
-  break_char : Int?
-  max_context : Int?
-  lower_optical_point_size : Int?
-  upper_optical_point_size : Int?
+  version : Int32
+  weight_class : Int32
+  width_class : Int32
+  fs_type : Int32
+  typo_ascender : Int32
+  typo_descender : Int32
+  typo_line_gap : Int32
+  win_ascent : Int32
+  win_descent : Int32
+  code_page_range_1 : UInt32?
+  code_page_range_2 : UInt32?
+  x_height : Int32?
+  cap_height : Int32?
+  default_char : Int32?
+  break_char : Int32?
+  max_context : Int32?
+  lower_optical_point_size : Int32?
+  upper_optical_point_size : Int32?
 } derive(Debug, ToJson)
 
 ///|
-fn os2_required_len(version : Int) -> Int {
+pub extend Os2Table with @debug.Debug::{to_repr}
+
+///|
+pub extend Os2Table with ToJson::{to_json}
+
+///|
+fn os2_required_len(version : Int32) -> Int32 {
   if version < 0 {
     return 0
   }
@@ -93,8 +99,8 @@ pub fn Os2Table::parse(data : BytesView) -> Result[Os2Table, SfntError] {
           Ok(win_ascent),
           Ok(win_descent),
         ) => {
-          let mut code_page_range_1 : UInt? = None
-          let mut code_page_range_2 : UInt? = None
+          let mut code_page_range_1 : UInt32? = None
+          let mut code_page_range_2 : UInt32? = None
           if version >= 1 {
             let range1 = read_u32(data, 78)
             let range2 = read_u32(data, 82)
@@ -107,11 +113,11 @@ pub fn Os2Table::parse(data : BytesView) -> Result[Os2Table, SfntError] {
               }
             }
           }
-          let mut x_height : Int? = None
-          let mut cap_height : Int? = None
-          let mut default_char : Int? = None
-          let mut break_char : Int? = None
-          let mut max_context : Int? = None
+          let mut x_height : Int32? = None
+          let mut cap_height : Int32? = None
+          let mut default_char : Int32? = None
+          let mut break_char : Int32? = None
+          let mut max_context : Int32? = None
           if version >= 2 {
             let x_height_val = read_i16(data, 86)
             let cap_height_val = read_i16(data, 88)
@@ -142,8 +148,8 @@ pub fn Os2Table::parse(data : BytesView) -> Result[Os2Table, SfntError] {
               }
             }
           }
-          let mut lower_optical_point_size : Int? = None
-          let mut upper_optical_point_size : Int? = None
+          let mut lower_optical_point_size : Int32? = None
+          let mut upper_optical_point_size : Int32? = None
           if version >= 5 {
             let lower = read_u16_int(data, 96)
             let upper = read_u16_int(data, 98)

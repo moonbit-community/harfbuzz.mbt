@@ -15,39 +15,72 @@
 ///|
 /// Math value record with optional device table offset.
 pub struct MathValueRecord {
-  value : Int
-  device_offset : Int
+  value : Int32
+  device_offset : Int32
 } derive(Eq, Debug, ToJson)
+
+///|
+pub extend MathValueRecord with Eq::{not_equal, equal}
+
+///|
+pub extend MathValueRecord with @debug.Debug::{to_repr}
+
+///|
+pub extend MathValueRecord with ToJson::{to_json}
 
 ///|
 /// Math constants table.
 pub struct MathConstants {
-  percent_scale_down : Array[Int]
-  min_height : Array[Int]
+  percent_scale_down : Array[Int32]
+  min_height : Array[Int32]
   math_values : Array[MathValueRecord]
-  radical_degree_bottom_raise_percent : Int
+  radical_degree_bottom_raise_percent : Int32
 } derive(Debug, ToJson)
+
+///|
+pub extend MathConstants with @debug.Debug::{to_repr}
+
+///|
+pub extend MathConstants with ToJson::{to_json}
 
 ///|
 /// Italics correction info.
 pub struct MathItalicsCorrectionInfo {
-  coverage_offset : Int
+  coverage_offset : Int32
   records : Array[MathValueRecord]
 } derive(Debug, ToJson)
+
+///|
+pub extend MathItalicsCorrectionInfo with @debug.Debug::{to_repr}
+
+///|
+pub extend MathItalicsCorrectionInfo with ToJson::{to_json}
 
 ///|
 /// Top accent attachment info.
 pub struct MathTopAccentAttachment {
-  coverage_offset : Int
+  coverage_offset : Int32
   records : Array[MathValueRecord]
 } derive(Debug, ToJson)
 
 ///|
+pub extend MathTopAccentAttachment with @debug.Debug::{to_repr}
+
+///|
+pub extend MathTopAccentAttachment with ToJson::{to_json}
+
+///|
 /// Math kern table.
 pub struct MathKern {
-  height_count : Int
+  height_count : Int32
   records : Array[MathValueRecord]
 } derive(Debug, ToJson)
+
+///|
+pub extend MathKern with @debug.Debug::{to_repr}
+
+///|
+pub extend MathKern with ToJson::{to_json}
 
 ///|
 /// Math kern info record (four corners).
@@ -56,37 +89,67 @@ pub struct MathKernInfoRecord {
 } derive(Debug, ToJson)
 
 ///|
+pub extend MathKernInfoRecord with @debug.Debug::{to_repr}
+
+///|
+pub extend MathKernInfoRecord with ToJson::{to_json}
+
+///|
 /// Math kern info table.
 pub struct MathKernInfo {
-  coverage_offset : Int
+  coverage_offset : Int32
   records : Array[MathKernInfoRecord]
 } derive(Debug, ToJson)
+
+///|
+pub extend MathKernInfo with @debug.Debug::{to_repr}
+
+///|
+pub extend MathKernInfo with ToJson::{to_json}
 
 ///|
 /// Math glyph info table.
 pub struct MathGlyphInfo {
   italics_correction : MathItalicsCorrectionInfo?
   top_accent_attachment : MathTopAccentAttachment?
-  extended_shape_coverage_offset : Int
+  extended_shape_coverage_offset : Int32
   math_kern_info : MathKernInfo?
 } derive(Debug, ToJson)
 
 ///|
+pub extend MathGlyphInfo with @debug.Debug::{to_repr}
+
+///|
+pub extend MathGlyphInfo with ToJson::{to_json}
+
+///|
 /// Math glyph variant record.
 pub struct MathGlyphVariantRecord {
-  variant_glyph : Int
-  advance : Int
+  variant_glyph : Int32
+  advance : Int32
 } derive(Debug, ToJson)
+
+///|
+pub extend MathGlyphVariantRecord with @debug.Debug::{to_repr}
+
+///|
+pub extend MathGlyphVariantRecord with ToJson::{to_json}
 
 ///|
 /// Math glyph part record.
 pub struct MathGlyphPartRecord {
-  glyph : Int
-  start_connector_length : Int
-  end_connector_length : Int
-  full_advance : Int
-  flags : Int
+  glyph : Int32
+  start_connector_length : Int32
+  end_connector_length : Int32
+  full_advance : Int32
+  flags : Int32
 } derive(Debug, ToJson)
+
+///|
+pub extend MathGlyphPartRecord with @debug.Debug::{to_repr}
+
+///|
+pub extend MathGlyphPartRecord with ToJson::{to_json}
 
 ///|
 /// Math glyph assembly table.
@@ -96,6 +159,12 @@ pub struct MathGlyphAssembly {
 } derive(Debug, ToJson)
 
 ///|
+pub extend MathGlyphAssembly with @debug.Debug::{to_repr}
+
+///|
+pub extend MathGlyphAssembly with ToJson::{to_json}
+
+///|
 /// Math glyph construction table.
 pub struct MathGlyphConstruction {
   glyph_assembly : MathGlyphAssembly?
@@ -103,31 +172,49 @@ pub struct MathGlyphConstruction {
 } derive(Debug, ToJson)
 
 ///|
+pub extend MathGlyphConstruction with @debug.Debug::{to_repr}
+
+///|
+pub extend MathGlyphConstruction with ToJson::{to_json}
+
+///|
 /// Math variants table.
 pub struct MathVariants {
-  min_connector_overlap : Int
-  vert_coverage_offset : Int
-  horiz_coverage_offset : Int
-  vert_glyph_count : Int
-  horiz_glyph_count : Int
+  min_connector_overlap : Int32
+  vert_coverage_offset : Int32
+  horiz_coverage_offset : Int32
+  vert_glyph_count : Int32
+  horiz_glyph_count : Int32
   constructions : Array[MathGlyphConstruction?]
 } derive(Debug, ToJson)
 
 ///|
+pub extend MathVariants with @debug.Debug::{to_repr}
+
+///|
+pub extend MathVariants with ToJson::{to_json}
+
+///|
 /// Parsed MATH table.
 pub struct MathTable {
-  major_version : Int
-  minor_version : Int
+  major_version : Int32
+  minor_version : Int32
   constants : MathConstants?
   glyph_info : MathGlyphInfo?
   variants : MathVariants?
 } derive(Debug, ToJson)
 
 ///|
+pub extend MathTable with @debug.Debug::{to_repr}
+
+///|
+pub extend MathTable with ToJson::{to_json}
+
+///|
 fn read_math_value_record(
   data : BytesView,
-  offset : Int,
-  base : Int,
+  offset : Int32,
+  base : Int32,
 ) -> Result[MathValueRecord, SfntError] {
   let value = read_i16(data, offset)
   let device_offset = read_u16_int(data, offset + 2)
@@ -152,7 +239,7 @@ fn read_math_value_record(
 ///|
 fn parse_math_constants(
   data : BytesView,
-  offset : Int,
+  offset : Int32,
 ) -> Result[MathConstants, SfntError] {
   if offset < 0 || offset + 214 > data.length() {
     return Err(UnexpectedEof)
@@ -167,8 +254,8 @@ fn parse_math_constants(
     (_, _, Err(err), _) => Err(err)
     (_, _, _, Err(err)) => Err(err)
     (Ok(percent0), Ok(percent1), Ok(min0), Ok(min1)) => {
-      let percent_scale_down : Array[Int] = [percent0, percent1]
-      let min_height : Array[Int] = [min0, min1]
+      let percent_scale_down : Array[Int32] = [percent0, percent1]
+      let min_height : Array[Int32] = [min0, min1]
       let math_values : Array[MathValueRecord] = []
       let mut cursor = offset + 8
       for _ in 0..<51 {
@@ -197,7 +284,7 @@ fn parse_math_constants(
 ///|
 fn parse_math_italics_correction(
   data : BytesView,
-  offset : Int,
+  offset : Int32,
 ) -> Result[MathItalicsCorrectionInfo, SfntError] {
   let coverage_offset = read_u16_int(data, offset)
   let count = read_u16_int(data, offset + 2)
@@ -238,7 +325,7 @@ fn parse_math_italics_correction(
 ///|
 fn parse_math_top_accent_attachment(
   data : BytesView,
-  offset : Int,
+  offset : Int32,
 ) -> Result[MathTopAccentAttachment, SfntError] {
   let coverage_offset = read_u16_int(data, offset)
   let count = read_u16_int(data, offset + 2)
@@ -279,7 +366,7 @@ fn parse_math_top_accent_attachment(
 ///|
 fn parse_math_kern(
   data : BytesView,
-  offset : Int,
+  offset : Int32,
 ) -> Result[MathKern, SfntError] {
   let height_count = read_u16_int(data, offset)
   match height_count {
@@ -310,7 +397,7 @@ fn parse_math_kern(
 ///|
 fn parse_math_kern_info(
   data : BytesView,
-  offset : Int,
+  offset : Int32,
 ) -> Result[MathKernInfo, SfntError] {
   let coverage_offset = read_u16_int(data, offset)
   let count = read_u16_int(data, offset + 2)
@@ -369,7 +456,7 @@ fn parse_math_kern_info(
 ///|
 fn parse_math_glyph_info(
   data : BytesView,
-  offset : Int,
+  offset : Int32,
 ) -> Result[MathGlyphInfo, SfntError] {
   let italics_offset = read_u16_int(data, offset)
   let top_offset = read_u16_int(data, offset + 2)
@@ -439,7 +526,7 @@ fn parse_math_glyph_info(
 ///|
 fn parse_math_glyph_assembly(
   data : BytesView,
-  offset : Int,
+  offset : Int32,
 ) -> Result[MathGlyphAssembly, SfntError] {
   let italics = match read_math_value_record(data, offset, offset) {
     Err(err) => return Err(err)
@@ -497,7 +584,7 @@ fn parse_math_glyph_assembly(
 ///|
 fn parse_math_glyph_construction(
   data : BytesView,
-  offset : Int,
+  offset : Int32,
 ) -> Result[MathGlyphConstruction, SfntError] {
   let assembly_offset = read_u16_int(data, offset)
   let variant_count = read_u16_int(data, offset + 2)
@@ -543,7 +630,7 @@ fn parse_math_glyph_construction(
 ///|
 fn parse_math_variants(
   data : BytesView,
-  offset : Int,
+  offset : Int32,
 ) -> Result[MathVariants, SfntError] {
   let min_connector_overlap = read_u16_int(data, offset)
   let vert_coverage_offset = read_u16_int(data, offset + 2)

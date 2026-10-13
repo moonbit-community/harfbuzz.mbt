@@ -15,16 +15,22 @@
 ///|
 /// CPAL color palette table.
 pub struct CpalTable {
-  version : Int
-  num_colors : Int
-  num_palettes : Int
-  num_color_records : Int
+  version : Int32
+  num_colors : Int32
+  num_palettes : Int32
+  num_color_records : Int32
   color_records : Array[@paint.Color]
-  color_record_indices : Array[Int]
-  palette_flags : Array[UInt]?
-  palette_labels : Array[Int]?
-  color_labels : Array[Int]?
+  color_record_indices : Array[Int32]
+  palette_flags : Array[UInt32]?
+  palette_labels : Array[Int32]?
+  color_labels : Array[Int32]?
 } derive(Debug, ToJson)
+
+///|
+pub extend CpalTable with @debug.Debug::{to_repr}
+
+///|
+pub extend CpalTable with ToJson::{to_json}
 
 ///|
 /// Parse CPAL table data.
@@ -65,7 +71,7 @@ pub fn CpalTable::parse(data : BytesView) -> Result[CpalTable, ColorError] {
       if indices_offset + indices_len > data.length() {
         return Err(UnexpectedEof)
       }
-      let color_record_indices : Array[Int] = []
+      let color_record_indices : Array[Int32] = []
       for i in 0..<num_palettes {
         let idx = read_u16_int(data, indices_offset + i * 2)
         match idx {
@@ -87,9 +93,9 @@ pub fn CpalTable::parse(data : BytesView) -> Result[CpalTable, ColorError] {
         let a = data[base + 3].to_int()
         color_records.push(@paint.Color::from_bgra(b, g, r, a))
       }
-      let mut palette_flags : Array[UInt]? = None
-      let mut palette_labels : Array[Int]? = None
-      let mut color_labels : Array[Int]? = None
+      let mut palette_flags : Array[UInt32]? = None
+      let mut palette_labels : Array[Int32]? = None
+      let mut color_labels : Array[Int32]? = None
       if version == 1 {
         let tail_offset = indices_offset + indices_len
         if tail_offset + 12 > data.length() {
@@ -109,7 +115,7 @@ pub fn CpalTable::parse(data : BytesView) -> Result[CpalTable, ColorError] {
                 flags_offset + num_palettes * 4 > data.length() {
                 return Err(UnexpectedEof)
               }
-              let flags : Array[UInt] = []
+              let flags : Array[UInt32] = []
               for i in 0..<num_palettes {
                 let value = read_u32(data, flags_offset + i * 4)
                 match value {
@@ -124,7 +130,7 @@ pub fn CpalTable::parse(data : BytesView) -> Result[CpalTable, ColorError] {
                 labels_offset + num_palettes * 2 > data.length() {
                 return Err(UnexpectedEof)
               }
-              let labels : Array[Int] = []
+              let labels : Array[Int32] = []
               for i in 0..<num_palettes {
                 let value = read_u16_int(data, labels_offset + i * 2)
                 match value {
@@ -139,7 +145,7 @@ pub fn CpalTable::parse(data : BytesView) -> Result[CpalTable, ColorError] {
                 colors_offset + num_colors * 2 > data.length() {
                 return Err(UnexpectedEof)
               }
-              let labels : Array[Int] = []
+              let labels : Array[Int32] = []
               for i in 0..<num_colors {
                 let value = read_u16_int(data, colors_offset + i * 2)
                 match value {
@@ -171,7 +177,7 @@ pub fn CpalTable::parse(data : BytesView) -> Result[CpalTable, ColorError] {
 /// Get palette colors for the given palette index.
 pub fn CpalTable::palette_colors(
   self : CpalTable,
-  palette_index : Int,
+  palette_index : Int32,
 ) -> Array[@paint.Color] {
   if palette_index < 0 || palette_index >= self.num_palettes {
     return []

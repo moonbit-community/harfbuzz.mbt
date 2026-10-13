@@ -44,6 +44,6 @@ http://localhost:8000/src/examples/js_svg/index.html
 ```mbt check
 ///|
 test "module version placeholder" {
-  inspect(version, content="0.0.0")
+  inspect(@harfbuzz.version, content="0.0.0")
 }
 ```

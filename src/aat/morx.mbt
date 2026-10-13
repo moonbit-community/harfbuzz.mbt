@@ -29,76 +29,157 @@ let subtable_type_insertion = 5
 
 ///|
 pub(all) struct NoncontextualSubtable {
-  coverage_flags : Int
-  sub_feature_flags : UInt
+  coverage_flags : Int32
+  sub_feature_flags : UInt32
   lookup : LookupTable
 } derive(Eq, Debug, ToJson)
 
 ///|
+pub extend NoncontextualSubtable with Eq::{not_equal, equal}
+
+///|
+pub extend NoncontextualSubtable with @debug.Debug::{to_repr}
+
+///|
+pub extend NoncontextualSubtable with ToJson::{to_json}
+
+///|
 pub(all) struct StateEntry {
-  new_state : Int
-  flags : Int
-  data1 : Int
-  data2 : Int
+  new_state : Int32
+  flags : Int32
+  data1 : Int32
+  data2 : Int32
 } derive(Eq, Debug, ToJson)
+
+///|
+pub extend StateEntry with Eq::{not_equal, equal}
+
+///|
+pub extend StateEntry with @debug.Debug::{to_repr}
+
+///|
+pub extend StateEntry with ToJson::{to_json}
 
 ///|
 pub(all) enum ClassTable {
   Lookup(LookupTable)
-  Array(UInt, Array[Int])
+  Array(UInt32, Array[Int32])
 } derive(Eq, Debug, ToJson)
 
 ///|
+pub extend ClassTable with Eq::{not_equal, equal}
+
+///|
+pub extend ClassTable with @debug.Debug::{to_repr}
+
+///|
+pub extend ClassTable with ToJson::{to_json}
+
+///|
 pub(all) struct StateTable {
-  n_classes : Int
+  n_classes : Int32
   class_table : ClassTable
-  state_array : Array[Int]
+  state_array : Array[Int32]
   entries : Array[StateEntry]
-  state_array_offset : Int
+  state_array_offset : Int32
   extended : Bool
 } derive(Eq, Debug, ToJson)
 
 ///|
+pub extend StateTable with Eq::{not_equal, equal}
+
+///|
+pub extend StateTable with @debug.Debug::{to_repr}
+
+///|
+pub extend StateTable with ToJson::{to_json}
+
+///|
 pub(all) struct RearrangementSubtable {
-  coverage_flags : Int
-  sub_feature_flags : UInt
+  coverage_flags : Int32
+  sub_feature_flags : UInt32
   table : StateTable
 } derive(Eq, Debug, ToJson)
 
 ///|
+pub extend RearrangementSubtable with Eq::{not_equal, equal}
+
+///|
+pub extend RearrangementSubtable with @debug.Debug::{to_repr}
+
+///|
+pub extend RearrangementSubtable with ToJson::{to_json}
+
+///|
 pub(all) enum ContextualSubstitutions {
   Lookups(Array[LookupTable])
-  Values(Int, Array[UInt])
+  Values(Int32, Array[UInt32])
 } derive(Eq, Debug, ToJson)
 
 ///|
+pub extend ContextualSubstitutions with Eq::{not_equal, equal}
+
+///|
+pub extend ContextualSubstitutions with @debug.Debug::{to_repr}
+
+///|
+pub extend ContextualSubstitutions with ToJson::{to_json}
+
+///|
 pub(all) struct ContextualSubtable {
-  coverage_flags : Int
-  sub_feature_flags : UInt
+  coverage_flags : Int32
+  sub_feature_flags : UInt32
   table : StateTable
   substitutions : ContextualSubstitutions
 } derive(Eq, Debug, ToJson)
 
 ///|
+pub extend ContextualSubtable with Eq::{not_equal, equal}
+
+///|
+pub extend ContextualSubtable with @debug.Debug::{to_repr}
+
+///|
+pub extend ContextualSubtable with ToJson::{to_json}
+
+///|
 pub(all) struct LigatureSubtable {
-  coverage_flags : Int
-  sub_feature_flags : UInt
+  coverage_flags : Int32
+  sub_feature_flags : UInt32
   table : StateTable
-  lig_actions : Array[UInt]
-  components : Array[UInt]
-  ligatures : Array[UInt]
-  lig_action_offset : Int
-  component_offset_words : Int
-  ligature_offset : Int
+  lig_actions : Array[UInt32]
+  components : Array[UInt32]
+  ligatures : Array[UInt32]
+  lig_action_offset : Int32
+  component_offset_words : Int32
+  ligature_offset : Int32
 } derive(Eq, Debug, ToJson)
 
 ///|
+pub extend LigatureSubtable with Eq::{not_equal, equal}
+
+///|
+pub extend LigatureSubtable with @debug.Debug::{to_repr}
+
+///|
+pub extend LigatureSubtable with ToJson::{to_json}
+
+///|
 pub(all) struct InsertionSubtable {
-  coverage_flags : Int
-  sub_feature_flags : UInt
+  coverage_flags : Int32
+  sub_feature_flags : UInt32
   table : StateTable
-  insertion_action : Array[UInt]
+  insertion_action : Array[UInt32]
 } derive(Eq, Debug, ToJson)
+
+///|
+pub extend InsertionSubtable with Eq::{not_equal, equal}
+
+///|
+pub extend InsertionSubtable with @debug.Debug::{to_repr}
+
+///|
+pub extend InsertionSubtable with ToJson::{to_json}
 
 ///|
 pub(all) enum MorxSubtable {
@@ -110,19 +191,46 @@ pub(all) enum MorxSubtable {
 } derive(Eq, Debug, ToJson)
 
 ///|
+pub extend MorxSubtable with Eq::{not_equal, equal}
+
+///|
+pub extend MorxSubtable with @debug.Debug::{to_repr}
+
+///|
+pub extend MorxSubtable with ToJson::{to_json}
+
+///|
 pub struct MorxTable {
-  version : Int
+  version : Int32
   subtables : Array[MorxSubtable]
 } derive(Eq, Debug, ToJson)
+
+///|
+pub extend MorxTable with Eq::{not_equal, equal}
+
+///|
+pub extend MorxTable with @debug.Debug::{to_repr}
+
+///|
+pub extend MorxTable with ToJson::{to_json}
 
 ///|
 pub struct MortTable {
-  version : Int
+  version : Int32
   subtables : Array[MorxSubtable]
 } derive(Eq, Debug, ToJson)
 
 ///|
-fn coverage_flags_from(coverage : UInt, extended : Bool) -> Int {
+pub extend MortTable with Eq::{not_equal, equal}
+
+///|
+pub extend MortTable with @debug.Debug::{to_repr}
+
+///|
+pub extend MortTable with ToJson::{to_json}
+
+///|
+fn coverage_flags_from(coverage : UInt32, extended : Bool) -> Int32 {
   if extended {
     ((coverage >> 24) & 0xffU).reinterpret_as_int()
   } else {
@@ -131,12 +239,12 @@ fn coverage_flags_from(coverage : UInt, extended : Bool) -> Int {
 }
 
 ///|
-fn coverage_type_from(coverage : UInt) -> Int {
+fn coverage_type_from(coverage : UInt32) -> Int32 {
   (coverage & 0xffU).reinterpret_as_int()
 }
 
 ///|
-fn coverage_allows(flags : Int, horizontal : Bool) -> Bool {
+fn coverage_allows(flags : Int32, horizontal : Bool) -> Bool {
   let all_directions = (flags & 0x20) != 0
   if all_directions {
     return true
@@ -152,7 +260,7 @@ fn coverage_allows(flags : Int, horizontal : Bool) -> Bool {
 ///|
 fn NoncontextualSubtable::apply(
   self : NoncontextualSubtable,
-  glyphs : Array[UInt],
+  glyphs : Array[UInt32],
   horizontal : Bool,
 ) -> Bool {
   if !coverage_allows(self.coverage_flags, horizontal) {
@@ -186,13 +294,13 @@ let rearr_mark_last = 0x2000
 let rearr_verb_mask = 0x000f
 
 ///|
-let rearrange_map : Array[Int] = [
+let rearrange_map : Array[Int32] = [
   0x00, 0x10, 0x01, 0x11, 0x20, 0x30, 0x02, 0x03, 0x12, 0x13, 0x21, 0x31, 0x22, 0x32,
   0x23, 0x33,
 ]
 
 ///|
-fn StateTable::class_for(self : StateTable, glyph : UInt) -> Int {
+fn StateTable::class_for(self : StateTable, glyph : UInt32) -> Int32 {
   if glyph == 0xffffU {
     return 2
   }
@@ -228,8 +336,8 @@ fn StateTable::class_for(self : StateTable, glyph : UInt) -> Int {
 ///|
 fn StateTable::entry_for(
   self : StateTable,
-  state : Int,
-  klass : Int,
+  state : Int32,
+  klass : Int32,
 ) -> StateEntry {
   if self.n_classes <= 0 {
     return { new_state: 0, flags: 0, data1: 0, data2: 0, }
@@ -255,7 +363,7 @@ fn StateTable::entry_for(
 }
 
 ///|
-fn StateTable::new_state(self : StateTable, raw : Int) -> Int {
+fn StateTable::new_state(self : StateTable, raw : Int32) -> Int32 {
   if self.n_classes <= 0 {
     return 0
   }
@@ -267,7 +375,7 @@ fn StateTable::new_state(self : StateTable, raw : Int) -> Int {
 }
 
 ///|
-fn merge_clusters(clusters : Array[Int], start : Int, end : Int) -> Unit {
+fn merge_clusters(clusters : Array[Int32], start : Int32, end : Int32) -> Unit {
   if start < 0 || end > clusters.length() || start >= end {
     return ()
   }
@@ -285,12 +393,12 @@ fn merge_clusters(clusters : Array[Int], start : Int, end : Int) -> Unit {
 
 ///|
 fn rearrange_range(
-  glyphs : Array[UInt],
-  clusters : Array[Int],
-  start : Int,
-  end : Int,
-  l : Int,
-  r : Int,
+  glyphs : Array[UInt32],
+  clusters : Array[Int32],
+  start : Int32,
+  end : Int32,
+  l : Int32,
+  r : Int32,
   reverse_l : Bool,
   reverse_r : Bool,
 ) -> Unit {
@@ -298,8 +406,8 @@ fn rearrange_range(
   if total < l + r || total > 4 {
     return ()
   }
-  let buf_glyphs : Array[UInt] = [0U, 0U, 0U, 0U]
-  let buf_clusters : Array[Int] = [0, 0, 0, 0]
+  let buf_glyphs : Array[UInt32] = [0U, 0U, 0U, 0U]
+  let buf_clusters : Array[Int32] = [0, 0, 0, 0]
   for i in 0..<l {
     buf_glyphs[i] = glyphs[start + i]
     buf_clusters[i] = clusters[start + i]
@@ -311,8 +419,8 @@ fn rearrange_range(
   if l != r {
     let middle_len = total - l - r
     if middle_len > 0 {
-      let temp_glyphs : Array[UInt] = []
-      let temp_clusters : Array[Int] = []
+      let temp_glyphs : Array[UInt32] = []
+      let temp_clusters : Array[Int32] = []
       for i in 0..<middle_len {
         temp_glyphs.push(glyphs[start + l + i])
         temp_clusters.push(clusters[start + l + i])
@@ -352,8 +460,8 @@ fn rearrange_range(
 ///|
 fn RearrangementSubtable::apply(
   self : RearrangementSubtable,
-  glyphs : Array[UInt],
-  clusters : Array[Int],
+  glyphs : Array[UInt32],
+  clusters : Array[Int32],
   horizontal : Bool,
 ) -> Bool {
   if !coverage_allows(self.coverage_flags, horizontal) {
@@ -426,9 +534,9 @@ let contextual_dont_advance = 0x4000
 ///|
 fn contextual_replacement(
   substitutions : ContextualSubstitutions,
-  index : Int,
-  glyph : UInt,
-) -> UInt? {
+  index : Int32,
+  glyph : UInt32,
+) -> UInt32? {
   match substitutions {
     Lookups(lookups) =>
       if index < 0 || index >= lookups.length() {
@@ -457,8 +565,8 @@ fn contextual_replacement(
 ///|
 fn ContextualSubtable::apply(
   self : ContextualSubtable,
-  glyphs : Array[UInt],
-  clusters : Array[Int],
+  glyphs : Array[UInt32],
+  clusters : Array[Int32],
   horizontal : Bool,
 ) -> Bool {
   if !coverage_allows(self.coverage_flags, horizontal) {
@@ -555,7 +663,7 @@ let lig_action_store = 0x40000000U
 let lig_action_offset_mask = 0x3fffffffU
 
 ///|
-fn sign_extend_30(value : UInt) -> Int {
+fn sign_extend_30(value : UInt32) -> Int32 {
   let mut offset = value & lig_action_offset_mask
   if (offset & 0x20000000U) != 0U {
     offset = offset | 0xC0000000U
@@ -564,7 +672,7 @@ fn sign_extend_30(value : UInt) -> Int {
 }
 
 ///|
-fn shift_positions(values : Array[Int], start : Int, delta : Int) -> Unit {
+fn shift_positions(values : Array[Int32], start : Int32, delta : Int32) -> Unit {
   for i in 0..<values.length() {
     if values[i] >= start {
       values[i] = values[i] + delta
@@ -575,8 +683,8 @@ fn shift_positions(values : Array[Int], start : Int, delta : Int) -> Unit {
 ///|
 fn LigatureSubtable::apply(
   self : LigatureSubtable,
-  glyphs : Array[UInt],
-  clusters : Array[Int],
+  glyphs : Array[UInt32],
+  clusters : Array[Int32],
   horizontal : Bool,
 ) -> Bool {
   if !coverage_allows(self.coverage_flags, horizontal) {
@@ -592,7 +700,7 @@ fn LigatureSubtable::apply(
   let mut changed = false
   let mut state = 0
   let mut idx = 0
-  let match_positions : Array[Int] = []
+  let match_positions : Array[Int32] = []
   while true {
     let len = glyphs.length()
     let klass = if idx < len { table.class_for(glyphs[idx]) } else { 0 }
@@ -742,7 +850,7 @@ let insertion_current_count = 0x03e0
 let insertion_marked_count = 0x001f
 
 ///|
-fn adjust_index(idx : Int, pos : Int, delta : Int) -> Int {
+fn adjust_index(idx : Int32, pos : Int32, delta : Int32) -> Int32 {
   if idx >= pos {
     idx + delta
   } else {
@@ -752,14 +860,14 @@ fn adjust_index(idx : Int, pos : Int, delta : Int) -> Int {
 
 ///|
 fn insert_glyphs_from(
-  glyphs : Array[UInt],
-  clusters : Array[Int],
-  pos : Int,
-  source : Array[UInt],
-  start : Int,
-  count : Int,
-  cluster_value : Int,
-) -> Int {
+  glyphs : Array[UInt32],
+  clusters : Array[Int32],
+  pos : Int32,
+  source : Array[UInt32],
+  start : Int32,
+  count : Int32,
+  cluster_value : Int32,
+) -> Int32 {
   if count <= 0 {
     return 0
   }
@@ -790,8 +898,8 @@ fn insert_glyphs_from(
 ///|
 fn InsertionSubtable::apply(
   self : InsertionSubtable,
-  glyphs : Array[UInt],
-  clusters : Array[Int],
+  glyphs : Array[UInt32],
+  clusters : Array[Int32],
   horizontal : Bool,
 ) -> Bool {
   if !coverage_allows(self.coverage_flags, horizontal) {
@@ -901,9 +1009,9 @@ fn InsertionSubtable::apply(
 ///|
 fn read_count(
   data : BytesView,
-  offset : Int,
+  offset : Int32,
   extended : Bool,
-) -> Result[Int, AatError] {
+) -> Result[Int32, AatError] {
   if extended {
     read_u32_non_negative(data, offset)
   } else {
@@ -912,7 +1020,7 @@ fn read_count(
 }
 
 ///|
-fn read_u8_int(data : BytesView, offset : Int) -> Result[Int, AatError] {
+fn read_u8_int(data : BytesView, offset : Int32) -> Result[Int32, AatError] {
   if offset < 0 || offset >= data.length() {
     return Err(UnexpectedEof)
   }
@@ -920,7 +1028,9 @@ fn read_u8_int(data : BytesView, offset : Int) -> Result[Int, AatError] {
 }
 
 ///|
-fn entry_count_from_state(state_array : Array[Int]) -> Result[Int, AatError] {
+fn entry_count_from_state(
+  state_array : Array[Int32],
+) -> Result[Int32, AatError] {
   let mut max_entry = -1
   for value in state_array {
     if value < 0 {
@@ -941,8 +1051,8 @@ fn entry_count_from_state(state_array : Array[Int]) -> Result[Int, AatError] {
 fn parse_state_table(
   data : BytesView,
   extended : Bool,
-  num_glyphs : Int,
-  entry_data_fields : Int,
+  num_glyphs : Int32,
+  entry_data_fields : Int32,
 ) -> Result[StateTable, AatError] {
   let n_classes = read_count(data, 0, extended)
   let class_offset = read_count(data, if extended { 4 } else { 2 }, extended)
@@ -988,7 +1098,7 @@ fn parse_state_table(
             if array_start < 0 || array_start + length > data.length() {
               return Err(UnexpectedEof)
             }
-            let classes : Array[Int] = []
+            let classes : Array[Int32] = []
             for i in 0..<length {
               let value = read_u8_int(data, array_start + i)
               match value {
@@ -1006,7 +1116,7 @@ fn parse_state_table(
         return Err(InvalidFormat)
       }
       let state_count = state_bytes / element_size
-      let state_array : Array[Int] = []
+      let state_array : Array[Int32] = []
       for i in 0..<state_count {
         let value = if extended {
           read_u16_int(data, state_offset + i * 2)
@@ -1077,9 +1187,9 @@ fn parse_state_table(
 fn parse_contextual_subtable(
   data : BytesView,
   extended : Bool,
-  num_glyphs : Int,
-  coverage_flags : Int,
-  sub_feature_flags : UInt,
+  num_glyphs : Int32,
+  coverage_flags : Int32,
+  sub_feature_flags : UInt32,
 ) -> Result[MorxSubtable, AatError] {
   let table = match parse_state_table(data, extended, num_glyphs, 2) {
     Err(err) => return Err(err)
@@ -1137,7 +1247,7 @@ fn parse_contextual_subtable(
       return Err(InvalidFormat)
     }
     let count = bytes_len / 2
-    let values : Array[UInt] = []
+    let values : Array[UInt32] = []
     for i in 0..<count {
       let value = read_u16(data, subs_offset + i * 2)
       match value {
@@ -1154,9 +1264,9 @@ fn parse_contextual_subtable(
 fn parse_ligature_subtable(
   data : BytesView,
   extended : Bool,
-  num_glyphs : Int,
-  coverage_flags : Int,
-  sub_feature_flags : UInt,
+  num_glyphs : Int32,
+  coverage_flags : Int32,
+  sub_feature_flags : UInt32,
 ) -> Result[MorxSubtable, AatError] {
   let table = match
     parse_state_table(data, extended, num_glyphs, if extended { 1 } else { 0 }) {
@@ -1229,7 +1339,7 @@ fn parse_ligature_subtable(
     return Err(InvalidFormat)
   }
   let lig_action_count = lig_action_bytes / 4
-  let lig_actions : Array[UInt] = []
+  let lig_actions : Array[UInt32] = []
   for i in 0..<lig_action_count {
     let value = read_u32(data, lig_action_offset + i * 4)
     match value {
@@ -1242,7 +1352,7 @@ fn parse_ligature_subtable(
     return Err(InvalidFormat)
   }
   let component_count = component_bytes / 2
-  let components : Array[UInt] = []
+  let components : Array[UInt32] = []
   for i in 0..<component_count {
     let value = read_u16(data, component_offset + i * 2)
     match value {
@@ -1255,7 +1365,7 @@ fn parse_ligature_subtable(
     return Err(InvalidFormat)
   }
   let ligature_count = ligature_bytes / 2
-  let ligatures : Array[UInt] = []
+  let ligatures : Array[UInt32] = []
   for i in 0..<ligature_count {
     let value = read_u16(data, ligature_offset + i * 2)
     match value {
@@ -1282,9 +1392,9 @@ fn parse_ligature_subtable(
 fn parse_insertion_subtable(
   data : BytesView,
   extended : Bool,
-  num_glyphs : Int,
-  coverage_flags : Int,
-  sub_feature_flags : UInt,
+  num_glyphs : Int32,
+  coverage_flags : Int32,
+  sub_feature_flags : UInt32,
 ) -> Result[MorxSubtable, AatError] {
   let table = match parse_state_table(data, extended, num_glyphs, 2) {
     Err(err) => return Err(err)
@@ -1307,7 +1417,7 @@ fn parse_insertion_subtable(
     return Err(InvalidFormat)
   }
   let count = bytes_len / 2
-  let insertion_action : Array[UInt] = []
+  let insertion_action : Array[UInt32] = []
   for i in 0..<count {
     let value = read_u16(data, insertion_offset + i * 2)
     match value {
@@ -1321,10 +1431,10 @@ fn parse_insertion_subtable(
 ///|
 fn parse_chain(
   data : BytesView,
-  offset : Int,
+  offset : Int32,
   extended : Bool,
-  num_glyphs : Int,
-) -> Result[(Array[MorxSubtable], Int), AatError] {
+  num_glyphs : Int32,
+) -> Result[(Array[MorxSubtable], Int32), AatError] {
   let default_flags = read_u32_int(data, offset)
   let length = read_u32_non_negative(data, offset + 4)
   match (default_flags, length) {
@@ -1464,8 +1574,8 @@ fn parse_chain(
 fn parse_mort_morx(
   data : BytesView,
   extended : Bool,
-  num_glyphs : Int,
-) -> Result[(Int, Array[MorxSubtable]), AatError] {
+  num_glyphs : Int32,
+) -> Result[(Int32, Array[MorxSubtable]), AatError] {
   let version = read_u16_int(data, 0)
   let chain_count = read_u32_non_negative(data, 4)
   match (version, chain_count) {
@@ -1494,7 +1604,7 @@ fn parse_mort_morx(
 ///|
 pub fn MorxTable::parse(
   data : BytesView,
-  num_glyphs : Int,
+  num_glyphs : Int32,
 ) -> Result[MorxTable, AatError] {
   match parse_mort_morx(data, true, num_glyphs) {
     Err(err) => Err(err)
@@ -1505,7 +1615,7 @@ pub fn MorxTable::parse(
 ///|
 pub fn MortTable::parse(
   data : BytesView,
-  num_glyphs : Int,
+  num_glyphs : Int32,
 ) -> Result[MortTable, AatError] {
   match parse_mort_morx(data, false, num_glyphs) {
     Err(err) => Err(err)
@@ -1526,8 +1636,8 @@ pub fn MortTable::has_data(self : MortTable) -> Bool {
 ///|
 fn MorxSubtable::apply(
   self : MorxSubtable,
-  glyphs : Array[UInt],
-  clusters : Array[Int],
+  glyphs : Array[UInt32],
+  clusters : Array[Int32],
   horizontal : Bool,
 ) -> Bool {
   match self {
@@ -1542,8 +1652,8 @@ fn MorxSubtable::apply(
 ///|
 pub fn MorxTable::apply(
   self : MorxTable,
-  glyphs : Array[UInt],
-  clusters : Array[Int],
+  glyphs : Array[UInt32],
+  clusters : Array[Int32],
   horizontal : Bool,
 ) -> Bool {
   let mut changed = false
@@ -1558,8 +1668,8 @@ pub fn MorxTable::apply(
 ///|
 pub fn MortTable::apply(
   self : MortTable,
-  glyphs : Array[UInt],
-  clusters : Array[Int],
+  glyphs : Array[UInt32],
+  clusters : Array[Int32],
   horizontal : Bool,
 ) -> Bool {
   let mut changed = false

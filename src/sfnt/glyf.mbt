@@ -15,27 +15,42 @@
 ///|
 /// Glyph bounding box from glyf header.
 pub struct GlyphBounds {
-  contours : Int
-  x_min : Int
-  y_min : Int
-  x_max : Int
-  y_max : Int
+  contours : Int32
+  x_min : Int32
+  y_min : Int32
+  x_max : Int32
+  y_max : Int32
 } derive(Eq, Debug, ToJson)
+
+///|
+pub extend GlyphBounds with Eq::{not_equal, equal}
+
+///|
+pub extend GlyphBounds with @debug.Debug::{to_repr}
+
+///|
+pub extend GlyphBounds with ToJson::{to_json}
 
 ///|
 /// Outline point from glyf data.
 pub struct GlyphPoint {
   mut x : Double
   mut y : Double
-  flag : Int
+  flag : Int32
   mut is_end_point : Bool
 } derive(Debug, ToJson)
+
+///|
+pub extend GlyphPoint with @debug.Debug::{to_repr}
+
+///|
+pub extend GlyphPoint with ToJson::{to_json}
 
 ///|
 pub fn GlyphPoint::new(
   x : Double,
   y : Double,
-  flag : Int,
+  flag : Int32,
   is_end_point : Bool,
 ) -> GlyphPoint {
   { x, y, flag, is_end_point, }
@@ -73,11 +88,11 @@ pub fn GlyphPoint::transform(
 
 ///|
 pub fn GlyphBounds::new(
-  contours : Int,
-  x_min : Int,
-  y_min : Int,
-  x_max : Int,
-  y_max : Int,
+  contours : Int32,
+  x_min : Int32,
+  y_min : Int32,
+  x_max : Int32,
+  y_max : Int32,
 ) -> GlyphBounds {
   { contours, x_min, y_min, x_max, y_max, }
 }
@@ -89,11 +104,17 @@ pub struct GlyfTable {
 } derive(Debug, ToJson)
 
 ///|
+pub extend GlyfTable with @debug.Debug::{to_repr}
+
+///|
+pub extend GlyfTable with ToJson::{to_json}
+
+///|
 pub struct CompositeComponent {
-  glyph : Int
-  flags : Int
-  arg1 : Int
-  arg2 : Int
+  glyph : Int32
+  flags : Int32
+  arg1 : Int32
+  arg2 : Int32
   a : Double
   b : Double
   c : Double
@@ -106,6 +127,12 @@ pub struct CompositeComponent {
 } derive(Debug, ToJson)
 
 ///|
+pub extend CompositeComponent with @debug.Debug::{to_repr}
+
+///|
+pub extend CompositeComponent with ToJson::{to_json}
+
+///|
 /// Parse glyf table from its blob.
 pub fn GlyfTable::parse(blob : @blob.Blob) -> Result[GlyfTable, SfntError] {
   Ok({ data: blob.as_view(), })
@@ -115,8 +142,8 @@ pub fn GlyfTable::parse(blob : @blob.Blob) -> Result[GlyfTable, SfntError] {
 /// Read glyph bounds at a given offset/length.
 pub fn GlyfTable::glyph_bounds(
   self : GlyfTable,
-  offset : Int,
-  length : Int,
+  offset : Int32,
+  length : Int32,
 ) -> Result[GlyphBounds?, SfntError] {
   if offset < 0 || length < 0 {
     return Err(InvalidFormat)
@@ -150,14 +177,14 @@ pub fn GlyfTable::glyph_bounds(
 ///|
 fn read_simple_flags(
   data : BytesView,
-  offset : Int,
-  end : Int,
-  count : Int,
-) -> Result[(Array[Int], Int), SfntError] {
+  offset : Int32,
+  end : Int32,
+  count : Int32,
+) -> Result[(Array[Int32], Int32), SfntError] {
   if count < 0 {
     return Err(InvalidFormat)
   }
-  let flags : Array[Int] = []
+  let flags : Array[Int32] = []
   let mut pos = offset
   let mut i = 0
   while i < count {
@@ -188,13 +215,13 @@ fn read_simple_flags(
 ///|
 fn read_simple_coords(
   data : BytesView,
-  offset : Int,
-  end : Int,
-  flags : Array[Int],
-  short_flag : Int,
-  same_flag : Int,
-) -> Result[(Array[Int], Int), SfntError] {
-  let coords : Array[Int] = []
+  offset : Int32,
+  end : Int32,
+  flags : Array[Int32],
+  short_flag : Int32,
+  same_flag : Int32,
+) -> Result[(Array[Int32], Int32), SfntError] {
+  let coords : Array[Int32] = []
   let mut pos = offset
   let mut value = 0
   for flag in flags {
@@ -226,7 +253,7 @@ fn read_simple_coords(
 }
 
 ///|
-fn read_i8(data : BytesView, offset : Int) -> Result[Int, SfntError] {
+fn read_i8(data : BytesView, offset : Int32) -> Result[Int32, SfntError] {
   if offset < 0 || offset >= data.length() {
     return Err(UnexpectedEof)
   }
@@ -235,7 +262,7 @@ fn read_i8(data : BytesView, offset : Int) -> Result[Int, SfntError] {
 }
 
 ///|
-fn f2dot14_to_double(value : Int) -> Double {
+fn f2dot14_to_double(value : Int32) -> Double {
   value.to_double() / 16384.0
 }
 
@@ -243,8 +270,8 @@ fn f2dot14_to_double(value : Int) -> Double {
 /// Read simple glyph outline points. Returns None for composite glyphs.
 pub fn GlyfTable::glyph_simple_points(
   self : GlyfTable,
-  offset : Int,
-  length : Int,
+  offset : Int32,
+  length : Int32,
 ) -> Result[Array[GlyphPoint]?, SfntError] {
   if offset < 0 || length < 0 {
     return Err(InvalidFormat)
@@ -275,7 +302,7 @@ pub fn GlyfTable::glyph_simple_points(
   if end_pts_offset + end_pts_total > offset + length {
     return Err(UnexpectedEof)
   }
-  let end_points : Array[Int] = []
+  let end_points : Array[Int32] = []
   let mut pos = end_pts_offset
   for _ in 0..<num_contours {
     let value = read_u16_int(self.data, pos)
@@ -345,8 +372,8 @@ pub fn GlyfTable::glyph_simple_points(
 /// Read composite glyph component records. Returns None for non-composite glyphs.
 pub fn GlyfTable::glyph_composite_components(
   self : GlyfTable,
-  offset : Int,
-  length : Int,
+  offset : Int32,
+  length : Int32,
 ) -> Result[Array[CompositeComponent]?, SfntError] {
   if offset < 0 || length < 0 {
     return Err(InvalidFormat)

@@ -23,6 +23,8 @@ pub fn DrawExtents::add_point(Self, Double, Double) -> Unit
 pub fn DrawExtents::is_empty(Self) -> Bool
 pub fn DrawExtents::is_void(Self) -> Bool
 pub fn DrawExtents::new() -> Self
+pub fn DrawExtents::to_json(Self) -> Json
+pub fn DrawExtents::to_repr(Self) -> @debug.Repr
 
 pub struct DrawFuncs[T] {
   mut move_to_cb : (T, DrawState, Double, Double) -> Unit
@@ -72,6 +74,8 @@ pub struct DrawState {
   mut current_y : Double
 } derive(ToJson, @debug.Debug)
 pub fn DrawState::new() -> Self
+pub fn DrawState::to_json(Self) -> Json
+pub fn DrawState::to_repr(Self) -> @debug.Repr
 
 pub struct Outline {
   points : Array[OutlinePoint]
@@ -83,6 +87,8 @@ pub fn Outline::new() -> Self
 pub fn[T] Outline::replay(Self, DrawFuncs[T], T) -> Unit
 pub fn Outline::reset(Self) -> Unit
 pub fn Outline::slant(Self, Double) -> Unit
+pub fn Outline::to_json(Self) -> Json
+pub fn Outline::to_repr(Self) -> @debug.Repr
 pub fn Outline::translate(Self, Double, Double) -> Unit
 
 pub struct OutlinePoint {
@@ -90,7 +96,11 @@ pub struct OutlinePoint {
   mut y : Double
   kind : OutlinePointKind
 } derive(Eq, ToJson, @debug.Debug)
+pub fn OutlinePoint::equal(Self, Self) -> Bool
 pub fn OutlinePoint::new(Double, Double, OutlinePointKind) -> Self
+pub fn OutlinePoint::not_equal(Self, Self) -> Bool
+pub fn OutlinePoint::to_json(Self) -> Json
+pub fn OutlinePoint::to_repr(Self) -> @debug.Repr
 
 pub enum OutlinePointKind {
   MoveTo
@@ -98,6 +108,10 @@ pub enum OutlinePointKind {
   QuadraticTo
   CubicTo
 } derive(Eq, ToJson, @debug.Debug)
+pub fn OutlinePointKind::equal(Self, Self) -> Bool
+pub fn OutlinePointKind::not_equal(Self, Self) -> Bool
+pub fn OutlinePointKind::to_json(Self) -> Json
+pub fn OutlinePointKind::to_repr(Self) -> @debug.Repr
 
 // Type aliases
 pub type DrawClosePathFunc[T] = (T, DrawState) -> Unit
@@ -111,4 +125,3 @@ pub type DrawMoveToFunc[T] = (T, DrawState, Double, Double) -> Unit
 pub type DrawQuadraticToFunc[T] = (T, DrawState, Double, Double, Double, Double) -> Unit
 
 // Traits
-

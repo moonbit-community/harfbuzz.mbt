@@ -145,7 +145,7 @@ fn build_font_bytes_aat_morx() -> Bytes {
 
 ///|
 test "aat morx parse and apply" {
-  let font = Font::from_bytes(build_font_bytes_aat_morx())
+  let font = @font.Font::from_bytes(build_font_bytes_aat_morx())
   let morx = match font.morx() {
     Err(err) => fail("morx parse failed: \{@debug.to_string(err)}")
     Ok(None) => fail("morx table missing")
@@ -153,15 +153,15 @@ test "aat morx parse and apply" {
   }
   assert_true(morx.has_data())
   let num_glyphs = font.get_face().get_glyph_count()
-  let glyphs : Array[UInt] = []
-  let clusters : Array[Int] = []
+  let glyphs : Array[UInt32] = []
+  let clusters : Array[Int32] = []
   for i in 0..<num_glyphs {
     glyphs.push(i.reinterpret_as_uint())
     clusters.push(i)
   }
   let changed = morx.apply(glyphs, clusters, true)
   assert_true(changed)
-  let changes : Array[(Int, UInt)] = []
+  let changes : Array[(Int32, UInt32)] = []
   for i in 0..<glyphs.length() {
     let original = i.reinterpret_as_uint()
     if glyphs[i] != original {

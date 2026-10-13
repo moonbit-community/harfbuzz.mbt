@@ -12,6 +12,10 @@ pub fn face_count(@blob.Blob) -> Int
 
 // Errors
 type FaceTableError derive(Eq, ToJson, @debug.Debug)
+pub fn FaceTableError::equal(Self, Self) -> Bool
+pub fn FaceTableError::not_equal(Self, Self) -> Bool
+pub fn FaceTableError::to_json(Self) -> Json
+pub fn FaceTableError::to_repr(Self) -> @debug.Repr
 
 // Types and methods
 pub struct Face {
@@ -37,8 +41,9 @@ pub fn Face::set_index(Self, Int) -> Unit
 pub fn Face::set_table(Self, @common.Tag, @blob.Blob) -> Unit
 pub fn Face::set_upem(Self, Int) -> Unit
 pub fn Face::table_tags(Self, start_offset? : Int, count? : Int) -> Result[(Int, Array[@common.Tag]), FaceTableError]
+pub fn Face::to_json(Self) -> Json
+pub fn Face::to_repr(Self) -> @debug.Repr
 
 // Type aliases
 
 // Traits
-

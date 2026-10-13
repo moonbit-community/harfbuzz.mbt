@@ -15,18 +15,30 @@
 ///|
 /// Name record (string bytes in original encoding).
 pub struct NameRecord {
-  platform_id : Int
-  encoding_id : Int
-  language_id : Int
-  name_id : Int
+  platform_id : Int32
+  encoding_id : Int32
+  language_id : Int32
+  name_id : Int32
   value : Bytes
 } derive(Debug, ToJson)
+
+///|
+pub extend NameRecord with @debug.Debug::{to_repr}
+
+///|
+pub extend NameRecord with ToJson::{to_json}
 
 ///|
 /// Parsed name table (subset).
 pub struct NameTable {
   records : Array[NameRecord]
 } derive(Debug, ToJson)
+
+///|
+pub extend NameTable with @debug.Debug::{to_repr}
+
+///|
+pub extend NameTable with ToJson::{to_json}
 
 ///|
 /// Parse name table bytes (format 0/1; string decoding is caller's responsibility).
@@ -103,10 +115,10 @@ pub fn NameTable::parse(data : BytesView) -> Result[NameTable, SfntError] {
 /// Return the first name record matching ids (simple helper).
 pub fn NameTable::find_name(
   self : NameTable,
-  platform_id : Int,
-  encoding_id : Int,
-  language_id : Int,
-  name_id : Int,
+  platform_id : Int32,
+  encoding_id : Int32,
+  language_id : Int32,
+  name_id : Int32,
 ) -> NameRecord? {
   for record in self.records {
     if record.platform_id == platform_id &&

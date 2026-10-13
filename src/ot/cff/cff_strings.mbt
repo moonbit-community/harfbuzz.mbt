@@ -72,7 +72,7 @@ let cff1_standard_strings : Array[String] = [
 ]
 
 ///|
-fn cff1_standard_string(sid : Int) -> String? {
+fn cff1_standard_string(sid : Int32) -> String? {
   if sid < 0 || sid >= cff1_standard_strings.length() {
     None
   } else {
@@ -81,7 +81,7 @@ fn cff1_standard_string(sid : Int) -> String? {
 }
 
 ///|
-fn cff1_standard_sid_for(name : String) -> Int? {
+fn cff1_standard_sid_for(name : String) -> Int32? {
   for i in 0..<cff1_standard_strings.length() {
     if cff1_standard_strings[i] == name {
       return Some(i)
@@ -91,6 +91,6 @@ fn cff1_standard_sid_for(name : String) -> Int? {
 }
 
 ///|
-fn cff1_standard_strings_len() -> Int {
+fn cff1_standard_strings_len() -> Int32 {
   cff1_standard_strings.length()
 }

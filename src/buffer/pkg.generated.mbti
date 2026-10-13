@@ -15,6 +15,10 @@ pub suberror ShapeError {
   Font(@font.FontError)
   Layout(@tables.OtLayoutError)
 } derive(Eq, ToJson, @debug.Debug)
+pub fn ShapeError::equal(Self, Self) -> Bool
+pub fn ShapeError::not_equal(Self, Self) -> Bool
+pub fn ShapeError::to_json(Self) -> Json
+pub fn ShapeError::to_repr(Self) -> @debug.Repr
 
 // Types and methods
 pub struct Buffer {
@@ -78,6 +82,8 @@ pub fn Buffer::shape_myanmar(Self, @font.Font) -> Result[Unit, ShapeError]
 pub fn Buffer::shape_ot(Self, @font.Font, fallback_position? : Bool) -> Result[Unit, ShapeError]
 pub fn Buffer::shape_thai(Self, @font.Font) -> Result[Unit, ShapeError]
 pub fn Buffer::shape_use(Self, @font.Font, script_tag? : @common.Tag) -> Result[Unit, ShapeError]
+pub fn Buffer::to_json(Self) -> Json
+pub fn Buffer::to_repr(Self) -> @debug.Repr
 pub fn Buffer::verify(Self) -> Bool
 
 pub(all) enum BufferSerializeFormat {
@@ -85,24 +91,37 @@ pub(all) enum BufferSerializeFormat {
   Text
   Json
 } derive(Eq, @debug.Debug)
+pub fn BufferSerializeFormat::equal(Self, Self) -> Bool
 pub fn BufferSerializeFormat::from_string(String, len? : Int) -> Self
+pub fn BufferSerializeFormat::not_equal(Self, Self) -> Bool
+pub fn BufferSerializeFormat::to_repr(Self) -> @debug.Repr
 pub fn BufferSerializeFormat::to_string(Self) -> String?
 
 pub(all) enum BufferSerializeMode {
   Glyphs
   Unicode
 } derive(Eq, @debug.Debug)
+pub fn BufferSerializeMode::equal(Self, Self) -> Bool
 pub fn BufferSerializeMode::from_string(String, len? : Int) -> Self
+pub fn BufferSerializeMode::not_equal(Self, Self) -> Bool
+pub fn BufferSerializeMode::to_repr(Self) -> @debug.Repr
 
 type FeatureValues derive(ToJson, @debug.Debug)
+pub fn FeatureValues::to_json(Self) -> Json
+pub fn FeatureValues::to_repr(Self) -> @debug.Repr
 
 type GlyphExtents derive(@debug.Debug)
+pub fn GlyphExtents::to_repr(Self) -> @debug.Repr
 
 pub struct GlyphInfo {
   codepoint : UInt
   cluster : Int
   unicode : UInt
 } derive(Eq, ToJson, @debug.Debug)
+pub fn GlyphInfo::equal(Self, Self) -> Bool
+pub fn GlyphInfo::not_equal(Self, Self) -> Bool
+pub fn GlyphInfo::to_json(Self) -> Json
+pub fn GlyphInfo::to_repr(Self) -> @debug.Repr
 
 pub struct GlyphPosition {
   x_advance : Int
@@ -110,8 +129,11 @@ pub struct GlyphPosition {
   x_offset : Int
   y_offset : Int
 } derive(Eq, ToJson, @debug.Debug)
+pub fn GlyphPosition::equal(Self, Self) -> Bool
+pub fn GlyphPosition::not_equal(Self, Self) -> Bool
+pub fn GlyphPosition::to_json(Self) -> Json
+pub fn GlyphPosition::to_repr(Self) -> @debug.Repr
 
 // Type aliases
 
 // Traits
-

@@ -13,14 +13,14 @@
 // limitations under the License.
 
 ///|
-pub let codepoint_invalid : UInt = 0xFFFF_FFFFU
+pub let codepoint_invalid : UInt32 = 0xFFFF_FFFFU
 
 ///|
-pub let map_value_invalid : UInt = codepoint_invalid
+pub let map_value_invalid : UInt32 = codepoint_invalid
 
 ///|
 pub struct CodepointSet {
-  set : Set[UInt]
+  set : Set[UInt32]
 }
 
 ///|
@@ -39,12 +39,12 @@ pub fn CodepointSet::is_empty(self : CodepointSet) -> Bool {
 }
 
 ///|
-pub fn CodepointSet::population(self : CodepointSet) -> Int {
+pub fn CodepointSet::population(self : CodepointSet) -> Int32 {
   self.set.length()
 }
 
 ///|
-pub fn CodepointSet::get_min(self : CodepointSet) -> UInt {
+pub fn CodepointSet::get_min(self : CodepointSet) -> UInt32 {
   let values = sorted_values(self)
   if values.is_empty() {
     map_value_invalid
@@ -54,7 +54,7 @@ pub fn CodepointSet::get_min(self : CodepointSet) -> UInt {
 }
 
 ///|
-pub fn CodepointSet::get_max(self : CodepointSet) -> UInt {
+pub fn CodepointSet::get_max(self : CodepointSet) -> UInt32 {
   let values = sorted_values(self)
   if values.is_empty() {
     map_value_invalid
@@ -64,14 +64,14 @@ pub fn CodepointSet::get_max(self : CodepointSet) -> UInt {
 }
 
 ///|
-pub fn CodepointSet::add(self : CodepointSet, value : UInt) -> Unit {
+pub fn CodepointSet::add(self : CodepointSet, value : UInt32) -> Unit {
   self.set.add(value)
 }
 
 ///|
 pub fn CodepointSet::add_array(
   self : CodepointSet,
-  values : ArrayView[UInt],
+  values : ArrayView[UInt32],
 ) -> Unit {
   for value in values {
     self.set.add(value)
@@ -81,7 +81,7 @@ pub fn CodepointSet::add_array(
 ///|
 pub fn CodepointSet::add_sorted_array(
   self : CodepointSet,
-  values : ArrayView[UInt],
+  values : ArrayView[UInt32],
 ) -> Bool {
   if values.is_empty() {
     return true
@@ -103,8 +103,8 @@ pub fn CodepointSet::add_sorted_array(
 ///|
 pub fn CodepointSet::add_range(
   self : CodepointSet,
-  first : UInt,
-  last : UInt,
+  first : UInt32,
+  last : UInt32,
 ) -> Bool {
   if first > last {
     return false
@@ -121,15 +121,15 @@ pub fn CodepointSet::add_range(
 }
 
 ///|
-pub fn CodepointSet::del(self : CodepointSet, value : UInt) -> Unit {
+pub fn CodepointSet::del(self : CodepointSet, value : UInt32) -> Unit {
   self.set.remove(value)
 }
 
 ///|
 pub fn CodepointSet::del_range(
   self : CodepointSet,
-  first : UInt,
-  last : UInt,
+  first : UInt32,
+  last : UInt32,
 ) -> Unit {
   if first > last {
     return ()
@@ -145,12 +145,12 @@ pub fn CodepointSet::del_range(
 }
 
 ///|
-pub fn CodepointSet::has(self : CodepointSet, value : UInt) -> Bool {
+pub fn CodepointSet::has(self : CodepointSet, value : UInt32) -> Bool {
   self.set.contains(value)
 }
 
 ///|
-pub fn CodepointSet::to_sorted_array(self : CodepointSet) -> Array[UInt] {
+pub fn CodepointSet::to_sorted_array(self : CodepointSet) -> Array[UInt32] {
   let values = self.set.to_array()
   values.sort()
   values
@@ -197,7 +197,7 @@ pub fn CodepointSet::intersect_in_place(
   self : CodepointSet,
   other : CodepointSet,
 ) -> Unit {
-  let to_remove : Array[UInt] = []
+  let to_remove : Array[UInt32] = []
   for value in self.set.iter() {
     if !other.set.contains(value) {
       to_remove.push(value)
@@ -223,7 +223,7 @@ pub fn CodepointSet::symmetric_difference_in_place(
   self : CodepointSet,
   other : CodepointSet,
 ) -> Unit {
-  let to_remove : Array[UInt] = []
+  let to_remove : Array[UInt32] = []
   for value in other.set.iter() {
     if self.set.contains(value) {
       to_remove.push(value)
@@ -301,8 +301,8 @@ pub fn CodepointSet::may_intersect(
 ///|
 pub fn CodepointSet::intersects(
   self : CodepointSet,
-  first : UInt,
-  last : UInt,
+  first : UInt32,
+  last : UInt32,
 ) -> Bool {
   if first > last {
     return false
@@ -321,7 +321,7 @@ pub fn CodepointSet::intersects(
 }
 
 ///|
-pub fn CodepointSet::hash(self : CodepointSet) -> Int {
+pub fn CodepointSet::hash(self : CodepointSet) -> Int32 {
   let values = sorted_values(self)
   let hasher = Hasher(seed=0)
   for value in values {
@@ -331,7 +331,7 @@ pub fn CodepointSet::hash(self : CodepointSet) -> Int {
 }
 
 ///|
-fn sorted_values(set : CodepointSet) -> Array[UInt] {
+fn sorted_values(set : CodepointSet) -> Array[UInt32] {
   set.to_sorted_array()
 }
 
@@ -339,8 +339,8 @@ fn sorted_values(set : CodepointSet) -> Array[UInt] {
 /// Return the next value after `after` (exclusive). Use `codepoint_invalid` to start.
 pub fn CodepointSet::next(
   self : CodepointSet,
-  after? : UInt = codepoint_invalid,
-) -> UInt? {
+  after~ : UInt32 = codepoint_invalid,
+) -> UInt32? {
   let values = sorted_values(self)
   if values.is_empty() {
     return None
@@ -359,9 +359,9 @@ pub fn CodepointSet::next(
 ///|
 pub fn CodepointSet::next_many(
   self : CodepointSet,
-  after? : UInt = codepoint_invalid,
-  size? : Int = 0,
-) -> Array[UInt] {
+  after~ : UInt32 = codepoint_invalid,
+  size~ : Int32 = 0,
+) -> Array[UInt32] {
   if size <= 0 {
     return []
   }
@@ -369,7 +369,7 @@ pub fn CodepointSet::next_many(
   if values.is_empty() {
     return []
   }
-  let out : Array[UInt] = []
+  let out : Array[UInt32] = []
   let mut started = after == codepoint_invalid
   for value in values {
     if !started {
@@ -391,8 +391,8 @@ pub fn CodepointSet::next_many(
 /// Return the previous value before `before` (exclusive). Use `codepoint_invalid` to start.
 pub fn CodepointSet::previous(
   self : CodepointSet,
-  before? : UInt = codepoint_invalid,
-) -> UInt? {
+  before~ : UInt32 = codepoint_invalid,
+) -> UInt32? {
   let values = sorted_values(self)
   if values.is_empty() {
     return None
@@ -412,8 +412,8 @@ pub fn CodepointSet::previous(
 /// Return the next contiguous range at or after `start`.
 pub fn CodepointSet::next_range(
   self : CodepointSet,
-  start? : UInt = codepoint_invalid,
-) -> (UInt, UInt)? {
+  start~ : UInt32 = codepoint_invalid,
+) -> (UInt32, UInt32)? {
   let values = sorted_values(self)
   if values.is_empty() {
     return None
@@ -446,8 +446,8 @@ pub fn CodepointSet::next_range(
 /// Return the previous contiguous range ending at or before `end`.
 pub fn CodepointSet::previous_range(
   self : CodepointSet,
-  end? : UInt = codepoint_invalid,
-) -> (UInt, UInt)? {
+  end~ : UInt32 = codepoint_invalid,
+) -> (UInt32, UInt32)? {
   let values = sorted_values(self)
   if values.is_empty() {
     return None
@@ -477,7 +477,7 @@ pub fn CodepointSet::previous_range(
 
 ///|
 pub struct CodepointMap {
-  map : Map[UInt, UInt]
+  map : Map[UInt32, UInt32]
 }
 
 ///|
@@ -496,7 +496,7 @@ pub fn CodepointMap::is_empty(self : CodepointMap) -> Bool {
 }
 
 ///|
-pub fn CodepointMap::population(self : CodepointMap) -> Int {
+pub fn CodepointMap::population(self : CodepointMap) -> Int32 {
   self.map.length()
 }
 
@@ -509,7 +509,7 @@ pub fn CodepointMap::is_equal(
 }
 
 ///|
-pub fn CodepointMap::hash(self : CodepointMap) -> Int {
+pub fn CodepointMap::hash(self : CodepointMap) -> Int32 {
   let entries = Array::from_iter(self.map.iter())
   entries.sort_by((a, b) => {
     let (ak, av) = a
@@ -541,7 +541,11 @@ pub fn CodepointMap::copy(self : CodepointMap) -> CodepointMap {
 }
 
 ///|
-pub fn CodepointMap::set(self : CodepointMap, key : UInt, value : UInt) -> Unit {
+pub fn CodepointMap::set(
+  self : CodepointMap,
+  key : UInt32,
+  value : UInt32,
+) -> Unit {
   if key == map_value_invalid {
     return ()
   }
@@ -553,7 +557,7 @@ pub fn CodepointMap::set(self : CodepointMap, key : UInt, value : UInt) -> Unit 
 }
 
 ///|
-pub fn CodepointMap::get(self : CodepointMap, key : UInt) -> UInt {
+pub fn CodepointMap::get(self : CodepointMap, key : UInt32) -> UInt32 {
   match self.map.get(key) {
     None => map_value_invalid
     Some(value) => value
@@ -561,12 +565,12 @@ pub fn CodepointMap::get(self : CodepointMap, key : UInt) -> UInt {
 }
 
 ///|
-pub fn CodepointMap::del(self : CodepointMap, key : UInt) -> Unit {
+pub fn CodepointMap::del(self : CodepointMap, key : UInt32) -> Unit {
   self.map.remove(key)
 }
 
 ///|
-pub fn CodepointMap::has(self : CodepointMap, key : UInt) -> Bool {
+pub fn CodepointMap::has(self : CodepointMap, key : UInt32) -> Bool {
   self.map.contains(key)
 }
 
@@ -578,12 +582,12 @@ pub fn CodepointMap::update(self : CodepointMap, other : CodepointMap) -> Unit {
 }
 
 ///|
-pub fn CodepointMap::keys(self : CodepointMap) -> Array[UInt] {
+pub fn CodepointMap::keys(self : CodepointMap) -> Array[UInt32] {
   Array::from_iter(self.map.keys())
 }
 
 ///|
-pub fn CodepointMap::values(self : CodepointMap) -> Array[UInt] {
+pub fn CodepointMap::values(self : CodepointMap) -> Array[UInt32] {
   Array::from_iter(self.map.values())
 }
 
@@ -606,7 +610,7 @@ pub fn CodepointMap::values_set(self : CodepointMap) -> CodepointSet {
 }
 
 ///|
-pub fn CodepointMap::iter(self : CodepointMap) -> Iter[(UInt, UInt)] {
+pub fn CodepointMap::iter(self : CodepointMap) -> Iter[(UInt32, UInt32)] {
   self.map.iter()
 }
 
@@ -615,8 +619,8 @@ pub fn CodepointMap::iter(self : CodepointMap) -> Iter[(UInt, UInt)] {
 /// Returns (next_index, key, value).
 pub fn CodepointMap::next(
   self : CodepointMap,
-  idx? : Int = -1,
-) -> (Int, UInt, UInt)? {
+  idx~ : Int32 = -1,
+) -> (Int32, UInt32, UInt32)? {
   let entries = Array::from_iter(self.map.iter())
   entries.sort_by((a, b) => {
     let (ak, av) = a
@@ -666,15 +670,15 @@ pub fn CodepointBiMap::is_empty(self : CodepointBiMap) -> Bool {
 }
 
 ///|
-pub fn CodepointBiMap::population(self : CodepointBiMap) -> Int {
+pub fn CodepointBiMap::population(self : CodepointBiMap) -> Int32 {
   self.forward.population()
 }
 
 ///|
 pub fn CodepointBiMap::set(
   self : CodepointBiMap,
-  lhs : UInt,
-  rhs : UInt,
+  lhs : UInt32,
+  rhs : UInt32,
 ) -> Unit {
   if lhs == map_value_invalid {
     return ()
@@ -688,22 +692,22 @@ pub fn CodepointBiMap::set(
 }
 
 ///|
-pub fn CodepointBiMap::get(self : CodepointBiMap, lhs : UInt) -> UInt {
+pub fn CodepointBiMap::get(self : CodepointBiMap, lhs : UInt32) -> UInt32 {
   self.forward.get(lhs)
 }
 
 ///|
-pub fn CodepointBiMap::backward(self : CodepointBiMap, rhs : UInt) -> UInt {
+pub fn CodepointBiMap::backward(self : CodepointBiMap, rhs : UInt32) -> UInt32 {
   self.backward.get(rhs)
 }
 
 ///|
-pub fn CodepointBiMap::has(self : CodepointBiMap, lhs : UInt) -> Bool {
+pub fn CodepointBiMap::has(self : CodepointBiMap, lhs : UInt32) -> Bool {
   self.forward.has(lhs)
 }
 
 ///|
-pub fn CodepointBiMap::del(self : CodepointBiMap, lhs : UInt) -> Unit {
+pub fn CodepointBiMap::del(self : CodepointBiMap, lhs : UInt32) -> Unit {
   let rhs = self.forward.get(lhs)
   if rhs != map_value_invalid {
     self.backward.del(rhs)
@@ -712,19 +716,19 @@ pub fn CodepointBiMap::del(self : CodepointBiMap, lhs : UInt) -> Unit {
 }
 
 ///|
-pub fn CodepointBiMap::keys(self : CodepointBiMap) -> Array[UInt] {
+pub fn CodepointBiMap::keys(self : CodepointBiMap) -> Array[UInt32] {
   self.forward.keys()
 }
 
 ///|
-pub fn CodepointBiMap::values(self : CodepointBiMap) -> Array[UInt] {
+pub fn CodepointBiMap::values(self : CodepointBiMap) -> Array[UInt32] {
   self.forward.values()
 }
 
 ///|
 pub struct CodepointIncBiMap {
   forward : CodepointMap
-  back : Array[UInt]
+  back : Array[UInt32]
 }
 
 ///|
@@ -739,17 +743,17 @@ pub fn CodepointIncBiMap::clear(self : CodepointIncBiMap) -> Unit {
 }
 
 ///|
-pub fn CodepointIncBiMap::population(self : CodepointIncBiMap) -> Int {
+pub fn CodepointIncBiMap::population(self : CodepointIncBiMap) -> Int32 {
   self.forward.population()
 }
 
 ///|
-pub fn CodepointIncBiMap::get_next_value(self : CodepointIncBiMap) -> UInt {
+pub fn CodepointIncBiMap::get_next_value(self : CodepointIncBiMap) -> UInt32 {
   self.back.length().reinterpret_as_uint()
 }
 
 ///|
-pub fn CodepointIncBiMap::add(self : CodepointIncBiMap, lhs : UInt) -> UInt {
+pub fn CodepointIncBiMap::add(self : CodepointIncBiMap, lhs : UInt32) -> UInt32 {
   let existing = self.forward.get(lhs)
   if existing != map_value_invalid {
     return existing
@@ -763,8 +767,8 @@ pub fn CodepointIncBiMap::add(self : CodepointIncBiMap, lhs : UInt) -> UInt {
 ///|
 pub fn CodepointIncBiMap::skip(
   self : CodepointIncBiMap,
-  count? : Int = 1,
-) -> UInt {
+  count~ : Int32 = 1,
+) -> UInt32 {
   let start = self.back.length().reinterpret_as_uint()
   if count <= 0 {
     return start
@@ -776,15 +780,15 @@ pub fn CodepointIncBiMap::skip(
 }
 
 ///|
-pub fn CodepointIncBiMap::get(self : CodepointIncBiMap, lhs : UInt) -> UInt {
+pub fn CodepointIncBiMap::get(self : CodepointIncBiMap, lhs : UInt32) -> UInt32 {
   self.forward.get(lhs)
 }
 
 ///|
 pub fn CodepointIncBiMap::backward(
   self : CodepointIncBiMap,
-  rhs : UInt,
-) -> UInt {
+  rhs : UInt32,
+) -> UInt32 {
   let idx = rhs.reinterpret_as_int()
   if idx < 0 || idx >= self.back.length() {
     map_value_invalid
@@ -794,7 +798,7 @@ pub fn CodepointIncBiMap::backward(
 }
 
 ///|
-pub fn CodepointIncBiMap::has(self : CodepointIncBiMap, lhs : UInt) -> Bool {
+pub fn CodepointIncBiMap::has(self : CodepointIncBiMap, lhs : UInt32) -> Bool {
   self.forward.has(lhs)
 }
 
@@ -811,7 +815,7 @@ pub fn CodepointIncBiMap::add_set(
 ///|
 pub fn CodepointIncBiMap::identity(
   self : CodepointIncBiMap,
-  size : Int,
+  size : Int32,
 ) -> Bool {
   self.clear()
   if size < 0 {

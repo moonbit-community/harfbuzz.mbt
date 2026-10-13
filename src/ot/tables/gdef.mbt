@@ -14,19 +14,31 @@
 
 ///|
 pub struct GdefHeader {
-  version : UInt
-  glyph_class_def_offset : Int?
-  attach_list_offset : Int?
-  lig_caret_list_offset : Int?
-  mark_attach_class_def_offset : Int?
-  mark_glyph_sets_def_offset : Int?
+  version : UInt32
+  glyph_class_def_offset : Int32?
+  attach_list_offset : Int32?
+  lig_caret_list_offset : Int32?
+  mark_attach_class_def_offset : Int32?
+  mark_glyph_sets_def_offset : Int32?
 } derive(Debug, ToJson)
+
+///|
+pub extend GdefHeader with @debug.Debug::{to_repr}
+
+///|
+pub extend GdefHeader with ToJson::{to_json}
 
 ///|
 pub struct GdefTable {
   data : BytesView
   header : GdefHeader
 } derive(Debug, ToJson)
+
+///|
+pub extend GdefTable with @debug.Debug::{to_repr}
+
+///|
+pub extend GdefTable with ToJson::{to_json}
 
 ///|
 pub fn GdefTable::parse(blob : @blob.Blob) -> Result[GdefTable, OtLayoutError] {
@@ -108,8 +120,8 @@ pub fn GdefTable::header(self : GdefTable) -> GdefHeader {
 ///|
 pub fn GdefTable::glyph_class(
   self : GdefTable,
-  glyph : UInt,
-) -> Result[Int, OtLayoutError] {
+  glyph : UInt32,
+) -> Result[Int32, OtLayoutError] {
   match self.header.glyph_class_def_offset {
     None => Ok(0)
     Some(offset) => class_def_value(self.data, offset, glyph)
@@ -119,8 +131,8 @@ pub fn GdefTable::glyph_class(
 ///|
 pub fn GdefTable::mark_attach_class(
   self : GdefTable,
-  glyph : UInt,
-) -> Result[Int, OtLayoutError] {
+  glyph : UInt32,
+) -> Result[Int32, OtLayoutError] {
   match self.header.mark_attach_class_def_offset {
     None => Ok(0)
     Some(offset) => class_def_value(self.data, offset, glyph)
@@ -130,8 +142,8 @@ pub fn GdefTable::mark_attach_class(
 ///|
 pub fn GdefTable::mark_glyph_set_contains(
   self : GdefTable,
-  set_index : Int,
-  glyph : UInt,
+  set_index : Int32,
+  glyph : UInt32,
 ) -> Result[Bool, OtLayoutError] {
   match self.header.mark_glyph_sets_def_offset {
     None => Ok(false)

@@ -19,6 +19,15 @@ pub struct Script {
 } derive(Eq, Debug, ToJson)
 
 ///|
+pub extend Script with Eq::{not_equal, equal}
+
+///|
+pub extend Script with @debug.Debug::{to_repr}
+
+///|
+pub extend Script with ToJson::{to_json}
+
+///|
 fn canonicalize_script_tag(tag : Tag) -> Tag {
   let (b1, b2, b3, b4) = tag.bytes()
   let u1 = b1.to_uint()
@@ -109,7 +118,7 @@ pub fn Script::from_iso15924_tag(tag : Tag) -> Script {
 
 ///|
 /// Convert an ISO 15924 string to a script.
-pub fn Script::from_string(s : String, len? : Int = -1) -> Script {
+pub fn Script::from_string(s : String, len~ : Int32 = -1) -> Script {
   Script::from_iso15924_tag(Tag::from_string(s, len~))
 }
 

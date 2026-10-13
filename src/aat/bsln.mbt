@@ -27,20 +27,32 @@ let bsln_format3 = 3
 ///|
 /// Parsed bsln baseline data.
 pub enum BslnData {
-  Format0(Array[Int])
-  Format1(Array[Int], LookupTable)
-  Format2(Int, Array[Int])
-  Format3(Int, Array[Int], LookupTable)
+  Format0(Array[Int32])
+  Format1(Array[Int32], LookupTable)
+  Format2(Int32, Array[Int32])
+  Format3(Int32, Array[Int32], LookupTable)
 } derive(Debug, ToJson)
+
+///|
+pub extend BslnData with @debug.Debug::{to_repr}
+
+///|
+pub extend BslnData with ToJson::{to_json}
 
 ///|
 /// Parsed bsln table.
 pub struct BslnTable {
-  version : Int
-  format : Int
-  default_baseline : Int
+  version : Int32
+  format : Int32
+  default_baseline : Int32
   data : BslnData
 } derive(Debug, ToJson)
+
+///|
+pub extend BslnTable with @debug.Debug::{to_repr}
+
+///|
+pub extend BslnTable with ToJson::{to_json}
 
 ///|
 pub fn BslnTable::has_data(self : BslnTable) -> Bool {
@@ -48,11 +60,14 @@ pub fn BslnTable::has_data(self : BslnTable) -> Bool {
 }
 
 ///|
-fn parse_deltas(data : BytesView, offset : Int) -> Result[Array[Int], AatError] {
+fn parse_deltas(
+  data : BytesView,
+  offset : Int32,
+) -> Result[Array[Int32], AatError] {
   if offset < 0 || offset + 64 > data.length() {
     return Err(UnexpectedEof)
   }
-  let deltas : Array[Int] = []
+  let deltas : Array[Int32] = []
   for i in 0..<32 {
     let value = read_i16(data, offset + i * 2)
     match value {
@@ -66,12 +81,12 @@ fn parse_deltas(data : BytesView, offset : Int) -> Result[Array[Int], AatError] 
 ///|
 fn parse_ctl_points(
   data : BytesView,
-  offset : Int,
-) -> Result[Array[Int], AatError] {
+  offset : Int32,
+) -> Result[Array[Int32], AatError] {
   if offset < 0 || offset + 64 > data.length() {
     return Err(UnexpectedEof)
   }
-  let points : Array[Int] = []
+  let points : Array[Int32] = []
   for i in 0..<32 {
     let value = read_u16_int(data, offset + i * 2)
     match value {
@@ -91,7 +106,7 @@ fn parse_ctl_points(
 /// Parse a bsln table.
 pub fn BslnTable::parse(
   data : BytesView,
-  num_glyphs : Int,
+  num_glyphs : Int32,
 ) -> Result[BslnTable, AatError] {
   if num_glyphs < 0 {
     return Err(InvalidFormat)

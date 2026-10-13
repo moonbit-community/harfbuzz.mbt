@@ -19,7 +19,7 @@ fn serialize_glyphs(
   no_positions : Bool,
   no_advances : Bool,
 ) -> String {
-  let sb = StringBuilder::new()
+  let sb = StringBuilder()
   let mut x = 0
   let mut y = 0
   let len = infos.length()
@@ -63,8 +63,8 @@ fn serialize_glyphs(
 }
 
 ///|
-fn run_aots_case(case : AotsTestCase) -> Result[String, String] {
-  let bytes = match aots_font_bytes(case.font) {
+fn run_aots_case(case : @shape.AotsTestCase) -> Result[String, String] {
+  let bytes = match @shape.aots_font_bytes(case.font) {
     None => return Err("missing font: \{case.font}")
     Some(value) => value
   }
@@ -99,14 +99,14 @@ fn run_aots_case(case : AotsTestCase) -> Result[String, String] {
 test "shape aots fixtures" {
   let mut skipped = 0
   let mut mismatched = 0
-  for case in aots_test_cases {
+  for case in @shape.aots_test_cases {
     match run_aots_case(case) {
       Err(_) => skipped = skipped + 1
       Ok(actual) => if actual != case.expected { mismatched = mismatched + 1 }
     }
   }
   @debug.debug_inspect(
-    (aots_skipped_cases, skipped, mismatched),
+    (@shape.aots_skipped_cases, skipped, mismatched),
     content="(0, 0, 0)",
   )
 }

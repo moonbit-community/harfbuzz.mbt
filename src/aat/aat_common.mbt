@@ -19,7 +19,16 @@ pub suberror AatError {
 } derive(Eq, Debug, ToJson)
 
 ///|
-fn read_u16(data : BytesView, offset : Int) -> Result[UInt, AatError] {
+pub extend AatError with Eq::{not_equal, equal}
+
+///|
+pub extend AatError with @debug.Debug::{to_repr}
+
+///|
+pub extend AatError with ToJson::{to_json}
+
+///|
+fn read_u16(data : BytesView, offset : Int32) -> Result[UInt32, AatError] {
   if offset < 0 || offset + 2 > data.length() {
     return Err(UnexpectedEof)
   }
@@ -29,7 +38,7 @@ fn read_u16(data : BytesView, offset : Int) -> Result[UInt, AatError] {
 }
 
 ///|
-fn read_u32(data : BytesView, offset : Int) -> Result[UInt, AatError] {
+fn read_u32(data : BytesView, offset : Int32) -> Result[UInt32, AatError] {
   if offset < 0 || offset + 4 > data.length() {
     return Err(UnexpectedEof)
   }
@@ -41,7 +50,7 @@ fn read_u32(data : BytesView, offset : Int) -> Result[UInt, AatError] {
 }
 
 ///|
-fn u16_to_int(value : UInt) -> Int {
+fn u16_to_int(value : UInt32) -> Int32 {
   let v = value.reinterpret_as_int()
   if v < 0 {
     v + 0x10000
@@ -51,7 +60,7 @@ fn u16_to_int(value : UInt) -> Int {
 }
 
 ///|
-fn read_u16_int(data : BytesView, offset : Int) -> Result[Int, AatError] {
+fn read_u16_int(data : BytesView, offset : Int32) -> Result[Int32, AatError] {
   match read_u16(data, offset) {
     Err(err) => Err(err)
     Ok(value) => Ok(u16_to_int(value))
@@ -59,7 +68,7 @@ fn read_u16_int(data : BytesView, offset : Int) -> Result[Int, AatError] {
 }
 
 ///|
-fn read_u32_int(data : BytesView, offset : Int) -> Result[Int, AatError] {
+fn read_u32_int(data : BytesView, offset : Int32) -> Result[Int32, AatError] {
   match read_u32(data, offset) {
     Err(err) => Err(err)
     Ok(value) => Ok(value.reinterpret_as_int())
@@ -69,8 +78,8 @@ fn read_u32_int(data : BytesView, offset : Int) -> Result[Int, AatError] {
 ///|
 fn read_u32_non_negative(
   data : BytesView,
-  offset : Int,
-) -> Result[Int, AatError] {
+  offset : Int32,
+) -> Result[Int32, AatError] {
   match read_u32_int(data, offset) {
     Err(err) => Err(err)
     Ok(value) => if value < 0 { Err(InvalidFormat) } else { Ok(value) }
@@ -78,7 +87,7 @@ fn read_u32_non_negative(
 }
 
 ///|
-fn read_i16(data : BytesView, offset : Int) -> Result[Int, AatError] {
+fn read_i16(data : BytesView, offset : Int32) -> Result[Int32, AatError] {
   match read_u16_int(data, offset) {
     Err(err) => Err(err)
     Ok(value) => if value >= 0x8000 { Ok(value - 0x10000) } else { Ok(value) }
@@ -86,7 +95,7 @@ fn read_i16(data : BytesView, offset : Int) -> Result[Int, AatError] {
 }
 
 ///|
-fn read_i32(data : BytesView, offset : Int) -> Result[Int, AatError] {
+fn read_i32(data : BytesView, offset : Int32) -> Result[Int32, AatError] {
   match read_u32(data, offset) {
     Err(err) => Err(err)
     Ok(value) => Ok(value.reinterpret_as_int())

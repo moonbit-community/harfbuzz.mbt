@@ -120,9 +120,9 @@ fn is_use_script_for_normalize(script : @common.Script) -> Bool {
 ///|
 fn compose_for_script(
   script : @common.Script,
-  base : UInt,
-  mark : UInt,
-) -> UInt? {
+  base : UInt32,
+  mark : UInt32,
+) -> UInt32? {
   if (
       is_indic_script_for_normalize(script) ||
       is_use_script_for_normalize(script)

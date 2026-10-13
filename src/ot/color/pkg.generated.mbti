@@ -15,12 +15,20 @@ pub suberror ColorError {
   InvalidFormat
   Var(@var.VarError)
 } derive(Eq, ToJson, @debug.Debug)
+pub fn ColorError::equal(Self, Self) -> Bool
+pub fn ColorError::not_equal(Self, Self) -> Bool
+pub fn ColorError::to_json(Self) -> Json
+pub fn ColorError::to_repr(Self) -> @debug.Repr
 
 // Types and methods
 pub struct BaseGlyphPaintRecord {
   glyph_id : Int
   paint_offset : Int
 } derive(Eq, ToJson, @debug.Debug)
+pub fn BaseGlyphPaintRecord::equal(Self, Self) -> Bool
+pub fn BaseGlyphPaintRecord::not_equal(Self, Self) -> Bool
+pub fn BaseGlyphPaintRecord::to_json(Self) -> Json
+pub fn BaseGlyphPaintRecord::to_repr(Self) -> @debug.Repr
 
 pub struct ClipBox {
   format : Int
@@ -30,6 +38,10 @@ pub struct ClipBox {
   y_max : Int
   var_idx_base : UInt?
 } derive(Eq, ToJson, @debug.Debug)
+pub fn ClipBox::equal(Self, Self) -> Bool
+pub fn ClipBox::not_equal(Self, Self) -> Bool
+pub fn ClipBox::to_json(Self) -> Json
+pub fn ClipBox::to_repr(Self) -> @debug.Repr
 
 pub struct ClipExtents {
   x_bearing : Int
@@ -37,28 +49,48 @@ pub struct ClipExtents {
   width : Int
   height : Int
 } derive(Eq, ToJson, @debug.Debug)
+pub fn ClipExtents::equal(Self, Self) -> Bool
+pub fn ClipExtents::not_equal(Self, Self) -> Bool
+pub fn ClipExtents::to_json(Self) -> Json
+pub fn ClipExtents::to_repr(Self) -> @debug.Repr
 
 pub struct ClipList {
   format : Int
   records : Array[ClipRecord]
 } derive(Eq, ToJson, @debug.Debug)
+pub fn ClipList::equal(Self, Self) -> Bool
+pub fn ClipList::not_equal(Self, Self) -> Bool
+pub fn ClipList::to_json(Self) -> Json
+pub fn ClipList::to_repr(Self) -> @debug.Repr
 
 pub struct ClipRecord {
   start_glyph_id : Int
   end_glyph_id : Int
   clip_box : ClipBox
 } derive(Eq, ToJson, @debug.Debug)
+pub fn ClipRecord::equal(Self, Self) -> Bool
+pub fn ClipRecord::not_equal(Self, Self) -> Bool
+pub fn ClipRecord::to_json(Self) -> Json
+pub fn ClipRecord::to_repr(Self) -> @debug.Repr
 
 pub struct ColrBaseGlyph {
   glyph_id : Int
   first_layer_index : Int
   num_layers : Int
 } derive(Eq, ToJson, @debug.Debug)
+pub fn ColrBaseGlyph::equal(Self, Self) -> Bool
+pub fn ColrBaseGlyph::not_equal(Self, Self) -> Bool
+pub fn ColrBaseGlyph::to_json(Self) -> Json
+pub fn ColrBaseGlyph::to_repr(Self) -> @debug.Repr
 
 pub struct ColrLayer {
   glyph_id : Int
   color_index : Int
 } derive(Eq, ToJson, @debug.Debug)
+pub fn ColrLayer::equal(Self, Self) -> Bool
+pub fn ColrLayer::not_equal(Self, Self) -> Bool
+pub fn ColrLayer::to_json(Self) -> Json
+pub fn ColrLayer::to_repr(Self) -> @debug.Repr
 
 pub struct ColrTable {
   version : Int
@@ -80,6 +112,8 @@ pub fn ColrTable::layer_paint(Self, Int) -> Result[@paint.Paint?, ColorError]
 pub fn ColrTable::paint_at(Self, Int) -> Result[@paint.Paint, ColorError]
 pub fn ColrTable::paint_for_glyph(Self, Int) -> Result[@paint.Paint?, ColorError]
 pub fn ColrTable::parse(BytesView) -> Result[Self, ColorError]
+pub fn ColrTable::to_json(Self) -> Json
+pub fn ColrTable::to_repr(Self) -> @debug.Repr
 pub fn ColrTable::var_instancer(Self, Array[Int]) -> ColrVarInstancer
 pub fn ColrTable::walk_paint(Self, @paint.Paint, (@paint.Paint, Int) -> Bool, max_depth? : Int) -> Result[Int, ColorError]
 
@@ -106,9 +140,10 @@ pub struct CpalTable {
 } derive(ToJson, @debug.Debug)
 pub fn CpalTable::palette_colors(Self, Int) -> Array[@paint.Color]
 pub fn CpalTable::parse(BytesView) -> Result[Self, ColorError]
+pub fn CpalTable::to_json(Self) -> Json
+pub fn CpalTable::to_repr(Self) -> @debug.Repr
 
 // Type aliases
 pub type PaintVisitor = (@paint.Paint, Int) -> Bool
 
 // Traits
-

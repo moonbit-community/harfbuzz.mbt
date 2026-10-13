@@ -9,6 +9,10 @@ import {
 
 // Errors
 type BlobError derive(Eq, ToJson, @debug.Debug)
+pub fn BlobError::equal(Self, Self) -> Bool
+pub fn BlobError::not_equal(Self, Self) -> Bool
+pub fn BlobError::to_json(Self) -> Json
+pub fn BlobError::to_repr(Self) -> @debug.Repr
 
 // Types and methods
 pub struct Blob {
@@ -18,6 +22,7 @@ pub struct Blob {
   mode : MemoryMode
 } derive(Eq, ToJson, @debug.Debug)
 pub fn Blob::as_view(Self) -> BytesView
+pub fn Blob::equal(Self, Self) -> Bool
 pub fn Blob::from_array(ArrayView[Byte], mode? : MemoryMode) -> Self
 pub fn Blob::from_bytes(Bytes, mode? : MemoryMode) -> Self
 pub fn Blob::from_bytes_copy(Bytes) -> Self
@@ -25,8 +30,11 @@ pub fn Blob::get(Self, Int) -> Byte?
 pub fn Blob::is_empty(Self) -> Bool
 pub fn Blob::len(Self) -> Int
 pub fn Blob::memory_mode(Self) -> MemoryMode
+pub fn Blob::not_equal(Self, Self) -> Bool
 pub fn Blob::sub(Self, Int, Int) -> Result[Self, BlobError]
 pub fn Blob::to_bytes(Self) -> Bytes
+pub fn Blob::to_json(Self) -> Json
+pub fn Blob::to_repr(Self) -> @debug.Repr
 
 pub(all) enum MemoryMode {
   Duplicate
@@ -34,8 +42,11 @@ pub(all) enum MemoryMode {
   Writable
   ReadonlyMayMakeWritable
 } derive(Eq, ToJson, @debug.Debug)
+pub fn MemoryMode::equal(Self, Self) -> Bool
+pub fn MemoryMode::not_equal(Self, Self) -> Bool
+pub fn MemoryMode::to_json(Self) -> Json
+pub fn MemoryMode::to_repr(Self) -> @debug.Repr
 
 // Type aliases
 
 // Traits
-

@@ -26,6 +26,12 @@ pub struct VarcTransform {
 } derive(Debug, ToJson)
 
 ///|
+pub extend VarcTransform with @debug.Debug::{to_repr}
+
+///|
+pub extend VarcTransform with ToJson::{to_json}
+
+///|
 pub fn VarcTransform::apply_to_point(
   self : VarcTransform,
   x : Double,
@@ -99,13 +105,19 @@ fn max4(a : Double, b : Double, c : Double, d : Double) -> Double {
 
 ///|
 pub struct VarcComponent {
-  glyph : Int
+  glyph : Int32
   visible : Bool
-  axis_indices : Array[Int]
+  axis_indices : Array[Int32]
   axis_values : Array[Double]
-  coords : Array[Int]
+  coords : Array[Int32]
   transform : VarcTransform
 } derive(Debug, ToJson)
+
+///|
+pub extend VarcComponent with @debug.Debug::{to_repr}
+
+///|
+pub extend VarcComponent with ToJson::{to_json}
 
 ///|
 priv struct VarcTransformRaw {
@@ -121,58 +133,58 @@ priv struct VarcTransformRaw {
 }
 
 ///|
-let varc_flag_reset_unspecified_axes : UInt = 1U << 0
+let varc_flag_reset_unspecified_axes : UInt32 = 1U << 0
 
 ///|
-let varc_flag_have_axes : UInt = 1U << 1
+let varc_flag_have_axes : UInt32 = 1U << 1
 
 ///|
-let varc_flag_axis_values_have_variation : UInt = 1U << 2
+let varc_flag_axis_values_have_variation : UInt32 = 1U << 2
 
 ///|
-let varc_flag_transform_has_variation : UInt = 1U << 3
+let varc_flag_transform_has_variation : UInt32 = 1U << 3
 
 ///|
-let varc_flag_have_translate_x : UInt = 1U << 4
+let varc_flag_have_translate_x : UInt32 = 1U << 4
 
 ///|
-let varc_flag_have_translate_y : UInt = 1U << 5
+let varc_flag_have_translate_y : UInt32 = 1U << 5
 
 ///|
-let varc_flag_have_rotation : UInt = 1U << 6
+let varc_flag_have_rotation : UInt32 = 1U << 6
 
 ///|
-let varc_flag_have_condition : UInt = 1U << 7
+let varc_flag_have_condition : UInt32 = 1U << 7
 
 ///|
-let varc_flag_have_scale_x : UInt = 1U << 8
+let varc_flag_have_scale_x : UInt32 = 1U << 8
 
 ///|
-let varc_flag_have_scale_y : UInt = 1U << 9
+let varc_flag_have_scale_y : UInt32 = 1U << 9
 
 ///|
-let varc_flag_have_tcenter_x : UInt = 1U << 10
+let varc_flag_have_tcenter_x : UInt32 = 1U << 10
 
 ///|
-let varc_flag_have_tcenter_y : UInt = 1U << 11
+let varc_flag_have_tcenter_y : UInt32 = 1U << 11
 
 ///|
-let varc_flag_gid_is_24bit : UInt = 1U << 12
+let varc_flag_gid_is_24bit : UInt32 = 1U << 12
 
 ///|
-let varc_flag_have_skew_x : UInt = 1U << 13
+let varc_flag_have_skew_x : UInt32 = 1U << 13
 
 ///|
-let varc_flag_have_skew_y : UInt = 1U << 14
+let varc_flag_have_skew_y : UInt32 = 1U << 14
 
 ///|
-let varc_flag_reserved_mask : UInt = 0xFFFF8000U
+let varc_flag_reserved_mask : UInt32 = 0xFFFF8000U
 
 ///|
-let varc_no_variation : UInt = 0xFFFFFFFFU
+let varc_no_variation : UInt32 = 0xFFFFFFFFU
 
 ///|
-let varc_max_axes : Int = 4096
+let varc_max_axes : Int32 = 4096
 
 ///|
 let varc_pi : Double = 3.141592653589793
@@ -186,7 +198,10 @@ fn option_or(value : Double?, default_value : Double) -> Double {
 }
 
 ///|
-fn read_glyph_id_24(data : BytesView, offset : Int) -> Result[Int, VarError] {
+fn read_glyph_id_24(
+  data : BytesView,
+  offset : Int32,
+) -> Result[Int32, VarError] {
   if offset < 0 || offset + 3 > data.length() {
     return Err(UnexpectedEof)
   }
@@ -198,10 +213,10 @@ fn read_glyph_id_24(data : BytesView, offset : Int) -> Result[Int, VarError] {
 
 ///|
 fn apply_axis_overrides(
-  base_coords : Array[Int],
-  axis_indices : Array[Int],
+  base_coords : Array[Int32],
+  axis_indices : Array[Int32],
   axis_values : Array[Double],
-) -> Array[Int] {
+) -> Array[Int32] {
   let coords = base_coords.copy()
   let count = if axis_indices.length() < axis_values.length() {
     axis_indices.length()
@@ -227,7 +242,7 @@ fn finalize_value(raw : Double, mult : Double, divisor : Double) -> Double {
 }
 
 ///|
-fn finalize_transform(flags : UInt, raw : VarcTransformRaw) -> VarcTransform {
+fn finalize_transform(flags : UInt32, raw : VarcTransformRaw) -> VarcTransform {
   let mut translate_x = 0.0
   let mut translate_y = 0.0
   let mut rotation = 0.0
@@ -295,13 +310,13 @@ fn finalize_transform(flags : UInt, raw : VarcTransformRaw) -> VarcTransform {
 ///|
 fn parse_component(
   data : BytesView,
-  offset : Int,
-  coords : Array[Int],
-  base_coords : Array[Int],
+  offset : Int32,
+  coords : Array[Int32],
+  base_coords : Array[Int32],
   varc : VarcTable,
   var_store : MultiItemVariationStore?,
   conditions : Array[VarcCondition],
-) -> Result[(VarcComponent, Int), VarError] {
+) -> Result[(VarcComponent, Int32), VarError] {
   let (flags, size) = match read_u32var(data, offset) {
     Err(err) => return Err(err)
     Ok(value) => value
@@ -338,7 +353,7 @@ fn parse_component(
     let var_delta = match var_store {
       None => None
       Some(store) =>
-        Some((var_idx : Int) => {
+        Some((var_idx : Int32) => {
           let var_idx_u = var_idx.reinterpret_as_uint()
           if var_idx_u == varc_no_variation {
             return 0.0
@@ -351,7 +366,7 @@ fn parse_component(
     show = conditions[cond_idx].evaluate(coords, var_delta)
   }
 
-  let mut axis_indices : Array[Int] = []
+  let mut axis_indices : Array[Int32] = []
   let axis_values : Array[Double] = []
   if (flags & varc_flag_have_axes) != 0U {
     let (axis_index, axis_size) = match read_u32var(data, pos) {
@@ -391,7 +406,7 @@ fn parse_component(
     }
   }
 
-  let mut transform_var_idx : UInt? = None
+  let mut transform_var_idx : UInt32? = None
   if (flags & varc_flag_transform_has_variation) != 0U {
     let (var_idx, var_size) = match read_u32var(data, pos) {
       Err(err) => return Err(err)
@@ -602,9 +617,9 @@ fn parse_component(
 ///|
 pub fn VarcTable::glyph_components(
   self : VarcTable,
-  glyph : Int,
-  coords : Array[Int],
-  base_coords : Array[Int],
+  glyph : Int32,
+  coords : Array[Int32],
+  base_coords : Array[Int32],
 ) -> Result[Array[VarcComponent], VarError] {
   let record = match self.glyph_record(glyph) {
     Err(err) => return Err(err)

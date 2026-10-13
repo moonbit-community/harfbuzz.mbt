@@ -15,8 +15,17 @@
 ///|
 /// Parsed vhea table (subset).
 pub struct VheaTable {
-  number_of_vmetrics : Int
+  number_of_vmetrics : Int32
 } derive(Eq, Debug, ToJson)
+
+///|
+pub extend VheaTable with Eq::{not_equal, equal}
+
+///|
+pub extend VheaTable with @debug.Debug::{to_repr}
+
+///|
+pub extend VheaTable with ToJson::{to_json}
 
 ///|
 /// Parse vhea table bytes.

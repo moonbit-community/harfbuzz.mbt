@@ -78,7 +78,7 @@ def main() -> None:
     for prop in PROPS:
         name = NAME_MAP[prop]
         content.append("///|")
-        content.append(f"let {name} : Array[(UInt, UInt)] = [")
+        content.append(f"let {name} : Array[(UInt32, UInt32)] = [")
         content.append(format_ranges(ranges[prop]))
         content.append("]")
         content.append("")

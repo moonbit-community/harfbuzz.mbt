@@ -15,46 +15,46 @@
 ///|
 /// Generated from refs/harfbuzz/src/hb-ot-shaper-use-machine.hh.
 ///
-let use_syllable_type_virama_terminated_cluster : Int = 0
+let use_syllable_type_virama_terminated_cluster : Int32 = 0
 
 ///|
-let use_syllable_type_sakot_terminated_cluster : Int = 1
+let use_syllable_type_sakot_terminated_cluster : Int32 = 1
 
 ///|
-let use_syllable_type_standard_cluster : Int = 2
+let use_syllable_type_standard_cluster : Int32 = 2
 
 ///|
-let use_syllable_type_number_joiner_terminated_cluster : Int = 3
+let use_syllable_type_number_joiner_terminated_cluster : Int32 = 3
 
 ///|
-let use_syllable_type_numeral_cluster : Int = 4
+let use_syllable_type_numeral_cluster : Int32 = 4
 
 ///|
-let use_syllable_type_symbol_cluster : Int = 5
+let use_syllable_type_symbol_cluster : Int32 = 5
 
 ///|
-let use_syllable_type_hieroglyph_cluster : Int = 6
+let use_syllable_type_hieroglyph_cluster : Int32 = 6
 
 ///|
-let use_syllable_type_broken_cluster : Int = 7
+let use_syllable_type_broken_cluster : Int32 = 7
 
 ///|
-let use_syllable_type_non_cluster : Int = 8
+let use_syllable_type_non_cluster : Int32 = 8
 
 ///|
-let use_syllable_machine_ex_CGJ : UInt = 6U
+let use_syllable_machine_ex_CGJ : UInt32 = 6U
 
 ///|
-let use_syllable_machine_ex_O : UInt = 0U
+let use_syllable_machine_ex_O : UInt32 = 0U
 
 ///|
-let use_syllable_machine_ex_ZWNJ : UInt = 14U
+let use_syllable_machine_ex_ZWNJ : UInt32 = 14U
 
 ///|
-let use_machine_start : Int = 1
+let use_machine_start : Int32 = 1
 
 ///|
-let use_machine_trans_keys : Array[Int] = [
+let use_machine_trans_keys : Array[Int32] = [
   49, 51, 0, 56, 11, 56, 11, 56, 1, 53, 14, 48, 14, 47, 14, 47, 14, 47, 14, 46, 14,
   46, 14, 14, 14, 48, 14, 48, 14, 48, 1, 14, 14, 48, 14, 53, 14, 53, 14, 53, 14,
   53, 12, 53, 14, 53, 12, 53, 12, 53, 12, 53, 11, 56, 1, 14, 1, 48, 14, 42, 14, 42,
@@ -71,7 +71,7 @@ let use_machine_trans_keys : Array[Int] = [
 ]
 
 ///|
-let use_machine_key_spans : Array[Int] = [
+let use_machine_key_spans : Array[Int32] = [
   3, 57, 46, 46, 53, 35, 34, 34, 34, 33, 33, 1, 35, 35, 35, 14, 35, 40, 40, 40, 40,
   42, 40, 42, 42, 42, 46, 14, 48, 29, 29, 46, 53, 35, 34, 34, 34, 33, 33, 1, 35,
   35, 35, 14, 35, 40, 40, 40, 40, 42, 40, 42, 42, 42, 46, 14, 14, 48, 1, 2, 11, 46,
@@ -82,7 +82,7 @@ let use_machine_key_spans : Array[Int] = [
 ]
 
 ///|
-let use_machine_index_offsets : Array[Int] = [
+let use_machine_index_offsets : Array[Int32] = [
   0, 4, 62, 109, 156, 210, 246, 281, 316, 351, 385, 419, 421, 457, 493, 529, 544,
   580, 621, 662, 703, 744, 787, 828, 871, 914, 957, 1004, 1019, 1068, 1098, 1128,
   1175, 1229, 1265, 1300, 1335, 1370, 1404, 1438, 1440, 1476, 1512, 1548, 1563, 1599,
@@ -95,7 +95,7 @@ let use_machine_index_offsets : Array[Int] = [
 ]
 
 ///|
-let use_machine_indicies : Array[Int] = [
+let use_machine_indicies : Array[Int32] = [
   1, 0, 2, 0, 3, 4, 5, 5, 6, 7, 5, 5, 5, 5, 5, 8, 9, 10, 11, 5, 5, 5, 12, 5, 5, 5,
   13, 14, 15, 16, 17, 18, 19, 20, 21, 8, 22, 23, 24, 25, 5, 26, 27, 28, 5, 29, 30,
   31, 32, 33, 34, 35, 32, 1, 5, 36, 5, 37, 5, 5, 38, 5, 40, 41, 39, 42, 39, 39, 39,
@@ -336,7 +336,7 @@ let use_machine_indicies : Array[Int] = [
 ]
 
 ///|
-let use_machine_trans_targs : Array[Int] = [
+let use_machine_trans_targs : Array[Int32] = [
   1, 122, 0, 2, 31, 1, 59, 61, 90, 91, 116, 1, 118, 104, 92, 93, 94, 95, 108, 110,
   111, 112, 113, 105, 106, 107, 99, 100, 101, 119, 120, 121, 114, 96, 97, 98, 126,
   115, 98, 1, 3, 4, 1, 17, 5, 6, 7, 8, 21, 23, 24, 25, 26, 18, 19, 20, 12, 13, 14,
@@ -348,7 +348,7 @@ let use_machine_trans_targs : Array[Int] = [
 ]
 
 ///|
-let use_machine_trans_actions : Array[Int] = [
+let use_machine_trans_actions : Array[Int32] = [
   1, 0, 0, 0, 0, 4, 0, 0, 0, 0, 0, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
   0, 0, 0, 0, 0, 0, 0, 0, 6, 7, 0, 8, 9, 0, 0, 10, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 11, 0, 12, 0, 0, 0, 0, 0, 0, 0,
@@ -358,7 +358,7 @@ let use_machine_trans_actions : Array[Int] = [
 ]
 
 ///|
-let use_machine_to_state_actions : Array[Int] = [
+let use_machine_to_state_actions : Array[Int32] = [
   0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -367,7 +367,7 @@ let use_machine_to_state_actions : Array[Int] = [
 ]
 
 ///|
-let use_machine_from_state_actions : Array[Int] = [
+let use_machine_from_state_actions : Array[Int32] = [
   0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -376,7 +376,7 @@ let use_machine_from_state_actions : Array[Int] = [
 ]
 
 ///|
-let use_machine_eof_trans : Array[Int] = [
+let use_machine_eof_trans : Array[Int32] = [
   1, 0, 40, 40, 40, 40, 40, 40, 40, 40, 40, 40, 40, 40, 40, 40, 40, 40, 40, 40, 40,
   40, 40, 40, 40, 40, 40, 40, 40, 40, 40, 70, 70, 70, 70, 70, 70, 70, 70, 70, 70,
   70, 70, 97, 70, 70, 70, 70, 70, 70, 70, 70, 70, 70, 70, 101, 97, 70, 101, 103,
@@ -388,16 +388,16 @@ let use_machine_eof_trans : Array[Int] = [
 
 ///|
 fn find_syllables_use(
-  categories : Array[UInt],
+  categories : Array[UInt32],
   is_mark : Array[Bool],
-) -> Array[Int] {
+) -> Array[Int32] {
   let len = categories.length()
-  let syllables : Array[Int] = Array::make(len, 0)
+  let syllables : Array[Int32] = Array::make(len, 0)
   if len == 0 || is_mark.length() != len {
     return syllables
   }
-  let filtered_indices : Array[Int] = []
-  let filtered_categories : Array[UInt] = []
+  let filtered_indices : Array[Int32] = []
+  let filtered_categories : Array[UInt32] = []
   for i in 0..<len {
     let category = categories[i]
     if category == use_syllable_machine_ex_CGJ {
@@ -434,7 +434,7 @@ fn find_syllables_use(
   let pe = filtered_len
   let eof = filtered_len
   let mut syllable_serial = 1
-  fn found_syllable(start : Int, end : Int, syllable_type : Int) -> Unit {
+  fn found_syllable(start : Int32, end : Int32, syllable_type : Int32) -> Unit {
     if start < 0 || start >= filtered_indices.length() {
       return ()
     }

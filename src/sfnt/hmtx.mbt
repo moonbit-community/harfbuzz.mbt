@@ -15,22 +15,28 @@
 ///|
 /// Parsed hmtx table (subset).
 pub struct HmtxTable {
-  advances : Array[Int]
-  lsbs : Array[Int]
+  advances : Array[Int32]
+  lsbs : Array[Int32]
 } derive(Debug, ToJson)
+
+///|
+pub extend HmtxTable with @debug.Debug::{to_repr}
+
+///|
+pub extend HmtxTable with ToJson::{to_json}
 
 ///|
 /// Parse hmtx table bytes.
 pub fn HmtxTable::parse(
   data : BytesView,
-  num_glyphs : Int,
-  number_of_hmetrics : Int,
+  num_glyphs : Int32,
+  number_of_hmetrics : Int32,
 ) -> Result[HmtxTable, SfntError] {
   if num_glyphs < 0 || number_of_hmetrics < 0 {
     return Err(InvalidFormat)
   }
-  let advances : Array[Int] = []
-  let lsbs : Array[Int] = []
+  let advances : Array[Int32] = []
+  let lsbs : Array[Int32] = []
   let mut offset = 0
   let mut last_advance = 0
   for i in 0..<num_glyphs {

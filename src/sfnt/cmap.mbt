@@ -16,10 +16,16 @@
 /// Parsed cmap table.
 pub struct CmapTable {
   data : BytesView
-  subtable_offset : Int
-  format : Int
-  variation_offset : Int?
+  subtable_offset : Int32
+  format : Int32
+  variation_offset : Int32?
 } derive(Debug, ToJson)
+
+///|
+pub extend CmapTable with @debug.Debug::{to_repr}
+
+///|
+pub extend CmapTable with ToJson::{to_json}
 
 ///|
 /// Parse a cmap table from its blob.
@@ -29,10 +35,10 @@ pub fn CmapTable::parse(blob : @blob.Blob) -> Result[CmapTable, SfntError] {
   match num_tables {
     Err(err) => Err(err)
     Ok(count) => {
-      let mut chosen_offset : Int? = None
-      let mut chosen_format : Int? = None
+      let mut chosen_offset : Int32? = None
+      let mut chosen_format : Int32? = None
       let mut chosen_rank = 0
-      let mut variation_offset : Int? = None
+      let mut variation_offset : Int32? = None
       let mut offset = 4
       for _ in 0..<count {
         let record_offset = offset
@@ -71,7 +77,7 @@ pub fn CmapTable::parse(blob : @blob.Blob) -> Result[CmapTable, SfntError] {
 }
 
 ///|
-fn cmap_format_rank(format : Int) -> Int {
+fn cmap_format_rank(format : Int32) -> Int32 {
   if format == 12 {
     5
   } else if format == 10 {
@@ -91,8 +97,8 @@ fn cmap_format_rank(format : Int) -> Int {
 /// Map a codepoint to a glyph id.
 pub fn CmapTable::glyph_for(
   self : CmapTable,
-  codepoint : UInt,
-) -> Result[UInt?, SfntError] {
+  codepoint : UInt32,
+) -> Result[UInt32?, SfntError] {
   if self.format == 12 {
     glyph_for_format12(self.data, self.subtable_offset, codepoint)
   } else if self.format == 10 {
@@ -148,9 +154,9 @@ pub fn CmapTable::collect_nominal_mapping(
 /// Map a codepoint + variation selector to a glyph id, if supported.
 pub fn CmapTable::variation_mapping(
   self : CmapTable,
-  codepoint : UInt,
-  selector : UInt,
-) -> Result[(Bool, UInt?), SfntError] {
+  codepoint : UInt32,
+  selector : UInt32,
+) -> Result[(Bool, UInt32?), SfntError] {
   match self.variation_offset {
     None => Ok((false, None))
     Some(offset) =>
@@ -161,10 +167,10 @@ pub fn CmapTable::variation_mapping(
 ///|
 fn variation_mapping_format14(
   data : BytesView,
-  offset : Int,
-  codepoint : UInt,
-  selector : UInt,
-) -> Result[(Bool, UInt?), SfntError] {
+  offset : Int32,
+  codepoint : UInt32,
+  selector : UInt32,
+) -> Result[(Bool, UInt32?), SfntError] {
   let num_records = read_u32_int(data, offset + 6)
   match num_records {
     Err(err) => Err(err)
@@ -220,9 +226,9 @@ fn variation_mapping_format14(
 ///|
 fn non_default_variation_mapping(
   data : BytesView,
-  offset : Int,
-  codepoint : UInt,
-) -> Result[UInt?, SfntError] {
+  offset : Int32,
+  codepoint : UInt32,
+) -> Result[UInt32?, SfntError] {
   let count = read_u32_int(data, offset)
   match count {
     Err(err) => Err(err)
@@ -252,8 +258,8 @@ fn non_default_variation_mapping(
 ///|
 fn default_variation_mapping(
   data : BytesView,
-  offset : Int,
-  codepoint : UInt,
+  offset : Int32,
+  codepoint : UInt32,
 ) -> Result[Bool, SfntError] {
   let count = read_u32_int(data, offset)
   match count {
@@ -287,9 +293,9 @@ fn default_variation_mapping(
 ///|
 fn glyph_for_format0(
   data : BytesView,
-  offset : Int,
-  codepoint : UInt,
-) -> Result[UInt?, SfntError] {
+  offset : Int32,
+  codepoint : UInt32,
+) -> Result[UInt32?, SfntError] {
   if codepoint > 0xffU {
     return Ok(None)
   }
@@ -307,7 +313,7 @@ fn glyph_for_format0(
 ///|
 fn collect_format0(
   data : BytesView,
-  offset : Int,
+  offset : Int32,
   map : @common.CodepointMap,
 ) -> Result[Unit, SfntError] {
   let base = offset + 6
@@ -329,9 +335,9 @@ fn collect_format0(
 ///|
 fn glyph_for_format6(
   data : BytesView,
-  offset : Int,
-  codepoint : UInt,
-) -> Result[UInt?, SfntError] {
+  offset : Int32,
+  codepoint : UInt32,
+) -> Result[UInt32?, SfntError] {
   if codepoint > 0xffffU {
     return Ok(None)
   }
@@ -362,7 +368,7 @@ fn glyph_for_format6(
 ///|
 fn collect_format6(
   data : BytesView,
-  offset : Int,
+  offset : Int32,
   map : @common.CodepointMap,
 ) -> Result[Unit, SfntError] {
   let first_code = read_u16_int(data, offset + 6)
@@ -394,9 +400,9 @@ fn collect_format6(
 ///|
 fn glyph_for_format10(
   data : BytesView,
-  offset : Int,
-  codepoint : UInt,
-) -> Result[UInt?, SfntError] {
+  offset : Int32,
+  codepoint : UInt32,
+) -> Result[UInt32?, SfntError] {
   let start_code = read_u32_int(data, offset + 12)
   let entry_count = read_u32_int(data, offset + 16)
   match (start_code, entry_count) {
@@ -426,7 +432,7 @@ fn glyph_for_format10(
 ///|
 fn collect_format10(
   data : BytesView,
-  offset : Int,
+  offset : Int32,
   map : @common.CodepointMap,
 ) -> Result[Unit, SfntError] {
   let start_code = read_u32_int(data, offset + 12)
@@ -459,9 +465,9 @@ fn collect_format10(
 ///|
 fn glyph_for_format12(
   data : BytesView,
-  offset : Int,
-  codepoint : UInt,
-) -> Result[UInt?, SfntError] {
+  offset : Int32,
+  codepoint : UInt32,
+) -> Result[UInt32?, SfntError] {
   let groups = read_u32_int(data, offset + 12)
   match groups {
     Err(err) => Err(err)
@@ -490,7 +496,7 @@ fn glyph_for_format12(
 ///|
 fn collect_format12(
   data : BytesView,
-  offset : Int,
+  offset : Int32,
   map : @common.CodepointMap,
 ) -> Result[Unit, SfntError] {
   let groups = read_u32_int(data, offset + 12)
@@ -527,9 +533,9 @@ fn collect_format12(
 ///|
 fn glyph_for_format4(
   data : BytesView,
-  offset : Int,
-  codepoint : UInt,
-) -> Result[UInt?, SfntError] {
+  offset : Int32,
+  codepoint : UInt32,
+) -> Result[UInt32?, SfntError] {
   if codepoint > 0xffffU {
     return Ok(None)
   }
@@ -593,7 +599,7 @@ fn glyph_for_format4(
 ///|
 fn collect_format4(
   data : BytesView,
-  offset : Int,
+  offset : Int32,
   map : @common.CodepointMap,
 ) -> Result[Unit, SfntError] {
   let seg_count_x2 = read_u16_int(data, offset + 6)

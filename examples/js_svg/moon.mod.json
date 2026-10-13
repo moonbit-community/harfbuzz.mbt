@@ -1,9 +1,0 @@
-{
-  "name": "examples/js_svg",
-  "deps": {
-    "moonbit-community/harfbuzz": {
-      "path": "../../"
-    }
-  },
-  "preferred-target": "js"
-}

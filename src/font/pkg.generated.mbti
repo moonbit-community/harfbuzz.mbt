@@ -18,6 +18,10 @@ import {
 
 // Errors
 type FontError derive(Eq, ToJson, @debug.Debug)
+pub fn FontError::equal(Self, Self) -> Bool
+pub fn FontError::not_equal(Self, Self) -> Bool
+pub fn FontError::to_json(Self) -> Json
+pub fn FontError::to_repr(Self) -> @debug.Repr
 
 // Types and methods
 pub struct Font {
@@ -129,6 +133,8 @@ pub fn Font::set_ppem(Self, Int, Int) -> Unit
 pub fn Font::set_scale(Self, Int, Int) -> Unit
 pub fn Font::set_variations(Self, Array[@var.AxisCoord]) -> Result[Unit, FontError]
 pub fn Font::stat(Self) -> Result[@sfnt.StatTable?, FontError]
+pub fn Font::to_json(Self) -> Json
+pub fn Font::to_repr(Self) -> @debug.Repr
 pub fn Font::trak(Self) -> Result[@aat.TrakTable?, FontError]
 pub fn Font::varc(Self) -> Result[@var.VarcTable?, FontError]
 pub fn Font::varc_components(Self, UInt) -> Result[Array[@var.VarcComponent]?, FontError]
@@ -140,8 +146,9 @@ pub fn Font::vorg(Self) -> Result[@sfnt.VorgTable?, FontError]
 pub fn Font::vvar(Self) -> Result[@var.HvarTable?, FontError]
 
 type PointDelta derive(ToJson, @debug.Debug)
+pub fn PointDelta::to_json(Self) -> Json
+pub fn PointDelta::to_repr(Self) -> @debug.Repr
 
 // Type aliases
 
 // Traits
-

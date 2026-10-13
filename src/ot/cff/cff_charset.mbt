@@ -14,12 +14,12 @@
 
 ///|
 priv struct SidGid {
-  sid : Int
-  gid : Int
+  sid : Int32
+  gid : Int32
 }
 
 ///|
-let standard_encoding_to_sid : Array[Int] = [
+let standard_encoding_to_sid : Array[Int32] = [
   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
   0, 0, 0, 0, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19,
   20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39,
@@ -294,7 +294,7 @@ let expert_subset_charset_sid_to_gid : Array[SidGid] = [
 ]
 
 ///|
-fn lookup_sid_to_gid(pairs : Array[SidGid], sid : Int) -> Int? {
+fn lookup_sid_to_gid(pairs : Array[SidGid], sid : Int32) -> Int32? {
   let mut lo = 0
   let mut hi = pairs.length()
   while lo < hi {
@@ -312,7 +312,7 @@ fn lookup_sid_to_gid(pairs : Array[SidGid], sid : Int) -> Int? {
 }
 
 ///|
-pub fn cff1_standard_sid(code : Int) -> Int? {
+pub fn cff1_standard_sid(code : Int32) -> Int32? {
   if code < 0 || code >= standard_encoding_to_sid.length() {
     return None
   }
@@ -325,15 +325,15 @@ pub fn cff1_standard_sid(code : Int) -> Int? {
 
 ///|
 pub fn cff1_sid_to_gid(
-  charset_offset : Int,
-  charset_map : Map[Int, Int]?,
-  sid : Int,
-  glyph_count : Int,
-) -> Int? {
+  charset_offset : Int32,
+  charset_map : Map[Int32, Int32]?,
+  sid : Int32,
+  glyph_count : Int32,
+) -> Int32? {
   if sid < 0 {
     return None
   }
-  let mut gid : Int? = None
+  let mut gid : Int32? = None
   if charset_offset == 0 {
     if sid <= 228 && sid < glyph_count {
       gid = Some(sid)
@@ -362,8 +362,8 @@ pub fn cff1_sid_to_gid(
 ///|
 fn assign_gid_sids(
   pairs : Array[SidGid],
-  glyph_count : Int,
-  gids : Array[Int],
+  glyph_count : Int32,
+  gids : Array[Int32],
 ) -> Unit {
   for entry in pairs {
     if entry.gid >= 0 && entry.gid < glyph_count {
@@ -374,14 +374,14 @@ fn assign_gid_sids(
 
 ///|
 fn build_gid_to_sid_map(
-  charset_offset : Int,
-  charset_map : Map[Int, Int]?,
-  glyph_count : Int,
-) -> Result[Array[Int], CffError] {
+  charset_offset : Int32,
+  charset_map : Map[Int32, Int32]?,
+  glyph_count : Int32,
+) -> Result[Array[Int32], CffError] {
   if glyph_count < 0 {
     return Err(InvalidFormat)
   }
-  let gids : Array[Int] = Array::make(glyph_count, -1)
+  let gids : Array[Int32] = Array::make(glyph_count, -1)
   if glyph_count == 0 {
     return Ok(gids)
   }
@@ -422,10 +422,10 @@ fn build_gid_to_sid_map(
 ///|
 pub fn parse_cff1_charset(
   data : BytesView,
-  offset : Int,
-  glyph_count : Int,
-) -> Result[Map[Int, Int], CffError] {
-  let values : Map[Int, Int] = {}
+  offset : Int32,
+  glyph_count : Int32,
+) -> Result[Map[Int32, Int32], CffError] {
+  let values : Map[Int32, Int32] = Map([])
   values[0] = 0
   if glyph_count <= 1 {
     return Ok(values)

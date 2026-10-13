@@ -30,6 +30,8 @@ pub struct AotsTestCase {
   no_positions : Bool
   no_advances : Bool
 } derive(ToJson, @debug.Debug)
+pub fn AotsTestCase::to_json(Self) -> Json
+pub fn AotsTestCase::to_repr(Self) -> @debug.Repr
 
 pub struct ShapePlan {
   shaper : String
@@ -43,4 +45,3 @@ pub fn ShapePlan::shape(Self, @font.Font, @buffer.Buffer) -> Result[Unit, @buffe
 // Type aliases
 
 // Traits
-

@@ -15,8 +15,17 @@
 ///|
 /// Parsed hhea table (subset).
 pub struct HheaTable {
-  number_of_hmetrics : Int
+  number_of_hmetrics : Int32
 } derive(Eq, Debug, ToJson)
+
+///|
+pub extend HheaTable with Eq::{not_equal, equal}
+
+///|
+pub extend HheaTable with @debug.Debug::{to_repr}
+
+///|
+pub extend HheaTable with ToJson::{to_json}
 
 ///|
 /// Parse hhea table bytes.

@@ -15,16 +15,31 @@
 ///|
 /// Gasp range entry.
 pub struct GaspRange {
-  max_ppem : Int
-  behavior : Int
+  max_ppem : Int32
+  behavior : Int32
 } derive(Eq, Debug, ToJson)
+
+///|
+pub extend GaspRange with Eq::{not_equal, equal}
+
+///|
+pub extend GaspRange with @debug.Debug::{to_repr}
+
+///|
+pub extend GaspRange with ToJson::{to_json}
 
 ///|
 /// Parsed gasp table.
 pub struct GaspTable {
-  version : Int
+  version : Int32
   ranges : Array[GaspRange]
 } derive(Debug, ToJson)
+
+///|
+pub extend GaspTable with @debug.Debug::{to_repr}
+
+///|
+pub extend GaspTable with ToJson::{to_json}
 
 ///|
 /// Parse gasp table bytes (version 0/1).
@@ -60,7 +75,7 @@ pub fn GaspTable::parse(data : BytesView) -> Result[GaspTable, SfntError] {
 
 ///|
 /// Return gasp behavior flags for a given ppem (first range with max_ppem >= ppem).
-pub fn GaspTable::behavior_for_ppem(self : GaspTable, ppem : Int) -> Int? {
+pub fn GaspTable::behavior_for_ppem(self : GaspTable, ppem : Int32) -> Int32? {
   for range in self.ranges {
     if ppem <= range.max_ppem {
       return Some(range.behavior)

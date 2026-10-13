@@ -15,9 +15,18 @@
 ///|
 /// Parsed head table (subset).
 pub struct HeadTable {
-  units_per_em : Int
-  index_to_loc_format : Int
+  units_per_em : Int32
+  index_to_loc_format : Int32
 } derive(Eq, Debug, ToJson)
+
+///|
+pub extend HeadTable with Eq::{not_equal, equal}
+
+///|
+pub extend HeadTable with @debug.Debug::{to_repr}
+
+///|
+pub extend HeadTable with ToJson::{to_json}
 
 ///|
 /// Parse head table bytes.

@@ -2360,4 +2360,4 @@ pub let aots_test_cases : Array[AotsTestCase] = [
 ]
 
 ///|
-pub let aots_skipped_cases : Int = 0
+pub let aots_skipped_cases : Int32 = 0
