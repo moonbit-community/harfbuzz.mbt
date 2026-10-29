@@ -14,13 +14,13 @@
 
 ///|
 fn should_ignore_glyph(
-  glyph : UInt,
-  lookup_flag : Int,
+  glyph : UInt32,
+  lookup_flag : Int32,
   gdef : GdefTable?,
-  mark_filtering_set : Int?,
-  masks? : Array[UInt] = [],
-  index? : Int = -1,
-  lookup_mask? : UInt = 0xFFFFFFFFU,
+  mark_filtering_set : Int32?,
+  masks~ : Array[UInt32] = [],
+  index~ : Int32 = -1,
+  lookup_mask~ : UInt32 = 0xFFFFFFFFU,
 ) -> Result[Bool, OtLayoutError] {
   if !masks.is_empty() && index >= 0 {
     if (masks[index] & lookup_mask) == 0U {
@@ -81,16 +81,16 @@ fn should_ignore_glyph(
 
 ///|
 fn collect_forward_indices(
-  glyphs : ArrayView[UInt],
-  start_index : Int,
-  count : Int,
-  lookup_flag : Int,
+  glyphs : ArrayView[UInt32],
+  start_index : Int32,
+  count : Int32,
+  lookup_flag : Int32,
   gdef : GdefTable?,
-  mark_filtering_set : Int?,
-  masks? : Array[UInt] = [],
-  lookup_mask? : UInt = 0xFFFFFFFFU,
-  allow_ignored_start? : Bool = false,
-) -> Result[Array[Int]?, OtLayoutError] {
+  mark_filtering_set : Int32?,
+  masks~ : Array[UInt32] = [],
+  lookup_mask~ : UInt32 = 0xFFFFFFFFU,
+  allow_ignored_start~ : Bool = false,
+) -> Result[Array[Int32]?, OtLayoutError] {
   if count <= 0 {
     return Err(InvalidFormat)
   }
@@ -132,7 +132,7 @@ fn collect_forward_indices(
     Err(err) => Err(err)
     Ok(true) => Ok(None)
     Ok(false) => {
-      let indices : Array[Int] = []
+      let indices : Array[Int32] = []
       indices.push(cursor)
       cursor = cursor + 1
       while indices.length() < count {
@@ -164,22 +164,22 @@ fn collect_forward_indices(
 
 ///|
 fn collect_backward_indices(
-  glyphs : ArrayView[UInt],
-  start_index : Int,
-  count : Int,
-  lookup_flag : Int,
+  glyphs : ArrayView[UInt32],
+  start_index : Int32,
+  count : Int32,
+  lookup_flag : Int32,
   gdef : GdefTable?,
-  mark_filtering_set : Int?,
-  masks? : Array[UInt] = [],
-  lookup_mask? : UInt = 0xFFFFFFFFU,
-) -> Result[Array[Int]?, OtLayoutError] {
+  mark_filtering_set : Int32?,
+  masks~ : Array[UInt32] = [],
+  lookup_mask~ : UInt32 = 0xFFFFFFFFU,
+) -> Result[Array[Int32]?, OtLayoutError] {
   if count < 0 {
     return Err(InvalidFormat)
   }
   if count == 0 {
     return Ok(Some([]))
   }
-  let indices : Array[Int] = []
+  let indices : Array[Int32] = []
   let mut cursor = start_index - 1
   while indices.length() < count {
     if cursor < 0 {

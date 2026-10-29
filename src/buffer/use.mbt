@@ -39,34 +39,34 @@ let use_feature_tags : Array[@common.Tag] = [
 ]
 
 ///|
-let use_feature_rphf : Int = 4
+let use_feature_rphf : Int32 = 4
 
 ///|
-let use_feature_pref : Int = 5
+let use_feature_pref : Int32 = 5
 
 ///|
-let use_feature_isol : Int = 13
+let use_feature_isol : Int32 = 13
 
 ///|
-let use_feature_init : Int = 14
+let use_feature_init : Int32 = 14
 
 ///|
-let use_feature_medi : Int = 15
+let use_feature_medi : Int32 = 15
 
 ///|
-let use_feature_fina : Int = 16
+let use_feature_fina : Int32 = 16
 
 ///|
-let use_form_isol : Int = 0
+let use_form_isol : Int32 = 0
 
 ///|
-let use_form_init : Int = 1
+let use_form_init : Int32 = 1
 
 ///|
-let use_form_medi : Int = 2
+let use_form_medi : Int32 = 2
 
 ///|
-let use_form_fina : Int = 3
+let use_form_fina : Int32 = 3
 
 ///|
 fn use_has_arabic_joining(script : @common.Script) -> Bool {
@@ -86,83 +86,83 @@ fn use_has_arabic_joining(script : @common.Script) -> Bool {
 }
 
 ///|
-let use_cat_r : Int = 18
+let use_cat_r : Int32 = 18
 
 ///|
-let use_cat_h : Int = 12
+let use_cat_h : Int32 = 12
 
 ///|
-let use_cat_hvm : Int = 53
+let use_cat_hvm : Int32 = 53
 
 ///|
-let use_cat_is : Int = 44
+let use_cat_is : Int32 = 44
 
 ///|
-let use_cat_vpre : Int = 22
+let use_cat_vpre : Int32 = 22
 
 ///|
-let use_cat_vmpre : Int = 23
+let use_cat_vmpre : Int32 = 23
 
 ///|
-let use_cat_fabv : Int = 24
+let use_cat_fabv : Int32 = 24
 
 ///|
-let use_cat_fblw : Int = 25
+let use_cat_fblw : Int32 = 25
 
 ///|
-let use_cat_fpst : Int = 26
+let use_cat_fpst : Int32 = 26
 
 ///|
-let use_cat_fmabv : Int = 45
+let use_cat_fmabv : Int32 = 45
 
 ///|
-let use_cat_fmblw : Int = 46
+let use_cat_fmblw : Int32 = 46
 
 ///|
-let use_cat_fmpst : Int = 47
+let use_cat_fmpst : Int32 = 47
 
 ///|
-let use_cat_mabv : Int = 27
+let use_cat_mabv : Int32 = 27
 
 ///|
-let use_cat_mblw : Int = 28
+let use_cat_mblw : Int32 = 28
 
 ///|
-let use_cat_mpre : Int = 30
+let use_cat_mpre : Int32 = 30
 
 ///|
-let use_cat_mpst : Int = 29
+let use_cat_mpst : Int32 = 29
 
 ///|
-let use_cat_vabv : Int = 33
+let use_cat_vabv : Int32 = 33
 
 ///|
-let use_cat_vblw : Int = 34
+let use_cat_vblw : Int32 = 34
 
 ///|
-let use_cat_vpst : Int = 35
+let use_cat_vpst : Int32 = 35
 
 ///|
-let use_cat_vmabv : Int = 37
+let use_cat_vmabv : Int32 = 37
 
 ///|
-let use_cat_vmblw : Int = 38
+let use_cat_vmblw : Int32 = 38
 
 ///|
-let use_cat_vmpst : Int = 39
+let use_cat_vmpst : Int32 = 39
 
 ///|
-fn use_category(codepoint : UInt) -> Int {
+fn use_category(codepoint : UInt32) -> Int32 {
   use_get_category(codepoint).reinterpret_as_int()
 }
 
 ///|
-fn is_halant_use(category : Int) -> Bool {
+fn is_halant_use(category : Int32) -> Bool {
   category == use_cat_h || category == use_cat_hvm || category == use_cat_is
 }
 
 ///|
-fn is_post_base_use(category : Int) -> Bool {
+fn is_post_base_use(category : Int32) -> Bool {
   category == use_cat_fabv ||
   category == use_cat_fblw ||
   category == use_cat_fpst ||
@@ -186,10 +186,10 @@ fn is_post_base_use(category : Int) -> Bool {
 ///|
 fn move_index_use(
   buffer : Buffer,
-  categories : Array[Int],
-  from : Int,
-  to : Int,
-) -> Array[Int] {
+  categories : Array[Int32],
+  from : Int32,
+  to : Int32,
+) -> Array[Int32] {
   if from == to ||
     from < 0 ||
     to < 0 ||
@@ -230,10 +230,10 @@ fn move_index_use(
 ///|
 fn reorder_syllable_use(
   buffer : Buffer,
-  categories : Array[Int],
-  start : Int,
-  end : Int,
-) -> Array[Int] {
+  categories : Array[Int32],
+  start : Int32,
+  end : Int32,
+) -> Array[Int32] {
   if start < 0 || end > buffer.infos.length() || start >= end {
     return categories
   }
@@ -270,8 +270,8 @@ fn reorder_syllable_use(
 ///|
 fn reorder_use_syllables(
   buffer : Buffer,
-  categories : Array[Int],
-  syllables : Array[Int],
+  categories : Array[Int32],
+  syllables : Array[Int32],
 ) -> Unit {
   if categories.length() != buffer.infos.length() ||
     syllables.length() != buffer.infos.length() {
@@ -302,14 +302,14 @@ fn reorder_use_syllables(
 
 ///|
 fn set_use_form_masks(
-  masks : Array[UInt],
-  isol_bit : UInt,
-  init_bit : UInt,
-  medi_bit : UInt,
-  fina_bit : UInt,
-  start : Int,
-  end : Int,
-  form : Int,
+  masks : Array[UInt32],
+  isol_bit : UInt32,
+  init_bit : UInt32,
+  medi_bit : UInt32,
+  fina_bit : UInt32,
+  start : Int32,
+  end : Int32,
+  form : Int32,
 ) -> Unit {
   if start < 0 || end > masks.length() || start >= end {
     return ()
@@ -332,10 +332,10 @@ fn set_use_form_masks(
 ///|
 fn use_apply_gsub(
   gsub : @ot_tables.GsubTable?,
-  lookup_offsets : Array[Int],
-  glyphs : Array[UInt],
-  masks? : Array[UInt] = [],
-) -> (Array[UInt], Bool) {
+  lookup_offsets : Array[Int32],
+  glyphs : Array[UInt32],
+  masks~ : Array[UInt32] = [],
+) -> (Array[UInt32], Bool) {
   if lookup_offsets.is_empty() || glyphs.is_empty() {
     return (glyphs, false)
   }
@@ -359,12 +359,12 @@ fn use_apply_gsub(
 
 ///|
 fn update_use_categories_for_reph_pref(
-  categories : Array[Int],
-  syllables : Array[Int],
-  glyphs : Array[UInt],
+  categories : Array[Int32],
+  syllables : Array[Int32],
+  glyphs : Array[UInt32],
   gsub : @ot_tables.GsubTable?,
-  rphf_lookups : Array[Int],
-  pref_lookups : Array[Int],
+  rphf_lookups : Array[Int32],
+  pref_lookups : Array[Int32],
 ) -> Unit {
   if categories.length() != syllables.length() ||
     categories.length() != glyphs.length() {
@@ -390,7 +390,7 @@ fn update_use_categories_for_reph_pref(
       for k in 0..<limit {
         masks[k] = 1U
       }
-      let sub_glyphs : Array[UInt] = []
+      let sub_glyphs : Array[UInt32] = []
       for k in i..<j {
         sub_glyphs.push(glyphs[k])
       }
@@ -400,7 +400,7 @@ fn update_use_categories_for_reph_pref(
       }
     }
     if len > 0 && !pref_lookups.is_empty() {
-      let sub_glyphs : Array[UInt] = []
+      let sub_glyphs : Array[UInt32] = []
       for k in i..<j {
         sub_glyphs.push(glyphs[k])
       }
@@ -427,12 +427,12 @@ fn update_use_categories_for_reph_pref(
 
 ///|
 fn apply_use_arabic_form_masks(
-  masks : Array[UInt],
-  actions : Array[Int],
-  isol_bit : UInt,
-  init_bit : UInt,
-  medi_bit : UInt,
-  fina_bit : UInt,
+  masks : Array[UInt32],
+  actions : Array[Int32],
+  isol_bit : UInt32,
+  init_bit : UInt32,
+  medi_bit : UInt32,
+  fina_bit : UInt32,
 ) -> Bool {
   if actions.is_empty() || actions.length() != masks.length() {
     return false
@@ -456,10 +456,10 @@ fn apply_use_arabic_form_masks(
 
 ///|
 fn build_use_feature_masks(
-  categories : Array[Int],
-  syllables : Array[Int],
-  arabic_actions? : Array[Int] = [],
-) -> Array[UInt] {
+  categories : Array[Int32],
+  syllables : Array[Int32],
+  arabic_actions~ : Array[Int32] = [],
+) -> Array[UInt32] {
   let len = categories.length()
   let masks = Array::make(len, 0U)
   let rphf_bit = 1U << use_feature_rphf
@@ -526,7 +526,7 @@ fn build_use_feature_masks(
 pub fn Buffer::shape_use(
   self : Buffer,
   font : @font.Font,
-  script_tag? : @common.Tag = self.script.to_tag(),
+  script_tag~ : @common.Tag = self.script.to_tag(),
 ) -> Result[Unit, ShapeError] {
   let gsub = match font.gsub() {
     Err(err) => return Err(Font(err))
@@ -549,8 +549,8 @@ pub fn Buffer::shape_use(
     }
   }
   preprocess_vowel_constraints(self)
-  let categories : Array[UInt] = []
-  let categories_i : Array[Int] = []
+  let categories : Array[UInt32] = []
+  let categories_i : Array[Int32] = []
   let marks : Array[Bool] = []
   for info in self.infos {
     let category = use_get_category(info.codepoint)
@@ -566,8 +566,8 @@ pub fn Buffer::shape_use(
     Err(err) => return Err(err)
     Ok(_) => ()
   }
-  let categories_after_u : Array[UInt] = []
-  let categories_after_i : Array[Int] = []
+  let categories_after_u : Array[UInt32] = []
+  let categories_after_i : Array[Int32] = []
   let marks_after : Array[Bool] = []
   for info in self.infos {
     let category = use_category(info.codepoint)
@@ -576,8 +576,8 @@ pub fn Buffer::shape_use(
     marks_after.push(@unicode.is_mark(info.codepoint))
   }
   let syllables_after = find_syllables_use(categories_after_u, marks_after)
-  let mut rphf_lookups : Array[Int] = []
-  let mut pref_lookups : Array[Int] = []
+  let mut rphf_lookups : Array[Int32] = []
+  let mut pref_lookups : Array[Int32] = []
   if gsub is Some(gsub) {
     let lang_tag = language_to_ot_tag(self.language)
     rphf_lookups = match
@@ -606,7 +606,7 @@ pub fn Buffer::shape_use(
     }
   }
   if !rphf_lookups.is_empty() || !pref_lookups.is_empty() {
-    let glyphs_for_reorder : Array[UInt] = []
+    let glyphs_for_reorder : Array[UInt32] = []
     for info in self.infos {
       let glyph = match font.glyph_for_codepoint(info.codepoint) {
         Err(err) => return Err(Font(err))
@@ -621,11 +621,11 @@ pub fn Buffer::shape_use(
     )
   }
   reorder_use_syllables(self, categories_after_i, syllables_after)
-  let reordered_categories : Array[Int] = []
+  let reordered_categories : Array[Int32] = []
   for info in self.infos {
     reordered_categories.push(use_category(info.codepoint))
   }
-  let mut arabic_actions : Array[Int] = []
+  let mut arabic_actions : Array[Int32] = []
   if use_has_arabic_joining(self.script) {
     arabic_actions = arabic_joining_actions(self)
     if self.script == @common.script_mongolian {

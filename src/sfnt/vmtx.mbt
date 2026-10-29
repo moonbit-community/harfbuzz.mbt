@@ -15,22 +15,22 @@
 ///|
 /// Parsed vmtx table (subset).
 pub struct VmtxTable {
-  advances : Array[Int]
-  tsbs : Array[Int]
+  advances : Array[Int32]
+  tsbs : Array[Int32]
 } derive(Debug, ToJson)
 
 ///|
 /// Parse vmtx table bytes.
 pub fn VmtxTable::parse(
   data : BytesView,
-  num_glyphs : Int,
-  number_of_vmetrics : Int,
+  num_glyphs : Int32,
+  number_of_vmetrics : Int32,
 ) -> Result[VmtxTable, SfntError] {
   if num_glyphs < 0 || number_of_vmetrics < 0 {
     return Err(InvalidFormat)
   }
-  let advances : Array[Int] = []
-  let tsbs : Array[Int] = []
+  let advances : Array[Int32] = []
+  let tsbs : Array[Int32] = []
   let mut offset = 0
   let mut last_advance = 0
   for i in 0..<num_glyphs {

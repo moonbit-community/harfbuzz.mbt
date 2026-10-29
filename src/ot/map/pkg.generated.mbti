@@ -12,14 +12,13 @@ import {
 
 // Types and methods
 pub struct OtMap {
-  gsub_lookups : Array[Int]
-  gpos_lookups : Array[Int]
+  gsub_lookups : Array[Int32]
+  gpos_lookups : Array[Int32]
 }
-pub fn OtMap::gpos_lookups(Self) -> ArrayView[Int]
-pub fn OtMap::gsub_lookups(Self) -> ArrayView[Int]
+pub fn OtMap::gpos_lookups(Self) -> ArrayView[Int32]
+pub fn OtMap::gsub_lookups(Self) -> ArrayView[Int32]
 pub fn OtMap::new(@tables.GsubTable?, @tables.GposTable?, @common.Tag, language_tag? : @common.Tag, gsub_features? : Array[@common.Tag], gpos_features? : Array[@common.Tag]) -> Result[Self, @tables.OtLayoutError]
 
 // Type aliases
 
 // Traits
-

@@ -7,7 +7,7 @@ import {
 }
 
 // Values
-pub let codepoint_invalid : UInt
+pub let codepoint_invalid : UInt32
 
 pub let direction_btt : Direction
 
@@ -21,17 +21,17 @@ pub let direction_ttb : Direction
 
 pub let language_invalid : Language
 
-pub let map_value_invalid : UInt
+pub let map_value_invalid : UInt32
 
-pub fn pack_object_order(ArrayView[SerializeObject]) -> Result[Array[Int], SerializeError]
+pub fn pack_object_order(ArrayView[SerializeObject]) -> Result[Array[Int32], SerializeError]
 
-pub fn parse_double(StringView, start? : Int, end? : Int, whole? : Bool) -> (Double, Int)?
+pub fn parse_double(StringView, start? : Int32, end? : Int32, whole? : Bool) -> (Double, Int32)?
 
-pub fn parse_int(StringView, start? : Int, end? : Int, whole? : Bool) -> (Int, Int)?
+pub fn parse_int(StringView, start? : Int32, end? : Int32, whole? : Bool) -> (Int32, Int32)?
 
-pub fn parse_uint(StringView, start? : Int, end? : Int, whole? : Bool, base? : Int) -> (UInt, Int)?
+pub fn parse_uint(StringView, start? : Int32, end? : Int32, whole? : Bool, base? : Int32) -> (UInt32, Int32)?
 
-pub fn repack_object_order(ArrayView[SerializeObject], max_iterations? : Int) -> Result[Array[Int], SerializeError]
+pub fn repack_object_order(ArrayView[SerializeObject], max_iterations? : Int32) -> Result[Array[Int32], SerializeError]
 
 pub let script_adlam : Script
 
@@ -389,17 +389,17 @@ pub let script_zanabazar_square : Script
 
 pub fn serialize_objects(ArrayView[SerializeObject]) -> Result[Bytes, SerializeError]
 
-pub fn serialize_objects_in_order(ArrayView[SerializeObject], ArrayView[Int]) -> Result[Bytes, SerializeError]
+pub fn serialize_objects_in_order(ArrayView[SerializeObject], ArrayView[Int32]) -> Result[Bytes, SerializeError]
 
 pub fn serialize_objects_packed(ArrayView[SerializeObject]) -> Result[Bytes, SerializeError]
 
-pub fn serialize_objects_packed_with_order(ArrayView[SerializeObject]) -> Result[(Bytes, Array[Int]), SerializeError]
+pub fn serialize_objects_packed_with_order(ArrayView[SerializeObject]) -> Result[(Bytes, Array[Int32]), SerializeError]
 
-pub fn serialize_objects_repacked(ArrayView[SerializeObject], max_iterations? : Int) -> Result[Bytes, SerializeError]
+pub fn serialize_objects_repacked(ArrayView[SerializeObject], max_iterations? : Int32) -> Result[Bytes, SerializeError]
 
-pub fn serialize_objects_repacked_with_order(ArrayView[SerializeObject], max_iterations? : Int) -> Result[(Bytes, Array[Int]), SerializeError]
+pub fn serialize_objects_repacked_with_order(ArrayView[SerializeObject], max_iterations? : Int32) -> Result[(Bytes, Array[Int32]), SerializeError]
 
-pub fn serialize_objects_with_offsets(ArrayView[SerializeObject]) -> Result[(Bytes, Array[Int]), SerializeError]
+pub fn serialize_objects_with_offsets(ArrayView[SerializeObject]) -> Result[(Bytes, Array[Int32]), SerializeError]
 
 pub let tag_max : Tag
 
@@ -414,132 +414,147 @@ pub struct CodepointBiMap {
   forward : CodepointMap
   backward : CodepointMap
 }
-pub fn CodepointBiMap::backward(Self, UInt) -> UInt
+pub fn CodepointBiMap::backward(Self, UInt32) -> UInt32
 pub fn CodepointBiMap::clear(Self) -> Unit
-pub fn CodepointBiMap::del(Self, UInt) -> Unit
-pub fn CodepointBiMap::get(Self, UInt) -> UInt
-pub fn CodepointBiMap::has(Self, UInt) -> Bool
+pub fn CodepointBiMap::del(Self, UInt32) -> Unit
+pub fn CodepointBiMap::get(Self, UInt32) -> UInt32
+pub fn CodepointBiMap::has(Self, UInt32) -> Bool
 pub fn CodepointBiMap::is_empty(Self) -> Bool
-pub fn CodepointBiMap::keys(Self) -> Array[UInt]
+pub fn CodepointBiMap::keys(Self) -> Array[UInt32]
 pub fn CodepointBiMap::new() -> Self
-pub fn CodepointBiMap::population(Self) -> Int
-pub fn CodepointBiMap::set(Self, UInt, UInt) -> Unit
-pub fn CodepointBiMap::values(Self) -> Array[UInt]
+pub fn CodepointBiMap::population(Self) -> Int32
+pub fn CodepointBiMap::set(Self, UInt32, UInt32) -> Unit
+pub fn CodepointBiMap::values(Self) -> Array[UInt32]
 
 pub struct CodepointIncBiMap {
   forward : CodepointMap
-  back : Array[UInt]
+  back : Array[UInt32]
 }
-pub fn CodepointIncBiMap::add(Self, UInt) -> UInt
+pub fn CodepointIncBiMap::add(Self, UInt32) -> UInt32
 pub fn CodepointIncBiMap::add_set(Self, CodepointSet) -> Unit
-pub fn CodepointIncBiMap::backward(Self, UInt) -> UInt
+pub fn CodepointIncBiMap::backward(Self, UInt32) -> UInt32
 pub fn CodepointIncBiMap::clear(Self) -> Unit
-pub fn CodepointIncBiMap::get(Self, UInt) -> UInt
-pub fn CodepointIncBiMap::get_next_value(Self) -> UInt
-pub fn CodepointIncBiMap::has(Self, UInt) -> Bool
-pub fn CodepointIncBiMap::identity(Self, Int) -> Bool
+pub fn CodepointIncBiMap::get(Self, UInt32) -> UInt32
+pub fn CodepointIncBiMap::get_next_value(Self) -> UInt32
+pub fn CodepointIncBiMap::has(Self, UInt32) -> Bool
+pub fn CodepointIncBiMap::identity(Self, Int32) -> Bool
 pub fn CodepointIncBiMap::new() -> Self
-pub fn CodepointIncBiMap::population(Self) -> Int
-pub fn CodepointIncBiMap::skip(Self, count? : Int) -> UInt
+pub fn CodepointIncBiMap::population(Self) -> Int32
+pub fn CodepointIncBiMap::skip(Self, count? : Int32) -> UInt32
 pub fn CodepointIncBiMap::sort(Self) -> Unit
 
 pub struct CodepointMap {
-  map : Map[UInt, UInt]
+  map : Map[UInt32, UInt32]
 }
 pub fn CodepointMap::clear(Self) -> Unit
 pub fn CodepointMap::copy(Self) -> Self
-pub fn CodepointMap::del(Self, UInt) -> Unit
-pub fn CodepointMap::get(Self, UInt) -> UInt
-pub fn CodepointMap::has(Self, UInt) -> Bool
-pub fn CodepointMap::hash(Self) -> Int
+pub fn CodepointMap::del(Self, UInt32) -> Unit
+pub fn CodepointMap::get(Self, UInt32) -> UInt32
+pub fn CodepointMap::has(Self, UInt32) -> Bool
+pub fn CodepointMap::hash(Self) -> Int32
 pub fn CodepointMap::is_empty(Self) -> Bool
 pub fn CodepointMap::is_equal(Self, Self) -> Bool
-pub fn CodepointMap::iter(Self) -> Iter[(UInt, UInt)]
-pub fn CodepointMap::keys(Self) -> Array[UInt]
+pub fn CodepointMap::iter(Self) -> Iter[(UInt32, UInt32)]
+pub fn CodepointMap::keys(Self) -> Array[UInt32]
 pub fn CodepointMap::keys_set(Self) -> CodepointSet
 pub fn CodepointMap::new() -> Self
-pub fn CodepointMap::next(Self, idx? : Int) -> (Int, UInt, UInt)?
-pub fn CodepointMap::population(Self) -> Int
-pub fn CodepointMap::set(Self, UInt, UInt) -> Unit
+pub fn CodepointMap::next(Self, idx? : Int32) -> (Int32, UInt32, UInt32)?
+pub fn CodepointMap::population(Self) -> Int32
+pub fn CodepointMap::set(Self, UInt32, UInt32) -> Unit
 pub fn CodepointMap::update(Self, Self) -> Unit
-pub fn CodepointMap::values(Self) -> Array[UInt]
+pub fn CodepointMap::values(Self) -> Array[UInt32]
 pub fn CodepointMap::values_set(Self) -> CodepointSet
 
 pub struct CodepointSet {
-  set : @set.Set[UInt]
+  set : @set.Set[UInt32]
 }
-pub fn CodepointSet::add(Self, UInt) -> Unit
-pub fn CodepointSet::add_array(Self, ArrayView[UInt]) -> Unit
-pub fn CodepointSet::add_range(Self, UInt, UInt) -> Bool
-pub fn CodepointSet::add_sorted_array(Self, ArrayView[UInt]) -> Bool
+pub fn CodepointSet::add(Self, UInt32) -> Unit
+pub fn CodepointSet::add_array(Self, ArrayView[UInt32]) -> Unit
+pub fn CodepointSet::add_range(Self, UInt32, UInt32) -> Bool
+pub fn CodepointSet::add_sorted_array(Self, ArrayView[UInt32]) -> Bool
 pub fn CodepointSet::clear(Self) -> Unit
-pub fn CodepointSet::del(Self, UInt) -> Unit
-pub fn CodepointSet::del_range(Self, UInt, UInt) -> Unit
-pub fn CodepointSet::get_max(Self) -> UInt
-pub fn CodepointSet::get_min(Self) -> UInt
-pub fn CodepointSet::has(Self, UInt) -> Bool
-pub fn CodepointSet::hash(Self) -> Int
+pub fn CodepointSet::del(Self, UInt32) -> Unit
+pub fn CodepointSet::del_range(Self, UInt32, UInt32) -> Unit
+pub fn CodepointSet::get_max(Self) -> UInt32
+pub fn CodepointSet::get_min(Self) -> UInt32
+pub fn CodepointSet::has(Self, UInt32) -> Bool
+pub fn CodepointSet::hash(Self) -> Int32
 pub fn CodepointSet::intersect(Self, Self) -> Self
 pub fn CodepointSet::intersect_in_place(Self, Self) -> Unit
-pub fn CodepointSet::intersects(Self, UInt, UInt) -> Bool
+pub fn CodepointSet::intersects(Self, UInt32, UInt32) -> Bool
 pub fn CodepointSet::is_empty(Self) -> Bool
 pub fn CodepointSet::is_equal(Self, Self) -> Bool
 pub fn CodepointSet::is_subset(Self, Self) -> Bool
 pub fn CodepointSet::may_intersect(Self, Self) -> Bool
 pub fn CodepointSet::new() -> Self
-pub fn CodepointSet::next(Self, after? : UInt) -> UInt?
-pub fn CodepointSet::next_many(Self, after? : UInt, size? : Int) -> Array[UInt]
-pub fn CodepointSet::next_range(Self, start? : UInt) -> (UInt, UInt)?
-pub fn CodepointSet::population(Self) -> Int
-pub fn CodepointSet::previous(Self, before? : UInt) -> UInt?
-pub fn CodepointSet::previous_range(Self, end? : UInt) -> (UInt, UInt)?
+pub fn CodepointSet::next(Self, after? : UInt32) -> UInt32?
+pub fn CodepointSet::next_many(Self, after? : UInt32, size? : Int32) -> Array[UInt32]
+pub fn CodepointSet::next_range(Self, start? : UInt32) -> (UInt32, UInt32)?
+pub fn CodepointSet::population(Self) -> Int32
+pub fn CodepointSet::previous(Self, before? : UInt32) -> UInt32?
+pub fn CodepointSet::previous_range(Self, end? : UInt32) -> (UInt32, UInt32)?
 pub fn CodepointSet::set_from(Self, Self) -> Unit
 pub fn CodepointSet::subtract(Self, Self) -> Self
 pub fn CodepointSet::subtract_in_place(Self, Self) -> Unit
 pub fn CodepointSet::symmetric_difference_in_place(Self, Self) -> Unit
-pub fn CodepointSet::to_sorted_array(Self) -> Array[UInt]
+pub fn CodepointSet::to_sorted_array(Self) -> Array[UInt32]
 pub fn CodepointSet::union(Self, Self) -> Self
 pub fn CodepointSet::union_in_place(Self, Self) -> Unit
 
 pub struct Direction {
-  raw : UInt
+  raw : UInt32
 } derive(Eq, ToJson, @debug.Debug)
-pub fn Direction::from_string(String, len? : Int) -> Self
+pub fn Direction::equal(Self, Self) -> Bool
+pub fn Direction::from_string(String, len? : Int32) -> Self
 pub fn Direction::is_backward(Self) -> Bool
 pub fn Direction::is_forward(Self) -> Bool
 pub fn Direction::is_horizontal(Self) -> Bool
 pub fn Direction::is_valid(Self) -> Bool
 pub fn Direction::is_vertical(Self) -> Bool
+pub fn Direction::not_equal(Self, Self) -> Bool
 pub fn Direction::reverse(Self) -> Self
+pub fn Direction::to_json(Self) -> Json
+pub fn Direction::to_repr(Self) -> @debug.Repr
 pub fn Direction::to_string(Self) -> String
-pub fn Direction::to_uint(Self) -> UInt
+pub fn Direction::to_uint(Self) -> UInt32
 
 pub struct Language {
   tag : String
 } derive(Eq, ToJson, @debug.Debug)
 pub fn Language::as_string(Self) -> String
-pub fn Language::from_string(String, len? : Int) -> Self
+pub fn Language::equal(Self, Self) -> Bool
+pub fn Language::from_string(String, len? : Int32) -> Self
 pub fn Language::is_valid(Self) -> Bool
 pub fn Language::matches(Self, Self) -> Bool
+pub fn Language::not_equal(Self, Self) -> Bool
+pub fn Language::to_json(Self) -> Json
+pub fn Language::to_repr(Self) -> @debug.Repr
 pub fn Language::to_string(Self) -> String?
 
 pub struct OverflowRecord {
-  parent : Int
-  child : Int
-  offset : Int
-  min : Int
-  max : Int
-  width : Int
+  parent : Int32
+  child : Int32
+  offset : Int32
+  min : Int32
+  max : Int32
+  width : Int32
   is_signed : Bool
 } derive(Eq, @debug.Debug)
+pub fn OverflowRecord::equal(Self, Self) -> Bool
+pub fn OverflowRecord::not_equal(Self, Self) -> Bool
+pub fn OverflowRecord::to_repr(Self) -> @debug.Repr
 
 pub struct Script {
   tag : Tag
 } derive(Eq, ToJson, @debug.Debug)
+pub fn Script::equal(Self, Self) -> Bool
 pub fn Script::from_iso15924_tag(Tag) -> Self
-pub fn Script::from_string(String, len? : Int) -> Self
+pub fn Script::from_string(String, len? : Int32) -> Self
 pub fn Script::horizontal_direction(Self) -> Direction
+pub fn Script::not_equal(Self, Self) -> Bool
 pub fn Script::to_iso15924_tag(Self) -> Tag
+pub fn Script::to_json(Self) -> Json
+pub fn Script::to_repr(Self) -> @debug.Repr
 pub fn Script::to_tag(Self) -> Tag
 
 pub enum SerializeError {
@@ -550,21 +565,24 @@ pub enum SerializeError {
   NegativeOffset
   VirtualOrder
 } derive(Eq, @debug.Debug)
+pub fn SerializeError::equal(Self, Self) -> Bool
+pub fn SerializeError::not_equal(Self, Self) -> Bool
+pub fn SerializeError::to_repr(Self) -> @debug.Repr
 
 pub(all) struct SerializeLink {
-  width : Int
-  position : Int
-  objidx : Int
+  width : Int32
+  position : Int32
+  objidx : Int32
   is_signed : Bool
   whence : SerializeWhence
-  bias : Int
+  bias : Int32
 }
-pub fn SerializeLink::new(Int, Int, Int, is_signed? : Bool, whence? : SerializeWhence, bias? : Int) -> Self
+pub fn SerializeLink::new(Int32, Int32, Int32, is_signed? : Bool, whence? : SerializeWhence, bias? : Int32) -> Self
 
 pub struct SerializeObject {
   data : Bytes
   real_links : Array[SerializeLink]
-  virtual_links : Array[Int]
+  virtual_links : Array[Int32]
 }
 pub fn SerializeObject::new(Bytes) -> Self
 
@@ -573,19 +591,28 @@ pub(all) enum SerializeWhence {
   Tail
   Absolute
 } derive(Eq, @debug.Debug)
+pub fn SerializeWhence::equal(Self, Self) -> Bool
+pub fn SerializeWhence::not_equal(Self, Self) -> Bool
+pub fn SerializeWhence::to_repr(Self) -> @debug.Repr
 
 pub struct Tag {
-  value : UInt
+  value : UInt32
 } derive(Eq, Hash, ToJson, @debug.Debug)
 pub fn Tag::bytes(Self) -> (Byte, Byte, Byte, Byte)
+pub fn Tag::equal(Self, Self) -> Bool
 pub fn Tag::from_bytes(Byte, Byte, Byte, Byte) -> Self
 pub fn Tag::from_chars(Char, Char, Char, Char) -> Self
-pub fn Tag::from_string(String, len? : Int) -> Self
+pub fn Tag::from_string(String, len? : Int32) -> Self
+pub fn Tag::hash(Self) -> Int32
+pub fn Tag::hash_combine(Self, Hasher) -> Unit
+pub fn Tag::not_equal(Self, Self) -> Bool
+pub fn Tag::output(Self, &Logger) -> Unit
+pub fn Tag::to_json(Self) -> Json
+pub fn Tag::to_repr(Self) -> @debug.Repr
 pub fn Tag::to_string(Self) -> String
-pub fn Tag::to_uint(Self) -> UInt
+pub fn Tag::to_uint(Self) -> UInt32
 pub impl Show for Tag
 
 // Type aliases
 
 // Traits
-

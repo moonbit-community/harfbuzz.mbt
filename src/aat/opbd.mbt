@@ -15,17 +15,17 @@
 ///|
 /// Optical bounds record.
 pub struct OpticalBounds {
-  left : Int
-  top : Int
-  right : Int
-  bottom : Int
+  left : Int32
+  top : Int32
+  right : Int32
+  bottom : Int32
 } derive(Eq, Debug, ToJson)
 
 ///|
 /// Parsed opbd table.
 pub struct OpbdTable {
-  version : Int
-  format : Int
+  version : Int32
+  format : Int32
   lookup : LookupTable
   data : BytesView
 } derive(Debug, ToJson)
@@ -38,7 +38,7 @@ pub fn OpbdTable::has_data(self : OpbdTable) -> Bool {
 ///|
 fn read_bounds(
   data : BytesView,
-  offset : Int,
+  offset : Int32,
 ) -> Result[OpticalBounds, AatError] {
   if offset < 0 || offset + 8 > data.length() {
     return Err(UnexpectedEof)
@@ -61,7 +61,7 @@ fn read_bounds(
 /// Parse an opbd table.
 pub fn OpbdTable::parse(
   data : BytesView,
-  num_glyphs : Int,
+  num_glyphs : Int32,
 ) -> Result[OpbdTable, AatError] {
   if num_glyphs < 0 {
     return Err(InvalidFormat)
@@ -89,8 +89,8 @@ pub fn OpbdTable::parse(
 /// Resolve optical bounds for a glyph.
 pub fn OpbdTable::bounds(
   self : OpbdTable,
-  glyph : UInt,
-  contour_point? : (UInt, Int) -> (Int, Int)? = (_, _) => None,
+  glyph : UInt32,
+  contour_point~ : (UInt32, Int32) -> (Int32, Int32)? = (_, _) => None,
 ) -> Result[OpticalBounds?, AatError] {
   let offset = match self.lookup.value_for(glyph) {
     None => return Ok(None)

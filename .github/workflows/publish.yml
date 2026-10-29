@@ -1,41 +1,40 @@
-name: publish-package
-
+name: Publish Mooncakes module
 on:
   workflow_dispatch:
-
+permissions:
+  contents: read
+concurrency:
+  group: publish-module
+  cancel-in-progress: false
 jobs:
   publish:
-    # Use macos-latest or windows-latest if you want to publish to those platforms
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
-
-      - name: install-ubuntu
-        if: ${{ matrix.os != 'windows-latest' }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install MoonBit
         run: |
           curl -fsSL https://cli.moonbitlang.com/install/unix.sh | bash
-          echo "$HOME/.moon/bin" >> $GITHUB_PATH
-      - name: install-windows
-        if: ${{ matrix.os == 'windows-latest' }}
-        run: |
-          Set-ExecutionPolicy RemoteSigned -Scope CurrentUser; irm https://cli.moonbitlang.com/install/powershell.ps1 | iex
-          "C:\Users\runneradmin\.moon\bin" | Out-File -FilePath $env:GITHUB_PATH -Append
-
-      - name: post install
+          echo "$HOME/.moon/bin" >> "$GITHUB_PATH"
+      - name: Validate release
         run: |
           moon version --all
-          moon update
-
-      # Add -C if your moon.mod.json or moon.pkg.json is not in the root directory
-      - name: prepublish check
-        run: |
-          moon check --target all
+          moon check --target all --deny-warn --warn-list '-78-33'
           moon test --target all
-
-      - name: publish
+          moon test --target all --release
+          moon info --target all
+          moon fmt
+          git diff --exit-code
+          python3 scripts/check_package.py
+      - name: Publish
         env:
-          SECRET: ${{ secrets.MOONCAKES_MOONBIT_COMMUNITY_TOKEN }}
+          MOONCAKES_TOKEN: ${{ secrets.MOONCAKES_MOONBIT_COMMUNITY_TOKEN }}
         run: |
-          echo "$SECRET" > ~/.moon/credentials.json
+          test -n "$MOONCAKES_TOKEN"
+          trap 'rm -f "$HOME/.moon/credentials.json"' EXIT
+          printf '%s' "$MOONCAKES_TOKEN" > "$HOME/.moon/credentials.json"
+          moon publish --dry-run
           moon publish
-          rm ~/.moon/credentials.json

@@ -15,100 +15,135 @@ pub suberror ColorError {
   InvalidFormat
   Var(@var.VarError)
 } derive(Eq, ToJson, @debug.Debug)
+pub fn ColorError::equal(Self, Self) -> Bool
+pub fn ColorError::not_equal(Self, Self) -> Bool
+pub fn ColorError::to_json(Self) -> Json
+pub fn ColorError::to_repr(Self) -> @debug.Repr
 
 // Types and methods
 pub struct BaseGlyphPaintRecord {
-  glyph_id : Int
-  paint_offset : Int
+  glyph_id : Int32
+  paint_offset : Int32
 } derive(Eq, ToJson, @debug.Debug)
+pub fn BaseGlyphPaintRecord::equal(Self, Self) -> Bool
+pub fn BaseGlyphPaintRecord::not_equal(Self, Self) -> Bool
+pub fn BaseGlyphPaintRecord::to_json(Self) -> Json
+pub fn BaseGlyphPaintRecord::to_repr(Self) -> @debug.Repr
 
 pub struct ClipBox {
-  format : Int
-  x_min : Int
-  y_min : Int
-  x_max : Int
-  y_max : Int
-  var_idx_base : UInt?
+  format : Int32
+  x_min : Int32
+  y_min : Int32
+  x_max : Int32
+  y_max : Int32
+  var_idx_base : UInt32?
 } derive(Eq, ToJson, @debug.Debug)
+pub fn ClipBox::equal(Self, Self) -> Bool
+pub fn ClipBox::not_equal(Self, Self) -> Bool
+pub fn ClipBox::to_json(Self) -> Json
+pub fn ClipBox::to_repr(Self) -> @debug.Repr
 
 pub struct ClipExtents {
-  x_bearing : Int
-  y_bearing : Int
-  width : Int
-  height : Int
+  x_bearing : Int32
+  y_bearing : Int32
+  width : Int32
+  height : Int32
 } derive(Eq, ToJson, @debug.Debug)
+pub fn ClipExtents::equal(Self, Self) -> Bool
+pub fn ClipExtents::not_equal(Self, Self) -> Bool
+pub fn ClipExtents::to_json(Self) -> Json
+pub fn ClipExtents::to_repr(Self) -> @debug.Repr
 
 pub struct ClipList {
-  format : Int
+  format : Int32
   records : Array[ClipRecord]
 } derive(Eq, ToJson, @debug.Debug)
+pub fn ClipList::equal(Self, Self) -> Bool
+pub fn ClipList::not_equal(Self, Self) -> Bool
+pub fn ClipList::to_json(Self) -> Json
+pub fn ClipList::to_repr(Self) -> @debug.Repr
 
 pub struct ClipRecord {
-  start_glyph_id : Int
-  end_glyph_id : Int
+  start_glyph_id : Int32
+  end_glyph_id : Int32
   clip_box : ClipBox
 } derive(Eq, ToJson, @debug.Debug)
+pub fn ClipRecord::equal(Self, Self) -> Bool
+pub fn ClipRecord::not_equal(Self, Self) -> Bool
+pub fn ClipRecord::to_json(Self) -> Json
+pub fn ClipRecord::to_repr(Self) -> @debug.Repr
 
 pub struct ColrBaseGlyph {
-  glyph_id : Int
-  first_layer_index : Int
-  num_layers : Int
+  glyph_id : Int32
+  first_layer_index : Int32
+  num_layers : Int32
 } derive(Eq, ToJson, @debug.Debug)
+pub fn ColrBaseGlyph::equal(Self, Self) -> Bool
+pub fn ColrBaseGlyph::not_equal(Self, Self) -> Bool
+pub fn ColrBaseGlyph::to_json(Self) -> Json
+pub fn ColrBaseGlyph::to_repr(Self) -> @debug.Repr
 
 pub struct ColrLayer {
-  glyph_id : Int
-  color_index : Int
+  glyph_id : Int32
+  color_index : Int32
 } derive(Eq, ToJson, @debug.Debug)
+pub fn ColrLayer::equal(Self, Self) -> Bool
+pub fn ColrLayer::not_equal(Self, Self) -> Bool
+pub fn ColrLayer::to_json(Self) -> Json
+pub fn ColrLayer::to_repr(Self) -> @debug.Repr
 
 pub struct ColrTable {
-  version : Int
+  version : Int32
   base_glyphs : Array[ColrBaseGlyph]
   layers : Array[ColrLayer]
   base_glyph_paints : Array[BaseGlyphPaintRecord]
-  layer_paint_offsets : Array[Int]
+  layer_paint_offsets : Array[Int32]
   clip_list : ClipList?
   var_idx_map : @var.DeltaSetIndexMap?
   var_store : @var.ItemVariationStore?
   data : BytesView
 } derive(ToJson, @debug.Debug)
-pub fn ColrTable::clip_box_for_glyph(Self, Int) -> ClipBox?
-pub fn ColrTable::clip_extents_for_glyph(Self, Int, coords? : Array[Int]) -> ClipExtents?
-pub fn ColrTable::glyph_layers(Self, Int) -> Array[ColrLayer]?
+pub fn ColrTable::clip_box_for_glyph(Self, Int32) -> ClipBox?
+pub fn ColrTable::clip_extents_for_glyph(Self, Int32, coords? : Array[Int32]) -> ClipExtents?
+pub fn ColrTable::glyph_layers(Self, Int32) -> Array[ColrLayer]?
 pub fn ColrTable::has_v0(Self) -> Bool
 pub fn ColrTable::has_v1(Self) -> Bool
-pub fn ColrTable::layer_paint(Self, Int) -> Result[@paint.Paint?, ColorError]
-pub fn ColrTable::paint_at(Self, Int) -> Result[@paint.Paint, ColorError]
-pub fn ColrTable::paint_for_glyph(Self, Int) -> Result[@paint.Paint?, ColorError]
+pub fn ColrTable::layer_paint(Self, Int32) -> Result[@paint.Paint?, ColorError]
+pub fn ColrTable::paint_at(Self, Int32) -> Result[@paint.Paint, ColorError]
+pub fn ColrTable::paint_for_glyph(Self, Int32) -> Result[@paint.Paint?, ColorError]
 pub fn ColrTable::parse(BytesView) -> Result[Self, ColorError]
-pub fn ColrTable::var_instancer(Self, Array[Int]) -> ColrVarInstancer
-pub fn ColrTable::walk_paint(Self, @paint.Paint, (@paint.Paint, Int) -> Bool, max_depth? : Int) -> Result[Int, ColorError]
+pub fn ColrTable::to_json(Self) -> Json
+pub fn ColrTable::to_repr(Self) -> @debug.Repr
+pub fn ColrTable::var_instancer(Self, Array[Int32]) -> ColrVarInstancer
+pub fn ColrTable::walk_paint(Self, @paint.Paint, (@paint.Paint, Int32) -> Bool, max_depth? : Int32) -> Result[Int32, ColorError]
 
 pub struct ColrVarInstancer {
-  coords : Array[Int]
+  coords : Array[Int32]
   var_store : @var.ItemVariationStore?
   var_idx_map : @var.DeltaSetIndexMap?
 }
-pub fn ColrVarInstancer::delta(Self, UInt?, Int) -> Double
-pub fn ColrVarInstancer::f16dot16(Self, Int, UInt?, Int) -> Double
-pub fn ColrVarInstancer::f2dot14(Self, Int, UInt?, Int) -> Double
-pub fn ColrVarInstancer::fword(Self, Int, UInt?, Int) -> Double
+pub fn ColrVarInstancer::delta(Self, UInt32?, Int32) -> Double
+pub fn ColrVarInstancer::f16dot16(Self, Int32, UInt32?, Int32) -> Double
+pub fn ColrVarInstancer::f2dot14(Self, Int32, UInt32?, Int32) -> Double
+pub fn ColrVarInstancer::fword(Self, Int32, UInt32?, Int32) -> Double
 
 pub struct CpalTable {
-  version : Int
-  num_colors : Int
-  num_palettes : Int
-  num_color_records : Int
+  version : Int32
+  num_colors : Int32
+  num_palettes : Int32
+  num_color_records : Int32
   color_records : Array[@paint.Color]
-  color_record_indices : Array[Int]
-  palette_flags : Array[UInt]?
-  palette_labels : Array[Int]?
-  color_labels : Array[Int]?
+  color_record_indices : Array[Int32]
+  palette_flags : Array[UInt32]?
+  palette_labels : Array[Int32]?
+  color_labels : Array[Int32]?
 } derive(ToJson, @debug.Debug)
-pub fn CpalTable::palette_colors(Self, Int) -> Array[@paint.Color]
+pub fn CpalTable::palette_colors(Self, Int32) -> Array[@paint.Color]
 pub fn CpalTable::parse(BytesView) -> Result[Self, ColorError]
+pub fn CpalTable::to_json(Self) -> Json
+pub fn CpalTable::to_repr(Self) -> @debug.Repr
 
 // Type aliases
-pub type PaintVisitor = (@paint.Paint, Int) -> Bool
+pub type PaintVisitor = (@paint.Paint, Int32) -> Bool
 
 // Traits
-

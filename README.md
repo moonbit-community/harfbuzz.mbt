@@ -33,17 +33,29 @@ the concatenated upstream HarfBuzz notice texts.
 (Instructions currently mirrored from `src/README.mbt.md`)
 
 ```bash
-moon build --target js src/examples/js_svg
+(cd examples/js_svg && moon build --target js)
 python3 -m http.server
 ```
 
 Then open:
 
 ```
-http://localhost:8000/src/examples/js_svg/index.html
+http://localhost:8000/examples/js_svg/index.html
 ```
 
 ## Status
 
 Port is under active development; see `docs/PORTING_PLAN.md` for
 details and current progress.
+
+## Toolchain migration (0.2.0)
+
+`ColorLine.extend` is now `ColorLine.extend_mode` because `extend` is a
+MoonBit keyword. Its JSON key remains `extend`. Existing Result-based APIs and
+explicit trait extension methods are preserved.
+
+CI checks every target in debug and release mode and tests an extracted package
+through an independent consumer. It denies all warnings except warning 78
+(Result-returning APIs retained for compatibility) and warning 33 (large generated
+font fixtures). These two existing warning classes remain visible in normal
+`moon check` output.

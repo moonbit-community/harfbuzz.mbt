@@ -107,7 +107,7 @@ priv struct CffCharstringState {
   mut x : Double
   mut y : Double
   mut has_width : Bool
-  mut stem_count : Int
+  mut stem_count : Int32
   bounds : CffBoundsBuilder
 }
 
@@ -161,36 +161,38 @@ fn CffCharstringState::curve_to(
 ///|
 priv struct Cff1SeacContext {
   charstrings : CffIndex
-  charset_offset : Int
-  charset_map : Map[Int, Int]?
-  glyph_count : Int
+  charset_offset : Int32
+  charset_map : Map[Int32, Int32]?
+  glyph_count : Int32
 }
 
 ///|
-fn Cff1SeacContext::sid_to_gid(self : Cff1SeacContext, sid : Int) -> Int? {
+fn Cff1SeacContext::sid_to_gid(self : Cff1SeacContext, sid : Int32) -> Int32? {
   cff1_sid_to_gid(self.charset_offset, self.charset_map, sid, self.glyph_count)
 }
 
 ///|
 priv struct Cff2BlendState {
-  mut ivs : Int
+  mut ivs : Int32
   mut seen_vsindex : Bool
   mut seen_blend : Bool
   var_store : @ot_var.ItemVariationStore?
-  coords : Array[Int]
+  coords : Array[Int32]
 }
 
 ///|
 fn Cff2BlendState::new(
   var_store : @ot_var.ItemVariationStore?,
-  ivs : Int,
-  coords : Array[Int],
+  ivs : Int32,
+  coords : Array[Int32],
 ) -> Cff2BlendState {
   { ivs, seen_vsindex: false, seen_blend: false, var_store, coords, }
 }
 
 ///|
-fn Cff2BlendState::region_count(self : Cff2BlendState) -> Result[Int, CffError] {
+fn Cff2BlendState::region_count(
+  self : Cff2BlendState,
+) -> Result[Int32, CffError] {
   let store = match self.var_store {
     None => return Err(InvalidFormat)
     Some(value) => value
@@ -275,11 +277,11 @@ fn cff1_charstring_seac_components(
   global_subrs : CffIndex?,
   local_subrs : CffIndex?,
   seac : Cff1SeacContext,
-) -> Result[(Int, Int)?, CffError] {
+) -> Result[(Int32, Int32)?, CffError] {
   let state = CffCharstringState::new()
   let stack : Array[Double] = []
-  let records : Array[(Int, Int)] = []
-  let report = (base : Int, accent : Int) => {
+  let records : Array[(Int32, Int32)] = []
+  let report = (base : Int32, accent : Int32) => {
     if records.is_empty() {
       records.push((base, accent))
     }
@@ -308,8 +310,8 @@ pub fn cff2_charstring_bounds(
   global_subrs : CffIndex?,
   local_subrs : CffIndex?,
   var_store : @ot_var.ItemVariationStore?,
-  ivs : Int,
-  coords : Array[Int],
+  ivs : Int32,
+  coords : Array[Int32],
 ) -> Result[CffBounds?, CffError] {
   let state = CffCharstringState::new()
   let blend_state = Cff2BlendState::new(var_store, ivs, coords)
@@ -324,7 +326,7 @@ pub fn cff2_charstring_bounds(
 }
 
 ///|
-fn subr_bias(count : Int) -> Int {
+fn subr_bias(count : Int32) -> Int32 {
   if count < 1240 {
     107
   } else if count < 33900 {
@@ -341,11 +343,11 @@ fn interpret_charstring(
   stack : Array[Double],
   global_subrs : CffIndex?,
   local_subrs : CffIndex?,
-  depth : Int,
+  depth : Int32,
   allow_return : Bool,
   seac : Cff1SeacContext?,
   in_seac : Bool,
-  seac_report? : (Int, Int) -> Unit = (_, _) => (),
+  seac_report~ : (Int32, Int32) -> Unit = (_, _) => (),
 ) -> Result[Unit, CffError] {
   if depth > 16 {
     return Err(InvalidFormat)
@@ -744,7 +746,7 @@ fn interpret_charstring_cff2(
   blend_state : Cff2BlendState,
   global_subrs : CffIndex?,
   local_subrs : CffIndex?,
-  depth : Int,
+  depth : Int32,
   allow_return : Bool,
 ) -> Result[Unit, CffError] {
   if depth > 16 {
@@ -1107,7 +1109,7 @@ fn offset_bounds(bounds : CffBounds, dx : Double, dy : Double) -> CffBounds {
 }
 
 ///|
-fn width_offset(state : CffCharstringState, stack : Array[Double]) -> Int {
+fn width_offset(state : CffCharstringState, stack : Array[Double]) -> Int32 {
   if state.has_width {
     return 0
   }
@@ -1121,8 +1123,8 @@ fn width_offset(state : CffCharstringState, stack : Array[Double]) -> Int {
 ///|
 fn parse_charstring_number(
   data : BytesView,
-  pos : Int,
-) -> Result[(Double, Int), CffError] {
+  pos : Int32,
+) -> Result[(Double, Int32), CffError] {
   if pos < 0 || pos >= data.length() {
     return Err(UnexpectedEof)
   }

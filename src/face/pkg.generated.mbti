@@ -8,37 +8,42 @@ import {
 }
 
 // Values
-pub fn face_count(@blob.Blob) -> Int
+pub fn face_count(@blob.Blob) -> Int32
 
 // Errors
 type FaceTableError derive(Eq, ToJson, @debug.Debug)
+pub fn FaceTableError::equal(Self, Self) -> Bool
+pub fn FaceTableError::not_equal(Self, Self) -> Bool
+pub fn FaceTableError::to_json(Self) -> Json
+pub fn FaceTableError::to_repr(Self) -> @debug.Repr
 
 // Types and methods
 pub struct Face {
   blob : @blob.Blob
-  mut index : Int
-  mut upem : Int
-  mut glyph_count : Int
+  mut index : Int32
+  mut upem : Int32
+  mut glyph_count : Int32
   mut tables : Map[@common.Tag, @blob.Blob]
 } derive(ToJson, @debug.Debug)
 pub fn Face::collect_nominal_glyph_mapping(Self) -> Result[@common.CodepointMap, FaceTableError]
 pub fn Face::collect_unicodes(Self) -> Result[@common.CodepointSet, FaceTableError]
 pub fn Face::ensure_sfnt_tables(Self) -> Result[Unit, FaceTableError]
-pub fn Face::from_bytes(Bytes, index? : Int) -> Self
-pub fn Face::get_glyph_count(Self) -> Int
-pub fn Face::get_index(Self) -> Int
-pub fn Face::get_upem(Self) -> Int
-pub fn Face::new(@blob.Blob, index? : Int) -> Self
+pub fn Face::from_bytes(Bytes, index? : Int32) -> Self
+pub fn Face::get_glyph_count(Self) -> Int32
+pub fn Face::get_index(Self) -> Int32
+pub fn Face::get_upem(Self) -> Int32
+pub fn Face::new(@blob.Blob, index? : Int32) -> Self
 pub fn Face::reference_blob(Self) -> @blob.Blob
 pub fn Face::reference_table(Self, @common.Tag) -> Result[@blob.Blob, FaceTableError]
 pub fn Face::reference_table_optional(Self, @common.Tag) -> Result[@blob.Blob?, FaceTableError]
-pub fn Face::set_glyph_count(Self, Int) -> Unit
-pub fn Face::set_index(Self, Int) -> Unit
+pub fn Face::set_glyph_count(Self, Int32) -> Unit
+pub fn Face::set_index(Self, Int32) -> Unit
 pub fn Face::set_table(Self, @common.Tag, @blob.Blob) -> Unit
-pub fn Face::set_upem(Self, Int) -> Unit
-pub fn Face::table_tags(Self, start_offset? : Int, count? : Int) -> Result[(Int, Array[@common.Tag]), FaceTableError]
+pub fn Face::set_upem(Self, Int32) -> Unit
+pub fn Face::table_tags(Self, start_offset? : Int32, count? : Int32) -> Result[(Int32, Array[@common.Tag]), FaceTableError]
+pub fn Face::to_json(Self) -> Json
+pub fn Face::to_repr(Self) -> @debug.Repr
 
 // Type aliases
 
 // Traits
-

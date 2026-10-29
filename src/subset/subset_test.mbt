@@ -13,19 +13,19 @@
 // limitations under the License.
 
 ///|
-fn push_u16(bytes : Array[Byte], value : Int) -> Unit {
+fn push_u16(bytes : Array[Byte], value : Int32) -> Unit {
   bytes.push(((value >> 8) & 0xff).to_byte())
   bytes.push((value & 0xff).to_byte())
 }
 
 ///|
-fn push_i16(bytes : Array[Byte], value : Int) -> Unit {
+fn push_i16(bytes : Array[Byte], value : Int32) -> Unit {
   let adjusted = if value < 0 { value + 0x10000 } else { value }
   push_u16(bytes, adjusted)
 }
 
 ///|
-fn read_u16(data : BytesView, offset : Int) -> Int? {
+fn read_u16(data : BytesView, offset : Int32) -> Int32? {
   if offset + 2 > data.length() {
     return None
   }
@@ -35,7 +35,7 @@ fn read_u16(data : BytesView, offset : Int) -> Int? {
 }
 
 ///|
-fn read_i16(data : BytesView, offset : Int) -> Int? {
+fn read_i16(data : BytesView, offset : Int32) -> Int32? {
   match read_u16(data, offset) {
     None => None
     Some(value) =>
@@ -48,7 +48,7 @@ fn read_i16(data : BytesView, offset : Int) -> Int? {
 }
 
 ///|
-fn read_u32(data : BytesView, offset : Int) -> Int? {
+fn read_u32(data : BytesView, offset : Int32) -> Int32? {
   if offset + 4 > data.length() {
     return None
   }
@@ -60,7 +60,11 @@ fn read_u32(data : BytesView, offset : Int) -> Int? {
 }
 
 ///|
-fn find_cmap_subtable(data : BytesView, platform : Int, encoding : Int) -> Int? {
+fn find_cmap_subtable(
+  data : BytesView,
+  platform : Int32,
+  encoding : Int32,
+) -> Int32? {
   let count = read_u16(data, 2)
   match count {
     None => None
@@ -86,7 +90,7 @@ fn find_cmap_subtable(data : BytesView, platform : Int, encoding : Int) -> Int? 
 }
 
 ///|
-fn push_u32(bytes : Array[Byte], value : Int) -> Unit {
+fn push_u32(bytes : Array[Byte], value : Int32) -> Unit {
   bytes.push(((value >> 24) & 0xff).to_byte())
   bytes.push(((value >> 16) & 0xff).to_byte())
   bytes.push(((value >> 8) & 0xff).to_byte())
@@ -94,7 +98,7 @@ fn push_u32(bytes : Array[Byte], value : Int) -> Unit {
 }
 
 ///|
-fn push_u24(bytes : Array[Byte], value : Int) -> Unit {
+fn push_u24(bytes : Array[Byte], value : Int32) -> Unit {
   bytes.push(((value >> 16) & 0xff).to_byte())
   bytes.push(((value >> 8) & 0xff).to_byte())
   bytes.push((value & 0xff).to_byte())
@@ -109,7 +113,7 @@ fn build_sfnt(tables : Array[(@common.Tag, Bytes)]) -> Bytes {
   push_u16(bytes, 0)
   push_u16(bytes, 0)
   let mut offset = 12 + tables.length() * 16
-  let records : Array[(@common.Tag, Int, Int)] = []
+  let records : Array[(@common.Tag, Int32, Int32)] = []
   for entry in tables {
     let (tag, table) = entry
     records.push((tag, offset, table.length()))
@@ -136,7 +140,7 @@ fn build_sfnt(tables : Array[(@common.Tag, Bytes)]) -> Bytes {
 }
 
 ///|
-fn build_head(upem : Int, loc_format : Int) -> Bytes {
+fn build_head(upem : Int32, loc_format : Int32) -> Bytes {
   let bytes : Array[Byte] = Array::make(54, b'\x00')
   bytes[18] = ((upem >> 8) & 0xff).to_byte()
   bytes[19] = (upem & 0xff).to_byte()
@@ -146,7 +150,7 @@ fn build_head(upem : Int, loc_format : Int) -> Bytes {
 }
 
 ///|
-fn build_maxp(num_glyphs : Int) -> Bytes {
+fn build_maxp(num_glyphs : Int32) -> Bytes {
   let bytes : Array[Byte] = Array::make(6, b'\x00')
   bytes[4] = ((num_glyphs >> 8) & 0xff).to_byte()
   bytes[5] = (num_glyphs & 0xff).to_byte()
@@ -154,7 +158,7 @@ fn build_maxp(num_glyphs : Int) -> Bytes {
 }
 
 ///|
-fn build_hhea(number_of_hmetrics : Int) -> Bytes {
+fn build_hhea(number_of_hmetrics : Int32) -> Bytes {
   let bytes : Array[Byte] = Array::make(36, b'\x00')
   bytes[34] = ((number_of_hmetrics >> 8) & 0xff).to_byte()
   bytes[35] = (number_of_hmetrics & 0xff).to_byte()
@@ -271,8 +275,8 @@ fn build_kern_subtable_format0() -> Bytes {
 
 ///|
 fn build_kern_subtable_format2() -> Bytes {
-  let left_classes : Array[Int] = [0, 1, 1, 0]
-  let right_classes : Array[Int] = [0, 1, 0, 1]
+  let left_classes : Array[Int32] = [0, 1, 1, 0]
+  let right_classes : Array[Int32] = [0, 1, 0, 1]
   let left_offset = 14
   let left_size = 4 + left_classes.length() * 2
   let right_offset = left_offset + left_size
@@ -280,7 +284,7 @@ fn build_kern_subtable_format2() -> Bytes {
   let array_offset = right_offset + right_size
   let right_class_count = 2
   let row_width = right_class_count * 2
-  let values : Array[Int] = [0, -20, -30, -40]
+  let values : Array[Int32] = [0, -20, -30, -40]
   let length = array_offset + values.length() * 2
   let bytes : Array[Byte] = []
   push_u16(bytes, 0)
@@ -309,10 +313,10 @@ fn build_kern_subtable_format2() -> Bytes {
 ///|
 fn build_kern_subtable_format3() -> Bytes {
   let glyph_count = 4
-  let kern_values : Array[Int] = [0, -10, -50]
-  let left_class : Array[Int] = [0, 1, 1, 0]
-  let right_class : Array[Int] = [0, 1, 0, 1]
-  let kern_index : Array[Int] = [0, 1, 1, 2]
+  let kern_values : Array[Int32] = [0, -10, -50]
+  let left_class : Array[Int32] = [0, 1, 1, 0]
+  let right_class : Array[Int32] = [0, 1, 0, 1]
+  let kern_index : Array[Int32] = [0, 1, 1, 2]
   let kern_value_count = kern_values.length()
   let left_class_count = 2
   let right_class_count = 2
@@ -528,7 +532,10 @@ fn build_svg_table() -> Bytes {
 }
 
 ///|
-fn build_class_def_format1(start_glyph : Int, classes : Array[Int]) -> Bytes {
+fn build_class_def_format1(
+  start_glyph : Int32,
+  classes : Array[Int32],
+) -> Bytes {
   let bytes : Array[Byte] = []
   push_u16(bytes, 1)
   push_u16(bytes, start_glyph)
@@ -540,7 +547,7 @@ fn build_class_def_format1(start_glyph : Int, classes : Array[Int]) -> Bytes {
 }
 
 ///|
-fn build_coverage_format1(glyphs : Array[Int]) -> Bytes {
+fn build_coverage_format1(glyphs : Array[Int32]) -> Bytes {
   let bytes : Array[Byte] = []
   push_u16(bytes, 1)
   push_u16(bytes, glyphs.length())
@@ -551,7 +558,7 @@ fn build_coverage_format1(glyphs : Array[Int]) -> Bytes {
 }
 
 ///|
-fn build_anchor_format1(x : Int, y : Int) -> Array[Byte] {
+fn build_anchor_format1(x : Int32, y : Int32) -> Array[Byte] {
   let bytes : Array[Byte] = []
   push_u16(bytes, 1)
   push_i16(bytes, x)
@@ -571,7 +578,7 @@ fn build_attach_list() -> Bytes {
   push_u16(attach2, 4)
   let header_len = 4 + 2 * 2
   let cursor = header_len + coverage.length()
-  let offsets : Array[Int] = [cursor, cursor + attach1.length()]
+  let offsets : Array[Int32] = [cursor, cursor + attach1.length()]
   let bytes : Array[Byte] = []
   push_u16(bytes, header_len)
   push_u16(bytes, 2)
@@ -601,7 +608,7 @@ fn build_device_table() -> Bytes {
 }
 
 ///|
-fn build_caret_value_format1(coord : Int) -> Bytes {
+fn build_caret_value_format1(coord : Int32) -> Bytes {
   let bytes : Array[Byte] = []
   push_u16(bytes, 1)
   push_i16(bytes, coord)
@@ -609,7 +616,7 @@ fn build_caret_value_format1(coord : Int) -> Bytes {
 }
 
 ///|
-fn build_caret_value_format2(point : Int) -> Bytes {
+fn build_caret_value_format2(point : Int32) -> Bytes {
   let bytes : Array[Byte] = []
   push_u16(bytes, 2)
   push_u16(bytes, point)
@@ -617,7 +624,7 @@ fn build_caret_value_format2(point : Int) -> Bytes {
 }
 
 ///|
-fn build_caret_value_format3(coord : Int) -> Bytes {
+fn build_caret_value_format3(coord : Int32) -> Bytes {
   let device = build_device_table()
   let bytes : Array[Byte] = []
   push_u16(bytes, 3)
@@ -634,7 +641,7 @@ fn build_lig_glyph(carets : Array[Bytes]) -> Bytes {
   let bytes : Array[Byte] = []
   push_u16(bytes, carets.length())
   let mut cursor = 2 + carets.length() * 2
-  let offsets : Array[Int] = []
+  let offsets : Array[Int32] = []
   for caret in carets {
     offsets.push(cursor)
     cursor = cursor + caret.length()
@@ -660,7 +667,7 @@ fn build_lig_caret_list() -> Bytes {
   ])
   let header_len = 4 + 2 * 2
   let cursor = header_len + coverage.length()
-  let offsets : Array[Int] = [cursor, cursor + lig1.length()]
+  let offsets : Array[Int32] = [cursor, cursor + lig1.length()]
   let bytes : Array[Byte] = []
   push_u16(bytes, header_len)
   push_u16(bytes, 2)
@@ -1049,7 +1056,7 @@ fn build_gsub_single() -> Bytes {
 
 ///|
 fn build_gpos_table_with_lookup(
-  lookup_type : Int,
+  lookup_type : Int32,
   subtable : Array[Byte],
 ) -> Bytes {
   let lookup : Array[Byte] = []
@@ -1416,7 +1423,7 @@ fn build_gpos_chaining() -> Bytes {
 }
 
 ///|
-fn build_vhea(number_of_vmetrics : Int) -> Bytes {
+fn build_vhea(number_of_vmetrics : Int32) -> Bytes {
   let bytes : Array[Byte] = Array::make(36, b'\x00')
   bytes[34] = ((number_of_vmetrics >> 8) & 0xff).to_byte()
   bytes[35] = (number_of_vmetrics & 0xff).to_byte()
@@ -1424,7 +1431,7 @@ fn build_vhea(number_of_vmetrics : Int) -> Bytes {
 }
 
 ///|
-fn build_hmtx(advances : Array[Int], lsbs : Array[Int]) -> Bytes {
+fn build_hmtx(advances : Array[Int32], lsbs : Array[Int32]) -> Bytes {
   let bytes : Array[Byte] = []
   for i in 0..<advances.length() {
     push_u16(bytes, advances[i])
@@ -1434,7 +1441,7 @@ fn build_hmtx(advances : Array[Int], lsbs : Array[Int]) -> Bytes {
 }
 
 ///|
-fn build_vmtx(advances : Array[Int], tsbs : Array[Int]) -> Bytes {
+fn build_vmtx(advances : Array[Int32], tsbs : Array[Int32]) -> Bytes {
   let bytes : Array[Byte] = []
   for i in 0..<advances.length() {
     push_u16(bytes, advances[i])
@@ -1444,7 +1451,7 @@ fn build_vmtx(advances : Array[Int], tsbs : Array[Int]) -> Bytes {
 }
 
 ///|
-fn build_loca_long(offsets : Array[Int]) -> Bytes {
+fn build_loca_long(offsets : Array[Int32]) -> Bytes {
   let bytes : Array[Byte] = []
   for offset in offsets {
     push_u32(bytes, offset)
@@ -1465,7 +1472,7 @@ fn build_simple_glyph() -> Array[Byte] {
 }
 
 ///|
-fn build_composite_glyph(component_gid : Int) -> Array[Byte] {
+fn build_composite_glyph(component_gid : Int32) -> Array[Byte] {
   let bytes : Array[Byte] = []
   push_i16(bytes, -1)
   push_i16(bytes, 0)
@@ -1512,7 +1519,11 @@ fn build_cmap_table(subtable : Bytes) -> Bytes {
 }
 
 ///|
-fn build_cmap_format12(start : UInt, end : UInt, start_gid : UInt) -> Bytes {
+fn build_cmap_format12(
+  start : UInt32,
+  end : UInt32,
+  start_gid : UInt32,
+) -> Bytes {
   let bytes : Array[Byte] = []
   push_u16(bytes, 12)
   push_u16(bytes, 0)
@@ -1700,7 +1711,7 @@ fn build_font_bytes_subset_cblc_fixture() -> Bytes {
 }
 
 ///|
-fn build_delta_map(values : Array[Int]) -> Array[Byte] {
+fn build_delta_map(values : Array[Int32]) -> Array[Byte] {
   let bytes : Array[Byte] = []
   bytes.push(0)
   bytes.push(0)
@@ -1781,7 +1792,7 @@ fn build_vvar_table() -> Bytes {
 
 ///|
 fn build_gvar_table() -> Bytes {
-  let offsets : Array[Int] = [0, 1, 3, 6, 6]
+  let offsets : Array[Int32] = [0, 1, 3, 6, 6]
   let data_bytes : Array[Byte] = [0xa0, 0xb1, 0xb2, 0xc1, 0xc2, 0xc3]
   let data_offset = 20 + offsets.length() * 4
   let bytes : Array[Byte] = []
@@ -1921,7 +1932,8 @@ fn build_font_bytes_subset_gpos_extension_fixture() -> Bytes {
 ///|
 test "subset drops unused glyphs" {
   let font = @font.Font::from_bytes(build_font_bytes_subset_fixture())
-  let bytes = match subset(font, SubsetInput::from_codepoints([0x41U])) {
+  let bytes = match
+    @subset.subset(font, @subset.SubsetInput::from_codepoints([0x41U])) {
     Err(err) => fail("subset failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -1954,7 +1966,8 @@ test "subset drops unused glyphs" {
 ///|
 test "subset preserves os2" {
   let font = @font.Font::from_bytes(build_font_bytes_subset_fixture())
-  let bytes = match subset(font, SubsetInput::from_codepoints([0x41U])) {
+  let bytes = match
+    @subset.subset(font, @subset.SubsetInput::from_codepoints([0x41U])) {
     Err(err) => fail("subset failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -1986,7 +1999,8 @@ test "subset preserves os2" {
 ///|
 test "subset preserves cpal" {
   let font = @font.Font::from_bytes(build_font_bytes_subset_fixture())
-  let bytes = match subset(font, SubsetInput::from_codepoints([0x41U])) {
+  let bytes = match
+    @subset.subset(font, @subset.SubsetInput::from_codepoints([0x41U])) {
     Err(err) => fail("subset failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -2005,7 +2019,8 @@ test "subset preserves cpal" {
 ///|
 test "subset rebuilds post table when remapped" {
   let font = @font.Font::from_bytes(build_font_bytes_subset_fixture())
-  let bytes = match subset(font, SubsetInput::from_codepoints([0x42U])) {
+  let bytes = match
+    @subset.subset(font, @subset.SubsetInput::from_codepoints([0x42U])) {
     Err(err) => fail("subset failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -2028,7 +2043,8 @@ test "subset rebuilds post table when remapped" {
 ///|
 test "subset preserves post table for identity subset" {
   let font = @font.Font::from_bytes(build_font_bytes_subset_fixture())
-  let bytes = match subset(font, SubsetInput::from_codepoints([0x41U, 0x42U])) {
+  let bytes = match
+    @subset.subset(font, @subset.SubsetInput::from_codepoints([0x41U, 0x42U])) {
     Err(err) => fail("subset failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -2051,7 +2067,8 @@ test "subset preserves post table for identity subset" {
 ///|
 test "subset rebuilds vorg" {
   let font = @font.Font::from_bytes(build_font_bytes_subset_fixture())
-  let bytes = match subset(font, SubsetInput::from_codepoints([0x42U])) {
+  let bytes = match
+    @subset.subset(font, @subset.SubsetInput::from_codepoints([0x42U])) {
     Err(err) => fail("subset failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -2076,7 +2093,8 @@ test "subset rebuilds vorg" {
 ///|
 test "subset rebuilds kern" {
   let font = @font.Font::from_bytes(build_font_bytes_subset_fixture())
-  let bytes = match subset(font, SubsetInput::from_codepoints([0x42U])) {
+  let bytes = match
+    @subset.subset(font, @subset.SubsetInput::from_codepoints([0x42U])) {
     Err(err) => fail("subset failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -2108,7 +2126,7 @@ test "subset rebuilds kern" {
   )
   let subtable2 = kern.subtables[1]
   @debug.debug_inspect(subtable2.format, content="0")
-  let pairs2 : Array[(Int, Int, Int)] = []
+  let pairs2 : Array[(Int32, Int32, Int32)] = []
   for pair in subtable2.pairs {
     pairs2.push(
       (
@@ -2124,7 +2142,7 @@ test "subset rebuilds kern" {
   )
   let subtable3 = kern.subtables[2]
   @debug.debug_inspect(subtable3.format, content="0")
-  let pairs3 : Array[(Int, Int, Int)] = []
+  let pairs3 : Array[(Int32, Int32, Int32)] = []
   for pair in subtable3.pairs {
     pairs3.push(
       (
@@ -2143,7 +2161,8 @@ test "subset rebuilds kern" {
 ///|
 test "subset rebuilds gsub single" {
   let font = @font.Font::from_bytes(build_font_bytes_subset_fixture())
-  let bytes = match subset(font, SubsetInput::from_codepoints([0x42U])) {
+  let bytes = match
+    @subset.subset(font, @subset.SubsetInput::from_codepoints([0x42U])) {
     Err(err) => fail("subset failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -2230,7 +2249,8 @@ test "subset rebuilds gsub single" {
 ///|
 test "subset rebuilds gsub multiple" {
   let font = @font.Font::from_bytes(build_font_bytes_subset_fixture())
-  let bytes = match subset(font, SubsetInput::from_codepoints([0x42U])) {
+  let bytes = match
+    @subset.subset(font, @subset.SubsetInput::from_codepoints([0x42U])) {
     Err(err) => fail("subset failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -2322,7 +2342,8 @@ test "subset rebuilds gsub multiple" {
 ///|
 test "subset rebuilds gsub alternate" {
   let font = @font.Font::from_bytes(build_font_bytes_subset_fixture())
-  let bytes = match subset(font, SubsetInput::from_codepoints([0x42U])) {
+  let bytes = match
+    @subset.subset(font, @subset.SubsetInput::from_codepoints([0x42U])) {
     Err(err) => fail("subset failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -2415,7 +2436,8 @@ test "subset rebuilds gsub alternate" {
 ///|
 test "subset rebuilds gsub ligature" {
   let font = @font.Font::from_bytes(build_font_bytes_subset_fixture())
-  let bytes = match subset(font, SubsetInput::from_codepoints([0x42U])) {
+  let bytes = match
+    @subset.subset(font, @subset.SubsetInput::from_codepoints([0x42U])) {
     Err(err) => fail("subset failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -2516,7 +2538,8 @@ test "subset rebuilds gsub ligature" {
 ///|
 test "subset rebuilds gsub contextual" {
   let font = @font.Font::from_bytes(build_font_bytes_subset_fixture())
-  let bytes = match subset(font, SubsetInput::from_codepoints([0x42U])) {
+  let bytes = match
+    @subset.subset(font, @subset.SubsetInput::from_codepoints([0x42U])) {
     Err(err) => fail("subset failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -2629,7 +2652,8 @@ test "subset rebuilds gsub contextual" {
 ///|
 test "subset rebuilds gsub chaining" {
   let font = @font.Font::from_bytes(build_font_bytes_subset_fixture())
-  let bytes = match subset(font, SubsetInput::from_codepoints([0x42U])) {
+  let bytes = match
+    @subset.subset(font, @subset.SubsetInput::from_codepoints([0x42U])) {
     Err(err) => fail("subset failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -2761,7 +2785,8 @@ test "subset rebuilds gsub chaining" {
 ///|
 test "subset rebuilds gsub extension" {
   let font = @font.Font::from_bytes(build_font_bytes_subset_fixture())
-  let bytes = match subset(font, SubsetInput::from_codepoints([0x42U])) {
+  let bytes = match
+    @subset.subset(font, @subset.SubsetInput::from_codepoints([0x42U])) {
     Err(err) => fail("subset failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -2854,7 +2879,8 @@ test "subset rebuilds gsub extension" {
 ///|
 test "subset rebuilds gsub reverse chaining" {
   let font = @font.Font::from_bytes(build_font_bytes_subset_fixture())
-  let bytes = match subset(font, SubsetInput::from_codepoints([0x42U])) {
+  let bytes = match
+    @subset.subset(font, @subset.SubsetInput::from_codepoints([0x42U])) {
     Err(err) => fail("subset failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -2969,7 +2995,8 @@ test "subset rebuilds gsub reverse chaining" {
 ///|
 test "subset rebuilds gpos single" {
   let font = @font.Font::from_bytes(build_font_bytes_subset_fixture())
-  let bytes = match subset(font, SubsetInput::from_codepoints([0x42U])) {
+  let bytes = match
+    @subset.subset(font, @subset.SubsetInput::from_codepoints([0x42U])) {
     Err(err) => fail("subset failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -3051,7 +3078,8 @@ test "subset rebuilds gpos single" {
 ///|
 test "subset rebuilds gpos pair" {
   let font = @font.Font::from_bytes(build_font_bytes_subset_gpos_pair_fixture())
-  let bytes = match subset(font, SubsetInput::from_codepoints([0x42U])) {
+  let bytes = match
+    @subset.subset(font, @subset.SubsetInput::from_codepoints([0x42U])) {
     Err(err) => fail("subset failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -3151,7 +3179,8 @@ test "subset rebuilds gpos extension" {
   let font = @font.Font::from_bytes(
     build_font_bytes_subset_gpos_extension_fixture(),
   )
-  let bytes = match subset(font, SubsetInput::from_codepoints([0x42U])) {
+  let bytes = match
+    @subset.subset(font, @subset.SubsetInput::from_codepoints([0x42U])) {
     Err(err) => fail("subset failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -3247,7 +3276,8 @@ test "subset rebuilds gpos cursive" {
   let font = @font.Font::from_bytes(
     build_font_bytes_subset_with_gpos(build_gpos_cursive()),
   )
-  let bytes = match subset(font, SubsetInput::from_codepoints([0x42U])) {
+  let bytes = match
+    @subset.subset(font, @subset.SubsetInput::from_codepoints([0x42U])) {
     Err(err) => fail("subset failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -3346,7 +3376,8 @@ test "subset rebuilds gpos mark-to-base" {
   let font = @font.Font::from_bytes(
     build_font_bytes_subset_with_gpos(build_gpos_mark_base()),
   )
-  let bytes = match subset(font, SubsetInput::from_codepoints([0x42U])) {
+  let bytes = match
+    @subset.subset(font, @subset.SubsetInput::from_codepoints([0x42U])) {
     Err(err) => fail("subset failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -3449,7 +3480,8 @@ test "subset rebuilds gpos mark-to-ligature" {
   let font = @font.Font::from_bytes(
     build_font_bytes_subset_with_gpos(build_gpos_mark_ligature()),
   )
-  let bytes = match subset(font, SubsetInput::from_codepoints([0x42U])) {
+  let bytes = match
+    @subset.subset(font, @subset.SubsetInput::from_codepoints([0x42U])) {
     Err(err) => fail("subset failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -3553,7 +3585,8 @@ test "subset rebuilds gpos mark-to-mark" {
   let font = @font.Font::from_bytes(
     build_font_bytes_subset_with_gpos(build_gpos_mark_mark()),
   )
-  let bytes = match subset(font, SubsetInput::from_codepoints([0x42U])) {
+  let bytes = match
+    @subset.subset(font, @subset.SubsetInput::from_codepoints([0x42U])) {
     Err(err) => fail("subset failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -3623,7 +3656,8 @@ test "subset rebuilds gpos contextual" {
   let font = @font.Font::from_bytes(
     build_font_bytes_subset_with_gpos(build_gpos_contextual()),
   )
-  let bytes = match subset(font, SubsetInput::from_codepoints([0x42U])) {
+  let bytes = match
+    @subset.subset(font, @subset.SubsetInput::from_codepoints([0x42U])) {
     Err(err) => fail("subset failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -3684,7 +3718,8 @@ test "subset rebuilds gpos chaining" {
   let font = @font.Font::from_bytes(
     build_font_bytes_subset_with_gpos(build_gpos_chaining()),
   )
-  let bytes = match subset(font, SubsetInput::from_codepoints([0x42U])) {
+  let bytes = match
+    @subset.subset(font, @subset.SubsetInput::from_codepoints([0x42U])) {
     Err(err) => fail("subset failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -3743,7 +3778,8 @@ test "subset rebuilds gpos chaining" {
 ///|
 test "subset rebuilds colr v0" {
   let font = @font.Font::from_bytes(build_font_bytes_subset_fixture())
-  let bytes = match subset(font, SubsetInput::from_codepoints([0x42U])) {
+  let bytes = match
+    @subset.subset(font, @subset.SubsetInput::from_codepoints([0x42U])) {
     Err(err) => fail("subset failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -3818,7 +3854,8 @@ test "subset rebuilds colr v0" {
 ///|
 test "subset rebuilds colr v1" {
   let font = @font.Font::from_bytes(build_font_bytes_subset_colr_v1_fixture())
-  let bytes = match subset(font, SubsetInput::from_codepoints([0x42U])) {
+  let bytes = match
+    @subset.subset(font, @subset.SubsetInput::from_codepoints([0x42U])) {
     Err(err) => fail("subset failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -3865,7 +3902,8 @@ test "subset rebuilds colr v1" {
 ///|
 test "subset rebuilds sbix" {
   let font = @font.Font::from_bytes(build_font_bytes_subset_sbix_fixture())
-  let bytes = match subset(font, SubsetInput::from_codepoints([0x42U])) {
+  let bytes = match
+    @subset.subset(font, @subset.SubsetInput::from_codepoints([0x42U])) {
     Err(err) => fail("subset failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -3976,7 +4014,8 @@ test "subset rebuilds sbix" {
 ///|
 test "subset rebuilds cblc/cbdt" {
   let font = @font.Font::from_bytes(build_font_bytes_subset_cblc_fixture())
-  let bytes = match subset(font, SubsetInput::from_codepoints([0x42U])) {
+  let bytes = match
+    @subset.subset(font, @subset.SubsetInput::from_codepoints([0x42U])) {
     Err(err) => fail("subset failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -4080,7 +4119,7 @@ test "subset rebuilds cblc/cbdt" {
     Some(value) => value
   }
   @debug.debug_inspect((cbdt_major, cbdt_minor), content="(2, 0)")
-  let data_bytes : Array[Int] = []
+  let data_bytes : Array[Int32] = []
   for i in 0..<7 {
     data_bytes.push(cbdt[image_data_offset + i].to_int())
   }
@@ -4090,7 +4129,8 @@ test "subset rebuilds cblc/cbdt" {
 ///|
 test "subset rebuilds svg" {
   let font = @font.Font::from_bytes(build_font_bytes_subset_svg_fixture())
-  let bytes = match subset(font, SubsetInput::from_codepoints([0x42U])) {
+  let bytes = match
+    @subset.subset(font, @subset.SubsetInput::from_codepoints([0x42U])) {
     Err(err) => fail("subset failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -4140,7 +4180,7 @@ test "subset rebuilds svg" {
   @debug.debug_inspect((start, end), content="(1, 2)")
   @debug.debug_inspect((doc_offset, doc_length), content="(14, 6)")
   let doc_base = index_offset + doc_offset
-  let doc_bytes : Array[Int] = []
+  let doc_bytes : Array[Int32] = []
   for i in 0..<doc_length {
     doc_bytes.push(data[doc_base + i].to_int())
   }
@@ -4150,7 +4190,8 @@ test "subset rebuilds svg" {
 ///|
 test "subset rebuilds gdef" {
   let font = @font.Font::from_bytes(build_font_bytes_subset_fixture())
-  let bytes = match subset(font, SubsetInput::from_codepoints([0x42U])) {
+  let bytes = match
+    @subset.subset(font, @subset.SubsetInput::from_codepoints([0x42U])) {
     Err(err) => fail("subset failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -4432,7 +4473,8 @@ test "subset rebuilds gdef" {
 ///|
 test "subset rebuilds variation tables" {
   let font = @font.Font::from_bytes(build_font_bytes_subset_variation_fixture())
-  let bytes = match subset(font, SubsetInput::from_codepoints([0x42U])) {
+  let bytes = match
+    @subset.subset(font, @subset.SubsetInput::from_codepoints([0x42U])) {
     Err(err) => fail("subset failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -4458,7 +4500,7 @@ test "subset rebuilds variation tables" {
     None => fail("gvar last offset missing")
     Some(value) => value
   }
-  let gvar_bytes : Array[Int] = []
+  let gvar_bytes : Array[Int32] = []
   for i in data_offset..<(data_offset + last_offset) {
     gvar_bytes.push(gvar[i].to_int())
   }
@@ -4480,7 +4522,7 @@ test "subset rebuilds variation tables" {
     None => fail("HVAR adv count missing")
     Some(value) => value
   }
-  let adv_values : Array[Int] = []
+  let adv_values : Array[Int32] = []
   for i in 0..<adv_count {
     adv_values.push(hvar[adv_offset + 4 + i].to_int())
   }
@@ -4501,7 +4543,7 @@ test "subset rebuilds variation tables" {
     None => fail("VVAR adv count missing")
     Some(value) => value
   }
-  let vadv_values : Array[Int] = []
+  let vadv_values : Array[Int32] = []
   for i in 0..<vadv_count {
     vadv_values.push(vvar[vadv_offset + 4 + i].to_int())
   }
@@ -4537,7 +4579,7 @@ test "subset rebuilds variation tables" {
   let data_start = records_offset + 5 + (record_count + 1) * off_size
   let start = varc[records_offset + 5].to_int() - 1
   let end = varc[records_offset + 6].to_int() - 1
-  let record_bytes : Array[Int] = []
+  let record_bytes : Array[Int32] = []
   for i in (data_start + start)..<(data_start + end) {
     record_bytes.push(varc[i].to_int())
   }
@@ -4548,7 +4590,8 @@ test "subset rebuilds variation tables" {
 ///|
 test "subset keeps empty gsub when remapped" {
   let font = @font.Font::from_bytes(build_font_bytes_subset_fixture())
-  let bytes = match subset(font, SubsetInput::from_codepoints([0x41U])) {
+  let bytes = match
+    @subset.subset(font, @subset.SubsetInput::from_codepoints([0x41U])) {
     Err(err) => fail("subset failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -4588,7 +4631,8 @@ test "subset keeps empty gsub when remapped" {
 ///|
 test "subset preserves layout tables for identity subset" {
   let font = @font.Font::from_bytes(build_font_bytes_subset_fixture())
-  let bytes = match subset(font, SubsetInput::from_codepoints([0x41U, 0x42U])) {
+  let bytes = match
+    @subset.subset(font, @subset.SubsetInput::from_codepoints([0x41U, 0x42U])) {
     Err(err) => fail("subset failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -4613,7 +4657,8 @@ test "subset preserves layout tables for identity subset" {
 ///|
 test "subset rebuilds vmtx" {
   let font = @font.Font::from_bytes(build_font_bytes_subset_fixture())
-  let bytes = match subset(font, SubsetInput::from_codepoints([0x41U])) {
+  let bytes = match
+    @subset.subset(font, @subset.SubsetInput::from_codepoints([0x41U])) {
     Err(err) => fail("subset failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -4669,7 +4714,8 @@ test "subset rebuilds vmtx" {
 ///|
 test "subset remaps composite components" {
   let font = @font.Font::from_bytes(build_font_bytes_subset_fixture())
-  let bytes = match subset(font, SubsetInput::from_codepoints([0x42U])) {
+  let bytes = match
+    @subset.subset(font, @subset.SubsetInput::from_codepoints([0x42U])) {
     Err(err) => fail("subset failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -5140,7 +5186,8 @@ fn build_font_bytes_test_cff2_vf() -> Bytes {
 test "subset cff1 cmap" {
   let font = @font.Font::from_bytes(build_font_bytes_cff1_seac_c0())
   let keep = 0xC0U
-  let bytes = match subset(font, SubsetInput::from_codepoints([keep])) {
+  let bytes = match
+    @subset.subset(font, @subset.SubsetInput::from_codepoints([keep])) {
     Err(err) => fail("subset failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -5205,7 +5252,8 @@ test "subset cff1 outlines" {
     Err(err) => fail("seac components error: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  let bytes = match subset(font, SubsetInput::from_codepoints([keep])) {
+  let bytes = match
+    @subset.subset(font, @subset.SubsetInput::from_codepoints([keep])) {
     Err(err) => fail("subset failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -5245,8 +5293,8 @@ test "subset cff1 outlines" {
   let expected_components = match original_components {
     None => None
     Some((base, accent)) => {
-      let selected : Array[Int] = [0, original_gid, base, accent]
-      let unique : Array[Int] = []
+      let selected : Array[Int32] = [0, original_gid, base, accent]
+      let unique : Array[Int32] = []
       for gid in selected {
         if !unique.contains(gid) {
           unique.push(gid)
@@ -5286,7 +5334,8 @@ test "subset cff1 outlines" {
 test "subset cff2 outlines" {
   let font = @font.Font::from_bytes(build_font_bytes_test_cff2_vf())
   let keep = 0x41U
-  let bytes = match subset(font, SubsetInput::from_codepoints([keep])) {
+  let bytes = match
+    @subset.subset(font, @subset.SubsetInput::from_codepoints([keep])) {
     Err(err) => fail("subset failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }

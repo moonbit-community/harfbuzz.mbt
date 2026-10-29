@@ -28,22 +28,22 @@ license and preserved upstream notices.
 
 ## Examples
 
-- JS SVG demo: `src/examples/js_svg`
+- JS SVG demo: `examples/js_svg`
 
 ```bash
-moon build --target js src/examples/js_svg
+(cd examples/js_svg && moon build --target js)
 python3 -m http.server
 ```
 
 Then open:
 
 ```
-http://localhost:8000/src/examples/js_svg/index.html
+http://localhost:8000/examples/js_svg/index.html
 ```
 
 ```mbt check
 ///|
 test "module version placeholder" {
-  inspect(version, content="0.0.0")
+  inspect(@harfbuzz.version, content="0.0.0")
 }
 ```

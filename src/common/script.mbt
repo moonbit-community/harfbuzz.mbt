@@ -109,7 +109,7 @@ pub fn Script::from_iso15924_tag(tag : Tag) -> Script {
 
 ///|
 /// Convert an ISO 15924 string to a script.
-pub fn Script::from_string(s : String, len? : Int = -1) -> Script {
+pub fn Script::from_string(s : String, len~ : Int32 = -1) -> Script {
   Script::from_iso15924_tag(Tag::from_string(s, len~))
 }
 

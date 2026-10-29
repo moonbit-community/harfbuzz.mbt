@@ -15,10 +15,10 @@
 ///|
 /// Name record (string bytes in original encoding).
 pub struct NameRecord {
-  platform_id : Int
-  encoding_id : Int
-  language_id : Int
-  name_id : Int
+  platform_id : Int32
+  encoding_id : Int32
+  language_id : Int32
+  name_id : Int32
   value : Bytes
 } derive(Debug, ToJson)
 
@@ -103,10 +103,10 @@ pub fn NameTable::parse(data : BytesView) -> Result[NameTable, SfntError] {
 /// Return the first name record matching ids (simple helper).
 pub fn NameTable::find_name(
   self : NameTable,
-  platform_id : Int,
-  encoding_id : Int,
-  language_id : Int,
-  name_id : Int,
+  platform_id : Int32,
+  encoding_id : Int32,
+  language_id : Int32,
+  name_id : Int32,
 ) -> NameRecord? {
   for record in self.records {
     if record.platform_id == platform_id &&

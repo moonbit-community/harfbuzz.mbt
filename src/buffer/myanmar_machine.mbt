@@ -15,19 +15,19 @@
 ///|
 /// Generated from refs/harfbuzz/src/hb-ot-shaper-myanmar-machine.hh.
 ///
-let myanmar_syllable_type_consonant : Int = 0
+let myanmar_syllable_type_consonant : Int32 = 0
 
 ///|
-let myanmar_syllable_type_broken : Int = 1
+let myanmar_syllable_type_broken : Int32 = 1
 
 ///|
-let myanmar_syllable_type_non_myanmar : Int = 2
+let myanmar_syllable_type_non_myanmar : Int32 = 2
 
 ///|
-let myanmar_machine_start : Int = 0
+let myanmar_machine_start : Int32 = 0
 
 ///|
-let myanmar_machine_trans_keys : Array[Int] = [
+let myanmar_machine_trans_keys : Array[Int32] = [
   1, 57, 3, 57, 5, 57, 5, 57, 3, 57, 5, 57, 3, 57, 3, 57, 3, 57, 3, 57, 3, 57, 5,
   57, 1, 15, 3, 57, 3, 57, 3, 57, 3, 57, 3, 57, 3, 57, 3, 57, 3, 57, 3, 57, 3, 57,
   3, 57, 3, 57, 5, 57, 5, 57, 3, 57, 5, 57, 3, 57, 3, 57, 3, 57, 3, 57, 3, 57, 5,
@@ -36,14 +36,14 @@ let myanmar_machine_trans_keys : Array[Int] = [
 ]
 
 ///|
-let myanmar_machine_key_spans : Array[Int] = [
+let myanmar_machine_key_spans : Array[Int32] = [
   57, 55, 53, 53, 55, 53, 55, 55, 55, 55, 55, 53, 15, 55, 55, 55, 55, 55, 55, 55,
   55, 55, 55, 55, 55, 53, 53, 55, 53, 55, 55, 55, 55, 55, 53, 15, 55, 55, 55, 55,
   55, 55, 55, 55, 55, 55, 55, 55, 55, 55, 55, 57, 15,
 ]
 
 ///|
-let myanmar_machine_index_offsets : Array[Int] = [
+let myanmar_machine_index_offsets : Array[Int32] = [
   0, 58, 114, 168, 222, 278, 332, 388, 444, 500, 556, 612, 666, 682, 738, 794, 850,
   906, 962, 1018, 1074, 1130, 1186, 1242, 1298, 1354, 1408, 1462, 1518, 1572, 1628,
   1684, 1740, 1796, 1852, 1906, 1922, 1978, 2034, 2090, 2146, 2202, 2258, 2314, 2370,
@@ -51,7 +51,7 @@ let myanmar_machine_index_offsets : Array[Int] = [
 ]
 
 ///|
-let myanmar_machine_indicies : Array[Int] = [
+let myanmar_machine_indicies : Array[Int32] = [
   1, 1, 2, 3, 4, 4, 0, 5, 6, 1, 1, 0, 0, 0, 7, 0, 0, 8, 0, 9, 10, 11, 12, 0, 0, 0,
   0, 0, 0, 0, 0, 13, 0, 0, 14, 15, 16, 17, 18, 19, 20, 0, 0, 0, 0, 0, 0, 0, 0, 0,
   0, 0, 0, 0, 0, 0, 21, 0, 23, 24, 25, 25, 22, 26, 27, 22, 22, 22, 22, 22, 22, 22,
@@ -195,42 +195,42 @@ let myanmar_machine_indicies : Array[Int] = [
 ]
 
 ///|
-let myanmar_machine_trans_targs : Array[Int] = [
+let myanmar_machine_trans_targs : Array[Int32] = [
   0, 1, 25, 35, 0, 26, 30, 49, 52, 37, 38, 39, 29, 41, 42, 44, 45, 46, 27, 48, 43,
   26, 0, 2, 12, 0, 3, 7, 13, 14, 15, 6, 17, 18, 20, 21, 22, 4, 24, 19, 11, 5, 8,
   9, 10, 16, 23, 0, 0, 34, 0, 28, 31, 32, 33, 36, 40, 47, 50, 51, 0,
 ]
 
 ///|
-let myanmar_machine_trans_actions : Array[Int] = [
+let myanmar_machine_trans_actions : Array[Int32] = [
   3, 0, 0, 0, 4, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6, 7, 0, 0, 8, 0,
   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 9, 10, 0, 11, 0, 0,
   0, 0, 0, 0, 0, 0, 0, 12,
 ]
 
 ///|
-let myanmar_machine_to_state_actions : Array[Int] = [
+let myanmar_machine_to_state_actions : Array[Int32] = [
   1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 ]
 
 ///|
-let myanmar_machine_from_state_actions : Array[Int] = [
+let myanmar_machine_from_state_actions : Array[Int32] = [
   2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 ]
 
 ///|
-let myanmar_machine_eof_trans : Array[Int] = [
+let myanmar_machine_eof_trans : Array[Int32] = [
   0, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23,
   23, 23, 23, 23, 23, 48, 51, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48,
   48, 48, 48, 48, 48, 48, 48, 48, 48, 23, 23, 48, 61,
 ]
 
 ///|
-fn find_syllables_myanmar(categories : Array[UInt]) -> Array[Int] {
+fn find_syllables_myanmar(categories : Array[UInt32]) -> Array[Int32] {
   let len = categories.length()
-  let syllables : Array[Int] = Array::make(len, 0)
+  let syllables : Array[Int32] = Array::make(len, 0)
   let mut cs = myanmar_machine_start
   let mut ts = 0
   let mut te = 0
@@ -239,7 +239,7 @@ fn find_syllables_myanmar(categories : Array[UInt]) -> Array[Int] {
   let pe = len
   let eof = len
   let mut syllable_serial = 1
-  fn found_syllable(start : Int, end : Int, syllable_type : Int) -> Unit {
+  fn found_syllable(start : Int32, end : Int32, syllable_type : Int32) -> Unit {
     if start < 0 || end > len || start >= end {
       return ()
     }

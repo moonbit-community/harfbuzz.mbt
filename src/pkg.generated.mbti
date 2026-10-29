@@ -4,17 +4,17 @@ package "moonbit-community/harfbuzz"
 // Values
 pub let version : String
 
-pub fn version_atleast(Int, Int, Int) -> Bool
+pub fn version_atleast(Int32, Int32, Int32) -> Bool
 
-pub let version_major : Int
+pub let version_major : Int32
 
-pub let version_micro : Int
+pub let version_micro : Int32
 
-pub let version_minor : Int
+pub let version_minor : Int32
 
 pub fn version_string() -> String
 
-pub fn version_tuple() -> (Int, Int, Int)
+pub fn version_tuple() -> (Int32, Int32, Int32)
 
 // Errors
 
@@ -23,4 +23,3 @@ pub fn version_tuple() -> (Int, Int, Int)
 // Type aliases
 
 // Traits
-

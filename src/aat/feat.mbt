@@ -24,23 +24,23 @@ let feat_flag_index_mask = 0x00ff
 ///|
 /// Feature setting name record.
 pub struct FeatSettingName {
-  setting : Int
-  name_id : Int
+  setting : Int32
+  name_id : Int32
 } derive(Eq, Debug, ToJson)
 
 ///|
 /// Feature name record.
 pub struct FeatFeatureName {
-  feature : Int
-  name_id : Int
-  flags : Int
+  feature : Int32
+  name_id : Int32
+  flags : Int32
   settings : Array[FeatSettingName]
 } derive(Eq, Debug, ToJson)
 
 ///|
 /// Parsed feat table.
 pub struct FeatTable {
-  version : Int
+  version : Int32
   features : Array[FeatFeatureName]
 } derive(Debug, ToJson)
 
@@ -50,8 +50,8 @@ pub fn FeatTable::has_data(self : FeatTable) -> Bool {
 }
 
 ///|
-pub fn FeatTable::feature_types(self : FeatTable) -> Array[Int] {
-  let types : Array[Int] = []
+pub fn FeatTable::feature_types(self : FeatTable) -> Array[Int32] {
+  let types : Array[Int32] = []
   for feature in self.features {
     types.push(feature.feature)
   }
@@ -61,7 +61,7 @@ pub fn FeatTable::feature_types(self : FeatTable) -> Array[Int] {
 ///|
 pub fn FeatTable::feature(
   self : FeatTable,
-  feature_type : Int,
+  feature_type : Int32,
 ) -> FeatFeatureName? {
   for feature in self.features {
     if feature.feature == feature_type {
@@ -77,7 +77,7 @@ pub fn FeatFeatureName::is_exclusive(self : FeatFeatureName) -> Bool {
 }
 
 ///|
-pub fn FeatFeatureName::default_setting_index(self : FeatFeatureName) -> Int? {
+pub fn FeatFeatureName::default_setting_index(self : FeatFeatureName) -> Int32? {
   if !self.is_exclusive() {
     return None
   }

@@ -14,13 +14,13 @@
 
 ///|
 test "version api" {
-  let (major, minor, micro) = version_tuple()
+  let (major, minor, micro) = @harfbuzz.version_tuple()
   @debug.debug_inspect((major, minor, micro), content="(0, 0, 0)")
   let expected = "\{major}.\{minor}.\{micro}"
-  inspect(version, content=expected)
-  inspect(version_string(), content=expected)
-  assert_true(version_atleast(major, minor, micro))
-  assert_true(!version_atleast(major + 1, minor, micro))
-  assert_true(!version_atleast(major, minor + 1, micro))
-  assert_true(!version_atleast(major, minor, micro + 1))
+  inspect(@harfbuzz.version, content=expected)
+  inspect(@harfbuzz.version_string(), content=expected)
+  assert_true(@harfbuzz.version_atleast(major, minor, micro))
+  assert_true(!@harfbuzz.version_atleast(major + 1, minor, micro))
+  assert_true(!@harfbuzz.version_atleast(major, minor + 1, micro))
+  assert_true(!@harfbuzz.version_atleast(major, minor, micro + 1))
 }

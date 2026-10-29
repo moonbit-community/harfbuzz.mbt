@@ -427,7 +427,7 @@ fn build_font_bytes_test_cff2_vf() -> Bytes {
 
 ///|
 test "font glyph bounds cff1 seac fixture" {
-  let font = Font::from_bytes(build_font_bytes_cff1_seac_c0())
+  let font = @font.Font::from_bytes(build_font_bytes_cff1_seac_c0())
   let gid = match font.glyph_for_codepoint(0xC0U) {
     Err(err) => fail("glyph lookup error: \{@debug.to_string(err)}")
     Ok(None) => fail("missing glyph for U+00C0")
@@ -446,7 +446,7 @@ test "font glyph bounds cff1 seac fixture" {
 
 ///|
 test "font glyph bounds cff2 vf fixture" {
-  let font = Font::from_bytes(build_font_bytes_test_cff2_vf())
+  let font = @font.Font::from_bytes(build_font_bytes_test_cff2_vf())
   let gid = match font.glyph_for_codepoint(0x41U) {
     Err(err) => fail("glyph lookup error: \{@debug.to_string(err)}")
     Ok(None) => fail("missing glyph for U+0041")

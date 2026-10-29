@@ -22,7 +22,7 @@ suberror FaceTableError {
 } derive(Eq, Debug, ToJson)
 
 ///|
-fn read_u32(data : BytesView, offset : Int) -> Result[Int, FaceTableError] {
+fn read_u32(data : BytesView, offset : Int32) -> Result[Int32, FaceTableError] {
   if offset + 4 > data.length() {
     return Err(UnexpectedEof)
   }
@@ -41,8 +41,8 @@ fn read_u32(data : BytesView, offset : Int) -> Result[Int, FaceTableError] {
 ///|
 fn ttc_font_offset(
   data : BytesView,
-  index : Int,
-) -> Result[Int, FaceTableError] {
+  index : Int32,
+) -> Result[Int32, FaceTableError] {
   let count = read_u32(data, 8)
   match count {
     Err(err) => Err(err)
@@ -128,9 +128,9 @@ pub fn Face::reference_table_optional(
 /// Returns (total_count, tags_slice).
 pub fn Face::table_tags(
   self : Face,
-  start_offset? : Int = 0,
-  count? : Int = -1,
-) -> Result[(Int, Array[@common.Tag]), FaceTableError] {
+  start_offset~ : Int32 = 0,
+  count~ : Int32 = -1,
+) -> Result[(Int32, Array[@common.Tag]), FaceTableError] {
   let offset = if start_offset < 0 { 0 } else { start_offset }
   match self.ensure_sfnt_tables() {
     Err(err) => Err(err)

@@ -1,5 +1,8 @@
 import {
   "moonbitlang/core/debug",
+}
+
+import {
   "moonbit-community/harfbuzz/blob",
   "moonbit-community/harfbuzz/common",
   "moonbit-community/harfbuzz/face",

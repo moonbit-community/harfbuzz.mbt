@@ -15,6 +15,10 @@ pub suberror ShapeError {
   Font(@font.FontError)
   Layout(@tables.OtLayoutError)
 } derive(Eq, ToJson, @debug.Debug)
+pub fn ShapeError::equal(Self, Self) -> Bool
+pub fn ShapeError::not_equal(Self, Self) -> Bool
+pub fn ShapeError::to_json(Self) -> Json
+pub fn ShapeError::to_repr(Self) -> @debug.Repr
 
 // Types and methods
 pub struct Buffer {
@@ -30,12 +34,12 @@ pub struct Buffer {
   mut gsub_feature_values : FeatureValues?
   mut preserve_default_ignorables : Bool
   mut remove_default_ignorables : Bool
-  mut not_found_variation_selector : UInt?
+  mut not_found_variation_selector : UInt32?
 } derive(ToJson, @debug.Debug)
-pub fn Buffer::add_char(Self, Char, cluster? : Int) -> Unit
-pub fn Buffer::add_codepoint(Self, UInt, cluster? : Int) -> Unit
+pub fn Buffer::add_char(Self, Char, cluster? : Int32) -> Unit
+pub fn Buffer::add_codepoint(Self, UInt32, cluster? : Int32) -> Unit
 pub fn Buffer::add_string(Self, String) -> Unit
-pub fn Buffer::add_tracking(Self, Int, Bool) -> Unit
+pub fn Buffer::add_tracking(Self, Int32, Bool) -> Unit
 pub fn Buffer::apply_gpos(Self, @font.Font, include_all_features? : Bool, adjust_mark_offsets? : Bool) -> Result[Bool, ShapeError]
 pub fn Buffer::apply_kerx(Self, @font.Font) -> Result[Unit, ShapeError]
 pub fn Buffer::apply_morx(Self, @font.Font) -> Result[Unit, ShapeError]
@@ -43,7 +47,7 @@ pub fn Buffer::apply_trak(Self, @font.Font) -> Result[Unit, ShapeError]
 pub fn Buffer::clear(Self) -> Unit
 pub fn Buffer::get_direction(Self) -> @common.Direction
 pub fn Buffer::get_language(Self) -> @common.Language
-pub fn Buffer::get_not_found_variation_selector(Self) -> UInt?
+pub fn Buffer::get_not_found_variation_selector(Self) -> UInt32?
 pub fn Buffer::get_script(Self) -> @common.Script
 pub fn Buffer::gpos_features(Self) -> ArrayView[@common.Tag]
 pub fn Buffer::gsub_features(Self) -> ArrayView[@common.Tag]
@@ -51,20 +55,20 @@ pub fn Buffer::guess_segment_properties(Self) -> Unit
 pub fn Buffer::has_kerx(Self, @font.Font) -> Result[Bool, ShapeError]
 pub fn Buffer::infos(Self) -> ArrayView[GlyphInfo]
 pub fn Buffer::is_empty(Self) -> Bool
-pub fn Buffer::len(Self) -> Int
-pub fn Buffer::merge_clusters(Self, Int, Int) -> Unit
+pub fn Buffer::len(Self) -> Int32
+pub fn Buffer::merge_clusters(Self, Int32, Int32) -> Unit
 pub fn Buffer::merge_combining_mark_clusters(Self) -> Unit
 pub fn Buffer::new() -> Self
 pub fn Buffer::normalize(Self) -> Unit
 pub fn Buffer::positions(Self) -> ArrayView[GlyphPosition]
 pub fn Buffer::replace_glyphs(Self, Array[GlyphInfo], positions? : Array[GlyphPosition]) -> Bool
-pub fn Buffer::serialize(Self, format? : BufferSerializeFormat, mode? : BufferSerializeMode, start? : Int, end? : Int, no_positions? : Bool, no_clusters? : Bool, no_advances? : Bool) -> String
+pub fn Buffer::serialize(Self, format? : BufferSerializeFormat, mode? : BufferSerializeMode, start? : Int32, end? : Int32, no_positions? : Bool, no_clusters? : Bool, no_advances? : Bool) -> String
 pub fn Buffer::set_direction(Self, @common.Direction) -> Unit
 pub fn Buffer::set_gpos_features(Self, Array[@common.Tag]) -> Unit
-pub fn Buffer::set_gsub_feature_values(Self, @common.Tag, Array[Int]) -> Unit
+pub fn Buffer::set_gsub_feature_values(Self, @common.Tag, Array[Int32]) -> Unit
 pub fn Buffer::set_gsub_features(Self, Array[@common.Tag]) -> Unit
 pub fn Buffer::set_language(Self, @common.Language) -> Unit
-pub fn Buffer::set_not_found_variation_selector(Self, UInt?) -> Unit
+pub fn Buffer::set_not_found_variation_selector(Self, UInt32?) -> Unit
 pub fn Buffer::set_preserve_default_ignorables(Self, Bool) -> Unit
 pub fn Buffer::set_remove_default_ignorables(Self, Bool) -> Unit
 pub fn Buffer::set_script(Self, @common.Script) -> Unit
@@ -78,6 +82,8 @@ pub fn Buffer::shape_myanmar(Self, @font.Font) -> Result[Unit, ShapeError]
 pub fn Buffer::shape_ot(Self, @font.Font, fallback_position? : Bool) -> Result[Unit, ShapeError]
 pub fn Buffer::shape_thai(Self, @font.Font) -> Result[Unit, ShapeError]
 pub fn Buffer::shape_use(Self, @font.Font, script_tag? : @common.Tag) -> Result[Unit, ShapeError]
+pub fn Buffer::to_json(Self) -> Json
+pub fn Buffer::to_repr(Self) -> @debug.Repr
 pub fn Buffer::verify(Self) -> Bool
 
 pub(all) enum BufferSerializeFormat {
@@ -85,33 +91,49 @@ pub(all) enum BufferSerializeFormat {
   Text
   Json
 } derive(Eq, @debug.Debug)
-pub fn BufferSerializeFormat::from_string(String, len? : Int) -> Self
+pub fn BufferSerializeFormat::equal(Self, Self) -> Bool
+pub fn BufferSerializeFormat::from_string(String, len? : Int32) -> Self
+pub fn BufferSerializeFormat::not_equal(Self, Self) -> Bool
+pub fn BufferSerializeFormat::to_repr(Self) -> @debug.Repr
 pub fn BufferSerializeFormat::to_string(Self) -> String?
 
 pub(all) enum BufferSerializeMode {
   Glyphs
   Unicode
 } derive(Eq, @debug.Debug)
-pub fn BufferSerializeMode::from_string(String, len? : Int) -> Self
+pub fn BufferSerializeMode::equal(Self, Self) -> Bool
+pub fn BufferSerializeMode::from_string(String, len? : Int32) -> Self
+pub fn BufferSerializeMode::not_equal(Self, Self) -> Bool
+pub fn BufferSerializeMode::to_repr(Self) -> @debug.Repr
 
 type FeatureValues derive(ToJson, @debug.Debug)
+pub fn FeatureValues::to_json(Self) -> Json
+pub fn FeatureValues::to_repr(Self) -> @debug.Repr
 
 type GlyphExtents derive(@debug.Debug)
+pub fn GlyphExtents::to_repr(Self) -> @debug.Repr
 
 pub struct GlyphInfo {
-  codepoint : UInt
-  cluster : Int
-  unicode : UInt
+  codepoint : UInt32
+  cluster : Int32
+  unicode : UInt32
 } derive(Eq, ToJson, @debug.Debug)
+pub fn GlyphInfo::equal(Self, Self) -> Bool
+pub fn GlyphInfo::not_equal(Self, Self) -> Bool
+pub fn GlyphInfo::to_json(Self) -> Json
+pub fn GlyphInfo::to_repr(Self) -> @debug.Repr
 
 pub struct GlyphPosition {
-  x_advance : Int
-  y_advance : Int
-  x_offset : Int
-  y_offset : Int
+  x_advance : Int32
+  y_advance : Int32
+  x_offset : Int32
+  y_offset : Int32
 } derive(Eq, ToJson, @debug.Debug)
+pub fn GlyphPosition::equal(Self, Self) -> Bool
+pub fn GlyphPosition::not_equal(Self, Self) -> Bool
+pub fn GlyphPosition::to_json(Self) -> Json
+pub fn GlyphPosition::to_repr(Self) -> @debug.Repr
 
 // Type aliases
 
 // Traits
-

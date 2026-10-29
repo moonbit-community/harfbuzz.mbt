@@ -18,14 +18,18 @@ import {
 
 // Errors
 type FontError derive(Eq, ToJson, @debug.Debug)
+pub fn FontError::equal(Self, Self) -> Bool
+pub fn FontError::not_equal(Self, Self) -> Bool
+pub fn FontError::to_json(Self) -> Json
+pub fn FontError::to_repr(Self) -> @debug.Repr
 
 // Types and methods
 pub struct Font {
   face : @face.Face
-  mut scale_x : Int
-  mut scale_y : Int
-  mut ppem_x : Int
-  mut ppem_y : Int
+  mut scale_x : Int32
+  mut scale_y : Int32
+  mut ppem_x : Int32
+  mut ppem_y : Int32
   mut head : @sfnt.HeadTable?
   mut maxp : @sfnt.MaxpTable?
   mut hhea : @sfnt.HheaTable?
@@ -74,7 +78,7 @@ pub struct Font {
   mut cff1 : @cff.Cff1Table?
   mut cff2 : @cff.Cff2Table?
   mut var_coords_design : Array[Double]?
-  mut var_coords_norm : Array[Int]?
+  mut var_coords_norm : Array[Int32]?
 } derive(ToJson, @debug.Debug)
 pub fn Font::ankr(Self) -> Result[@aat.AnkrTable?, FontError]
 pub fn Font::avar(Self) -> Result[@var.AvarTable?, FontError]
@@ -86,24 +90,24 @@ pub fn Font::colr(Self) -> Result[@color.ColrTable?, FontError]
 pub fn Font::cpal(Self) -> Result[@color.CpalTable?, FontError]
 pub fn Font::cvar(Self) -> Result[@var.CvarTable?, FontError]
 pub fn Font::cvt(Self) -> Result[@sfnt.CvtTable?, FontError]
-pub fn Font::cvt_values(Self) -> Result[Array[Int]?, FontError]
-pub fn[T] Font::draw_glyph(Self, UInt, @draw.DrawFuncs[T], T) -> Result[Unit, FontError]
-pub fn[T] Font::draw_glyph_or_fail(Self, UInt, @draw.DrawFuncs[T], T) -> Result[Bool, FontError]
+pub fn Font::cvt_values(Self) -> Result[Array[Int32]?, FontError]
+pub fn[T] Font::draw_glyph(Self, UInt32, @draw.DrawFuncs[T], T) -> Result[Unit, FontError]
+pub fn[T] Font::draw_glyph_or_fail(Self, UInt32, @draw.DrawFuncs[T], T) -> Result[Bool, FontError]
 pub fn Font::feat(Self) -> Result[@aat.FeatTable?, FontError]
 pub fn Font::from_bytes(Bytes) -> Self
 pub fn Font::fvar(Self) -> Result[@var.FvarTable?, FontError]
 pub fn Font::gasp(Self) -> Result[@sfnt.GaspTable?, FontError]
 pub fn Font::gdef(Self) -> Result[@tables.GdefTable?, FontError]
 pub fn Font::get_face(Self) -> @face.Face
-pub fn Font::get_ppem(Self) -> (Int, Int)
-pub fn Font::get_scale(Self) -> (Int, Int)
-pub fn Font::glyph_bounds(Self, UInt) -> Result[@sfnt.GlyphBounds?, FontError]
-pub fn Font::glyph_contour_point_for_origin(Self, UInt, Int) -> Result[(Int, Int)?, FontError]
-pub fn Font::glyph_for_codepoint(Self, UInt) -> Result[UInt?, FontError]
-pub fn Font::glyph_from_name(Self, String) -> Result[UInt?, FontError]
-pub fn Font::glyph_h_advance(Self, UInt) -> Result[Int, FontError]
-pub fn Font::glyph_name(Self, UInt) -> Result[String?, FontError]
-pub fn Font::glyph_v_advance(Self, UInt) -> Result[Int, FontError]
+pub fn Font::get_ppem(Self) -> (Int32, Int32)
+pub fn Font::get_scale(Self) -> (Int32, Int32)
+pub fn Font::glyph_bounds(Self, UInt32) -> Result[@sfnt.GlyphBounds?, FontError]
+pub fn Font::glyph_contour_point_for_origin(Self, UInt32, Int32) -> Result[(Int32, Int32)?, FontError]
+pub fn Font::glyph_for_codepoint(Self, UInt32) -> Result[UInt32?, FontError]
+pub fn Font::glyph_from_name(Self, String) -> Result[UInt32?, FontError]
+pub fn Font::glyph_h_advance(Self, UInt32) -> Result[Int32, FontError]
+pub fn Font::glyph_name(Self, UInt32) -> Result[String?, FontError]
+pub fn Font::glyph_v_advance(Self, UInt32) -> Result[Int32, FontError]
 pub fn Font::gpos(Self) -> Result[@tables.GposTable?, FontError]
 pub fn Font::gsub(Self) -> Result[@tables.GsubTable?, FontError]
 pub fn Font::gvar(Self) -> Result[@var.GvarTable?, FontError]
@@ -125,23 +129,26 @@ pub fn Font::new(@face.Face) -> Self
 pub fn Font::opbd(Self) -> Result[@aat.OpbdTable?, FontError]
 pub fn Font::os2(Self) -> Result[@sfnt.Os2Table?, FontError]
 pub fn Font::post(Self) -> Result[@sfnt.PostTable?, FontError]
-pub fn Font::set_ppem(Self, Int, Int) -> Unit
-pub fn Font::set_scale(Self, Int, Int) -> Unit
+pub fn Font::set_ppem(Self, Int32, Int32) -> Unit
+pub fn Font::set_scale(Self, Int32, Int32) -> Unit
 pub fn Font::set_variations(Self, Array[@var.AxisCoord]) -> Result[Unit, FontError]
 pub fn Font::stat(Self) -> Result[@sfnt.StatTable?, FontError]
+pub fn Font::to_json(Self) -> Json
+pub fn Font::to_repr(Self) -> @debug.Repr
 pub fn Font::trak(Self) -> Result[@aat.TrakTable?, FontError]
 pub fn Font::varc(Self) -> Result[@var.VarcTable?, FontError]
-pub fn Font::varc_components(Self, UInt) -> Result[Array[@var.VarcComponent]?, FontError]
-pub fn Font::variation_coords(Self) -> Array[Int]
-pub fn Font::variation_glyph_for(Self, UInt, UInt) -> Result[(Bool, UInt?), FontError]
+pub fn Font::varc_components(Self, UInt32) -> Result[Array[@var.VarcComponent]?, FontError]
+pub fn Font::variation_coords(Self) -> Array[Int32]
+pub fn Font::variation_glyph_for(Self, UInt32, UInt32) -> Result[(Bool, UInt32?), FontError]
 pub fn Font::vhea(Self) -> Result[@sfnt.VheaTable?, FontError]
 pub fn Font::vmtx(Self) -> Result[@sfnt.VmtxTable?, FontError]
 pub fn Font::vorg(Self) -> Result[@sfnt.VorgTable?, FontError]
 pub fn Font::vvar(Self) -> Result[@var.HvarTable?, FontError]
 
 type PointDelta derive(ToJson, @debug.Debug)
+pub fn PointDelta::to_json(Self) -> Json
+pub fn PointDelta::to_repr(Self) -> @debug.Repr
 
 // Type aliases
 
 // Traits
-

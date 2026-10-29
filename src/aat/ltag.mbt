@@ -15,8 +15,8 @@
 ///|
 /// Parsed ltag table.
 pub struct LtagTable {
-  version : Int
-  flags : Int
+  version : Int32
+  flags : Int32
   tags : Array[Bytes]
 } derive(Debug, ToJson)
 

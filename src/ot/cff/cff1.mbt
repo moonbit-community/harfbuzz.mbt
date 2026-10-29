@@ -13,28 +13,28 @@
 // limitations under the License.
 
 ///|
-let op_charstrings : Int = 0x11
+let op_charstrings : Int32 = 0x11
 
 ///|
-let op_encoding : Int = 0x10
+let op_encoding : Int32 = 0x10
 
 ///|
-let op_private : Int = 0x12
+let op_private : Int32 = 0x12
 
 ///|
-let op_subrs : Int = 0x13
+let op_subrs : Int32 = 0x13
 
 ///|
-let op_charset : Int = 0x0F
+let op_charset : Int32 = 0x0F
 
 ///|
-let op_ros : Int = 0x0C1E
+let op_ros : Int32 = 0x0C1E
 
 ///|
-let op_fd_array : Int = 0x0C24
+let op_fd_array : Int32 = 0x0C24
 
 ///|
-let op_fd_select : Int = 0x0C25
+let op_fd_select : Int32 = 0x0C25
 
 ///|
 pub struct Cff1Table {
@@ -46,11 +46,11 @@ pub struct Cff1Table {
   charstrings : CffIndex
   private_dict : CffDict?
   local_subrs : CffIndex?
-  charstrings_offset : Int
-  private_offset : Int
-  private_size : Int
-  charset_offset : Int
-  charset_map : Map[Int, Int]?
+  charstrings_offset : Int32
+  private_offset : Int32
+  private_size : Int32
+  charset_offset : Int32
+  charset_map : Map[Int32, Int32]?
 } derive(Eq, Debug, ToJson)
 
 ///|
@@ -165,7 +165,7 @@ pub fn Cff1Table::parse(data : BytesView) -> Result[Cff1Table, CffError] {
 ///|
 pub fn Cff1Table::glyph_bounds(
   self : Cff1Table,
-  glyph : Int,
+  glyph : Int32,
 ) -> Result[CffBounds?, CffError] {
   if glyph < 0 || glyph >= self.charstrings.count {
     return Err(InvalidFormat)
@@ -189,14 +189,14 @@ pub fn Cff1Table::glyph_bounds(
 }
 
 ///|
-pub fn Cff1Table::glyph_count(self : Cff1Table) -> Int {
+pub fn Cff1Table::glyph_count(self : Cff1Table) -> Int32 {
   self.charstrings.count
 }
 
 ///|
 pub fn Cff1Table::glyph_name(
   self : Cff1Table,
-  glyph : Int,
+  glyph : Int32,
 ) -> Result[String?, CffError] {
   if glyph < 0 || glyph >= self.charstrings.count {
     return Ok(None)
@@ -235,7 +235,7 @@ pub fn Cff1Table::glyph_name(
 pub fn Cff1Table::glyph_from_name(
   self : Cff1Table,
   name : String,
-) -> Result[Int?, CffError] {
+) -> Result[Int32?, CffError] {
   if name == "" {
     return Ok(None)
   }
@@ -243,7 +243,7 @@ pub fn Cff1Table::glyph_from_name(
     Some(value) => Some(value)
     None => {
       let standard_len = cff1_standard_strings_len()
-      let mut found : Int? = None
+      let mut found : Int32? = None
       for i in 0..<self.string_index.count {
         let bytes = match self.string_index.item_bytes(i) {
           Err(err) => return Err(err)
@@ -274,8 +274,8 @@ pub fn Cff1Table::glyph_from_name(
 ///|
 pub fn Cff1Table::seac_components(
   self : Cff1Table,
-  glyph : Int,
-) -> Result[(Int, Int)?, CffError] {
+  glyph : Int32,
+) -> Result[(Int32, Int32)?, CffError] {
   if glyph < 0 || glyph >= self.charstrings.count {
     return Err(InvalidFormat)
   }
@@ -299,24 +299,24 @@ pub fn Cff1Table::seac_components(
 
 ///|
 fn clone_entries(
-  entries : Map[Int, Array[CffNumber]],
-) -> Map[Int, Array[CffNumber]] {
-  let next : Map[Int, Array[CffNumber]] = {}
+  entries : Map[Int32, Array[CffNumber]],
+) -> Map[Int32, Array[CffNumber]] {
+  let next : Map[Int32, Array[CffNumber]] = Map([])
   entries.eachi((_, key, value) => next[key] = value.copy())
   next
 }
 
 ///|
 fn replace_entry(
-  entries : Map[Int, Array[CffNumber]],
-  op : Int,
+  entries : Map[Int32, Array[CffNumber]],
+  op : Int32,
   values : Array[CffNumber],
 ) -> Unit {
   entries[op] = values
 }
 
 ///|
-fn remove_entry(entries : Map[Int, Array[CffNumber]], op : Int) -> Unit {
+fn remove_entry(entries : Map[Int32, Array[CffNumber]], op : Int32) -> Unit {
   match entries.get(op) {
     None => ()
     Some(_) => entries.remove(op)
@@ -325,8 +325,8 @@ fn remove_entry(entries : Map[Int, Array[CffNumber]], op : Int) -> Unit {
 
 ///|
 fn build_charset_bytes(
-  glyphs : Array[Int],
-  gid_to_sid : Array[Int],
+  glyphs : Array[Int32],
+  gid_to_sid : Array[Int32],
 ) -> Result[Bytes, CffError] {
   let bytes : Array[Byte] = []
   bytes.push(0x00)
@@ -415,12 +415,12 @@ fn build_private_dict(
 
 ///|
 fn build_top_dict(
-  base : Map[Int, Array[CffNumber]],
-  charset_offset : Int,
-  charstrings_offset : Int,
+  base : Map[Int32, Array[CffNumber]],
+  charset_offset : Int32,
+  charstrings_offset : Int32,
   private_bytes : Bytes?,
-  private_offset : Int?,
-  encoding_value : Int?,
+  private_offset : Int32?,
+  encoding_value : Int32?,
 ) -> Result[Bytes, CffError] {
   let entries = clone_entries(base)
   replace_entry(entries, op_charset, [Int(charset_offset)])
@@ -446,7 +446,7 @@ fn build_top_dict(
 ///|
 pub fn Cff1Table::subset(
   self : Cff1Table,
-  glyphs : Array[Int],
+  glyphs : Array[Int32],
 ) -> Result[Bytes, CffError] {
   if glyphs.is_empty() {
     return Err(InvalidFormat)
@@ -542,7 +542,7 @@ pub fn Cff1Table::subset(
       global_index.length()
     let charset_offset = base_offset
     let charstrings_offset = charset_offset + charset_bytes.length()
-    let mut private_offset : Int? = None
+    let mut private_offset : Int32? = None
     if private_bytes is Some(_) {
       private_offset = Some(charstrings_offset + charstrings_index.length())
     }
@@ -618,8 +618,8 @@ pub fn Cff1Table::subset(
 ///|
 fn parse_cff1_index_at(
   data : BytesView,
-  offset : Int,
-) -> Result[(CffIndex, Int), CffError] {
+  offset : Int32,
+) -> Result[(CffIndex, Int32), CffError] {
   let index = match parse_cff1_index(data, offset) {
     Err(err) => return Err(err)
     Ok(value) => value

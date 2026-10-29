@@ -15,8 +15,8 @@
 ///|
 /// Parsed head table (subset).
 pub struct HeadTable {
-  units_per_em : Int
-  index_to_loc_format : Int
+  units_per_em : Int32
+  index_to_loc_format : Int32
 } derive(Eq, Debug, ToJson)
 
 ///|

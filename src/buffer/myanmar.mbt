@@ -27,78 +27,78 @@ let myanmar_feature_tags : Array[@common.Tag] = [
 ]
 
 ///|
-let myanmar_cat_c : Int = 1
+let myanmar_cat_c : Int32 = 1
 
 ///|
-let myanmar_cat_cs : Int = 18
+let myanmar_cat_cs : Int32 = 18
 
 ///|
-let myanmar_cat_ra : Int = 15
+let myanmar_cat_ra : Int32 = 15
 
 ///|
-let myanmar_cat_iv : Int = 2
+let myanmar_cat_iv : Int32 = 2
 
 ///|
-let myanmar_cat_gb : Int = 10
+let myanmar_cat_gb : Int32 = 10
 
 ///|
-let myanmar_cat_dotted_circle : Int = 11
+let myanmar_cat_dotted_circle : Int32 = 11
 
 ///|
-let myanmar_cat_as : Int = 32
+let myanmar_cat_as : Int32 = 32
 
 ///|
-let myanmar_cat_h : Int = 4
+let myanmar_cat_h : Int32 = 4
 
 ///|
-let myanmar_cat_mr : Int = 36
+let myanmar_cat_mr : Int32 = 36
 
 ///|
-let myanmar_cat_vpre : Int = 22
+let myanmar_cat_vpre : Int32 = 22
 
 ///|
-let myanmar_cat_vs : Int = 40
+let myanmar_cat_vs : Int32 = 40
 
 ///|
-let myanmar_cat_vblw : Int = 21
+let myanmar_cat_vblw : Int32 = 21
 
 ///|
-let myanmar_cat_a : Int = 9
+let myanmar_cat_a : Int32 = 9
 
 ///|
-let myanmar_pos_start : Int = 0
+let myanmar_pos_start : Int32 = 0
 
 ///|
-let myanmar_pos_pre_m : Int = 2
+let myanmar_pos_pre_m : Int32 = 2
 
 ///|
-let myanmar_pos_pre_c : Int = 3
+let myanmar_pos_pre_c : Int32 = 3
 
 ///|
-let myanmar_pos_base_c : Int = 4
+let myanmar_pos_base_c : Int32 = 4
 
 ///|
-let myanmar_pos_after_main : Int = 5
+let myanmar_pos_after_main : Int32 = 5
 
 ///|
-let myanmar_pos_before_sub : Int = 7
+let myanmar_pos_before_sub : Int32 = 7
 
 ///|
-let myanmar_pos_below_c : Int = 8
+let myanmar_pos_below_c : Int32 = 8
 
 ///|
-let myanmar_pos_after_sub : Int = 9
+let myanmar_pos_after_sub : Int32 = 9
 
 ///|
-let myanmar_pos_end : Int = 14
+let myanmar_pos_end : Int32 = 14
 
 ///|
-fn myanmar_category(codepoint : UInt) -> Int {
+fn myanmar_category(codepoint : UInt32) -> Int32 {
   indic_category(indic_get_categories(codepoint)).reinterpret_as_int()
 }
 
 ///|
-fn is_consonant_myanmar(category : Int) -> Bool {
+fn is_consonant_myanmar(category : Int32) -> Bool {
   category == myanmar_cat_c ||
   category == myanmar_cat_cs ||
   category == myanmar_cat_ra ||
@@ -108,7 +108,7 @@ fn is_consonant_myanmar(category : Int) -> Bool {
 }
 
 ///|
-fn reverse_range(buffer : Buffer, start : Int, end : Int) -> Unit {
+fn reverse_range(buffer : Buffer, start : Int32, end : Int32) -> Unit {
   if start < 0 || end > buffer.infos.length() || start >= end {
     return ()
   }
@@ -129,15 +129,15 @@ fn reverse_range(buffer : Buffer, start : Int, end : Int) -> Unit {
 ///|
 fn reorder_by_positions(
   buffer : Buffer,
-  positions : Array[Int],
-  start : Int,
-  end : Int,
-) -> Array[Int] {
+  positions : Array[Int32],
+  start : Int32,
+  end : Int32,
+) -> Array[Int32] {
   if start < 0 || end > buffer.infos.length() || start >= end {
     return positions
   }
   let range_len = end - start
-  let order : Array[Int] = []
+  let order : Array[Int32] = []
   for pos in myanmar_pos_start..<=myanmar_pos_end {
     for rel in 0..<range_len {
       if positions[start + rel] == pos {
@@ -147,7 +147,7 @@ fn reorder_by_positions(
   }
   let next_infos : Array[GlyphInfo] = []
   let next_positions : Array[GlyphPosition] = []
-  let next_pos_values : Array[Int] = []
+  let next_pos_values : Array[Int32] = []
   for i in 0..<start {
     next_infos.push(buffer.infos[i])
     next_positions.push(buffer.positions[i])
@@ -172,9 +172,9 @@ fn reorder_by_positions(
 ///|
 fn reorder_consonant_syllable_myanmar(
   buffer : Buffer,
-  categories : Array[Int],
-  start : Int,
-  end : Int,
+  categories : Array[Int32],
+  start : Int32,
+  end : Int32,
 ) -> Unit {
   if start < 0 || end > buffer.infos.length() || start >= end {
     return ()
@@ -200,7 +200,7 @@ fn reorder_consonant_syllable_myanmar(
       break
     }
   }
-  let pos_values : Array[Int] = Array::make(
+  let pos_values : Array[Int32] = Array::make(
     buffer.infos.length(),
     myanmar_pos_start,
   )
@@ -276,8 +276,8 @@ fn reorder_consonant_syllable_myanmar(
 ///|
 fn reorder_myanmar_syllables(
   buffer : Buffer,
-  categories : Array[Int],
-  syllables : Array[Int],
+  categories : Array[Int32],
+  syllables : Array[Int32],
 ) -> Unit {
   if categories.length() != buffer.infos.length() ||
     syllables.length() != buffer.infos.length() {
@@ -329,7 +329,7 @@ pub fn Buffer::shape_myanmar(
       }
     }
   }
-  let categories : Array[UInt] = []
+  let categories : Array[UInt32] = []
   for info in self.infos {
     categories.push(indic_category(indic_get_categories(info.codepoint)))
   }
@@ -341,8 +341,8 @@ pub fn Buffer::shape_myanmar(
     Err(err) => return Err(err)
     Ok(_) => ()
   }
-  let categories_after_u : Array[UInt] = []
-  let categories_after_i : Array[Int] = []
+  let categories_after_u : Array[UInt32] = []
+  let categories_after_i : Array[Int32] = []
   for info in self.infos {
     let category = myanmar_category(info.codepoint)
     categories_after_i.push(category)

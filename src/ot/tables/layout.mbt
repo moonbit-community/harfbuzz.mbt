@@ -21,18 +21,18 @@ pub suberror OtLayoutError {
 ///|
 /// Layout table header (GSUB/GPOS shared).
 pub struct LayoutHeader {
-  version : UInt
-  script_list_offset : Int
-  feature_list_offset : Int
-  lookup_list_offset : Int
-  feature_variations_offset : Int?
+  version : UInt32
+  script_list_offset : Int32
+  feature_list_offset : Int32
+  lookup_list_offset : Int32
+  feature_variations_offset : Int32?
 } derive(Eq, Debug, ToJson)
 
 ///|
 /// Script record entry (offset from table start).
 pub struct ScriptRecord {
   tag : @common.Tag
-  offset : Int
+  offset : Int32
 } derive(Eq, Debug, ToJson)
 
 ///|
@@ -50,7 +50,7 @@ pub fn ScriptList::records(self : ScriptList) -> ArrayView[ScriptRecord] {
 /// Feature record entry (offset from table start).
 pub struct FeatureRecord {
   tag : @common.Tag
-  offset : Int
+  offset : Int32
 } derive(Eq, Debug, ToJson)
 
 ///|
@@ -67,11 +67,11 @@ pub fn FeatureList::records(self : FeatureList) -> ArrayView[FeatureRecord] {
 ///|
 /// Lookup list table (offsets from table start).
 pub struct LookupList {
-  offsets : Array[Int]
+  offsets : Array[Int32]
 } derive(Eq, Debug, ToJson)
 
 ///|
-pub fn LookupList::offsets(self : LookupList) -> ArrayView[Int] {
+pub fn LookupList::offsets(self : LookupList) -> ArrayView[Int32] {
   self.offsets[:]
 }
 
@@ -110,9 +110,9 @@ pub fn LayoutTable::lookup_list(self : LayoutTable) -> LookupList {
 pub fn LayoutTable::select_lookup_offsets_with_features(
   self : LayoutTable,
   script_tag : @common.Tag,
-  language_tag? : @common.Tag = @common.tag_none,
-  feature_tags? : Array[@common.Tag] = [],
-) -> Result[Array[Int], OtLayoutError] {
+  language_tag~ : @common.Tag = @common.tag_none,
+  feature_tags~ : Array[@common.Tag] = [],
+) -> Result[Array[Int32], OtLayoutError] {
   select_lookup_offsets_internal(self, script_tag, language_tag, feature_tags)
 }
 
@@ -122,9 +122,9 @@ pub fn LayoutTable::select_lookup_offsets_for_feature(
   self : LayoutTable,
   script_tag : @common.Tag,
   feature_tag : @common.Tag,
-  language_tag? : @common.Tag = @common.tag_none,
-  include_required? : Bool = true,
-) -> Result[Array[Int], OtLayoutError] {
+  language_tag~ : @common.Tag = @common.tag_none,
+  include_required~ : Bool = true,
+) -> Result[Array[Int32], OtLayoutError] {
   select_lookup_offsets_for_feature_internal(
     self, script_tag, language_tag, feature_tag, include_required,
   )
@@ -135,8 +135,8 @@ pub fn LayoutTable::select_lookup_offsets_for_feature(
 pub fn LayoutTable::select_lookup_offsets(
   self : LayoutTable,
   script_tag : @common.Tag,
-  language_tag? : @common.Tag = @common.tag_none,
-) -> Result[Array[Int], OtLayoutError] {
+  language_tag~ : @common.Tag = @common.tag_none,
+) -> Result[Array[Int32], OtLayoutError] {
   self.select_lookup_offsets_with_features(script_tag, language_tag~)
 }
 
@@ -146,14 +146,14 @@ fn select_lookup_offsets_internal(
   script_tag : @common.Tag,
   language_tag : @common.Tag,
   feature_tags : Array[@common.Tag],
-) -> Result[Array[Int], OtLayoutError] {
+) -> Result[Array[Int32], OtLayoutError] {
   let (required_feature, feature_indices) = match
     resolve_lang_sys_features(layout, script_tag, language_tag) {
     Err(err) => return Err(err)
     Ok(value) => value
   }
   let has_filter = !feature_tags.is_empty()
-  let selected_features : Array[Int] = []
+  let selected_features : Array[Int32] = []
   match required_feature {
     None => ()
     Some(feature) =>
@@ -176,7 +176,7 @@ fn select_lookup_offsets_internal(
       }
     }
   }
-  let lookup_indices : Array[Int] = []
+  let lookup_indices : Array[Int32] = []
   for feature_index in selected_features {
     if feature_index < 0 ||
       feature_index >= layout.feature_list.records.length() {
@@ -191,7 +191,7 @@ fn select_lookup_offsets_internal(
       push_unique_int(lookup_indices, lookup_index)
     }
   }
-  let lookup_offsets : Array[Int] = []
+  let lookup_offsets : Array[Int32] = []
   for lookup_index in lookup_indices {
     if lookup_index < 0 || lookup_index >= layout.lookup_list.offsets.length() {
       continue
@@ -208,13 +208,13 @@ fn select_lookup_offsets_for_feature_internal(
   language_tag : @common.Tag,
   feature_tag : @common.Tag,
   include_required : Bool,
-) -> Result[Array[Int], OtLayoutError] {
+) -> Result[Array[Int32], OtLayoutError] {
   let (required_feature, feature_indices) = match
     resolve_lang_sys_features(layout, script_tag, language_tag) {
     Err(err) => return Err(err)
     Ok(value) => value
   }
-  let selected_features : Array[Int] = []
+  let selected_features : Array[Int32] = []
   if include_required {
     match required_feature {
       None => ()
@@ -234,7 +234,7 @@ fn select_lookup_offsets_for_feature_internal(
       push_unique_int(selected_features, feature_index)
     }
   }
-  let lookup_indices : Array[Int] = []
+  let lookup_indices : Array[Int32] = []
   for feature_index in selected_features {
     if feature_index < 0 ||
       feature_index >= layout.feature_list.records.length() {
@@ -249,7 +249,7 @@ fn select_lookup_offsets_for_feature_internal(
       push_unique_int(lookup_indices, lookup_index)
     }
   }
-  let lookup_offsets : Array[Int] = []
+  let lookup_offsets : Array[Int32] = []
   for lookup_index in lookup_indices {
     if lookup_index < 0 || lookup_index >= layout.lookup_list.offsets.length() {
       continue
@@ -264,7 +264,7 @@ fn resolve_lang_sys_features(
   layout : LayoutTable,
   script_tag : @common.Tag,
   language_tag : @common.Tag,
-) -> Result[(Int?, Array[Int]), OtLayoutError] {
+) -> Result[(Int32?, Array[Int32]), OtLayoutError] {
   let normalized_script = lowercase_tag(script_tag)
   let script_offset = match
     find_script_offset(layout.script_list.records, normalized_script) {
@@ -414,7 +414,7 @@ pub fn LayoutTable::parse(
 ///|
 fn parse_script_list(
   data : BytesView,
-  base : Int,
+  base : Int32,
 ) -> Result[ScriptList, OtLayoutError] {
   if base < 0 || base + 2 > data.length() {
     return Err(UnexpectedEof)
@@ -457,7 +457,7 @@ fn parse_script_list(
 ///|
 fn parse_feature_list(
   data : BytesView,
-  base : Int,
+  base : Int32,
 ) -> Result[FeatureList, OtLayoutError] {
   if base < 0 || base + 2 > data.length() {
     return Err(UnexpectedEof)
@@ -500,13 +500,13 @@ fn parse_feature_list(
 ///|
 fn parse_lookup_list(
   data : BytesView,
-  base : Int,
+  base : Int32,
 ) -> Result[LookupList, OtLayoutError] {
   if base < 0 || base + 2 > data.length() {
     return Err(UnexpectedEof)
   }
   let count = read_u16_int(data, base)
-  let offsets : Array[Int] = []
+  let offsets : Array[Int32] = []
   let record_base = base + 2
   match count {
     Err(err) => Err(err)
@@ -537,7 +537,10 @@ fn parse_lookup_list(
 }
 
 ///|
-fn find_script_offset(records : Array[ScriptRecord], tag : @common.Tag) -> Int? {
+fn find_script_offset(
+  records : Array[ScriptRecord],
+  tag : @common.Tag,
+) -> Int32? {
   for record in records {
     if record.tag == tag {
       return Some(record.offset)
@@ -548,9 +551,9 @@ fn find_script_offset(records : Array[ScriptRecord], tag : @common.Tag) -> Int? 
 
 ///|
 fn find_lang_sys_offset(
-  records : Array[(@common.Tag, Int)],
+  records : Array[(@common.Tag, Int32)],
   tag : @common.Tag,
-) -> Int? {
+) -> Int32? {
   for record in records {
     let (record_tag, offset) = record
     if record_tag == tag {
@@ -563,8 +566,8 @@ fn find_lang_sys_offset(
 ///|
 fn parse_script_table(
   data : BytesView,
-  offset : Int,
-) -> Result[(Int?, Array[(@common.Tag, Int)]), OtLayoutError] {
+  offset : Int32,
+) -> Result[(Int32?, Array[(@common.Tag, Int32)]), OtLayoutError] {
   if offset < 0 || offset + 4 > data.length() {
     return Err(UnexpectedEof)
   }
@@ -578,7 +581,7 @@ fn parse_script_table(
       if record_base < 0 || record_base + lang_count * 6 > data.length() {
         return Err(UnexpectedEof)
       }
-      let records : Array[(@common.Tag, Int)] = []
+      let records : Array[(@common.Tag, Int32)] = []
       for i in 0..<lang_count {
         let record_offset = record_base + i * 6
         let tag = match read_tag(data, record_offset) {
@@ -617,8 +620,8 @@ fn parse_script_table(
 ///|
 fn parse_lang_sys_table(
   data : BytesView,
-  offset : Int,
-) -> Result[(Int?, Array[Int]), OtLayoutError] {
+  offset : Int32,
+) -> Result[(Int32?, Array[Int32]), OtLayoutError] {
   if offset < 0 || offset + 6 > data.length() {
     return Err(UnexpectedEof)
   }
@@ -634,7 +637,7 @@ fn parse_lang_sys_table(
       if list_base < 0 || list_base + feature_count * 2 > data.length() {
         return Err(UnexpectedEof)
       }
-      let indices : Array[Int] = []
+      let indices : Array[Int32] = []
       for i in 0..<feature_count {
         let value = read_u16_int(data, list_base + i * 2)
         match value {
@@ -655,8 +658,8 @@ fn parse_lang_sys_table(
 ///|
 fn parse_feature_table(
   data : BytesView,
-  offset : Int,
-) -> Result[Array[Int], OtLayoutError] {
+  offset : Int32,
+) -> Result[Array[Int32], OtLayoutError] {
   if offset < 0 || offset + 4 > data.length() {
     return Err(UnexpectedEof)
   }
@@ -670,7 +673,7 @@ fn parse_feature_table(
       if list_base < 0 || list_base + count * 2 > data.length() {
         return Err(UnexpectedEof)
       }
-      let indices : Array[Int] = []
+      let indices : Array[Int32] = []
       for i in 0..<count {
         let value = read_u16_int(data, list_base + i * 2)
         match value {
@@ -684,7 +687,7 @@ fn parse_feature_table(
 }
 
 ///|
-fn push_unique_int(values : Array[Int], value : Int) -> Unit {
+fn push_unique_int(values : Array[Int32], value : Int32) -> Unit {
   for entry in values {
     if entry == value {
       return
@@ -727,8 +730,8 @@ fn ascii_lowercase_byte(b : Byte) -> Byte {
 ///|
 fn check_range(
   data : BytesView,
-  offset : Int,
-  size : Int,
+  offset : Int32,
+  size : Int32,
 ) -> Result[Unit, OtLayoutError] {
   if offset < 0 || size < 0 || offset + size > data.length() {
     Err(UnexpectedEof)
@@ -738,7 +741,7 @@ fn check_range(
 }
 
 ///|
-fn read_u16(data : BytesView, offset : Int) -> Result[UInt, OtLayoutError] {
+fn read_u16(data : BytesView, offset : Int32) -> Result[UInt32, OtLayoutError] {
   match check_range(data, offset, 2) {
     Err(err) => return Err(err)
     Ok(_) => ()
@@ -749,7 +752,7 @@ fn read_u16(data : BytesView, offset : Int) -> Result[UInt, OtLayoutError] {
 }
 
 ///|
-fn read_u32(data : BytesView, offset : Int) -> Result[UInt, OtLayoutError] {
+fn read_u32(data : BytesView, offset : Int32) -> Result[UInt32, OtLayoutError] {
   match check_range(data, offset, 4) {
     Err(err) => return Err(err)
     Ok(_) => ()
@@ -762,7 +765,7 @@ fn read_u32(data : BytesView, offset : Int) -> Result[UInt, OtLayoutError] {
 }
 
 ///|
-fn u16_to_int(value : UInt) -> Int {
+fn u16_to_int(value : UInt32) -> Int32 {
   let v = value.reinterpret_as_int()
   if v < 0 {
     v + 0x10000
@@ -772,7 +775,10 @@ fn u16_to_int(value : UInt) -> Int {
 }
 
 ///|
-fn read_u16_int(data : BytesView, offset : Int) -> Result[Int, OtLayoutError] {
+fn read_u16_int(
+  data : BytesView,
+  offset : Int32,
+) -> Result[Int32, OtLayoutError] {
   match read_u16(data, offset) {
     Err(err) => Err(err)
     Ok(value) => Ok(u16_to_int(value))
@@ -780,7 +786,10 @@ fn read_u16_int(data : BytesView, offset : Int) -> Result[Int, OtLayoutError] {
 }
 
 ///|
-fn read_u32_int(data : BytesView, offset : Int) -> Result[Int, OtLayoutError] {
+fn read_u32_int(
+  data : BytesView,
+  offset : Int32,
+) -> Result[Int32, OtLayoutError] {
   match read_u32(data, offset) {
     Err(err) => Err(err)
     Ok(value) => {
@@ -795,7 +804,7 @@ fn read_u32_int(data : BytesView, offset : Int) -> Result[Int, OtLayoutError] {
 }
 
 ///|
-fn read_i16(data : BytesView, offset : Int) -> Result[Int, OtLayoutError] {
+fn read_i16(data : BytesView, offset : Int32) -> Result[Int32, OtLayoutError] {
   match read_u16_int(data, offset) {
     Err(err) => Err(err)
     Ok(value) => if value >= 0x8000 { Ok(value - 0x10000) } else { Ok(value) }
@@ -805,7 +814,7 @@ fn read_i16(data : BytesView, offset : Int) -> Result[Int, OtLayoutError] {
 ///|
 fn read_tag(
   data : BytesView,
-  offset : Int,
+  offset : Int32,
 ) -> Result[@common.Tag, OtLayoutError] {
   match check_range(data, offset, 4) {
     Err(err) => return Err(err)

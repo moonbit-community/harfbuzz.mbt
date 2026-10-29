@@ -15,8 +15,8 @@
 ///|
 /// OT feature lookup selections for GSUB/GPOS.
 pub struct OtMap {
-  gsub_lookups : Array[Int]
-  gpos_lookups : Array[Int]
+  gsub_lookups : Array[Int32]
+  gpos_lookups : Array[Int32]
 }
 
 ///|
@@ -25,9 +25,9 @@ pub fn OtMap::new(
   gsub : @ot_tables.GsubTable?,
   gpos : @ot_tables.GposTable?,
   script_tag : @common.Tag,
-  language_tag? : @common.Tag = @common.tag_none,
-  gsub_features? : Array[@common.Tag] = [],
-  gpos_features? : Array[@common.Tag] = [],
+  language_tag~ : @common.Tag = @common.tag_none,
+  gsub_features~ : Array[@common.Tag] = [],
+  gpos_features~ : Array[@common.Tag] = [],
 ) -> Result[OtMap, @ot_tables.OtLayoutError] {
   let gsub_lookups = match gsub {
     None => []
@@ -64,12 +64,12 @@ pub fn OtMap::new(
 
 ///|
 /// Access GSUB lookup offsets.
-pub fn OtMap::gsub_lookups(self : OtMap) -> ArrayView[Int] {
+pub fn OtMap::gsub_lookups(self : OtMap) -> ArrayView[Int32] {
   self.gsub_lookups[:]
 }
 
 ///|
 /// Access GPOS lookup offsets.
-pub fn OtMap::gpos_lookups(self : OtMap) -> ArrayView[Int] {
+pub fn OtMap::gpos_lookups(self : OtMap) -> ArrayView[Int32] {
   self.gpos_lookups[:]
 }

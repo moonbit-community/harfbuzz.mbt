@@ -13,7 +13,7 @@
 // limitations under the License.
 
 ///|
-fn push_u32_varc_comp(bytes : Array[Byte], value : Int) -> Unit {
+fn push_u32_varc_comp(bytes : Array[Byte], value : Int32) -> Unit {
   bytes.push(((value >> 24) & 0xff).to_byte())
   bytes.push(((value >> 16) & 0xff).to_byte())
   bytes.push(((value >> 8) & 0xff).to_byte())
@@ -21,19 +21,19 @@ fn push_u32_varc_comp(bytes : Array[Byte], value : Int) -> Unit {
 }
 
 ///|
-fn push_u16_varc_comp(bytes : Array[Byte], value : Int) -> Unit {
+fn push_u16_varc_comp(bytes : Array[Byte], value : Int32) -> Unit {
   bytes.push(((value >> 8) & 0xff).to_byte())
   bytes.push((value & 0xff).to_byte())
 }
 
 ///|
-fn push_i16_varc_comp(bytes : Array[Byte], value : Int) -> Unit {
+fn push_i16_varc_comp(bytes : Array[Byte], value : Int32) -> Unit {
   let adjusted = if value < 0 { value + 0x10000 } else { value }
   push_u16_varc_comp(bytes, adjusted)
 }
 
 ///|
-fn push_u32var_comp(bytes : Array[Byte], value : UInt) -> Unit {
+fn push_u32var_comp(bytes : Array[Byte], value : UInt32) -> Unit {
   if value < 0x80U {
     bytes.push(value.reinterpret_as_int().to_byte())
     return
@@ -67,7 +67,7 @@ fn push_u32var_comp(bytes : Array[Byte], value : UInt) -> Unit {
 }
 
 ///|
-fn push_tuple_values_bytes(bytes : Array[Byte], values : Array[Int]) -> Unit {
+fn push_tuple_values_bytes(bytes : Array[Byte], values : Array[Int32]) -> Unit {
   let count = values.length()
   let control = (count - 1) & 0x3F
   bytes.push(control.to_byte())
@@ -77,7 +77,7 @@ fn push_tuple_values_bytes(bytes : Array[Byte], values : Array[Int]) -> Unit {
 }
 
 ///|
-fn push_tuple_values_words(bytes : Array[Byte], values : Array[Int]) -> Unit {
+fn push_tuple_values_words(bytes : Array[Byte], values : Array[Int32]) -> Unit {
   let count = values.length()
   let control = 0x40 | ((count - 1) & 0x3F)
   bytes.push(control.to_byte())
@@ -140,7 +140,7 @@ fn build_varc_component_table() -> Bytes {
 
 ///|
 test "varc component parse" {
-  let varc = match VarcTable::parse(build_varc_component_table()[:]) {
+  let varc = match @var.VarcTable::parse(build_varc_component_table()[:]) {
     Err(err) => fail("parse failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }

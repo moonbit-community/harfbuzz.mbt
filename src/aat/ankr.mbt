@@ -14,22 +14,22 @@
 
 ///|
 pub struct Anchor {
-  x : Int
-  y : Int
+  x : Int32
+  y : Int32
 } derive(Eq, Debug, ToJson)
 
 ///|
 pub struct AnkrTable {
-  version : Int
+  version : Int32
   lookup : LookupTable
-  anchor_offset : Int
+  anchor_offset : Int32
   data : Bytes
 } derive(Debug, ToJson)
 
 ///|
 pub fn AnkrTable::parse(
   data : BytesView,
-  num_glyphs : Int,
+  num_glyphs : Int32,
 ) -> Result[AnkrTable, AatError] {
   let version = read_u16_int(data, 0)
   let flags = read_u16_int(data, 2)
@@ -64,8 +64,8 @@ pub fn AnkrTable::has_data(self : AnkrTable) -> Bool {
 ///|
 pub fn AnkrTable::get_anchor(
   self : AnkrTable,
-  glyph : UInt,
-  index : Int,
+  glyph : UInt32,
+  index : Int32,
 ) -> Anchor? {
   if index < 0 {
     return None

@@ -16,9 +16,9 @@
 /// Unicode range mapping for OS/2 ulUnicodeRange bits.
 /// Generated from refs/harfbuzz/src/hb-ot-os2-unicode-ranges.hh; do not edit by hand.
 priv struct Os2UnicodeRange {
-  first : UInt
-  last : UInt
-  bit : Int
+  first : UInt32
+  last : UInt32
+  bit : Int32
 }
 
 ///|
@@ -195,7 +195,7 @@ let os2_unicode_ranges : Array[Os2UnicodeRange] = [
 ]
 
 ///|
-fn os2_unicode_range_bit(cp : UInt) -> Int? {
+fn os2_unicode_range_bit(cp : UInt32) -> Int32? {
   if os2_unicode_ranges.is_empty() {
     return None
   }
@@ -217,12 +217,12 @@ fn os2_unicode_range_bit(cp : UInt) -> Int? {
 
 ///|
 fn os2_unicode_ranges_from_codepoints(
-  codepoints : ArrayView[(UInt, Int)],
-) -> (UInt, UInt, UInt, UInt) {
-  let mut bits1 : UInt = 0U
-  let mut bits2 : UInt = 0U
-  let mut bits3 : UInt = 0U
-  let mut bits4 : UInt = 0U
+  codepoints : ArrayView[(UInt32, Int32)],
+) -> (UInt32, UInt32, UInt32, UInt32) {
+  let mut bits1 : UInt32 = 0U
+  let mut bits2 : UInt32 = 0U
+  let mut bits3 : UInt32 = 0U
+  let mut bits4 : UInt32 = 0U
   for pair in codepoints {
     let cp = pair.0
     match os2_unicode_range_bit(cp) {

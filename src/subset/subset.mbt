@@ -24,18 +24,18 @@ suberror SubsetError {
 
 ///|
 pub struct SubsetInput {
-  codepoints : Array[UInt]
+  codepoints : Array[UInt32]
 } derive(Debug, ToJson)
 
 ///|
-pub fn SubsetInput::from_codepoints(codepoints : Array[UInt]) -> SubsetInput {
+pub fn SubsetInput::from_codepoints(codepoints : Array[UInt32]) -> SubsetInput {
   { codepoints, }
 }
 
 ///|
-fn expand_bidi_codepoints(codepoints : Array[UInt]) -> Array[UInt] {
-  let seen : Map[Int, Bool] = {}
-  let expanded : Array[UInt] = []
+fn expand_bidi_codepoints(codepoints : Array[UInt32]) -> Array[UInt32] {
+  let seen : Map[Int32, Bool] = Map([])
+  let expanded : Array[UInt32] = []
   for cp in codepoints {
     let key = cp.reinterpret_as_int()
     if seen.get(key) is None {
@@ -56,9 +56,9 @@ fn expand_bidi_codepoints(codepoints : Array[UInt]) -> Array[UInt] {
 
 ///|
 pub struct SubsetPlan {
-  glyphs : Array[UInt]
-  old_to_new : Array[Int]
-  codepoint_map : Array[(UInt, Int)]
+  glyphs : Array[UInt32]
+  old_to_new : Array[Int32]
+  codepoint_map : Array[(UInt32, Int32)]
   gsub_mask : Array[Bool]
 } derive(Debug, ToJson)
 
@@ -222,12 +222,12 @@ let tag_vorg : @common.Tag = @common.Tag::from_chars('V', 'O', 'R', 'G')
 let tag_varc : @common.Tag = @common.Tag::from_chars('V', 'A', 'R', 'C')
 
 ///|
-fn tag_value(a : Char, b : Char, c : Char, d : Char) -> Int {
+fn tag_value(a : Char, b : Char, c : Char, d : Char) -> Int32 {
   @common.Tag::from_chars(a, b, c, d).to_uint().reinterpret_as_int()
 }
 
 ///|
-let default_layout_features : Array[Int] = [
+let default_layout_features : Array[Int32] = [
   tag_value('r', 'v', 'r', 'n'),
   tag_value('c', 'c', 'm', 'p'),
   tag_value('l', 'i', 'g', 'a'),
@@ -303,7 +303,7 @@ let default_layout_features : Array[Int] = [
 ]
 
 ///|
-fn is_default_layout_feature(tag : Int) -> Bool {
+fn is_default_layout_feature(tag : Int32) -> Bool {
   for value in default_layout_features {
     if value == tag {
       return true
@@ -313,7 +313,7 @@ fn is_default_layout_feature(tag : Int) -> Bool {
 }
 
 ///|
-fn read_u16(bytes : Array[Byte], offset : Int) -> Result[Int, SubsetError] {
+fn read_u16(bytes : Array[Byte], offset : Int32) -> Result[Int32, SubsetError] {
   if offset < 0 || offset + 2 > bytes.length() {
     return Err(InvalidInput("unexpected eof"))
   }
@@ -323,7 +323,7 @@ fn read_u16(bytes : Array[Byte], offset : Int) -> Result[Int, SubsetError] {
 }
 
 ///|
-fn read_i16(bytes : Array[Byte], offset : Int) -> Result[Int, SubsetError] {
+fn read_i16(bytes : Array[Byte], offset : Int32) -> Result[Int32, SubsetError] {
   match read_u16(bytes, offset) {
     Err(err) => Err(err)
     Ok(value) => if value >= 0x8000 { Ok(value - 0x10000) } else { Ok(value) }
@@ -331,7 +331,7 @@ fn read_i16(bytes : Array[Byte], offset : Int) -> Result[Int, SubsetError] {
 }
 
 ///|
-fn read_u24(bytes : Array[Byte], offset : Int) -> Result[Int, SubsetError] {
+fn read_u24(bytes : Array[Byte], offset : Int32) -> Result[Int32, SubsetError] {
   if offset < 0 || offset + 3 > bytes.length() {
     return Err(InvalidInput("unexpected eof"))
   }
@@ -342,7 +342,7 @@ fn read_u24(bytes : Array[Byte], offset : Int) -> Result[Int, SubsetError] {
 }
 
 ///|
-fn read_u8(bytes : Array[Byte], offset : Int) -> Result[Int, SubsetError] {
+fn read_u8(bytes : Array[Byte], offset : Int32) -> Result[Int32, SubsetError] {
   if offset < 0 || offset >= bytes.length() {
     return Err(InvalidInput("unexpected eof"))
   }
@@ -350,7 +350,7 @@ fn read_u8(bytes : Array[Byte], offset : Int) -> Result[Int, SubsetError] {
 }
 
 ///|
-fn read_u32(bytes : Array[Byte], offset : Int) -> Result[Int, SubsetError] {
+fn read_u32(bytes : Array[Byte], offset : Int32) -> Result[Int32, SubsetError] {
   if offset < 0 || offset + 4 > bytes.length() {
     return Err(InvalidInput("unexpected eof"))
   }
@@ -362,20 +362,20 @@ fn read_u32(bytes : Array[Byte], offset : Int) -> Result[Int, SubsetError] {
 }
 
 ///|
-fn write_u16(bytes : Array[Byte], offset : Int, value : Int) -> Unit {
+fn write_u16(bytes : Array[Byte], offset : Int32, value : Int32) -> Unit {
   bytes[offset] = ((value >> 8) & 0xff).to_byte()
   bytes[offset + 1] = (value & 0xff).to_byte()
 }
 
 ///|
-fn write_u24(bytes : Array[Byte], offset : Int, value : Int) -> Unit {
+fn write_u24(bytes : Array[Byte], offset : Int32, value : Int32) -> Unit {
   bytes[offset] = ((value >> 16) & 0xff).to_byte()
   bytes[offset + 1] = ((value >> 8) & 0xff).to_byte()
   bytes[offset + 2] = (value & 0xff).to_byte()
 }
 
 ///|
-fn write_u32(bytes : Array[Byte], offset : Int, value : Int) -> Unit {
+fn write_u32(bytes : Array[Byte], offset : Int32, value : Int32) -> Unit {
   bytes[offset] = ((value >> 24) & 0xff).to_byte()
   bytes[offset + 1] = ((value >> 16) & 0xff).to_byte()
   bytes[offset + 2] = ((value >> 8) & 0xff).to_byte()
@@ -383,26 +383,26 @@ fn write_u32(bytes : Array[Byte], offset : Int, value : Int) -> Unit {
 }
 
 ///|
-fn push_u16(bytes : Array[Byte], value : Int) -> Unit {
+fn push_u16(bytes : Array[Byte], value : Int32) -> Unit {
   bytes.push(((value >> 8) & 0xff).to_byte())
   bytes.push((value & 0xff).to_byte())
 }
 
 ///|
-fn push_u24(bytes : Array[Byte], value : Int) -> Unit {
+fn push_u24(bytes : Array[Byte], value : Int32) -> Unit {
   bytes.push(((value >> 16) & 0xff).to_byte())
   bytes.push(((value >> 8) & 0xff).to_byte())
   bytes.push((value & 0xff).to_byte())
 }
 
 ///|
-fn push_i16(bytes : Array[Byte], value : Int) -> Unit {
+fn push_i16(bytes : Array[Byte], value : Int32) -> Unit {
   let adjusted = if value < 0 { value + 0x10000 } else { value }
   push_u16(bytes, adjusted)
 }
 
 ///|
-fn push_u32(bytes : Array[Byte], value : Int) -> Unit {
+fn push_u32(bytes : Array[Byte], value : Int32) -> Unit {
   bytes.push(((value >> 24) & 0xff).to_byte())
   bytes.push(((value >> 16) & 0xff).to_byte())
   bytes.push(((value >> 8) & 0xff).to_byte())
@@ -410,7 +410,7 @@ fn push_u32(bytes : Array[Byte], value : Int) -> Unit {
 }
 
 ///|
-fn align4(value : Int) -> Int {
+fn align4(value : Int32) -> Int32 {
   let rem = value % 4
   if rem == 0 {
     value
@@ -420,7 +420,7 @@ fn align4(value : Int) -> Int {
 }
 
 ///|
-fn pad_to(bytes : Array[Byte], target : Int) -> Unit {
+fn pad_to(bytes : Array[Byte], target : Int32) -> Unit {
   let mut count = target - bytes.length()
   while count > 0 {
     bytes.push(b'\x00')
@@ -429,7 +429,7 @@ fn pad_to(bytes : Array[Byte], target : Int) -> Unit {
 }
 
 ///|
-fn write_u32_uint(bytes : Array[Byte], offset : Int, value : UInt) -> Unit {
+fn write_u32_uint(bytes : Array[Byte], offset : Int32, value : UInt32) -> Unit {
   bytes[offset] = ((value >> 24) & 0xffU).reinterpret_as_int().to_byte()
   bytes[offset + 1] = ((value >> 16) & 0xffU).reinterpret_as_int().to_byte()
   bytes[offset + 2] = ((value >> 8) & 0xffU).reinterpret_as_int().to_byte()
@@ -437,7 +437,7 @@ fn write_u32_uint(bytes : Array[Byte], offset : Int, value : UInt) -> Unit {
 }
 
 ///|
-fn push_u32_uint(bytes : Array[Byte], value : UInt) -> Unit {
+fn push_u32_uint(bytes : Array[Byte], value : UInt32) -> Unit {
   bytes.push(((value >> 24) & 0xffU).reinterpret_as_int().to_byte())
   bytes.push(((value >> 16) & 0xffU).reinterpret_as_int().to_byte())
   bytes.push(((value >> 8) & 0xffU).reinterpret_as_int().to_byte())
@@ -445,10 +445,10 @@ fn push_u32_uint(bytes : Array[Byte], value : UInt) -> Unit {
 }
 
 ///|
-fn checksum_bytes(bytes : Array[Byte]) -> UInt {
+fn checksum_bytes(bytes : Array[Byte]) -> UInt32 {
   let length = bytes.length()
   let padded = align4(length)
-  let mut sum : UInt = 0U
+  let mut sum : UInt32 = 0U
   let mut i = 0
   while i < padded {
     let b0 = if i < length { bytes[i].to_uint() } else { 0U }
@@ -463,7 +463,7 @@ fn checksum_bytes(bytes : Array[Byte]) -> UInt {
 }
 
 ///|
-fn sfnt_search_params(num_tables : Int) -> (Int, Int, Int) {
+fn sfnt_search_params(num_tables : Int32) -> (Int32, Int32, Int32) {
   let mut max_power = 1
   let mut entry_selector = 0
   while max_power * 2 <= num_tables {
@@ -476,7 +476,7 @@ fn sfnt_search_params(num_tables : Int) -> (Int, Int, Int) {
 }
 
 ///|
-fn kern_search_params(pair_count : Int) -> (Int, Int, Int) {
+fn kern_search_params(pair_count : Int32) -> (Int32, Int32, Int32) {
   let mut max_power = 1
   let mut entry_selector = 0
   while max_power * 2 <= pair_count {
@@ -489,7 +489,7 @@ fn kern_search_params(pair_count : Int) -> (Int, Int, Int) {
 }
 
 ///|
-fn kern_class_for_glyph(table : @sfnt.KernClassTable, glyph : Int) -> Int {
+fn kern_class_for_glyph(table : @sfnt.KernClassTable, glyph : Int32) -> Int32 {
   let start = table.first_glyph
   let index = glyph - start
   if index < 0 || index >= table.classes.length() {
@@ -505,7 +505,7 @@ fn kern_class_for_glyph(table : @sfnt.KernClassTable, glyph : Int) -> Int {
 
 ///|
 fn build_kern_format0_subtable(
-  pairs : Array[(Int, Int, Int)],
+  pairs : Array[(Int32, Int32, Int32)],
   horizontal : Bool,
   minimum : Bool,
   cross_stream : Bool,
@@ -565,7 +565,7 @@ fn build_kern_format0_subtable(
 fn kern_pairs_from_format2(
   format2 : @sfnt.KernSubtableFormat2,
   plan : SubsetPlan,
-) -> Result[Array[(Int, Int, Int)], SubsetError] {
+) -> Result[Array[(Int32, Int32, Int32)], SubsetError] {
   let left_class_count = format2.left.class_count
   let right_class_count = format2.right_class_count
   if left_class_count <= 0 || right_class_count <= 0 {
@@ -575,11 +575,11 @@ fn kern_pairs_from_format2(
   if total_values < 0 || total_values > format2.values.length() {
     return Err(InvalidInput("kern format2 value count out of range"))
   }
-  let left_classes : Array[Array[Int]] = []
+  let left_classes : Array[Array[Int32]] = []
   for _ in 0..<left_class_count {
     left_classes.push([])
   }
-  let right_classes : Array[Array[Int]] = []
+  let right_classes : Array[Array[Int32]] = []
   for _ in 0..<right_class_count {
     right_classes.push([])
   }
@@ -601,7 +601,7 @@ fn kern_pairs_from_format2(
       right_classes[right_class].push(new_gid)
     }
   }
-  let pairs : Array[(Int, Int, Int)] = []
+  let pairs : Array[(Int32, Int32, Int32)] = []
   for left_class in 0..<left_class_count {
     let left_glyphs = left_classes[left_class]
     if left_glyphs.is_empty() {
@@ -633,10 +633,10 @@ fn kern_pairs_from_format2(
 
 ///|
 fn kern_class_from_list(
-  classes : Array[Int],
-  class_count : Int,
-  glyph : Int,
-) -> Int {
+  classes : Array[Int32],
+  class_count : Int32,
+  glyph : Int32,
+) -> Int32 {
   if glyph < 0 || glyph >= classes.length() {
     return 0
   }
@@ -652,7 +652,7 @@ fn kern_class_from_list(
 fn kern_pairs_from_format3(
   format3 : @sfnt.KernSubtableFormat3,
   plan : SubsetPlan,
-) -> Result[Array[(Int, Int, Int)], SubsetError] {
+) -> Result[Array[(Int32, Int32, Int32)], SubsetError] {
   let glyph_count = format3.glyph_count
   if glyph_count <= 0 {
     return Ok([])
@@ -673,11 +673,11 @@ fn kern_pairs_from_format3(
   if format3.values.is_empty() {
     return Ok([])
   }
-  let left_classes : Array[Array[Int]] = []
+  let left_classes : Array[Array[Int32]] = []
   for _ in 0..<left_class_count {
     left_classes.push([])
   }
-  let right_classes : Array[Array[Int]] = []
+  let right_classes : Array[Array[Int32]] = []
   for _ in 0..<right_class_count {
     right_classes.push([])
   }
@@ -703,7 +703,7 @@ fn kern_pairs_from_format3(
     left_classes[left_class].push(new_gid)
     right_classes[right_class].push(new_gid)
   }
-  let pairs : Array[(Int, Int, Int)] = []
+  let pairs : Array[(Int32, Int32, Int32)] = []
   for left_class in 0..<left_class_count {
     let left_glyphs = left_classes[left_class]
     if left_glyphs.is_empty() {
@@ -738,7 +738,7 @@ fn kern_pairs_from_format3(
 }
 
 ///|
-fn compare_tags(a : @common.Tag, b : @common.Tag) -> Int {
+fn compare_tags(a : @common.Tag, b : @common.Tag) -> Int32 {
   let (a1, a2, a3, a4) = a.bytes()
   let (b1, b2, b3, b4) = b.bytes()
   let ai1 = a1.to_int()
@@ -762,7 +762,7 @@ fn compare_tags(a : @common.Tag, b : @common.Tag) -> Int {
 }
 
 ///|
-fn cmap_search_params(seg_count : Int) -> (Int, Int, Int) {
+fn cmap_search_params(seg_count : Int32) -> (Int32, Int32, Int32) {
   let mut max_power = 1
   let mut entry_selector = 0
   while max_power * 2 <= seg_count {
@@ -777,11 +777,11 @@ fn cmap_search_params(seg_count : Int) -> (Int, Int, Int) {
 ///|
 fn build_sfnt_bytes(
   dir_tags : Array[@common.Tag],
-  dir_checksums : Array[UInt],
-  dir_offsets : Array[Int],
-  dir_lengths : Array[Int],
+  dir_checksums : Array[UInt32],
+  dir_offsets : Array[Int32],
+  dir_lengths : Array[Int32],
   data_bytes : Array[Array[Byte]],
-  data_offsets : Array[Int],
+  data_offsets : Array[Int32],
 ) -> Bytes {
   let bytes : Array[Byte] = []
   push_u32(bytes, 0x00010000)
@@ -838,7 +838,7 @@ fn build_sfnt(tables : Array[(@common.Tag, Bytes)]) -> Bytes {
     data_bytes.push(table.to_array())
   }
   let mut offset = 12 + data_tags.length() * 16
-  let data_offsets : Array[Int] = []
+  let data_offsets : Array[Int32] = []
   for i in 0..<data_bytes.length() {
     offset = align4(offset)
     data_offsets.push(offset)
@@ -854,7 +854,7 @@ fn build_sfnt(tables : Array[(@common.Tag, Bytes)]) -> Bytes {
   if head_index >= 0 && data_bytes[head_index].length() >= 12 {
     write_u32_uint(data_bytes[head_index], 8, 0U)
   }
-  let data_checksums : Array[UInt] = []
+  let data_checksums : Array[UInt32] = []
   for table in data_bytes {
     data_checksums.push(checksum_bytes(table))
   }
@@ -864,9 +864,9 @@ fn build_sfnt(tables : Array[(@common.Tag, Bytes)]) -> Bytes {
     dir_tags.push(tag)
   }
   dir_tags.sort_by(compare_tags)
-  let dir_checksums : Array[UInt] = []
-  let dir_offsets : Array[Int] = []
-  let dir_lengths : Array[Int] = []
+  let dir_checksums : Array[UInt32] = []
+  let dir_offsets : Array[Int32] = []
+  let dir_lengths : Array[Int32] = []
   for tag in dir_tags {
     let mut idx = -1
     for i in 0..<data_tags.length() {
@@ -896,14 +896,14 @@ fn build_sfnt(tables : Array[(@common.Tag, Bytes)]) -> Bytes {
 }
 
 ///|
-fn build_cmap_table_multi(subtables : Array[(Int, Int, Bytes)]) -> Bytes {
+fn build_cmap_table_multi(subtables : Array[(Int32, Int32, Bytes)]) -> Bytes {
   let bytes : Array[Byte] = []
   push_u16(bytes, 0)
   push_u16(bytes, subtables.length())
   let mut offset = 4 + subtables.length() * 8
-  let table_indices : Array[Int] = []
+  let table_indices : Array[Int32] = []
   let unique_tables : Array[Bytes] = []
-  let unique_offsets : Array[Int] = []
+  let unique_offsets : Array[Int32] = []
   for entry in subtables {
     let (_, _, table) = entry
     let mut found = -1
@@ -946,7 +946,7 @@ fn build_cmap_table_multi(subtables : Array[(Int, Int, Bytes)]) -> Bytes {
 }
 
 ///|
-fn build_cmap_format4(groups : Array[(UInt, UInt, UInt)]) -> Bytes? {
+fn build_cmap_format4(groups : Array[(UInt32, UInt32, UInt32)]) -> Bytes? {
   let seg_count = groups.length() + 1
   if seg_count <= 0 || seg_count > 0xFFFF {
     return None
@@ -996,7 +996,7 @@ fn build_cmap_format4(groups : Array[(UInt, UInt, UInt)]) -> Bytes? {
 }
 
 ///|
-fn build_cmap_format12(groups : Array[(UInt, UInt, UInt)]) -> Bytes {
+fn build_cmap_format12(groups : Array[(UInt32, UInt32, UInt32)]) -> Bytes {
   let bytes : Array[Byte] = []
   push_u16(bytes, 12)
   push_u16(bytes, 0)
@@ -1014,16 +1014,16 @@ fn build_cmap_format12(groups : Array[(UInt, UInt, UInt)]) -> Bytes {
 }
 
 ///|
-fn build_format14_ranges(values : Array[Int]) -> Array[(Int, Int)] {
+fn build_format14_ranges(values : Array[Int32]) -> Array[(Int32, Int32)] {
   if values.is_empty() {
     return []
   }
-  let sorted : Array[Int] = []
+  let sorted : Array[Int32] = []
   for value in values {
     sorted.push(value)
   }
   sorted.sort()
-  let ranges : Array[(Int, Int)] = []
+  let ranges : Array[(Int32, Int32)] = []
   let mut i = 0
   while i < sorted.length() {
     let start = sorted[i]
@@ -1080,12 +1080,12 @@ fn build_cmap_format14_subset(
   if record_base + record_count * 11 > length {
     return Err(InvalidInput("invalid cmap format14 record bounds"))
   }
-  let retained : Map[Int, Bool] = {}
+  let retained : Map[Int32, Bool] = Map([])
   for entry in plan.codepoint_map {
     let (codepoint, _) = entry
     retained[codepoint.reinterpret_as_int()] = true
   }
-  let records : Array[(Int, Array[(Int, Int)], Array[(Int, Int)])] = []
+  let records : Array[(Int32, Array[(Int32, Int32)], Array[(Int32, Int32)])] = []
   for i in 0..<record_count {
     let rec_offset = record_base + i * 11
     let selector = match read_u24(bytes, rec_offset) {
@@ -1100,7 +1100,7 @@ fn build_cmap_format14_subset(
       Err(err) => return Err(err)
       Ok(value) => value
     }
-    let default_values : Array[Int] = []
+    let default_values : Array[Int32] = []
     if default_offset != 0 {
       if default_offset + 4 > length {
         return Err(InvalidInput("invalid cmap format14 default offset"))
@@ -1133,7 +1133,7 @@ fn build_cmap_format14_subset(
         }
       }
     }
-    let non_default_values : Array[(Int, Int)] = []
+    let non_default_values : Array[(Int32, Int32)] = []
     if non_default_offset != 0 {
       if non_default_offset + 4 > length {
         return Err(InvalidInput("invalid cmap format14 non-default offset"))
@@ -1207,8 +1207,8 @@ fn build_cmap_format14_subset(
   let record_count_out = records.length()
   let header_len = 10 + record_count_out * 11
   let mut cursor = header_len
-  let default_offsets : Array[Int] = []
-  let non_default_offsets : Array[Int] = []
+  let default_offsets : Array[Int32] = []
+  let non_default_offsets : Array[Int32] = []
   for i in 0..<record_count_out {
     let default_offset = match default_tables[i] {
       None => 0
@@ -1260,7 +1260,7 @@ fn build_cmap_format14_subset(
 }
 
 ///|
-fn sort_codepoint_map(pairs : Array[(UInt, Int)]) -> Array[(UInt, Int)] {
+fn sort_codepoint_map(pairs : Array[(UInt32, Int32)]) -> Array[(UInt32, Int32)] {
   let sorted = pairs.copy()
   let n = sorted.length()
   for i in 1..<n {
@@ -1277,12 +1277,12 @@ fn sort_codepoint_map(pairs : Array[(UInt, Int)]) -> Array[(UInt, Int)] {
 
 ///|
 fn build_format12_groups(
-  pairs : Array[(UInt, Int)],
-) -> Array[(UInt, UInt, UInt)] {
+  pairs : Array[(UInt32, Int32)],
+) -> Array[(UInt32, UInt32, UInt32)] {
   if pairs.is_empty() {
     return []
   }
-  let groups : Array[(UInt, UInt, UInt)] = []
+  let groups : Array[(UInt32, UInt32, UInt32)] = []
   let mut start_cp = pairs[0].0
   let mut prev_cp = pairs[0].0
   let mut start_gid = pairs[0].1.reinterpret_as_uint()
@@ -1306,7 +1306,7 @@ fn build_format12_groups(
 }
 
 ///|
-fn cmap_find_format4_offset(data : BytesView) -> Result[Int?, SubsetError] {
+fn cmap_find_format4_offset(data : BytesView) -> Result[Int32?, SubsetError] {
   let bytes = data.to_owned().to_array()
   let num_tables = read_u16(bytes, 2)
   match num_tables {
@@ -1316,7 +1316,7 @@ fn cmap_find_format4_offset(data : BytesView) -> Result[Int?, SubsetError] {
         return Err(InvalidInput("invalid cmap table"))
       }
       let mut offset = 4
-      let mut found : Int? = None
+      let mut found : Int32? = None
       for _ in 0..<count {
         let platform_id = read_u16(bytes, offset)
         let encoding_id = read_u16(bytes, offset + 2)
@@ -1400,8 +1400,8 @@ fn cmap_has_format12(data : BytesView) -> Result[Bool, SubsetError] {
 ///|
 fn cmap_format4_covers(
   data : BytesView,
-  offset : Int,
-  codepoints : Array[UInt],
+  offset : Int32,
+  codepoints : Array[UInt32],
 ) -> Result[Bool, SubsetError] {
   let bytes = data.to_owned().to_array()
   for cp in codepoints {
@@ -1480,7 +1480,7 @@ fn build_cmap_from_pairs(face : @face.Face, plan : SubsetPlan) -> Bytes? {
     return None
   }
   let sorted = sort_codepoint_map(pairs)
-  let dedup : Array[(UInt, Int)] = []
+  let dedup : Array[(UInt32, Int32)] = []
   for pair in sorted {
     if dedup.is_empty() || dedup[dedup.length() - 1].0 != pair.0 {
       dedup.push(pair)
@@ -1496,10 +1496,10 @@ fn build_cmap_from_pairs(face : @face.Face, plan : SubsetPlan) -> Bytes? {
     }
   }
   let mut use_format12 = !bmp_only
-  let format4_records : Array[(Int, Int)] = []
-  let format12_records : Array[(Int, Int)] = []
-  let format14_records : Array[(Int, Int, Bytes)] = []
-  let original_records : Array[(Int, Int, Int, Bytes?)] = []
+  let format4_records : Array[(Int32, Int32)] = []
+  let format12_records : Array[(Int32, Int32)] = []
+  let format14_records : Array[(Int32, Int32, Bytes)] = []
+  let original_records : Array[(Int32, Int32, Int32, Bytes?)] = []
   let mut format14_subset : Bytes? = None
   let cmap_blob = match face.reference_table_optional(tag_cmap) {
     Err(_) => None
@@ -1618,7 +1618,7 @@ fn build_cmap_from_pairs(face : @face.Face, plan : SubsetPlan) -> Bytes? {
       }
     }
   }
-  let subtables : Array[(Int, Int, Bytes)] = []
+  let subtables : Array[(Int32, Int32, Bytes)] = []
   let mut used_format = false
   let mut used_format14 = false
   if !original_records.is_empty() {
@@ -1753,7 +1753,7 @@ fn build_name_subset(blob : @blob.Blob) -> Result[Bytes?, SubsetError] {
   if record_base + count * record_len > bytes.length() {
     return Err(InvalidInput("invalid name records"))
   }
-  let records : Array[(Int, Int, Int, Int, Bytes, Int)] = []
+  let records : Array[(Int32, Int32, Int32, Int32, Bytes, Int32)] = []
   for i in 0..<count {
     let rec_offset = record_base + i * record_len
     let platform_id = match read_u16(bytes, rec_offset) {
@@ -1821,7 +1821,7 @@ fn build_name_subset(blob : @blob.Blob) -> Result[Bytes?, SubsetError] {
     }
     a.3 - b.3
   })
-  let string_entries : Array[(Bytes, Int)] = []
+  let string_entries : Array[(Bytes, Int32)] = []
   for record in records {
     let value = record.4
     let mut found = -1
@@ -1842,7 +1842,7 @@ fn build_name_subset(blob : @blob.Blob) -> Result[Bytes?, SubsetError] {
   }
   string_entries.sort_by((a, b) => b.1 - a.1)
   let string_bytes : Array[Byte] = []
-  let entry_offsets : Array[Int] = []
+  let entry_offsets : Array[Int32] = []
   for entry in string_entries {
     entry_offsets.push(string_bytes.length())
     for b in entry.0 {
@@ -1951,7 +1951,7 @@ fn build_hdmx_subset(
     if widths_base + maxp.num_glyphs > base + record_size {
       return Err(InvalidInput("invalid hdmx widths"))
     }
-    let widths : Array[Int] = []
+    let widths : Array[Int32] = []
     let mut max_width = 0
     for old_gid in plan.glyphs {
       let gid = old_gid.reinterpret_as_int()
@@ -2415,7 +2415,7 @@ fn add_optional_gpos(
 }
 
 ///|
-fn is_identity_subset(plan : SubsetPlan, total_glyphs : Int) -> Bool {
+fn is_identity_subset(plan : SubsetPlan, total_glyphs : Int32) -> Bool {
   if total_glyphs <= 0 || plan.glyphs.length() != total_glyphs {
     return false
   }
@@ -2469,7 +2469,7 @@ fn add_passthrough_tables(
 }
 
 ///|
-fn remap_gid(remap : Array[Int], glyph : Int) -> Result[Int, SubsetError] {
+fn remap_gid(remap : Array[Int32], glyph : Int32) -> Result[Int32, SubsetError] {
   if glyph < 0 || glyph >= remap.length() {
     return Err(InvalidInput("glyph id out of range"))
   }
@@ -2484,7 +2484,7 @@ fn remap_gid(remap : Array[Int], glyph : Int) -> Result[Int, SubsetError] {
 ///|
 fn remap_composite_glyph(
   glyph_bytes : Array[Byte],
-  remap : Array[Int],
+  remap : Array[Int32],
 ) -> Result[Unit, SubsetError] {
   if glyph_bytes.length() < 10 {
     return Ok(())
@@ -2568,7 +2568,7 @@ fn remap_composite_glyph(
 }
 
 ///|
-fn trim_simple_glyph_padding_len(glyph_bytes : Array[Byte]) -> Int {
+fn trim_simple_glyph_padding_len(glyph_bytes : Array[Byte]) -> Int32 {
   let length = glyph_bytes.length()
   if length < 10 {
     return length
@@ -2654,8 +2654,8 @@ pub fn build_plan(
     return Err(InvalidInput("font has no glyphs"))
   }
   let selected : Array[Bool] = Array::make(maxp.num_glyphs, false)
-  let queue : Array[Int] = []
-  let add_gid = (gid : Int) => {
+  let queue : Array[Int32] = []
+  let add_gid = (gid : Int32) => {
     if gid < 0 || gid >= selected.length() {
       return
     }
@@ -2732,7 +2732,7 @@ pub fn build_plan(
         }
       }
   }
-  let initial_glyphs : Array[Int] = []
+  let initial_glyphs : Array[Int32] = []
   for gid in 0..<selected.length() {
     if selected[gid] {
       initial_glyphs.push(gid)
@@ -2778,7 +2778,7 @@ pub fn build_plan(
     }
     _ => ()
   }
-  let glyphs : Array[UInt] = []
+  let glyphs : Array[UInt32] = []
   for gid in 0..<selected.length() {
     if selected[gid] {
       glyphs.push(gid.reinterpret_as_uint())
@@ -2787,14 +2787,14 @@ pub fn build_plan(
   if glyphs.is_empty() {
     return Err(InvalidInput("empty subset"))
   }
-  let old_to_new : Array[Int] = Array::make(maxp.num_glyphs, -1)
+  let old_to_new : Array[Int32] = Array::make(maxp.num_glyphs, -1)
   for i in 0..<glyphs.length() {
     let old_gid = glyphs[i].reinterpret_as_int()
     if old_gid >= 0 && old_gid < old_to_new.length() {
       old_to_new[old_gid] = i
     }
   }
-  let codepoint_map : Array[(UInt, Int)] = []
+  let codepoint_map : Array[(UInt32, Int32)] = []
   for codepoint in expanded_codepoints {
     let gid = match font.glyph_for_codepoint(codepoint) {
       Err(err) => return Err(Font(err))
@@ -2845,8 +2845,8 @@ fn build_vmetrics_subset(
         Err(err) => return Err(Sfnt(err))
         Ok(value) => value
       }
-      let advances : Array[Int] = []
-      let tsbs : Array[Int] = []
+      let advances : Array[Int32] = []
+      let tsbs : Array[Int32] = []
       for old_gid in plan.glyphs {
         let gid = old_gid.reinterpret_as_int()
         if gid < 0 || gid >= vmtx.advances.length() {
@@ -2888,9 +2888,9 @@ fn build_vmetrics_subset(
 fn build_hmtx_subset(
   hmtx : @sfnt.HmtxTable,
   plan : SubsetPlan,
-) -> Result[(Bytes, Int), SubsetError] {
-  let advances : Array[Int] = []
-  let lsbs : Array[Int] = []
+) -> Result[(Bytes, Int32), SubsetError] {
+  let advances : Array[Int32] = []
+  let lsbs : Array[Int32] = []
   for old_gid in plan.glyphs {
     let gid = old_gid.reinterpret_as_int()
     if gid < 0 || gid >= hmtx.advances.length() {
@@ -2937,7 +2937,7 @@ fn build_vorg_subset(
         Err(err) => return Err(Sfnt(err))
         Ok(value) => value
       }
-      let entries : Array[(Int, Int)] = []
+      let entries : Array[(Int32, Int32)] = []
       for metric in vorg.metrics {
         let gid = metric.glyph
         if gid < 0 || gid >= plan.old_to_new.length() {
@@ -2991,7 +2991,7 @@ fn build_kern_subset(
         let cross_stream = subtable.cross_stream
         let override_flag = subtable.override_flag
         if subtable.format == 0 {
-          let pairs : Array[(Int, Int, Int)] = []
+          let pairs : Array[(Int32, Int32, Int32)] = []
           for pair in subtable.pairs {
             let left = pair.left.reinterpret_as_int()
             let right = pair.right.reinterpret_as_int()
@@ -3082,13 +3082,13 @@ fn build_kern_subset(
 }
 
 ///|
-let max_colr_paint_depth : Int = 64
+let max_colr_paint_depth : Int32 = 64
 
 ///|
 fn parse_colr_layer_offsets(
   bytes : Array[Byte],
-  layer_list_offset : Int,
-) -> Result[Array[Int], SubsetError] {
+  layer_list_offset : Int32,
+) -> Result[Array[Int32], SubsetError] {
   if layer_list_offset < 0 || layer_list_offset + 4 > bytes.length() {
     return Err(InvalidInput("invalid COLR layer list offset"))
   }
@@ -3103,7 +3103,7 @@ fn parse_colr_layer_offsets(
   if entries_offset + count * 4 > bytes.length() {
     return Err(InvalidInput("invalid COLR layer list bounds"))
   }
-  let offsets : Array[Int] = []
+  let offsets : Array[Int32] = []
   for i in 0..<count {
     let rel = match read_u32(bytes, entries_offset + i * 4) {
       Err(err) => return Err(err)
@@ -3124,11 +3124,11 @@ fn parse_colr_layer_offsets(
 ///|
 fn remap_colr_v1_paint(
   bytes : Array[Byte],
-  offset : Int,
+  offset : Int32,
   plan : SubsetPlan,
-  layer_offsets : Array[Int],
+  layer_offsets : Array[Int32],
   visited : Array[Bool],
-  depth : Int,
+  depth : Int32,
 ) -> Result[Bool, SubsetError] {
   if depth <= 0 {
     return Err(InvalidInput("COLR paint depth exceeded"))
@@ -3372,7 +3372,7 @@ fn build_colr_subset(
         }
         let mut min_paint_offset = bytes.length()
         let visited : Array[Bool] = Array::make(bytes.length(), false)
-        let kept_records : Array[(Int, Int)] = []
+        let kept_records : Array[(Int32, Int32)] = []
         for i in 0..<count {
           let rec_offset = record_base + i * record_len
           let gid = match read_u16(bytes, rec_offset) {
@@ -3473,7 +3473,7 @@ fn build_colr_subset(
       if base_end > bytes.length() || layer_end > bytes.length() {
         return Err(InvalidInput("invalid COLR table"))
       }
-      let base_records : Array[(Int, Int, Int)] = []
+      let base_records : Array[(Int32, Int32, Int32)] = []
       for i in 0..<num_base {
         let rec_offset = base_offset + i * 6
         let gid = match read_u16(bytes, rec_offset) {
@@ -3495,7 +3495,7 @@ fn build_colr_subset(
         let (gb, _, _) = b
         ga - gb
       })
-      let layers : Array[(Int, Int)] = []
+      let layers : Array[(Int32, Int32)] = []
       for i in 0..<num_layers {
         let rec_offset = layer_offset + i * 4
         let gid = match read_u16(bytes, rec_offset) {
@@ -3508,8 +3508,8 @@ fn build_colr_subset(
         }
         layers.push((gid, color_index))
       }
-      let new_layers : Array[(Int, Int)] = []
-      let new_base : Array[(Int, Int, Int)] = []
+      let new_layers : Array[(Int32, Int32)] = []
+      let new_base : Array[(Int32, Int32, Int32)] = []
       for base in base_records {
         let (gid, first_layer, layer_count) = base
         if gid < 0 || gid >= plan.old_to_new.length() {
@@ -3613,9 +3613,9 @@ fn build_svg_subset(
       if entry_base + entry_count * 12 > bytes.length() {
         return Err(InvalidInput("invalid SVG entry bounds"))
       }
-      let doc_keys : Array[(Int, Int)] = []
+      let doc_keys : Array[(Int32, Int32)] = []
       let docs : Array[Bytes] = []
-      let runs : Array[(Int, Int, Int)] = []
+      let runs : Array[(Int32, Int32, Int32)] = []
       for i in 0..<entry_count {
         let rec_base = entry_base + i * 12
         let start = match read_u16(bytes, rec_base) {
@@ -3695,7 +3695,7 @@ fn build_svg_subset(
       }
       runs.sort_by((a, b) => a.0 - b.0)
       let index_size = 2 + runs.length() * 12
-      let doc_offsets : Array[Int] = []
+      let doc_offsets : Array[Int32] = []
       let mut cursor = index_size
       for doc in docs {
         doc_offsets.push(cursor)
@@ -3762,7 +3762,7 @@ fn build_sbix_subset(
       if strike_offsets_base + strike_count * 4 > bytes.length() {
         return Err(InvalidInput("invalid sbix strike offsets"))
       }
-      let strike_offsets : Array[Int] = []
+      let strike_offsets : Array[Int32] = []
       for i in 0..<strike_count {
         let offset = match read_u32(bytes, strike_offsets_base + i * 4) {
           Err(err) => return Err(err)
@@ -3804,7 +3804,7 @@ fn build_sbix_subset(
         if offsets_base + offsets_len > strike_end {
           return Err(InvalidInput("invalid sbix glyph offsets"))
         }
-        let old_offsets : Array[Int] = []
+        let old_offsets : Array[Int32] = []
         for j in 0..<(old_glyph_count + 1) {
           let offset = match read_u32(bytes, offsets_base + j * 4) {
             Err(err) => return Err(err)
@@ -3814,7 +3814,7 @@ fn build_sbix_subset(
         }
         let header_size = 4 + (new_glyph_count + 1) * 4
         let mut head = header_size
-        let new_offsets : Array[Int] = []
+        let new_offsets : Array[Int32] = []
         let glyph_data : Array[Byte] = []
         let mut has_glyphs = false
         for new_gid in 0..<new_glyph_count {
@@ -3883,31 +3883,31 @@ fn build_sbix_subset(
 
 ///|
 priv struct CblcStrike {
-  start_gid : Int
-  end_gid : Int
+  start_gid : Int32
+  end_gid : Int32
   metrics : Array[Byte]
-  ppem_x : Int
-  ppem_y : Int
-  bit_depth : Int
-  flags : Int
-  color_ref : Int
+  ppem_x : Int32
+  ppem_y : Int32
+  bit_depth : Int32
+  flags : Int32
+  color_ref : Int32
   list : Array[Byte]
   subtable : Array[Byte]
 }
 
 ///|
 priv struct DeltaMapInfo {
-  format : Int
-  entry_format : Int
-  width : Int
-  map_count : Int
+  format : Int32
+  entry_format : Int32
+  width : Int32
+  map_count : Int32
   map_data : Array[Byte]
 }
 
 ///|
 fn parse_delta_map(
   bytes : Array[Byte],
-  offset : Int,
+  offset : Int32,
 ) -> Result[DeltaMapInfo, SubsetError] {
   let format = match read_u8(bytes, offset) {
     Err(err) => return Err(err)
@@ -3946,7 +3946,7 @@ fn parse_delta_map(
 ///|
 fn build_delta_map_subset(
   info : DeltaMapInfo,
-  glyphs : Array[UInt],
+  glyphs : Array[UInt32],
 ) -> Result[Array[Byte], SubsetError] {
   let new_count = glyphs.length()
   if new_count <= 0 {
@@ -4074,7 +4074,7 @@ fn build_cblc_cbdt_subset(
         if list_offset + record_len > cblc_bytes.length() {
           return Err(InvalidInput("invalid CBLC index subtable records"))
         }
-        let list_records : Array[(Int, Int, Array[Byte])] = []
+        let list_records : Array[(Int32, Int32, Array[Byte])] = []
         let mut image_format = -1
         for j in 0..<subtable_count {
           let rec_offset = list_offset + j * 8
@@ -4127,7 +4127,7 @@ fn build_cblc_cbdt_subset(
           if offsets_base + num_offsets * offset_unit > cblc_bytes.length() {
             return Err(InvalidInput("invalid CBLC offset array"))
           }
-          let offsets : Array[Int] = []
+          let offsets : Array[Int32] = []
           if index_format == 1 {
             for k in 0..<num_offsets {
               let off = match read_u32(cblc_bytes, offsets_base + k * 4) {
@@ -4145,7 +4145,7 @@ fn build_cblc_cbdt_subset(
               offsets.push(off)
             }
           }
-          let entries : Array[(Int, Array[Byte])] = []
+          let entries : Array[(Int32, Array[Byte])] = []
           for k in 0..<(num_offsets - 1) {
             let gid = first + k
             if gid < 0 || gid >= old_glyph_count {
@@ -4176,7 +4176,7 @@ fn build_cblc_cbdt_subset(
             continue
           }
           entries.sort_by((a, b) => a.0 - b.0)
-          let unique_entries : Array[(Int, Array[Byte])] = []
+          let unique_entries : Array[(Int32, Array[Byte])] = []
           let mut last_seen = -1
           for entry in entries {
             let gid = entry.0
@@ -4196,7 +4196,7 @@ fn build_cblc_cbdt_subset(
               let run_entries = entries[run_start:idx].to_owned()
               let first_gid = run_entries[0].0
               let last_gid = run_entries[run_entries.length() - 1].0
-              let offsets_out : Array[Int] = []
+              let offsets_out : Array[Int32] = []
               let mut data_cursor = 0
               let strike_data : Array[Byte] = []
               for entry in run_entries {
@@ -4305,7 +4305,7 @@ fn build_cblc_cbdt_subset(
       push_u16(out, major)
       push_u16(out, minor)
       push_u32(out, strikes.length())
-      let list_order : Array[Int] = []
+      let list_order : Array[Int32] = []
       for i in 0..<strikes.length() {
         list_order.push(i)
       }
@@ -4322,7 +4322,7 @@ fn build_cblc_cbdt_subset(
           }
         }
       })
-      let list_offsets : Array[Int] = Array::make(strikes.length(), 0)
+      let list_offsets : Array[Int32] = Array::make(strikes.length(), 0)
       let mut cursor = 8 + strikes.length() * size_record_len
       for idx in list_order {
         let strike = strikes[idx]
@@ -4365,15 +4365,15 @@ fn build_cblc_cbdt_subset(
 ///|
 fn parse_gvar_offsets(
   bytes : Array[Byte],
-  offset : Int,
-  glyph_count : Int,
+  offset : Int32,
+  glyph_count : Int32,
   long_offsets : Bool,
-) -> Result[Array[Int], SubsetError] {
+) -> Result[Array[Int32], SubsetError] {
   let count = glyph_count + 1
   if count <= 0 {
     return Err(InvalidInput("invalid gvar glyph count"))
   }
-  let offsets : Array[Int] = []
+  let offsets : Array[Int32] = []
   if long_offsets {
     let total = count * 4
     if offset < 0 || offset + total > bytes.length() {
@@ -4474,7 +4474,7 @@ fn build_gvar_subset(
           shared_bytes.push(b)
         }
       }
-      let new_offsets : Array[Int] = []
+      let new_offsets : Array[Int32] = []
       let mut cursor = 0
       let data_bytes : Array[Byte] = []
       for old_gid in plan.glyphs {
@@ -4539,10 +4539,10 @@ fn build_gvar_subset(
 ///|
 fn build_metrics_variation_subset(
   bytes : Array[Byte],
-  map_offsets : Array[Int],
+  map_offsets : Array[Int32],
   plan : SubsetPlan,
-) -> Result[Array[(Int, Array[Byte])], SubsetError] {
-  let built : Array[(Int, Array[Byte])] = []
+) -> Result[Array[(Int32, Array[Byte])], SubsetError] {
+  let built : Array[(Int32, Array[Byte])] = []
   for offset in map_offsets {
     if offset == 0 {
       built.push((0, []))
@@ -4727,55 +4727,55 @@ fn build_vvar_subset(
 }
 
 ///|
-let varc_flag_have_axes : UInt = 1U << 1
+let varc_flag_have_axes : UInt32 = 1U << 1
 
 ///|
-let varc_flag_axis_values_have_variation : UInt = 1U << 2
+let varc_flag_axis_values_have_variation : UInt32 = 1U << 2
 
 ///|
-let varc_flag_transform_has_variation : UInt = 1U << 3
+let varc_flag_transform_has_variation : UInt32 = 1U << 3
 
 ///|
-let varc_flag_have_translate_x : UInt = 1U << 4
+let varc_flag_have_translate_x : UInt32 = 1U << 4
 
 ///|
-let varc_flag_have_translate_y : UInt = 1U << 5
+let varc_flag_have_translate_y : UInt32 = 1U << 5
 
 ///|
-let varc_flag_have_rotation : UInt = 1U << 6
+let varc_flag_have_rotation : UInt32 = 1U << 6
 
 ///|
-let varc_flag_have_condition : UInt = 1U << 7
+let varc_flag_have_condition : UInt32 = 1U << 7
 
 ///|
-let varc_flag_have_scale_x : UInt = 1U << 8
+let varc_flag_have_scale_x : UInt32 = 1U << 8
 
 ///|
-let varc_flag_have_scale_y : UInt = 1U << 9
+let varc_flag_have_scale_y : UInt32 = 1U << 9
 
 ///|
-let varc_flag_have_tcenter_x : UInt = 1U << 10
+let varc_flag_have_tcenter_x : UInt32 = 1U << 10
 
 ///|
-let varc_flag_have_tcenter_y : UInt = 1U << 11
+let varc_flag_have_tcenter_y : UInt32 = 1U << 11
 
 ///|
-let varc_flag_gid_is_24bit : UInt = 1U << 12
+let varc_flag_gid_is_24bit : UInt32 = 1U << 12
 
 ///|
-let varc_flag_have_skew_x : UInt = 1U << 13
+let varc_flag_have_skew_x : UInt32 = 1U << 13
 
 ///|
-let varc_flag_have_skew_y : UInt = 1U << 14
+let varc_flag_have_skew_y : UInt32 = 1U << 14
 
 ///|
-let varc_flag_reserved_mask : UInt = 0xFFFF8000U
+let varc_flag_reserved_mask : UInt32 = 0xFFFF8000U
 
 ///|
 fn read_u32var(
   bytes : Array[Byte],
-  offset : Int,
-) -> Result[(UInt, Int), SubsetError] {
+  offset : Int32,
+) -> Result[(UInt32, Int32), SubsetError] {
   if offset < 0 || offset >= bytes.length() {
     return Err(InvalidInput("invalid VARC u32var offset"))
   }
@@ -4824,8 +4824,8 @@ fn read_u32var(
 ///|
 fn read_glyph_id_24(
   bytes : Array[Byte],
-  offset : Int,
-) -> Result[Int, SubsetError] {
+  offset : Int32,
+) -> Result[Int32, SubsetError] {
   if offset < 0 || offset + 3 > bytes.length() {
     return Err(InvalidInput("invalid VARC glyph bounds"))
   }
@@ -4836,7 +4836,7 @@ fn read_glyph_id_24(
 }
 
 ///|
-fn count_tuple_values(data : Array[Byte]) -> Result[Int, SubsetError] {
+fn count_tuple_values(data : Array[Byte]) -> Result[Int32, SubsetError] {
   let mut pos = 0
   let mut count = 0
   while pos < data.length() {
@@ -4866,9 +4866,9 @@ fn count_tuple_values(data : Array[Byte]) -> Result[Int, SubsetError] {
 ///|
 fn skip_tuple_values(
   data : Array[Byte],
-  offset : Int,
-  count : Int,
-) -> Result[Int, SubsetError] {
+  offset : Int32,
+  count : Int32,
+) -> Result[Int32, SubsetError] {
   if count < 0 {
     return Err(InvalidInput("invalid VARC tuple count"))
   }
@@ -4904,8 +4904,8 @@ fn skip_tuple_values(
 ///|
 fn axis_indices_count(
   index : @ot_cff.CffIndex,
-  axis_index : Int,
-) -> Result[Int, SubsetError] {
+  axis_index : Int32,
+) -> Result[Int32, SubsetError] {
   let bytes = match index.item_bytes(axis_index) {
     Err(err) => return Err(Cff(err))
     Ok(value) => value
@@ -4914,7 +4914,7 @@ fn axis_indices_count(
 }
 
 ///|
-fn offset_size_for(value : Int) -> Result[Int, SubsetError] {
+fn offset_size_for(value : Int32) -> Result[Int32, SubsetError] {
   if value <= 0 {
     return Err(InvalidInput("invalid VARC index size"))
   }
@@ -4936,8 +4936,8 @@ fn offset_size_for(value : Int) -> Result[Int, SubsetError] {
 ///|
 fn push_offset(
   bytes : Array[Byte],
-  value : Int,
-  size : Int,
+  value : Int32,
+  size : Int32,
 ) -> Result[Unit, SubsetError] {
   if value < 0 || size <= 0 || size > 4 {
     return Err(InvalidInput("invalid VARC index offset"))
@@ -4957,7 +4957,7 @@ fn write_cff2_index(items : Array[Bytes]) -> Result[Bytes, SubsetError] {
   if count == 0 {
     return Ok(Bytes::from_array(out))
   }
-  let offsets : Array[Int] = []
+  let offsets : Array[Int32] = []
   let mut current = 1
   offsets.push(current)
   for item in items {
@@ -5232,7 +5232,7 @@ fn build_varc_subset(
           Ok(value) => Some(value)
         }
       }
-      let new_glyphs : Array[Int] = []
+      let new_glyphs : Array[Int32] = []
       let new_records : Array[Bytes] = []
       for i in 0..<coverage.length() {
         let old_gid = coverage[i]
@@ -5267,7 +5267,7 @@ fn build_varc_subset(
         Err(err) => return Err(err)
         Ok(value) => value
       }
-      let offsets : Array[Int] = []
+      let offsets : Array[Int32] = []
       offsets.push(coverage_offset)
       offsets.push(glyph_records_offset)
       if var_store_offset > 0 {
@@ -5281,7 +5281,7 @@ fn build_varc_subset(
       }
       offsets.push(bytes.length())
       offsets.sort()
-      let segment_bytes = (offset : Int) => {
+      let segment_bytes = (offset : Int32) => {
         let mut next = bytes.length()
         for off in offsets {
           if off > offset && off < next {
@@ -5363,9 +5363,9 @@ fn build_varc_subset(
 ///|
 fn class_def_value_subset(
   bytes : Array[Byte],
-  offset : Int,
-  glyph : Int,
-) -> Result[Int, SubsetError] {
+  offset : Int32,
+  glyph : Int32,
+) -> Result[Int32, SubsetError] {
   let format = match read_u16(bytes, offset) {
     Err(err) => return Err(err)
     Ok(value) => value
@@ -5421,14 +5421,14 @@ fn class_def_value_subset(
 ///|
 fn build_class_def_subset(
   bytes : Array[Byte],
-  offset : Int,
+  offset : Int32,
   plan : SubsetPlan,
 ) -> Result[Bytes?, SubsetError] {
   let glyph_count = plan.glyphs.length()
   if glyph_count <= 0 {
     return Ok(None)
   }
-  let class_values : Array[Int] = []
+  let class_values : Array[Int32] = []
   for i in 0..<glyph_count {
     let old_gid = plan.glyphs[i].reinterpret_as_int()
     let class_value = if old_gid >= 0 &&
@@ -5448,7 +5448,7 @@ fn build_class_def_subset(
 
 ///|
 fn build_class_def_from_values(
-  class_values : Array[Int],
+  class_values : Array[Int32],
   allow_empty : Bool,
 ) -> Bytes? {
   if class_values.is_empty() {
@@ -5483,7 +5483,7 @@ fn build_class_def_from_values(
   for i in start..<(end + 1) {
     push_u16(format1, class_values[i])
   }
-  let ranges : Array[(Int, Int, Int)] = []
+  let ranges : Array[(Int32, Int32, Int32)] = []
   let mut idx = 0
   while idx < class_values.length() {
     let value = class_values[idx]
@@ -5518,8 +5518,8 @@ fn build_class_def_from_values(
 ///|
 fn parse_coverage_subset(
   bytes : Array[Byte],
-  offset : Int,
-) -> Result[Array[Int], SubsetError] {
+  offset : Int32,
+) -> Result[Array[Int32], SubsetError] {
   let format = match read_u16(bytes, offset) {
     Err(err) => return Err(err)
     Ok(value) => value
@@ -5529,7 +5529,7 @@ fn parse_coverage_subset(
       Err(err) => return Err(err)
       Ok(value) => value
     }
-    let glyphs : Array[Int] = []
+    let glyphs : Array[Int32] = []
     for i in 0..<count {
       let glyph = match read_u16(bytes, offset + 4 + i * 2) {
         Err(err) => return Err(err)
@@ -5543,7 +5543,7 @@ fn parse_coverage_subset(
       Err(err) => return Err(err)
       Ok(value) => value
     }
-    let glyphs : Array[Int] = []
+    let glyphs : Array[Int32] = []
     let mut record_offset = offset + 4
     for _ in 0..<count {
       let start = match read_u16(bytes, record_offset) {
@@ -5568,8 +5568,8 @@ fn parse_coverage_subset(
 ///|
 fn coverage_table_length(
   bytes : Array[Byte],
-  offset : Int,
-) -> Result[Int, SubsetError] {
+  offset : Int32,
+) -> Result[Int32, SubsetError] {
   let format = match read_u16(bytes, offset) {
     Err(err) => return Err(err)
     Ok(value) => value
@@ -5588,8 +5588,8 @@ fn coverage_table_length(
 }
 
 ///|
-fn build_coverage_subset(glyphs : Array[Int]) -> Bytes {
-  let sorted : Array[Int] = []
+fn build_coverage_subset(glyphs : Array[Int32]) -> Bytes {
+  let sorted : Array[Int32] = []
   for glyph in glyphs {
     sorted.push(glyph)
   }
@@ -5604,8 +5604,8 @@ fn build_coverage_subset(glyphs : Array[Int]) -> Bytes {
 }
 
 ///|
-fn build_coverage_compact(glyphs : Array[Int]) -> Bytes {
-  let sorted : Array[Int] = []
+fn build_coverage_compact(glyphs : Array[Int32]) -> Bytes {
+  let sorted : Array[Int32] = []
   for glyph in glyphs {
     sorted.push(glyph)
   }
@@ -5619,7 +5619,7 @@ fn build_coverage_compact(glyphs : Array[Int]) -> Bytes {
   if sorted.is_empty() {
     return Bytes::from_array(format1)
   }
-  let ranges : Array[(Int, Int)] = []
+  let ranges : Array[(Int32, Int32)] = []
   let mut start = sorted[0]
   let mut prev = start
   for i in 1..<sorted.length() {
@@ -5652,7 +5652,7 @@ fn build_coverage_compact(glyphs : Array[Int]) -> Bytes {
 }
 
 ///|
-fn gpos_value_record_size(value_format : Int) -> Int {
+fn gpos_value_record_size(value_format : Int32) -> Int32 {
   let mut size = 0
   if (value_format & 0x0001) != 0 {
     size = size + 2
@@ -5684,7 +5684,7 @@ fn gpos_value_record_size(value_format : Int) -> Int {
 ///|
 fn build_anchor_bytes_optional(
   bytes : Array[Byte],
-  offset : Int,
+  offset : Int32,
 ) -> Result[Bytes?, SubsetError] {
   if offset == 0 {
     return Ok(None)
@@ -5713,7 +5713,7 @@ fn build_anchor_bytes_optional(
 ///|
 fn build_mark_glyph_sets_subset(
   bytes : Array[Byte],
-  offset : Int,
+  offset : Int32,
   plan : SubsetPlan,
 ) -> Result[Bytes?, SubsetError] {
   let format = match read_u16(bytes, offset) {
@@ -5747,7 +5747,7 @@ fn build_mark_glyph_sets_subset(
       Err(err) => return Err(err)
       Ok(value) => value
     }
-    let mapped : Array[Int] = []
+    let mapped : Array[Int32] = []
     for glyph in glyphs {
       if glyph < 0 || glyph >= plan.old_to_new.length() {
         return Err(InvalidInput("glyph id out of range"))
@@ -5769,7 +5769,7 @@ fn build_mark_glyph_sets_subset(
   push_u16(out, 1)
   push_u16(out, set_count)
   let mut cursor = 4 + set_count * 2
-  let offsets : Array[Int] = []
+  let offsets : Array[Int32] = []
   for coverage in coverages {
     offsets.push(cursor)
     cursor = cursor + coverage.length()
@@ -5786,10 +5786,12 @@ fn build_mark_glyph_sets_subset(
 }
 
 ///|
-fn build_coverage_from_pairs(pairs : Array[(Int, Int)]) -> (Bytes, Array[Int]) {
+fn build_coverage_from_pairs(
+  pairs : Array[(Int32, Int32)],
+) -> (Bytes, Array[Int32]) {
   pairs.sort_by((a, b) => a.0 - b.0)
-  let glyphs : Array[Int] = []
-  let substitutes : Array[Int] = []
+  let glyphs : Array[Int32] = []
+  let substitutes : Array[Int32] = []
   for pair in pairs {
     let (gid, sub) = pair
     glyphs.push(gid)
@@ -5821,7 +5823,7 @@ fn build_gsub_single_subtable(
     Err(err) => return Err(err)
     Ok(value) => value
   }
-  let pairs : Array[(Int, Int)] = []
+  let pairs : Array[(Int32, Int32)] = []
   if format == 1 {
     let delta = match read_i16(bytes, 4) {
       Err(err) => return Err(err)
@@ -5929,7 +5931,7 @@ fn build_gsub_multiple_subtable(
   if coverage.length() != seq_count {
     return Err(InvalidInput("GSUB multiple coverage count mismatch"))
   }
-  let pairs : Array[(Int, Array[Int])] = []
+  let pairs : Array[(Int32, Array[Int32])] = []
   for i in 0..<seq_count {
     let glyph = coverage[i]
     if glyph < 0 || glyph >= plan.old_to_new.length() {
@@ -5960,7 +5962,7 @@ fn build_gsub_multiple_subtable(
     if seq_base + 2 + glyph_count * 2 > bytes.length() {
       return Err(InvalidInput("invalid GSUB sequence length"))
     }
-    let sequence : Array[Int] = []
+    let sequence : Array[Int32] = []
     let mut ok = true
     for j in 0..<glyph_count {
       let sub = match read_u16(bytes, seq_base + 2 + j * 2) {
@@ -5986,7 +5988,7 @@ fn build_gsub_multiple_subtable(
     return Ok(None)
   }
   pairs.sort_by((a, b) => a.0 - b.0)
-  let glyphs : Array[Int] = []
+  let glyphs : Array[Int32] = []
   let sequences : Array[Bytes] = []
   for pair in pairs {
     let (gid, seq) = pair
@@ -6003,7 +6005,7 @@ fn build_gsub_multiple_subtable(
   push_u16(out, 1)
   let header_len = 6 + sequences.length() * 2
   let mut cursor = header_len
-  let offsets : Array[Int] = []
+  let offsets : Array[Int32] = []
   for seq in sequences {
     offsets.push(cursor)
     cursor = cursor + seq.length()
@@ -6062,7 +6064,7 @@ fn build_gsub_alternate_subtable(
   if coverage.length() != alt_count {
     return Err(InvalidInput("GSUB alternate coverage count mismatch"))
   }
-  let pairs : Array[(Int, Array[Int])] = []
+  let pairs : Array[(Int32, Array[Int32])] = []
   for i in 0..<alt_count {
     let glyph = coverage[i]
     if glyph < 0 || glyph >= plan.old_to_new.length() {
@@ -6093,7 +6095,7 @@ fn build_gsub_alternate_subtable(
     if alt_base + 2 + glyph_count * 2 > bytes.length() {
       return Err(InvalidInput("invalid GSUB alternate set length"))
     }
-    let alternates : Array[Int] = []
+    let alternates : Array[Int32] = []
     for j in 0..<glyph_count {
       let alt = match read_u16(bytes, alt_base + 2 + j * 2) {
         Err(err) => return Err(err)
@@ -6115,7 +6117,7 @@ fn build_gsub_alternate_subtable(
     return Ok(None)
   }
   pairs.sort_by((a, b) => a.0 - b.0)
-  let glyphs : Array[Int] = []
+  let glyphs : Array[Int32] = []
   let alt_sets : Array[Bytes] = []
   for pair in pairs {
     let (gid, alternates) = pair
@@ -6132,7 +6134,7 @@ fn build_gsub_alternate_subtable(
   push_u16(out, 1)
   let header_len = 6 + alt_sets.length() * 2
   let mut cursor = header_len
-  let offsets : Array[Int] = []
+  let offsets : Array[Int32] = []
   for alt_set in alt_sets {
     offsets.push(cursor)
     cursor = cursor + alt_set.length()
@@ -6191,7 +6193,7 @@ fn build_gsub_ligature_subtable(
   if coverage.length() != set_count {
     return Err(InvalidInput("GSUB ligature coverage count mismatch"))
   }
-  let pairs : Array[(Int, Array[(Int, Array[Int])])] = []
+  let pairs : Array[(Int32, Array[(Int32, Array[Int32])])] = []
   for i in 0..<set_count {
     let glyph = coverage[i]
     if glyph < 0 || glyph >= plan.old_to_new.length() {
@@ -6222,7 +6224,7 @@ fn build_gsub_ligature_subtable(
     if set_base + 2 + lig_count * 2 > bytes.length() {
       return Err(InvalidInput("invalid GSUB ligature set length"))
     }
-    let ligatures : Array[(Int, Array[Int])] = []
+    let ligatures : Array[(Int32, Array[Int32])] = []
     for j in 0..<lig_count {
       let lig_offset = match read_u16(bytes, set_base + 2 + j * 2) {
         Err(err) => return Err(err)
@@ -6257,7 +6259,7 @@ fn build_gsub_ligature_subtable(
       if new_lig < 0 {
         continue
       }
-      let components : Array[Int] = []
+      let components : Array[Int32] = []
       let mut ok = true
       for k in 0..<comp_len {
         let comp = match read_u16(bytes, lig_base + 4 + k * 2) {
@@ -6287,7 +6289,7 @@ fn build_gsub_ligature_subtable(
     return Ok(None)
   }
   pairs.sort_by((a, b) => a.0 - b.0)
-  let glyphs : Array[Int] = []
+  let glyphs : Array[Int32] = []
   let lig_sets : Array[Bytes] = []
   for pair in pairs {
     let (gid, ligatures) = pair
@@ -6295,7 +6297,7 @@ fn build_gsub_ligature_subtable(
     let set_bytes : Array[Byte] = []
     push_u16(set_bytes, ligatures.length())
     let mut cursor = 2 + ligatures.length() * 2
-    let offsets : Array[Int] = []
+    let offsets : Array[Int32] = []
     let lig_bytes_list : Array[Bytes] = []
     for ligature in ligatures {
       let (lig_gid, components) = ligature
@@ -6325,7 +6327,7 @@ fn build_gsub_ligature_subtable(
   push_u16(out, 1)
   let header_len = 6 + lig_sets.length() * 2
   let mut cursor = header_len
-  let offsets : Array[Int] = []
+  let offsets : Array[Int32] = []
   for set_bytes in lig_sets {
     offsets.push(cursor)
     cursor = cursor + set_bytes.length()
@@ -6384,7 +6386,7 @@ fn build_gsub_contextual_subtable(
   if coverage.length() != set_count {
     return Err(InvalidInput("GSUB contextual coverage count mismatch"))
   }
-  let pairs : Array[(Int, Bytes)] = []
+  let pairs : Array[(Int32, Bytes)] = []
   for i in 0..<set_count {
     let glyph = coverage[i]
     if glyph < 0 || glyph >= plan.old_to_new.length() {
@@ -6448,7 +6450,7 @@ fn build_gsub_contextual_subtable(
       if input_base + input_len * 2 > bytes.length() {
         return Err(InvalidInput("invalid GSUB contextual input length"))
       }
-      let inputs : Array[Int] = []
+      let inputs : Array[Int32] = []
       let mut ok = true
       for k in 0..<input_len {
         let input_gid = match read_u16(bytes, input_base + k * 2) {
@@ -6494,7 +6496,7 @@ fn build_gsub_contextual_subtable(
       let set_bytes : Array[Byte] = []
       push_u16(set_bytes, rule_bytes_list.length())
       let mut cursor = 2 + rule_bytes_list.length() * 2
-      let offsets : Array[Int] = []
+      let offsets : Array[Int32] = []
       for rule_bytes in rule_bytes_list {
         offsets.push(cursor)
         cursor = cursor + rule_bytes.length()
@@ -6514,7 +6516,7 @@ fn build_gsub_contextual_subtable(
     return Ok(None)
   }
   pairs.sort_by((a, b) => a.0 - b.0)
-  let glyphs : Array[Int] = []
+  let glyphs : Array[Int32] = []
   let sets : Array[Bytes] = []
   for pair in pairs {
     let (gid, set_bytes) = pair
@@ -6526,7 +6528,7 @@ fn build_gsub_contextual_subtable(
   push_u16(out, 1)
   let header_len = 6 + sets.length() * 2
   let mut cursor = header_len
-  let offsets : Array[Int] = []
+  let offsets : Array[Int32] = []
   for set_bytes in sets {
     offsets.push(cursor)
     cursor = cursor + set_bytes.length()
@@ -6585,7 +6587,7 @@ fn build_gsub_chaining_subtable(
   if coverage.length() != set_count {
     return Err(InvalidInput("GSUB chaining coverage count mismatch"))
   }
-  let pairs : Array[(Int, Bytes)] = []
+  let pairs : Array[(Int32, Bytes)] = []
   for i in 0..<set_count {
     let glyph = coverage[i]
     if glyph < 0 || glyph >= plan.old_to_new.length() {
@@ -6669,7 +6671,7 @@ fn build_gsub_chaining_subtable(
         return Err(InvalidInput("invalid GSUB chaining rule length"))
       }
       let mut ok = true
-      let backtracks : Array[Int] = []
+      let backtracks : Array[Int32] = []
       for k in 0..<backtrack_count {
         let gid = match read_u16(bytes, backtrack_base + k * 2) {
           Err(err) => return Err(err)
@@ -6689,7 +6691,7 @@ fn build_gsub_chaining_subtable(
       if !ok {
         continue
       }
-      let inputs : Array[Int] = []
+      let inputs : Array[Int32] = []
       for k in 0..<input_len {
         let gid = match read_u16(bytes, input_base + k * 2) {
           Err(err) => return Err(err)
@@ -6709,7 +6711,7 @@ fn build_gsub_chaining_subtable(
       if !ok {
         continue
       }
-      let lookaheads : Array[Int] = []
+      let lookaheads : Array[Int32] = []
       for k in 0..<lookahead_count {
         let gid = match read_u16(bytes, lookahead_base + k * 2) {
           Err(err) => return Err(err)
@@ -6762,7 +6764,7 @@ fn build_gsub_chaining_subtable(
       let set_bytes : Array[Byte] = []
       push_u16(set_bytes, rule_bytes_list.length())
       let mut cursor = 2 + rule_bytes_list.length() * 2
-      let offsets : Array[Int] = []
+      let offsets : Array[Int32] = []
       for rule_bytes in rule_bytes_list {
         offsets.push(cursor)
         cursor = cursor + rule_bytes.length()
@@ -6782,7 +6784,7 @@ fn build_gsub_chaining_subtable(
     return Ok(None)
   }
   pairs.sort_by((a, b) => a.0 - b.0)
-  let glyphs : Array[Int] = []
+  let glyphs : Array[Int32] = []
   let sets : Array[Bytes] = []
   for pair in pairs {
     let (gid, set_bytes) = pair
@@ -6794,7 +6796,7 @@ fn build_gsub_chaining_subtable(
   push_u16(out, 1)
   let header_len = 6 + sets.length() * 2
   let mut cursor = header_len
-  let offsets : Array[Int] = []
+  let offsets : Array[Int32] = []
   for set_bytes in sets {
     offsets.push(cursor)
     cursor = cursor + set_bytes.length()
@@ -6820,7 +6822,7 @@ fn build_gsub_chaining_subtable(
 fn build_gsub_extension_subtable(
   bytes : Array[Byte],
   plan : SubsetPlan,
-) -> Result[(Int, Bytes)?, SubsetError] {
+) -> Result[(Int32, Bytes)?, SubsetError] {
   if bytes.length() < 8 {
     return Err(InvalidInput("invalid GSUB extension subtable"))
   }
@@ -6943,8 +6945,8 @@ fn build_gsub_reverse_chaining_subtable(
     return Err(InvalidInput("GSUB reverse chaining coverage count mismatch"))
   }
   let mut ok = true
-  let new_coverage : Array[Int] = []
-  let new_subs : Array[Int] = []
+  let new_coverage : Array[Int32] = []
+  let new_subs : Array[Int32] = []
   for i in 0..<glyph_count {
     let glyph = coverage[i]
     let sub = match read_u16(bytes, substitute_base + i * 2) {
@@ -6983,7 +6985,7 @@ fn build_gsub_reverse_chaining_subtable(
       Err(err) => return Err(err)
       Ok(value) => value
     }
-    let mapped : Array[Int] = []
+    let mapped : Array[Int32] = []
     for glyph in coverage {
       if glyph < 0 || glyph >= plan.old_to_new.length() {
         ok = false
@@ -7014,7 +7016,7 @@ fn build_gsub_reverse_chaining_subtable(
       Err(err) => return Err(err)
       Ok(value) => value
     }
-    let mapped : Array[Int] = []
+    let mapped : Array[Int32] = []
     for glyph in coverage {
       if glyph < 0 || glyph >= plan.old_to_new.length() {
         ok = false
@@ -7107,7 +7109,7 @@ fn build_gpos_single_subtable(
     if record_base + record_size > bytes.length() {
       return Err(InvalidInput("invalid GPOS value record"))
     }
-    let kept : Array[Int] = []
+    let kept : Array[Int32] = []
     for glyph in coverage {
       if glyph < 0 || glyph >= plan.old_to_new.length() {
         return Err(InvalidInput("glyph id out of range"))
@@ -7151,7 +7153,7 @@ fn build_gpos_single_subtable(
     if record_base + value_count * record_size > bytes.length() {
       return Err(InvalidInput("invalid GPOS value records"))
     }
-    let pairs : Array[(Int, Bytes)] = []
+    let pairs : Array[(Int32, Bytes)] = []
     for i in 0..<value_count {
       let glyph = coverage[i]
       if glyph < 0 || glyph >= plan.old_to_new.length() {
@@ -7169,7 +7171,7 @@ fn build_gpos_single_subtable(
       return Ok(None)
     }
     pairs.sort_by((a, b) => a.0 - b.0)
-    let glyphs : Array[Int] = []
+    let glyphs : Array[Int32] = []
     let records : Array[Bytes] = []
     for pair in pairs {
       let (gid, record_bytes) = pair
@@ -7199,21 +7201,21 @@ fn build_gpos_single_subtable(
 
 ///|
 fn build_gpos_pair_format1(
-  value_format1 : Int,
-  value_format2 : Int,
-  records : Array[(Int, Array[(Int, Bytes)])],
+  value_format1 : Int32,
+  value_format2 : Int32,
+  records : Array[(Int32, Array[(Int32, Bytes)])],
 ) -> Bytes {
-  let sorted : Array[(Int, Array[(Int, Bytes)])] = []
+  let sorted : Array[(Int32, Array[(Int32, Bytes)])] = []
   for record in records {
     sorted.push(record)
   }
   sorted.sort_by((a, b) => a.0 - b.0)
-  let glyphs : Array[Int] = []
+  let glyphs : Array[Int32] = []
   let pair_sets : Array[Bytes] = []
   for record in sorted {
     let (first_gid, pairs) = record
     glyphs.push(first_gid)
-    let sorted_pairs : Array[(Int, Bytes)] = []
+    let sorted_pairs : Array[(Int32, Bytes)] = []
     for pair in pairs {
       sorted_pairs.push(pair)
     }
@@ -7234,7 +7236,7 @@ fn build_gpos_pair_format1(
   push_u16(out, 1)
   let header_len = 10 + pair_sets.length() * 2
   let mut cursor = header_len
-  let offsets : Array[Int] = []
+  let offsets : Array[Int32] = []
   for set_bytes in pair_sets {
     offsets.push(cursor)
     cursor = cursor + set_bytes.length()
@@ -7313,7 +7315,7 @@ fn build_gpos_pair_subtable(
     if offsets_base + pair_set_count * 2 > bytes.length() {
       return Err(InvalidInput("invalid GPOS pair set offsets"))
     }
-    let records : Array[(Int, Array[(Int, Bytes)])] = []
+    let records : Array[(Int32, Array[(Int32, Bytes)])] = []
     let pair_record_size = 2 + record_size
     for i in 0..<pair_set_count {
       let glyph = coverage[i]
@@ -7343,7 +7345,7 @@ fn build_gpos_pair_subtable(
       if record_base + pair_value_count * pair_record_size > bytes.length() {
         return Err(InvalidInput("invalid GPOS pair value records"))
       }
-      let pairs : Array[(Int, Bytes)] = []
+      let pairs : Array[(Int32, Bytes)] = []
       for j in 0..<pair_value_count {
         let entry_base = record_base + j * pair_record_size
         let second_gid = match read_u16(bytes, entry_base) {
@@ -7406,7 +7408,7 @@ fn build_gpos_pair_subtable(
     if matrix_base + class1_count * class1_record_size > bytes.length() {
       return Err(InvalidInput("invalid GPOS class pair records"))
     }
-    let coverage_pairs : Array[(Int, Int)] = []
+    let coverage_pairs : Array[(Int32, Int32)] = []
     for glyph in coverage {
       if glyph < 0 || glyph >= plan.old_to_new.length() {
         return Err(InvalidInput("glyph id out of range"))
@@ -7420,9 +7422,9 @@ fn build_gpos_pair_subtable(
       return Ok(None)
     }
     coverage_pairs.sort_by((a, b) => a.0 - b.0)
-    let coverage_new : Array[Int] = []
-    let old_class1_indices : Array[Int] = []
-    let class_values1 : Array[Int] = Array::make(plan.glyphs.length(), 0)
+    let coverage_new : Array[Int32] = []
+    let old_class1_indices : Array[Int32] = []
+    let class_values1 : Array[Int32] = Array::make(plan.glyphs.length(), 0)
     for i in 0..<coverage_pairs.length() {
       let (new_gid, old_gid) = coverage_pairs[i]
       coverage_new.push(new_gid)
@@ -7440,7 +7442,7 @@ fn build_gpos_pair_subtable(
       None => return Ok(None)
       Some(value) => value
     }
-    let class_values2 : Array[Int] = []
+    let class_values2 : Array[Int32] = []
     for old_gid in plan.glyphs {
       let gid = old_gid.reinterpret_as_int()
       let class2 = match class_def_value_subset(bytes, class2_base, gid) {
@@ -7450,7 +7452,7 @@ fn build_gpos_pair_subtable(
       let class2_index = if class2 >= class2_count { 0 } else { class2 }
       class_values2.push(class2_index)
     }
-    let used_classes : Array[Int] = []
+    let used_classes : Array[Int32] = []
     for value in class_values2 {
       if value > 0 {
         let mut exists = false
@@ -7466,8 +7468,8 @@ fn build_gpos_pair_subtable(
       }
     }
     used_classes.sort()
-    let class_values2_new : Array[Int] = []
-    let old_class2_for_new : Array[Int] = [0]
+    let class_values2_new : Array[Int32] = []
+    let old_class2_for_new : Array[Int32] = [0]
     for value in used_classes {
       old_class2_for_new.push(value)
     }
@@ -7539,7 +7541,7 @@ fn build_gpos_pair_subtable(
 }
 
 ///|
-fn build_mark_array_bytes(records : Array[(Int, Int, Bytes)]) -> Bytes {
+fn build_mark_array_bytes(records : Array[(Int32, Int32, Bytes)]) -> Bytes {
   let out : Array[Byte] = []
   push_u16(out, records.length())
   let mut cursor = 2 + records.length() * 4
@@ -7561,8 +7563,8 @@ fn build_mark_array_bytes(records : Array[(Int, Int, Bytes)]) -> Bytes {
 
 ///|
 fn build_base_array_bytes(
-  records : Array[(Int, Array[Bytes?])],
-  class_count : Int,
+  records : Array[(Int32, Array[Bytes?])],
+  class_count : Int32,
 ) -> Bytes {
   let out : Array[Byte] = []
   push_u16(out, records.length())
@@ -7592,7 +7594,7 @@ fn build_base_array_bytes(
 ///|
 fn build_ligature_attach_bytes(
   components : Array[Array[Bytes?]],
-  class_count : Int,
+  class_count : Int32,
 ) -> Bytes {
   let out : Array[Byte] = []
   push_u16(out, components.length())
@@ -7620,8 +7622,8 @@ fn build_ligature_attach_bytes(
 
 ///|
 fn build_ligature_array_bytes(
-  records : Array[(Int, Array[Array[Bytes?]])],
-  class_count : Int,
+  records : Array[(Int32, Array[Array[Bytes?]])],
+  class_count : Int32,
 ) -> Bytes {
   let out : Array[Byte] = []
   push_u16(out, records.length())
@@ -7679,7 +7681,7 @@ fn build_gpos_cursive_subtable(
   if coverage.length() != entry_exit_count {
     return Err(InvalidInput("GPOS cursive coverage count mismatch"))
   }
-  let records : Array[(Int, Bytes?, Bytes?)] = []
+  let records : Array[(Int32, Bytes?, Bytes?)] = []
   for i in 0..<entry_exit_count {
     let glyph = coverage[i]
     if glyph < 0 || glyph >= plan.old_to_new.length() {
@@ -7721,7 +7723,7 @@ fn build_gpos_cursive_subtable(
     return Ok(None)
   }
   records.sort_by((a, b) => a.0 - b.0)
-  let glyphs : Array[Int] = []
+  let glyphs : Array[Int32] = []
   let out_records : Array[Byte] = []
   push_u16(out_records, records.length())
   let mut cursor = 2 + records.length() * 4
@@ -7841,7 +7843,7 @@ fn build_gpos_mark_base_subtable(
     return Err(InvalidInput("invalid GPOS base array bounds"))
   }
 
-  let mark_records : Array[(Int, Int, Bytes)] = []
+  let mark_records : Array[(Int32, Int32, Bytes)] = []
   for i in 0..<mark_count {
     let glyph = mark_coverage[i]
     if glyph < 0 || glyph >= plan.old_to_new.length() {
@@ -7875,7 +7877,7 @@ fn build_gpos_mark_base_subtable(
     mark_records.push((new_gid, mark_class, mark_anchor))
   }
 
-  let base_records : Array[(Int, Array[Bytes?])] = []
+  let base_records : Array[(Int32, Array[Bytes?])] = []
   for i in 0..<base_count {
     let glyph = base_coverage[i]
     if glyph < 0 || glyph >= plan.old_to_new.length() {
@@ -7915,8 +7917,8 @@ fn build_gpos_mark_base_subtable(
   }
   mark_records.sort_by((a, b) => a.0 - b.0)
   base_records.sort_by((a, b) => a.0 - b.0)
-  let mark_glyphs : Array[Int] = []
-  let base_glyphs : Array[Int] = []
+  let mark_glyphs : Array[Int32] = []
+  let base_glyphs : Array[Int32] = []
   for record in mark_records {
     mark_glyphs.push(record.0)
   }
@@ -8029,7 +8031,7 @@ fn build_gpos_mark_ligature_subtable(
     return Err(InvalidInput("invalid GPOS ligature array bounds"))
   }
 
-  let mark_records : Array[(Int, Int, Bytes)] = []
+  let mark_records : Array[(Int32, Int32, Bytes)] = []
   for i in 0..<mark_count {
     let glyph = mark_coverage[i]
     if glyph < 0 || glyph >= plan.old_to_new.length() {
@@ -8063,7 +8065,7 @@ fn build_gpos_mark_ligature_subtable(
     mark_records.push((new_gid, mark_class, mark_anchor))
   }
 
-  let lig_records : Array[(Int, Array[Array[Bytes?]])] = []
+  let lig_records : Array[(Int32, Array[Array[Bytes?]])] = []
   for i in 0..<lig_count {
     let glyph = lig_coverage[i]
     if glyph < 0 || glyph >= plan.old_to_new.length() {
@@ -8130,8 +8132,8 @@ fn build_gpos_mark_ligature_subtable(
   }
   mark_records.sort_by((a, b) => a.0 - b.0)
   lig_records.sort_by((a, b) => a.0 - b.0)
-  let mark_glyphs : Array[Int] = []
-  let lig_glyphs : Array[Int] = []
+  let mark_glyphs : Array[Int32] = []
+  let lig_glyphs : Array[Int32] = []
   for record in mark_records {
     mark_glyphs.push(record.0)
   }
@@ -8246,7 +8248,7 @@ fn build_gpos_mark_mark_subtable(
     return Err(InvalidInput("invalid GPOS mark2 array bounds"))
   }
 
-  let mark1_records : Array[(Int, Int, Bytes)] = []
+  let mark1_records : Array[(Int32, Int32, Bytes)] = []
   for i in 0..<mark1_count {
     let glyph = mark1_coverage[i]
     if glyph < 0 || glyph >= plan.old_to_new.length() {
@@ -8280,7 +8282,7 @@ fn build_gpos_mark_mark_subtable(
     mark1_records.push((new_gid, mark_class, mark_anchor))
   }
 
-  let mark2_records : Array[(Int, Array[Bytes?])] = []
+  let mark2_records : Array[(Int32, Array[Bytes?])] = []
   for i in 0..<mark2_count {
     let glyph = mark2_coverage[i]
     if glyph < 0 || glyph >= plan.old_to_new.length() {
@@ -8320,8 +8322,8 @@ fn build_gpos_mark_mark_subtable(
   }
   mark1_records.sort_by((a, b) => a.0 - b.0)
   mark2_records.sort_by((a, b) => a.0 - b.0)
-  let mark1_glyphs : Array[Int] = []
-  let mark2_glyphs : Array[Int] = []
+  let mark1_glyphs : Array[Int32] = []
+  let mark2_glyphs : Array[Int32] = []
   for record in mark1_records {
     mark1_glyphs.push(record.0)
   }
@@ -8380,7 +8382,7 @@ fn build_gpos_chaining_subtable(
 fn build_gpos_extension_subtable(
   bytes : Array[Byte],
   plan : SubsetPlan,
-) -> Result[(Int, Bytes)?, SubsetError] {
+) -> Result[(Int32, Bytes)?, SubsetError] {
   if bytes.length() < 8 {
     return Err(InvalidInput("invalid GPOS extension subtable"))
   }
@@ -8460,8 +8462,8 @@ fn build_gpos_extension_subtable(
 ///|
 fn parse_lookup_header(
   bytes : Array[Byte],
-  offset : Int,
-) -> Result[(Int, Int, Int?, Array[Int]), SubsetError] {
+  offset : Int32,
+) -> Result[(Int32, Int32, Int32?, Array[Int32]), SubsetError] {
   let lookup_type = match read_u16(bytes, offset) {
     Err(err) => return Err(err)
     Ok(value) => value
@@ -8481,7 +8483,7 @@ fn parse_lookup_header(
   if offsets_base + subtable_count * 2 > bytes.length() {
     return Err(InvalidInput("invalid lookup offsets"))
   }
-  let subtable_offsets : Array[Int] = []
+  let subtable_offsets : Array[Int32] = []
   for i in 0..<subtable_count {
     let value = match read_u16(bytes, offsets_base + i * 2) {
       Err(err) => return Err(err)
@@ -8510,11 +8512,11 @@ fn parse_lookup_header(
 
 ///|
 fn lookup_subtable_range(
-  bytes_len : Int,
-  base : Int,
-  sub_offsets : Array[Int],
-  index : Int,
-) -> (Int, Int)? {
+  bytes_len : Int32,
+  base : Int32,
+  sub_offsets : Array[Int32],
+  index : Int32,
+) -> (Int32, Int32)? {
   if index < 0 || index >= sub_offsets.length() {
     return None
   }
@@ -8542,9 +8544,9 @@ fn lookup_subtable_range(
 ///|
 fn gsub_subtable_bytes(
   bytes : Array[Byte],
-  base : Int,
-  sub_offsets : Array[Int],
-  index : Int,
+  base : Int32,
+  sub_offsets : Array[Int32],
+  index : Int32,
 ) -> Result[Array[Byte], SubsetError] {
   let range = lookup_subtable_range(bytes.length(), base, sub_offsets, index)
   match range {
@@ -8556,9 +8558,9 @@ fn gsub_subtable_bytes(
 ///|
 fn gpos_subtable_bytes(
   bytes : Array[Byte],
-  base : Int,
-  sub_offsets : Array[Int],
-  index : Int,
+  base : Int32,
+  sub_offsets : Array[Int32],
+  index : Int32,
 ) -> Result[Array[Byte], SubsetError] {
   if index < 0 || index >= sub_offsets.length() {
     return Err(InvalidInput("invalid GPOS subtable bounds"))
@@ -8576,9 +8578,9 @@ fn gpos_subtable_bytes(
 
 ///|
 fn build_lookup_bytes(
-  lookup_type : Int,
-  lookup_flag : Int,
-  mark_set : Int?,
+  lookup_type : Int32,
+  lookup_flag : Int32,
+  mark_set : Int32?,
   subtables : Array[Bytes],
 ) -> Result[Bytes, SubsetError] {
   let out : Array[Byte] = []
@@ -8615,7 +8617,7 @@ fn push_langsys_no_features(out : Array[Byte]) -> Unit {
 ///|
 fn build_script_table_no_features(
   has_default : Bool,
-  lang_tags : Array[Int],
+  lang_tags : Array[Int32],
 ) -> Bytes {
   let lang_count = lang_tags.length()
   let header_len = 4 + lang_count * 6
@@ -8624,7 +8626,7 @@ fn build_script_table_no_features(
   if has_default {
     cursor = cursor + 6
   }
-  let offsets : Array[Int] = []
+  let offsets : Array[Int32] = []
   for _ in 0..<lang_count {
     offsets.push(cursor)
     cursor = cursor + 6
@@ -8660,7 +8662,7 @@ fn build_script_list_no_features(
   if script_count < 0 {
     return Err(InvalidInput("invalid script count"))
   }
-  let records : Array[(Int, Bool, Array[Int])] = []
+  let records : Array[(Int32, Bool, Array[Int32])] = []
   let dflt_tag = @common.Tag::from_chars('D', 'F', 'L', 'T').to_uint()
   for i in 0..<script_count {
     let record_base = 2 + i * 6
@@ -8702,7 +8704,7 @@ fn build_script_list_no_features(
     record_tables.push(build_script_table_no_features(record.1, record.2))
   }
   let record_count = records.length()
-  let unique_tables : Array[(Int, Int, Bytes)] = []
+  let unique_tables : Array[(Int32, Int32, Bytes)] = []
   for table_bytes in record_tables {
     let mut exists = false
     for entry in unique_tables {
@@ -8727,14 +8729,14 @@ fn build_script_list_no_features(
   })
   let mut cursor = 2 + record_count * 6
   let script_tables : Array[Bytes] = []
-  let script_offsets : Array[Int] = []
+  let script_offsets : Array[Int32] = []
   for entry in unique_tables {
     let table_bytes = entry.2
     script_tables.push(table_bytes)
     script_offsets.push(cursor)
     cursor = cursor + table_bytes.length()
   }
-  let record_offsets : Array[Int] = []
+  let record_offsets : Array[Int32] = []
   for table_bytes in record_tables {
     let mut offset = 0
     for i in 0..<script_tables.length() {
@@ -8761,22 +8763,22 @@ fn build_script_list_no_features(
 
 ///|
 priv struct FeatureEntry {
-  tag : Int
-  params : Int
-  lookup_indices : Array[Int]
+  tag : Int32
+  params : Int32
+  lookup_indices : Array[Int32]
 }
 
 ///|
 priv struct LangSysData {
-  req_feature : Int
-  feature_indices : Array[Int]
+  req_feature : Int32
+  feature_indices : Array[Int32]
 }
 
 ///|
 priv struct ScriptEntry {
-  tag : Int
+  tag : Int32
   default_lang : LangSysData?
-  languages : Array[(Int, LangSysData)]
+  languages : Array[(Int32, LangSysData)]
 }
 
 ///|
@@ -8829,7 +8831,7 @@ fn parse_feature_list_bytes(
     if lookup_base + lookup_count * 2 > feature_bytes.length() {
       return Err(InvalidInput("invalid feature lookup indices"))
     }
-    let lookup_indices : Array[Int] = []
+    let lookup_indices : Array[Int32] = []
     for j in 0..<lookup_count {
       let lookup_index = match read_u16(feature_bytes, lookup_base + j * 2) {
         Err(err) => return Err(err)
@@ -8847,7 +8849,7 @@ fn build_feature_list_bytes(features : Array[FeatureEntry]) -> Bytes {
   let out : Array[Byte] = []
   push_u16(out, features.length())
   let mut cursor = 2 + features.length() * 6
-  let offsets : Array[Int] = []
+  let offsets : Array[Int32] = []
   for feature in features {
     offsets.push(cursor)
     cursor = cursor + 4 + feature.lookup_indices.length() * 2
@@ -8869,7 +8871,7 @@ fn build_feature_list_bytes(features : Array[FeatureEntry]) -> Bytes {
 ///|
 fn parse_langsys_bytes(
   bytes : Array[Byte],
-  offset : Int,
+  offset : Int32,
 ) -> Result[LangSysData, SubsetError] {
   if offset < 0 || offset + 6 > bytes.length() {
     return Err(InvalidInput("invalid LangSys offset"))
@@ -8893,7 +8895,7 @@ fn parse_langsys_bytes(
   if feature_base + feature_count * 2 > bytes.length() {
     return Err(InvalidInput("invalid LangSys feature indices"))
   }
-  let feature_indices : Array[Int] = []
+  let feature_indices : Array[Int32] = []
   for i in 0..<feature_count {
     let index = match read_u16(bytes, feature_base + i * 2) {
       Err(err) => return Err(err)
@@ -8965,7 +8967,7 @@ fn parse_script_list_bytes(
         },
       )
     }
-    let languages : Array[(Int, LangSysData)] = []
+    let languages : Array[(Int32, LangSysData)] = []
     for j in 0..<lang_count {
       let entry_base = lang_record_base + j * 6
       let lang_tag = match read_u32(script_bytes, entry_base) {
@@ -9006,7 +9008,7 @@ fn build_langsys_bytes(lang : LangSysData) -> Bytes {
 ///|
 fn build_script_table_filtered(
   default_lang : LangSysData?,
-  languages : Array[(Int, LangSysData)],
+  languages : Array[(Int32, LangSysData)],
 ) -> Bytes {
   let lang_count = languages.length()
   let header_len = 4 + lang_count * 6
@@ -9015,7 +9017,7 @@ fn build_script_table_filtered(
     None => None
     Some(lang) => Some(build_langsys_bytes(lang))
   }
-  let lang_tags : Array[Int] = []
+  let lang_tags : Array[Int32] = []
   let lang_tables : Array[Bytes] = []
   for entry in languages {
     let (tag, lang) = entry
@@ -9030,7 +9032,7 @@ fn build_script_table_filtered(
       offset
     }
   }
-  let offsets : Array[Int] = []
+  let offsets : Array[Int32] = []
   for table_bytes in lang_tables {
     offsets.push(cursor)
     cursor = cursor + table_bytes.length()
@@ -9060,7 +9062,7 @@ fn build_script_table_filtered(
 ///|
 fn build_script_list_filtered(entries : Array[ScriptEntry]) -> Bytes {
   let record_count = entries.length()
-  let record_tags : Array[Int] = []
+  let record_tags : Array[Int32] = []
   let record_tables : Array[Bytes] = []
   for entry in entries {
     record_tags.push(entry.tag)
@@ -9068,7 +9070,7 @@ fn build_script_list_filtered(entries : Array[ScriptEntry]) -> Bytes {
       build_script_table_filtered(entry.default_lang, entry.languages),
     )
   }
-  let unique_tables : Array[(Int, Int, Bytes)] = []
+  let unique_tables : Array[(Int32, Int32, Bytes)] = []
   for table_bytes in record_tables {
     let mut exists = false
     for entry in unique_tables {
@@ -9093,14 +9095,14 @@ fn build_script_list_filtered(entries : Array[ScriptEntry]) -> Bytes {
   })
   let mut cursor = 2 + record_count * 6
   let script_tables : Array[Bytes] = []
-  let script_offsets : Array[Int] = []
+  let script_offsets : Array[Int32] = []
   for entry in unique_tables {
     let table_bytes = entry.2
     script_tables.push(table_bytes)
     script_offsets.push(cursor)
     cursor = cursor + table_bytes.length()
   }
-  let record_offsets : Array[Int] = []
+  let record_offsets : Array[Int32] = []
   for table_bytes in record_tables {
     let mut offset = 0
     for i in 0..<script_tables.length() {
@@ -9128,7 +9130,7 @@ fn build_script_list_filtered(entries : Array[ScriptEntry]) -> Bytes {
 ///|
 fn map_langsys_features(
   lang : LangSysData,
-  feature_map : Array[Int],
+  feature_map : Array[Int32],
 ) -> Result[LangSysData, SubsetError] {
   let mut req_feature = lang.req_feature
   if req_feature != 0xFFFF {
@@ -9138,7 +9140,7 @@ fn map_langsys_features(
     let mapped = feature_map[req_feature]
     req_feature = if mapped < 0 { 0xFFFF } else { mapped }
   }
-  let new_indices : Array[Int] = []
+  let new_indices : Array[Int32] = []
   for index in lang.feature_indices {
     if index < 0 || index >= feature_map.length() {
       return Err(InvalidInput("invalid LangSys feature index"))
@@ -9164,7 +9166,7 @@ fn filter_layout_tables(
   if features.is_empty() {
     return Ok(None)
   }
-  let feature_map : Array[Int] = Array::make(features.length(), -1)
+  let feature_map : Array[Int32] = Array::make(features.length(), -1)
   let kept_features : Array[FeatureEntry] = []
   for i in 0..<features.length() {
     let feature = features[i]
@@ -9185,7 +9187,7 @@ fn filter_layout_tables(
       lookup_used[index] = true
     }
   }
-  let lookup_map : Array[Int] = Array::make(lookup_used.length(), -1)
+  let lookup_map : Array[Int32] = Array::make(lookup_used.length(), -1)
   let filtered_lookups : Array[Bytes] = []
   for i in 0..<lookup_used.length() {
     if lookup_used[i] {
@@ -9195,7 +9197,7 @@ fn filter_layout_tables(
   }
   let remapped_features : Array[FeatureEntry] = []
   for feature in kept_features {
-    let new_indices : Array[Int] = []
+    let new_indices : Array[Int32] = []
     for index in feature.lookup_indices {
       let mapped = lookup_map[index]
       if mapped < 0 {
@@ -9225,7 +9227,7 @@ fn filter_layout_tables(
           },
         )
     }
-    let languages : Array[(Int, LangSysData)] = []
+    let languages : Array[(Int32, LangSysData)] = []
     for entry in script.languages {
       let (lang_tag, lang) = entry
       let mapped = match map_langsys_features(lang, feature_map) {
@@ -9300,7 +9302,7 @@ fn build_gsub_subset(
       if offsets_base + lookup_count * 2 > bytes.length() {
         return Err(InvalidInput("invalid lookup list offsets"))
       }
-      let lookup_offsets : Array[Int] = []
+      let lookup_offsets : Array[Int32] = []
       for i in 0..<lookup_count {
         let value = match read_u16(bytes, offsets_base + i * 2) {
           Err(err) => return Err(err)
@@ -9637,7 +9639,7 @@ fn build_gpos_subset(
       if offsets_base + lookup_count * 2 > bytes.length() {
         return Err(InvalidInput("invalid lookup list offsets"))
       }
-      let lookup_offsets : Array[Int] = []
+      let lookup_offsets : Array[Int32] = []
       for i in 0..<lookup_count {
         let value = match read_u16(bytes, offsets_base + i * 2) {
           Err(err) => return Err(err)
@@ -9956,7 +9958,7 @@ fn build_lookup_list_bytes(
 ///|
 fn build_attach_list_subset(
   bytes : Array[Byte],
-  offset : Int,
+  offset : Int32,
   plan : SubsetPlan,
 ) -> Result[Bytes?, SubsetError] {
   let cov_offset = match read_u16(bytes, offset) {
@@ -9982,7 +9984,7 @@ fn build_attach_list_subset(
   if glyphs.length() != glyph_count {
     return Err(InvalidInput("attach list glyph count mismatch"))
   }
-  let records : Array[(Int, Bytes)] = []
+  let records : Array[(Int32, Bytes)] = []
   for i in 0..<glyph_count {
     let glyph = glyphs[i]
     if glyph < 0 || glyph >= plan.old_to_new.length() {
@@ -10023,7 +10025,7 @@ fn build_attach_list_subset(
     let (gid_b, _) = b
     gid_a - gid_b
   })
-  let mapped : Array[Int] = []
+  let mapped : Array[Int32] = []
   for record in records {
     mapped.push(record.0)
   }
@@ -10033,7 +10035,7 @@ fn build_attach_list_subset(
   push_u16(out, header_len)
   push_u16(out, records.length())
   let mut cursor = header_len + coverage.length()
-  let offsets : Array[Int] = []
+  let offsets : Array[Int32] = []
   for record in records {
     offsets.push(cursor)
     cursor = cursor + record.1.length()
@@ -10055,8 +10057,8 @@ fn build_attach_list_subset(
 ///|
 fn device_table_length(
   bytes : Array[Byte],
-  offset : Int,
-) -> Result[Int, SubsetError] {
+  offset : Int32,
+) -> Result[Int32, SubsetError] {
   let start_size = match read_u16(bytes, offset) {
     Err(err) => return Err(err)
     Ok(value) => value
@@ -10101,9 +10103,9 @@ fn bytes_equal(a : Array[Byte], b : Array[Byte]) -> Bool {
 
 ///|
 fn find_table_offset(
-  tables : Array[(Array[Byte], Int)],
+  tables : Array[(Array[Byte], Int32)],
   bytes : Array[Byte],
-) -> Int? {
+) -> Int32? {
   for entry in tables {
     let (existing, offset) = entry
     if bytes_equal(existing, bytes) {
@@ -10116,9 +10118,9 @@ fn find_table_offset(
 ///|
 fn read_math_value_record_bytes(
   bytes : Array[Byte],
-  offset : Int,
-  base : Int,
-) -> Result[(Int, Array[Byte]), SubsetError] {
+  offset : Int32,
+  base : Int32,
+) -> Result[(Int32, Array[Byte]), SubsetError] {
   let value = match read_i16(bytes, offset) {
     Err(err) => return Err(err)
     Ok(value) => value
@@ -10147,7 +10149,7 @@ fn read_math_value_record_bytes(
 
 ///|
 fn build_math_value_table(
-  entries : Array[(Int, Array[Byte])],
+  entries : Array[(Int32, Array[Byte])],
   coverage : Bytes,
 ) -> Bytes {
   let coverage_bytes = coverage.to_array()
@@ -10182,7 +10184,7 @@ fn build_math_value_table(
 ///|
 fn build_math_value_table_subset(
   bytes : Array[Byte],
-  offset : Int,
+  offset : Int32,
   plan : SubsetPlan,
 ) -> Result[Bytes, SubsetError] {
   let coverage_offset = match read_u16(bytes, offset) {
@@ -10207,7 +10209,7 @@ fn build_math_value_table_subset(
   if coverage_glyphs.length() < count {
     return Err(InvalidInput("invalid MATH coverage count"))
   }
-  let entries : Array[(Int, Int, Array[Byte])] = []
+  let entries : Array[(Int32, Int32, Array[Byte])] = []
   let record_base = offset + 4
   for i in 0..<count {
     let gid = coverage_glyphs[i]
@@ -10228,12 +10230,12 @@ fn build_math_value_table_subset(
   }
   if entries.is_empty() {
     let coverage = build_coverage_compact([])
-    let records : Array[(Int, Array[Byte])] = []
+    let records : Array[(Int32, Array[Byte])] = []
     return Ok(build_math_value_table(records, coverage))
   }
   entries.sort_by((a, b) => a.0 - b.0)
-  let mapped_glyphs : Array[Int] = []
-  let records : Array[(Int, Array[Byte])] = []
+  let mapped_glyphs : Array[Int32] = []
+  let records : Array[(Int32, Array[Byte])] = []
   for entry in entries {
     let (gid, value, device) = entry
     mapped_glyphs.push(gid)
@@ -10246,7 +10248,7 @@ fn build_math_value_table_subset(
 ///|
 fn build_math_kern_table(
   bytes : Array[Byte],
-  offset : Int,
+  offset : Int32,
 ) -> Result[Bytes, SubsetError] {
   let height_count = match read_u16(bytes, offset) {
     Err(err) => return Err(err)
@@ -10257,7 +10259,7 @@ fn build_math_kern_table(
   if record_base + total * 4 > bytes.length() {
     return Err(InvalidInput("invalid MATH kern table"))
   }
-  let entries : Array[(Int, Array[Byte])] = []
+  let entries : Array[(Int32, Array[Byte])] = []
   for i in 0..<total {
     let record_offset = record_base + i * 4
     let entry = match
@@ -10292,7 +10294,7 @@ fn build_math_kern_table(
 ///|
 fn build_math_kern_info_table(
   bytes : Array[Byte],
-  offset : Int,
+  offset : Int32,
   plan : SubsetPlan,
 ) -> Result[Bytes, SubsetError] {
   let coverage_offset = match read_u16(bytes, offset) {
@@ -10317,7 +10319,7 @@ fn build_math_kern_info_table(
   if coverage_glyphs.length() < count {
     return Err(InvalidInput("invalid MATH coverage count"))
   }
-  let entries : Array[(Int, Array[Bytes?])] = []
+  let entries : Array[(Int32, Array[Bytes?])] = []
   let record_base = offset + 4
   for i in 0..<count {
     let gid = coverage_glyphs[i]
@@ -10359,7 +10361,7 @@ fn build_math_kern_info_table(
     return Ok(Bytes::from_array(out))
   }
   entries.sort_by((a, b) => a.0 - b.0)
-  let mapped_glyphs : Array[Int] = []
+  let mapped_glyphs : Array[Int32] = []
   for entry in entries {
     mapped_glyphs.push(entry.0)
   }
@@ -10404,7 +10406,7 @@ fn build_math_kern_info_table(
 ///|
 fn build_math_glyph_construction_subset(
   bytes : Array[Byte],
-  offset : Int,
+  offset : Int32,
   plan : SubsetPlan,
 ) -> Result[Bytes?, SubsetError] {
   let assembly_offset = match read_u16(bytes, offset) {
@@ -10415,7 +10417,7 @@ fn build_math_glyph_construction_subset(
     Err(err) => return Err(err)
     Ok(value) => value
   }
-  let variants : Array[(Int, Int)] = []
+  let variants : Array[(Int32, Int32)] = []
   let record_base = offset + 4
   if record_base + variant_count * 4 > bytes.length() {
     return Err(InvalidInput("invalid MATH construction records"))
@@ -10438,8 +10440,8 @@ fn build_math_glyph_construction_subset(
       variants.push((mapped, advance))
     }
   }
-  let mut assembly_value : (Int, Array[Byte])? = None
-  let parts : Array[(Int, Int, Int, Int, Int)] = []
+  let mut assembly_value : (Int32, Array[Byte])? = None
+  let parts : Array[(Int32, Int32, Int32, Int32, Int32)] = []
   if assembly_offset != 0 {
     let assembly_base = offset + assembly_offset
     if assembly_base < 0 || assembly_base + 6 > bytes.length() {
@@ -10539,7 +10541,7 @@ fn build_math_glyph_construction_subset(
 ///|
 fn build_math_glyph_info_subset(
   bytes : Array[Byte],
-  offset : Int,
+  offset : Int32,
   plan : SubsetPlan,
 ) -> Result[Bytes?, SubsetError] {
   if offset == 0 {
@@ -10594,7 +10596,7 @@ fn build_math_glyph_info_subset(
       Err(err) => return Err(err)
       Ok(value) => value
     }
-    let mapped : Array[Int] = []
+    let mapped : Array[Int32] = []
     for glyph in coverage_glyphs {
       if glyph < 0 || glyph >= plan.old_to_new.length() {
         return Err(InvalidInput("glyph id out of range"))
@@ -10617,7 +10619,7 @@ fn build_math_glyph_info_subset(
       },
     )
   }
-  let table_pool : Array[(Array[Byte], Int)] = []
+  let table_pool : Array[(Array[Byte], Int32)] = []
   let table_out : Array[Array[Byte]] = []
   let mut cursor = 8
   let place_table = (bytes : Bytes) => {
@@ -10664,9 +10666,9 @@ fn build_math_glyph_info_subset(
 
 ///|
 priv struct MathVariantsSubset {
-  min_overlap : Int
-  vert_entries : Array[(Int, Bytes)]
-  horiz_entries : Array[(Int, Bytes)]
+  min_overlap : Int32
+  vert_entries : Array[(Int32, Bytes)]
+  horiz_entries : Array[(Int32, Bytes)]
   vert_coverage : Bytes
   horiz_coverage : Bytes
 }
@@ -10674,7 +10676,7 @@ priv struct MathVariantsSubset {
 ///|
 fn collect_math_variants_subset(
   bytes : Array[Byte],
-  offset : Int,
+  offset : Int32,
   plan : SubsetPlan,
 ) -> Result[MathVariantsSubset?, SubsetError] {
   if offset == 0 {
@@ -10727,15 +10729,15 @@ fn collect_math_variants_subset(
   if vert_glyphs.length() < vert_count || horiz_glyphs.length() < horiz_count {
     return Err(InvalidInput("invalid MATH coverage counts"))
   }
-  let glyphs : Array[Int] = []
+  let glyphs : Array[Int32] = []
   for i in 0..<vert_count {
     glyphs.push(vert_glyphs[i])
   }
   for i in 0..<horiz_count {
     glyphs.push(horiz_glyphs[i])
   }
-  let vert_entries : Array[(Int, Bytes)] = []
-  let horiz_entries : Array[(Int, Bytes)] = []
+  let vert_entries : Array[(Int32, Bytes)] = []
+  let horiz_entries : Array[(Int32, Bytes)] = []
   for i in 0..<total {
     let gid = glyphs[i]
     if gid < 0 || gid >= plan.old_to_new.length() {
@@ -10773,8 +10775,8 @@ fn collect_math_variants_subset(
   }
   vert_entries.sort_by((a, b) => a.0 - b.0)
   horiz_entries.sort_by((a, b) => a.0 - b.0)
-  let vert_glyphs_new : Array[Int] = []
-  let horiz_glyphs_new : Array[Int] = []
+  let vert_glyphs_new : Array[Int32] = []
+  let horiz_glyphs_new : Array[Int32] = []
   for entry in vert_entries {
     vert_glyphs_new.push(entry.0)
   }
@@ -10803,7 +10805,7 @@ fn collect_math_variants_subset(
 }
 
 ///|
-fn math_variants_length(data : MathVariantsSubset, share_horiz : Bool) -> Int {
+fn math_variants_length(data : MathVariantsSubset, share_horiz : Bool) -> Int32 {
   let vert_count = data.vert_entries.length()
   let horiz_count = data.horiz_entries.length()
   let total = vert_count + horiz_count
@@ -10828,19 +10830,19 @@ fn math_variants_length(data : MathVariantsSubset, share_horiz : Bool) -> Int {
 ///|
 fn serialize_math_variants(
   data : MathVariantsSubset,
-  shared_horiz_offset : Int?,
+  shared_horiz_offset : Int32?,
 ) -> Bytes {
   let vert_count = data.vert_entries.length()
   let horiz_count = data.horiz_entries.length()
   let total = vert_count + horiz_count
-  let entries_all : Array[(Int, Bytes)] = []
+  let entries_all : Array[(Int32, Bytes)] = []
   for entry in data.vert_entries {
     entries_all.push(entry)
   }
   for entry in data.horiz_entries {
     entries_all.push(entry)
   }
-  let offsets : Array[Int] = Array::make(total, 0)
+  let offsets : Array[Int32] = Array::make(total, 0)
   let mut cursor = 10 + total * 2
   let vert_cov_offset = if vert_count == 0 { 0 } else { cursor }
   cursor = cursor + data.vert_coverage.length()
@@ -10894,7 +10896,7 @@ fn serialize_math_variants(
 ///|
 fn build_math_constants_subset(
   bytes : Array[Byte],
-  offset : Int,
+  offset : Int32,
 ) -> Result[Bytes?, SubsetError] {
   if offset == 0 {
     return Ok(None)
@@ -11092,8 +11094,8 @@ fn build_math_subset(
 ///|
 fn parse_math_glyph_construction_refs(
   bytes : Array[Byte],
-  offset : Int,
-) -> Result[Array[Int], SubsetError] {
+  offset : Int32,
+) -> Result[Array[Int32], SubsetError] {
   if offset < 0 || offset + 4 > bytes.length() {
     return Err(InvalidInput("invalid MATH construction offset"))
   }
@@ -11109,7 +11111,7 @@ fn parse_math_glyph_construction_refs(
   if record_base + variant_count * 4 > bytes.length() {
     return Err(InvalidInput("invalid MATH construction records"))
   }
-  let refs : Array[Int] = []
+  let refs : Array[Int32] = []
   for i in 0..<variant_count {
     let gid = match read_u16(bytes, record_base + i * 4) {
       Err(err) => return Err(err)
@@ -11144,7 +11146,7 @@ fn parse_math_glyph_construction_refs(
 ///|
 fn parse_math_variant_refs(
   bytes : Array[Byte],
-) -> Result[Map[Int, Array[Int]], SubsetError] {
+) -> Result[Map[Int32, Array[Int32]], SubsetError] {
   if bytes.length() < 10 {
     return Err(InvalidInput("invalid MATH table"))
   }
@@ -11200,7 +11202,7 @@ fn parse_math_variant_refs(
   if vert_glyphs.length() < vert_count || horiz_glyphs.length() < horiz_count {
     return Err(InvalidInput("invalid MATH coverage counts"))
   }
-  let glyphs : Array[Int] = []
+  let glyphs : Array[Int32] = []
   for i in 0..<vert_count {
     glyphs.push(vert_glyphs[i])
   }
@@ -11230,7 +11232,7 @@ fn parse_math_variant_refs(
 ///|
 fn build_caret_value_subset(
   bytes : Array[Byte],
-  offset : Int,
+  offset : Int32,
 ) -> Result[Bytes, SubsetError] {
   let format = match read_u16(bytes, offset) {
     Err(err) => return Err(err)
@@ -11295,7 +11297,7 @@ fn build_caret_value_subset(
 ///|
 fn build_lig_caret_list_subset(
   bytes : Array[Byte],
-  offset : Int,
+  offset : Int32,
   plan : SubsetPlan,
 ) -> Result[Bytes?, SubsetError] {
   let cov_offset = match read_u16(bytes, offset) {
@@ -11321,7 +11323,7 @@ fn build_lig_caret_list_subset(
   if glyphs.length() != glyph_count {
     return Err(InvalidInput("lig caret glyph count mismatch"))
   }
-  let records : Array[(Int, Bytes)] = []
+  let records : Array[(Int32, Bytes)] = []
   for i in 0..<glyph_count {
     let glyph = glyphs[i]
     if glyph < 0 || glyph >= plan.old_to_new.length() {
@@ -11368,7 +11370,7 @@ fn build_lig_caret_list_subset(
     let lig_bytes : Array[Byte] = []
     push_u16(lig_bytes, caret_values.length())
     let mut cursor = 2 + caret_values.length() * 2
-    let offsets : Array[Int] = []
+    let offsets : Array[Int32] = []
     for caret in caret_values {
       offsets.push(cursor)
       cursor = cursor + caret.length()
@@ -11394,7 +11396,7 @@ fn build_lig_caret_list_subset(
     let (gid_b, _) = b
     gid_a - gid_b
   })
-  let mapped : Array[Int] = []
+  let mapped : Array[Int32] = []
   for record in records {
     mapped.push(record.0)
   }
@@ -11404,7 +11406,7 @@ fn build_lig_caret_list_subset(
   push_u16(out, header_len)
   push_u16(out, records.length())
   let mut cursor = header_len + coverage.length()
-  let offsets : Array[Int] = []
+  let offsets : Array[Int32] = []
   for record in records {
     offsets.push(cursor)
     cursor = cursor + record.1.length()
@@ -11633,8 +11635,8 @@ fn build_plan_cff1(
     return Err(InvalidInput("cff glyph count mismatch"))
   }
   let selected : Array[Bool] = Array::make(maxp.num_glyphs, false)
-  let queue : Array[Int] = []
-  let add_gid = (gid : Int) => {
+  let queue : Array[Int32] = []
+  let add_gid = (gid : Int32) => {
     if gid < 0 || gid >= selected.length() {
       return
     }
@@ -11675,7 +11677,7 @@ fn build_plan_cff1(
       }
     }
   }
-  let glyphs : Array[UInt] = []
+  let glyphs : Array[UInt32] = []
   for gid in 0..<selected.length() {
     if selected[gid] {
       glyphs.push(gid.reinterpret_as_uint())
@@ -11684,14 +11686,14 @@ fn build_plan_cff1(
   if glyphs.is_empty() {
     return Err(InvalidInput("empty subset"))
   }
-  let old_to_new : Array[Int] = Array::make(maxp.num_glyphs, -1)
+  let old_to_new : Array[Int32] = Array::make(maxp.num_glyphs, -1)
   for i in 0..<glyphs.length() {
     let old_gid = glyphs[i].reinterpret_as_int()
     if old_gid >= 0 && old_gid < old_to_new.length() {
       old_to_new[old_gid] = i
     }
   }
-  let codepoint_map : Array[(UInt, Int)] = []
+  let codepoint_map : Array[(UInt32, Int32)] = []
   for codepoint in expanded_codepoints {
     let gid = match font.glyph_for_codepoint(codepoint) {
       Err(err) => return Err(Font(err))
@@ -11735,7 +11737,7 @@ fn build_plan_cff2(
     return Err(InvalidInput("cff2 glyph count mismatch"))
   }
   let selected : Array[Bool] = Array::make(maxp.num_glyphs, false)
-  let add_gid = (gid : Int) => {
+  let add_gid = (gid : Int32) => {
     if gid < 0 || gid >= selected.length() {
       return
     }
@@ -11757,7 +11759,7 @@ fn build_plan_cff2(
   for value in selected {
     gsub_mask.push(value)
   }
-  let glyphs : Array[UInt] = []
+  let glyphs : Array[UInt32] = []
   for gid in 0..<selected.length() {
     if selected[gid] {
       glyphs.push(gid.reinterpret_as_uint())
@@ -11766,14 +11768,14 @@ fn build_plan_cff2(
   if glyphs.is_empty() {
     return Err(InvalidInput("empty subset"))
   }
-  let old_to_new : Array[Int] = Array::make(maxp.num_glyphs, -1)
+  let old_to_new : Array[Int32] = Array::make(maxp.num_glyphs, -1)
   for i in 0..<glyphs.length() {
     let old_gid = glyphs[i].reinterpret_as_int()
     if old_gid >= 0 && old_gid < old_to_new.length() {
       old_to_new[old_gid] = i
     }
   }
-  let codepoint_map : Array[(UInt, Int)] = []
+  let codepoint_map : Array[(UInt32, Int32)] = []
   for codepoint in expanded_codepoints {
     let gid = match font.glyph_for_codepoint(codepoint) {
       Err(err) => return Err(Font(err))
@@ -11948,7 +11950,7 @@ pub fn subset_with_plan(
   }
   let glyf_data = glyf_blob.as_view()
 
-  let new_offsets : Array[Int] = []
+  let new_offsets : Array[Int32] = []
   let glyf_bytes : Array[Byte] = []
   let mut offset = 0
   for old_gid in plan.glyphs {
@@ -12364,7 +12366,7 @@ fn subset_cff1_with_plan(
     write_u16(hhea_bytes, 34, num_hmetrics)
   }
 
-  let glyph_ids : Array[Int] = []
+  let glyph_ids : Array[Int32] = []
   for gid in plan.glyphs {
     glyph_ids.push(gid.reinterpret_as_int())
   }
@@ -12533,7 +12535,7 @@ fn subset_cff2_with_plan(
     write_u16(hhea_bytes, 34, num_hmetrics)
   }
 
-  let glyph_ids : Array[Int] = []
+  let glyph_ids : Array[Int32] = []
   for gid in plan.glyphs {
     glyph_ids.push(gid.reinterpret_as_int())
   }

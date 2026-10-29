@@ -13,18 +13,18 @@
 // limitations under the License.
 
 ///|
-fn push_u8_multi(bytes : Array[Byte], value : Int) -> Unit {
+fn push_u8_multi(bytes : Array[Byte], value : Int32) -> Unit {
   bytes.push((value & 0xff).to_byte())
 }
 
 ///|
-fn push_u16_multi(bytes : Array[Byte], value : Int) -> Unit {
+fn push_u16_multi(bytes : Array[Byte], value : Int32) -> Unit {
   bytes.push(((value >> 8) & 0xff).to_byte())
   bytes.push((value & 0xff).to_byte())
 }
 
 ///|
-fn push_u32_multi(bytes : Array[Byte], value : Int) -> Unit {
+fn push_u32_multi(bytes : Array[Byte], value : Int32) -> Unit {
   bytes.push(((value >> 24) & 0xff).to_byte())
   bytes.push(((value >> 16) & 0xff).to_byte())
   bytes.push(((value >> 8) & 0xff).to_byte())
@@ -32,7 +32,7 @@ fn push_u32_multi(bytes : Array[Byte], value : Int) -> Unit {
 }
 
 ///|
-fn push_i16_multi(bytes : Array[Byte], value : Int) -> Unit {
+fn push_i16_multi(bytes : Array[Byte], value : Int32) -> Unit {
   let adjusted = if value < 0 { value + 0x10000 } else { value }
   push_u16_multi(bytes, adjusted)
 }
@@ -92,7 +92,7 @@ fn build_multi_item_store() -> Bytes {
 ///|
 test "multi item var store delta" {
   let store = match
-    MultiItemVariationStore::parse(build_multi_item_store()[:]) {
+    @var.MultiItemVariationStore::parse(build_multi_item_store()[:]) {
     Err(err) => fail("parse failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }

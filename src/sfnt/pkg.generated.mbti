@@ -15,85 +15,115 @@ pub suberror SfntError {
   InvalidFormat
   TableNotFound
 } derive(Eq, ToJson, @debug.Debug)
+pub fn SfntError::equal(Self, Self) -> Bool
+pub fn SfntError::not_equal(Self, Self) -> Bool
+pub fn SfntError::to_json(Self) -> Json
+pub fn SfntError::to_repr(Self) -> @debug.Repr
 
 // Types and methods
 pub struct Axis {
   base_tags : BaseTagList?
   base_scripts : BaseScriptList?
 } derive(ToJson, @debug.Debug)
+pub fn Axis::to_json(Self) -> Json
+pub fn Axis::to_repr(Self) -> @debug.Repr
 
 pub enum AxisValue {
-  Format1(Int, Int, Int, Int)
-  Format2(Int, Int, Int, Int, Int, Int)
-  Format3(Int, Int, Int, Int, Int)
-  Format4(Int, Int, Array[AxisValueRecord])
+  Format1(Int32, Int32, Int32, Int32)
+  Format2(Int32, Int32, Int32, Int32, Int32, Int32)
+  Format3(Int32, Int32, Int32, Int32, Int32)
+  Format4(Int32, Int32, Array[AxisValueRecord])
 } derive(ToJson, @debug.Debug)
+pub fn AxisValue::to_json(Self) -> Json
+pub fn AxisValue::to_repr(Self) -> @debug.Repr
 
 pub struct AxisValueRecord {
-  axis_index : Int
-  value : Int
+  axis_index : Int32
+  value : Int32
 } derive(Eq, ToJson, @debug.Debug)
+pub fn AxisValueRecord::equal(Self, Self) -> Bool
+pub fn AxisValueRecord::not_equal(Self, Self) -> Bool
+pub fn AxisValueRecord::to_json(Self) -> Json
+pub fn AxisValueRecord::to_repr(Self) -> @debug.Repr
 
 pub enum BaseCoord {
-  Format1(Int)
-  Format2(Int, Int, Int)
-  Format3(Int, Int)
+  Format1(Int32)
+  Format2(Int32, Int32, Int32)
+  Format3(Int32, Int32)
 } derive(ToJson, @debug.Debug)
+pub fn BaseCoord::to_json(Self) -> Json
+pub fn BaseCoord::to_repr(Self) -> @debug.Repr
 
 pub struct BaseLangSysRecord {
   tag : @common.Tag
   min_max : MinMax?
 } derive(ToJson, @debug.Debug)
+pub fn BaseLangSysRecord::to_json(Self) -> Json
+pub fn BaseLangSysRecord::to_repr(Self) -> @debug.Repr
 
 pub struct BaseScript {
   base_values : BaseValues?
   default_min_max : MinMax?
   lang_sys_records : Array[BaseLangSysRecord]
 } derive(ToJson, @debug.Debug)
+pub fn BaseScript::to_json(Self) -> Json
+pub fn BaseScript::to_repr(Self) -> @debug.Repr
 
 pub struct BaseScriptList {
   records : Array[BaseScriptRecord]
 } derive(ToJson, @debug.Debug)
+pub fn BaseScriptList::to_json(Self) -> Json
+pub fn BaseScriptList::to_repr(Self) -> @debug.Repr
 
 pub struct BaseScriptRecord {
   tag : @common.Tag
   base_script : BaseScript?
 } derive(ToJson, @debug.Debug)
+pub fn BaseScriptRecord::to_json(Self) -> Json
+pub fn BaseScriptRecord::to_repr(Self) -> @debug.Repr
 
 pub struct BaseTable {
-  major_version : Int
-  minor_version : Int
+  major_version : Int32
+  minor_version : Int32
   h_axis : Axis?
   v_axis : Axis?
-  var_store_offset : Int?
+  var_store_offset : Int32?
 } derive(ToJson, @debug.Debug)
 pub fn BaseTable::parse(BytesView) -> Result[Self, SfntError]
+pub fn BaseTable::to_json(Self) -> Json
+pub fn BaseTable::to_repr(Self) -> @debug.Repr
 
 pub struct BaseTagList {
   tags : Array[@common.Tag]
 } derive(ToJson, @debug.Debug)
+pub fn BaseTagList::to_json(Self) -> Json
+pub fn BaseTagList::to_repr(Self) -> @debug.Repr
 
 pub struct BaseValues {
-  default_index : Int
+  default_index : Int32
   base_coords : Array[BaseCoord?]
 } derive(ToJson, @debug.Debug)
+pub fn BaseValues::to_json(Self) -> Json
+pub fn BaseValues::to_repr(Self) -> @debug.Repr
 
 pub struct CmapTable {
   data : BytesView
-  subtable_offset : Int
-  format : Int
-  variation_offset : Int?
+  subtable_offset : Int32
+  format : Int32
+  variation_offset : Int32?
 } derive(ToJson, @debug.Debug)
 pub fn CmapTable::collect_nominal_mapping(Self) -> Result[@common.CodepointMap, SfntError]
-pub fn CmapTable::glyph_for(Self, UInt) -> Result[UInt?, SfntError]
+pub fn CmapTable::glyph_for(Self, UInt32) -> Result[UInt32?, SfntError]
 pub fn CmapTable::parse(@blob.Blob) -> Result[Self, SfntError]
-pub fn CmapTable::variation_mapping(Self, UInt, UInt) -> Result[(Bool, UInt?), SfntError]
+pub fn CmapTable::to_json(Self) -> Json
+pub fn CmapTable::to_repr(Self) -> @debug.Repr
+pub fn CmapTable::variation_mapping(Self, UInt32, UInt32) -> Result[(Bool, UInt32?), SfntError]
 
 pub struct CompositeComponent {
-  glyph : Int
-  flags : Int
-  arg1 : Int
-  arg2 : Int
+  glyph : Int32
+  flags : Int32
+  arg1 : Int32
+  arg2 : Int32
   a : Double
   b : Double
   c : Double
@@ -104,104 +134,146 @@ pub struct CompositeComponent {
   use_my_metrics : Bool
   scaled_offset : Bool
 } derive(ToJson, @debug.Debug)
+pub fn CompositeComponent::to_json(Self) -> Json
+pub fn CompositeComponent::to_repr(Self) -> @debug.Repr
 
 pub struct CvtTable {
-  values : Array[Int]
+  values : Array[Int32]
 } derive(ToJson, @debug.Debug)
 pub fn CvtTable::parse(BytesView) -> Result[Self, SfntError]
-pub fn CvtTable::values(Self) -> ArrayView[Int]
+pub fn CvtTable::to_json(Self) -> Json
+pub fn CvtTable::to_repr(Self) -> @debug.Repr
+pub fn CvtTable::values(Self) -> ArrayView[Int32]
 
 pub struct FeatMinMaxRecord {
   tag : @common.Tag
   min_coord : BaseCoord?
   max_coord : BaseCoord?
 } derive(ToJson, @debug.Debug)
+pub fn FeatMinMaxRecord::to_json(Self) -> Json
+pub fn FeatMinMaxRecord::to_repr(Self) -> @debug.Repr
 
 pub struct GaspRange {
-  max_ppem : Int
-  behavior : Int
+  max_ppem : Int32
+  behavior : Int32
 } derive(Eq, ToJson, @debug.Debug)
+pub fn GaspRange::equal(Self, Self) -> Bool
+pub fn GaspRange::not_equal(Self, Self) -> Bool
+pub fn GaspRange::to_json(Self) -> Json
+pub fn GaspRange::to_repr(Self) -> @debug.Repr
 
 pub struct GaspTable {
-  version : Int
+  version : Int32
   ranges : Array[GaspRange]
 } derive(ToJson, @debug.Debug)
-pub fn GaspTable::behavior_for_ppem(Self, Int) -> Int?
+pub fn GaspTable::behavior_for_ppem(Self, Int32) -> Int32?
 pub fn GaspTable::parse(BytesView) -> Result[Self, SfntError]
+pub fn GaspTable::to_json(Self) -> Json
+pub fn GaspTable::to_repr(Self) -> @debug.Repr
 
 pub struct GlyfTable {
   data : BytesView
 } derive(ToJson, @debug.Debug)
-pub fn GlyfTable::glyph_bounds(Self, Int, Int) -> Result[GlyphBounds?, SfntError]
-pub fn GlyfTable::glyph_composite_components(Self, Int, Int) -> Result[Array[CompositeComponent]?, SfntError]
-pub fn GlyfTable::glyph_simple_points(Self, Int, Int) -> Result[Array[GlyphPoint]?, SfntError]
+pub fn GlyfTable::glyph_bounds(Self, Int32, Int32) -> Result[GlyphBounds?, SfntError]
+pub fn GlyfTable::glyph_composite_components(Self, Int32, Int32) -> Result[Array[CompositeComponent]?, SfntError]
+pub fn GlyfTable::glyph_simple_points(Self, Int32, Int32) -> Result[Array[GlyphPoint]?, SfntError]
 pub fn GlyfTable::parse(@blob.Blob) -> Result[Self, SfntError]
+pub fn GlyfTable::to_json(Self) -> Json
+pub fn GlyfTable::to_repr(Self) -> @debug.Repr
 
 pub struct GlyphBounds {
-  contours : Int
-  x_min : Int
-  y_min : Int
-  x_max : Int
-  y_max : Int
+  contours : Int32
+  x_min : Int32
+  y_min : Int32
+  x_max : Int32
+  y_max : Int32
 } derive(Eq, ToJson, @debug.Debug)
-pub fn GlyphBounds::new(Int, Int, Int, Int, Int) -> Self
+pub fn GlyphBounds::equal(Self, Self) -> Bool
+pub fn GlyphBounds::new(Int32, Int32, Int32, Int32, Int32) -> Self
+pub fn GlyphBounds::not_equal(Self, Self) -> Bool
+pub fn GlyphBounds::to_json(Self) -> Json
+pub fn GlyphBounds::to_repr(Self) -> @debug.Repr
 
 pub struct GlyphPoint {
   mut x : Double
   mut y : Double
-  flag : Int
+  flag : Int32
   mut is_end_point : Bool
 } derive(ToJson, @debug.Debug)
-pub fn GlyphPoint::new(Double, Double, Int, Bool) -> Self
+pub fn GlyphPoint::new(Double, Double, Int32, Bool) -> Self
 pub fn GlyphPoint::set(Self, Double, Double) -> Unit
+pub fn GlyphPoint::to_json(Self) -> Json
+pub fn GlyphPoint::to_repr(Self) -> @debug.Repr
 pub fn GlyphPoint::transform(Self, Double, Double, Double, Double) -> Unit
 pub fn GlyphPoint::translate(Self, Double, Double) -> Unit
 
 pub struct HdmxRecord {
-  pixel_size : Int
-  max_width : Int
-  widths : Array[Int]
+  pixel_size : Int32
+  max_width : Int32
+  widths : Array[Int32]
 } derive(ToJson, @debug.Debug)
+pub fn HdmxRecord::to_json(Self) -> Json
+pub fn HdmxRecord::to_repr(Self) -> @debug.Repr
 
 pub struct HdmxTable {
-  version : Int
+  version : Int32
   records : Array[HdmxRecord]
 } derive(ToJson, @debug.Debug)
 pub fn HdmxTable::parse(BytesView) -> Result[Self, SfntError]
+pub fn HdmxTable::to_json(Self) -> Json
+pub fn HdmxTable::to_repr(Self) -> @debug.Repr
 
 pub struct HeadTable {
-  units_per_em : Int
-  index_to_loc_format : Int
+  units_per_em : Int32
+  index_to_loc_format : Int32
 } derive(Eq, ToJson, @debug.Debug)
+pub fn HeadTable::equal(Self, Self) -> Bool
+pub fn HeadTable::not_equal(Self, Self) -> Bool
 pub fn HeadTable::parse(BytesView) -> Result[Self, SfntError]
+pub fn HeadTable::to_json(Self) -> Json
+pub fn HeadTable::to_repr(Self) -> @debug.Repr
 
 pub struct HheaTable {
-  number_of_hmetrics : Int
+  number_of_hmetrics : Int32
 } derive(Eq, ToJson, @debug.Debug)
+pub fn HheaTable::equal(Self, Self) -> Bool
+pub fn HheaTable::not_equal(Self, Self) -> Bool
 pub fn HheaTable::parse(BytesView) -> Result[Self, SfntError]
+pub fn HheaTable::to_json(Self) -> Json
+pub fn HheaTable::to_repr(Self) -> @debug.Repr
 
 pub struct HmtxTable {
-  advances : Array[Int]
-  lsbs : Array[Int]
+  advances : Array[Int32]
+  lsbs : Array[Int32]
 } derive(ToJson, @debug.Debug)
-pub fn HmtxTable::parse(BytesView, Int, Int) -> Result[Self, SfntError]
+pub fn HmtxTable::parse(BytesView, Int32, Int32) -> Result[Self, SfntError]
+pub fn HmtxTable::to_json(Self) -> Json
+pub fn HmtxTable::to_repr(Self) -> @debug.Repr
 
 pub struct JstfLangSys {
   priorities : Array[JstfPriority?]
 } derive(ToJson, @debug.Debug)
+pub fn JstfLangSys::to_json(Self) -> Json
+pub fn JstfLangSys::to_repr(Self) -> @debug.Repr
 
 pub struct JstfLangSysRecord {
   tag : @common.Tag
   lang_sys : JstfLangSys?
 } derive(ToJson, @debug.Debug)
+pub fn JstfLangSysRecord::to_json(Self) -> Json
+pub fn JstfLangSysRecord::to_repr(Self) -> @debug.Repr
 
 pub struct JstfMax {
-  lookup_offsets : Array[Int]
+  lookup_offsets : Array[Int32]
 } derive(ToJson, @debug.Debug)
+pub fn JstfMax::to_json(Self) -> Json
+pub fn JstfMax::to_repr(Self) -> @debug.Repr
 
 pub struct JstfModList {
-  indices : Array[Int]
+  indices : Array[Int32]
 } derive(ToJson, @debug.Debug)
+pub fn JstfModList::to_json(Self) -> Json
+pub fn JstfModList::to_repr(Self) -> @debug.Repr
 
 pub struct JstfPriority {
   shrinkage_enable_gsub : JstfModList?
@@ -215,39 +287,53 @@ pub struct JstfPriority {
   extension_disable_gpos : JstfModList?
   extension_jstf_max : JstfMax?
 } derive(ToJson, @debug.Debug)
+pub fn JstfPriority::to_json(Self) -> Json
+pub fn JstfPriority::to_repr(Self) -> @debug.Repr
 
 pub struct JstfScript {
-  extender_glyphs : Array[Int]
+  extender_glyphs : Array[Int32]
   default_lang_sys : JstfLangSys?
   lang_sys_records : Array[JstfLangSysRecord]
 } derive(ToJson, @debug.Debug)
+pub fn JstfScript::to_json(Self) -> Json
+pub fn JstfScript::to_repr(Self) -> @debug.Repr
 
 pub struct JstfScriptRecord {
   tag : @common.Tag
   script : JstfScript?
 } derive(ToJson, @debug.Debug)
+pub fn JstfScriptRecord::to_json(Self) -> Json
+pub fn JstfScriptRecord::to_repr(Self) -> @debug.Repr
 
 pub struct JstfTable {
-  major_version : Int
-  minor_version : Int
+  major_version : Int32
+  minor_version : Int32
   scripts : Array[JstfScriptRecord]
 } derive(ToJson, @debug.Debug)
 pub fn JstfTable::parse(BytesView) -> Result[Self, SfntError]
+pub fn JstfTable::to_json(Self) -> Json
+pub fn JstfTable::to_repr(Self) -> @debug.Repr
 
 pub struct KernClassTable {
-  first_glyph : Int
-  classes : Array[Int]
-  class_count : Int
+  first_glyph : Int32
+  classes : Array[Int32]
+  class_count : Int32
 } derive(ToJson, @debug.Debug)
+pub fn KernClassTable::to_json(Self) -> Json
+pub fn KernClassTable::to_repr(Self) -> @debug.Repr
 
 pub struct KernPair {
-  left : UInt
-  right : UInt
-  value : Int
+  left : UInt32
+  right : UInt32
+  value : Int32
 } derive(Eq, ToJson, @debug.Debug)
+pub fn KernPair::equal(Self, Self) -> Bool
+pub fn KernPair::not_equal(Self, Self) -> Bool
+pub fn KernPair::to_json(Self) -> Json
+pub fn KernPair::to_repr(Self) -> @debug.Repr
 
 pub struct KernSubtable {
-  format : Int
+  format : Int32
   horizontal : Bool
   minimum : Bool
   cross_stream : Bool
@@ -256,255 +342,338 @@ pub struct KernSubtable {
   format2 : KernSubtableFormat2?
   format3 : KernSubtableFormat3?
 } derive(ToJson, @debug.Debug)
+pub fn KernSubtable::to_json(Self) -> Json
+pub fn KernSubtable::to_repr(Self) -> @debug.Repr
 
 pub struct KernSubtableFormat2 {
-  row_width : Int
+  row_width : Int32
   left : KernClassTable
   right : KernClassTable
-  right_class_count : Int
-  values : Array[Int]
+  right_class_count : Int32
+  values : Array[Int32]
 } derive(ToJson, @debug.Debug)
+pub fn KernSubtableFormat2::to_json(Self) -> Json
+pub fn KernSubtableFormat2::to_repr(Self) -> @debug.Repr
 
 pub struct KernSubtableFormat3 {
-  glyph_count : Int
-  kern_value_count : Int
-  left_class_count : Int
-  right_class_count : Int
-  values : Array[Int]
-  left_class : Array[Int]
-  right_class : Array[Int]
-  kern_index : Array[Int]
+  glyph_count : Int32
+  kern_value_count : Int32
+  left_class_count : Int32
+  right_class_count : Int32
+  values : Array[Int32]
+  left_class : Array[Int32]
+  right_class : Array[Int32]
+  kern_index : Array[Int32]
 } derive(ToJson, @debug.Debug)
+pub fn KernSubtableFormat3::to_json(Self) -> Json
+pub fn KernSubtableFormat3::to_repr(Self) -> @debug.Repr
 
 pub struct KernTable {
   subtables : Array[KernSubtable]
 } derive(ToJson, @debug.Debug)
-pub fn KernTable::kern_value(Self, UInt, UInt) -> Int?
+pub fn KernTable::kern_value(Self, UInt32, UInt32) -> Int32?
 pub fn KernTable::parse(BytesView) -> Result[Self, SfntError]
+pub fn KernTable::to_json(Self) -> Json
+pub fn KernTable::to_repr(Self) -> @debug.Repr
 
 pub struct LocaTable {
-  offsets : Array[Int]
+  offsets : Array[Int32]
 } derive(Eq, ToJson, @debug.Debug)
-pub fn LocaTable::parse(BytesView, Int, Int) -> Result[Self, SfntError]
+pub fn LocaTable::equal(Self, Self) -> Bool
+pub fn LocaTable::not_equal(Self, Self) -> Bool
+pub fn LocaTable::parse(BytesView, Int32, Int32) -> Result[Self, SfntError]
+pub fn LocaTable::to_json(Self) -> Json
+pub fn LocaTable::to_repr(Self) -> @debug.Repr
 
 pub struct MathConstants {
-  percent_scale_down : Array[Int]
-  min_height : Array[Int]
+  percent_scale_down : Array[Int32]
+  min_height : Array[Int32]
   math_values : Array[MathValueRecord]
-  radical_degree_bottom_raise_percent : Int
+  radical_degree_bottom_raise_percent : Int32
 } derive(ToJson, @debug.Debug)
+pub fn MathConstants::to_json(Self) -> Json
+pub fn MathConstants::to_repr(Self) -> @debug.Repr
 
 pub struct MathGlyphAssembly {
   italics_correction : MathValueRecord
   parts : Array[MathGlyphPartRecord]
 } derive(ToJson, @debug.Debug)
+pub fn MathGlyphAssembly::to_json(Self) -> Json
+pub fn MathGlyphAssembly::to_repr(Self) -> @debug.Repr
 
 pub struct MathGlyphConstruction {
   glyph_assembly : MathGlyphAssembly?
   variants : Array[MathGlyphVariantRecord]
 } derive(ToJson, @debug.Debug)
+pub fn MathGlyphConstruction::to_json(Self) -> Json
+pub fn MathGlyphConstruction::to_repr(Self) -> @debug.Repr
 
 pub struct MathGlyphInfo {
   italics_correction : MathItalicsCorrectionInfo?
   top_accent_attachment : MathTopAccentAttachment?
-  extended_shape_coverage_offset : Int
+  extended_shape_coverage_offset : Int32
   math_kern_info : MathKernInfo?
 } derive(ToJson, @debug.Debug)
+pub fn MathGlyphInfo::to_json(Self) -> Json
+pub fn MathGlyphInfo::to_repr(Self) -> @debug.Repr
 
 pub struct MathGlyphPartRecord {
-  glyph : Int
-  start_connector_length : Int
-  end_connector_length : Int
-  full_advance : Int
-  flags : Int
+  glyph : Int32
+  start_connector_length : Int32
+  end_connector_length : Int32
+  full_advance : Int32
+  flags : Int32
 } derive(ToJson, @debug.Debug)
+pub fn MathGlyphPartRecord::to_json(Self) -> Json
+pub fn MathGlyphPartRecord::to_repr(Self) -> @debug.Repr
 
 pub struct MathGlyphVariantRecord {
-  variant_glyph : Int
-  advance : Int
+  variant_glyph : Int32
+  advance : Int32
 } derive(ToJson, @debug.Debug)
+pub fn MathGlyphVariantRecord::to_json(Self) -> Json
+pub fn MathGlyphVariantRecord::to_repr(Self) -> @debug.Repr
 
 pub struct MathItalicsCorrectionInfo {
-  coverage_offset : Int
+  coverage_offset : Int32
   records : Array[MathValueRecord]
 } derive(ToJson, @debug.Debug)
+pub fn MathItalicsCorrectionInfo::to_json(Self) -> Json
+pub fn MathItalicsCorrectionInfo::to_repr(Self) -> @debug.Repr
 
 pub struct MathKern {
-  height_count : Int
+  height_count : Int32
   records : Array[MathValueRecord]
 } derive(ToJson, @debug.Debug)
+pub fn MathKern::to_json(Self) -> Json
+pub fn MathKern::to_repr(Self) -> @debug.Repr
 
 pub struct MathKernInfo {
-  coverage_offset : Int
+  coverage_offset : Int32
   records : Array[MathKernInfoRecord]
 } derive(ToJson, @debug.Debug)
+pub fn MathKernInfo::to_json(Self) -> Json
+pub fn MathKernInfo::to_repr(Self) -> @debug.Repr
 
 pub struct MathKernInfoRecord {
   math_kerns : Array[MathKern?]
 } derive(ToJson, @debug.Debug)
+pub fn MathKernInfoRecord::to_json(Self) -> Json
+pub fn MathKernInfoRecord::to_repr(Self) -> @debug.Repr
 
 pub struct MathTable {
-  major_version : Int
-  minor_version : Int
+  major_version : Int32
+  minor_version : Int32
   constants : MathConstants?
   glyph_info : MathGlyphInfo?
   variants : MathVariants?
 } derive(ToJson, @debug.Debug)
 pub fn MathTable::parse(BytesView) -> Result[Self, SfntError]
+pub fn MathTable::to_json(Self) -> Json
+pub fn MathTable::to_repr(Self) -> @debug.Repr
 
 pub struct MathTopAccentAttachment {
-  coverage_offset : Int
+  coverage_offset : Int32
   records : Array[MathValueRecord]
 } derive(ToJson, @debug.Debug)
+pub fn MathTopAccentAttachment::to_json(Self) -> Json
+pub fn MathTopAccentAttachment::to_repr(Self) -> @debug.Repr
 
 pub struct MathValueRecord {
-  value : Int
-  device_offset : Int
+  value : Int32
+  device_offset : Int32
 } derive(Eq, ToJson, @debug.Debug)
+pub fn MathValueRecord::equal(Self, Self) -> Bool
+pub fn MathValueRecord::not_equal(Self, Self) -> Bool
+pub fn MathValueRecord::to_json(Self) -> Json
+pub fn MathValueRecord::to_repr(Self) -> @debug.Repr
 
 pub struct MathVariants {
-  min_connector_overlap : Int
-  vert_coverage_offset : Int
-  horiz_coverage_offset : Int
-  vert_glyph_count : Int
-  horiz_glyph_count : Int
+  min_connector_overlap : Int32
+  vert_coverage_offset : Int32
+  horiz_coverage_offset : Int32
+  vert_glyph_count : Int32
+  horiz_glyph_count : Int32
   constructions : Array[MathGlyphConstruction?]
 } derive(ToJson, @debug.Debug)
+pub fn MathVariants::to_json(Self) -> Json
+pub fn MathVariants::to_repr(Self) -> @debug.Repr
 
 pub struct MaxpTable {
-  num_glyphs : Int
+  num_glyphs : Int32
 } derive(Eq, ToJson, @debug.Debug)
+pub fn MaxpTable::equal(Self, Self) -> Bool
+pub fn MaxpTable::not_equal(Self, Self) -> Bool
 pub fn MaxpTable::parse(BytesView) -> Result[Self, SfntError]
+pub fn MaxpTable::to_json(Self) -> Json
+pub fn MaxpTable::to_repr(Self) -> @debug.Repr
 
 pub struct MetaRecord {
   tag : @common.Tag
   data : Bytes
 } derive(ToJson, @debug.Debug)
+pub fn MetaRecord::to_json(Self) -> Json
+pub fn MetaRecord::to_repr(Self) -> @debug.Repr
 
 pub struct MetaTable {
-  version : Int
-  flags : Int
+  version : Int32
+  flags : Int32
   records : Array[MetaRecord]
 } derive(ToJson, @debug.Debug)
 pub fn MetaTable::find(Self, @common.Tag) -> Bytes?
 pub fn MetaTable::parse(BytesView) -> Result[Self, SfntError]
+pub fn MetaTable::to_json(Self) -> Json
+pub fn MetaTable::to_repr(Self) -> @debug.Repr
 
 pub struct MinMax {
   min_coord : BaseCoord?
   max_coord : BaseCoord?
   records : Array[FeatMinMaxRecord]
 } derive(ToJson, @debug.Debug)
+pub fn MinMax::to_json(Self) -> Json
+pub fn MinMax::to_repr(Self) -> @debug.Repr
 
 pub struct NameRecord {
-  platform_id : Int
-  encoding_id : Int
-  language_id : Int
-  name_id : Int
+  platform_id : Int32
+  encoding_id : Int32
+  language_id : Int32
+  name_id : Int32
   value : Bytes
 } derive(ToJson, @debug.Debug)
+pub fn NameRecord::to_json(Self) -> Json
+pub fn NameRecord::to_repr(Self) -> @debug.Repr
 
 pub struct NameTable {
   records : Array[NameRecord]
 } derive(ToJson, @debug.Debug)
-pub fn NameTable::find_name(Self, Int, Int, Int, Int) -> NameRecord?
+pub fn NameTable::find_name(Self, Int32, Int32, Int32, Int32) -> NameRecord?
 pub fn NameTable::parse(BytesView) -> Result[Self, SfntError]
+pub fn NameTable::to_json(Self) -> Json
+pub fn NameTable::to_repr(Self) -> @debug.Repr
 
 pub struct Os2Table {
-  version : Int
-  weight_class : Int
-  width_class : Int
-  fs_type : Int
-  typo_ascender : Int
-  typo_descender : Int
-  typo_line_gap : Int
-  win_ascent : Int
-  win_descent : Int
-  code_page_range_1 : UInt?
-  code_page_range_2 : UInt?
-  x_height : Int?
-  cap_height : Int?
-  default_char : Int?
-  break_char : Int?
-  max_context : Int?
-  lower_optical_point_size : Int?
-  upper_optical_point_size : Int?
+  version : Int32
+  weight_class : Int32
+  width_class : Int32
+  fs_type : Int32
+  typo_ascender : Int32
+  typo_descender : Int32
+  typo_line_gap : Int32
+  win_ascent : Int32
+  win_descent : Int32
+  code_page_range_1 : UInt32?
+  code_page_range_2 : UInt32?
+  x_height : Int32?
+  cap_height : Int32?
+  default_char : Int32?
+  break_char : Int32?
+  max_context : Int32?
+  lower_optical_point_size : Int32?
+  upper_optical_point_size : Int32?
 } derive(ToJson, @debug.Debug)
 pub fn Os2Table::parse(BytesView) -> Result[Self, SfntError]
+pub fn Os2Table::to_json(Self) -> Json
+pub fn Os2Table::to_repr(Self) -> @debug.Repr
 
 pub struct PostTable {
-  version : Int
-  italic_angle : Int
-  underline_position : Int
-  underline_thickness : Int
-  is_fixed_pitch : Int
-  min_mem_type42 : Int
-  max_mem_type42 : Int
-  min_mem_type1 : Int
-  max_mem_type1 : Int
-  glyph_name_indices : Array[Int]?
+  version : Int32
+  italic_angle : Int32
+  underline_position : Int32
+  underline_thickness : Int32
+  is_fixed_pitch : Int32
+  min_mem_type42 : Int32
+  max_mem_type42 : Int32
+  min_mem_type1 : Int32
+  max_mem_type1 : Int32
+  glyph_name_indices : Array[Int32]?
   custom_names : Array[Bytes]?
 } derive(ToJson, @debug.Debug)
-pub fn PostTable::glyph_from_name(Self, String) -> Int?
-pub fn PostTable::glyph_name(Self, Int) -> String?
+pub fn PostTable::glyph_from_name(Self, String) -> Int32?
+pub fn PostTable::glyph_name(Self, Int32) -> String?
 pub fn PostTable::parse(BytesView) -> Result[Self, SfntError]
+pub fn PostTable::to_json(Self) -> Json
+pub fn PostTable::to_repr(Self) -> @debug.Repr
 
 pub struct Sfnt {
   blob : @blob.Blob
   records : Array[TableRecord]
 } derive(ToJson, @debug.Debug)
 pub fn Sfnt::parse(@blob.Blob) -> Result[Self, SfntError]
-pub fn Sfnt::parse_at(@blob.Blob, Int) -> Result[Self, SfntError]
+pub fn Sfnt::parse_at(@blob.Blob, Int32) -> Result[Self, SfntError]
 pub fn Sfnt::table(Self, @common.Tag) -> Result[@blob.Blob, SfntError]
 pub fn Sfnt::tables(Self) -> ArrayView[TableRecord]
+pub fn Sfnt::to_json(Self) -> Json
+pub fn Sfnt::to_repr(Self) -> @debug.Repr
 
 pub struct StatAxisRecord {
   tag : @common.Tag
-  name_id : Int
-  ordering : Int
+  name_id : Int32
+  ordering : Int32
 } derive(Eq, ToJson, @debug.Debug)
+pub fn StatAxisRecord::equal(Self, Self) -> Bool
+pub fn StatAxisRecord::not_equal(Self, Self) -> Bool
+pub fn StatAxisRecord::to_json(Self) -> Json
+pub fn StatAxisRecord::to_repr(Self) -> @debug.Repr
 
 pub struct StatTable {
-  version : Int
-  design_axis_size : Int
+  version : Int32
+  design_axis_size : Int32
   design_axes : Array[StatAxisRecord]
   axis_values : Array[AxisValue]
-  elided_fallback_name_id : Int
+  elided_fallback_name_id : Int32
 } derive(ToJson, @debug.Debug)
 pub fn StatTable::parse(BytesView) -> Result[Self, SfntError]
+pub fn StatTable::to_json(Self) -> Json
+pub fn StatTable::to_repr(Self) -> @debug.Repr
 
 pub struct TableRecord {
   tag : @common.Tag
-  offset : Int
-  length : Int
+  offset : Int32
+  length : Int32
 } derive(Eq, ToJson, @debug.Debug)
+pub fn TableRecord::equal(Self, Self) -> Bool
+pub fn TableRecord::not_equal(Self, Self) -> Bool
+pub fn TableRecord::to_json(Self) -> Json
+pub fn TableRecord::to_repr(Self) -> @debug.Repr
 
 pub struct VheaTable {
-  number_of_vmetrics : Int
+  number_of_vmetrics : Int32
 } derive(Eq, ToJson, @debug.Debug)
+pub fn VheaTable::equal(Self, Self) -> Bool
+pub fn VheaTable::not_equal(Self, Self) -> Bool
 pub fn VheaTable::parse(BytesView) -> Result[Self, SfntError]
+pub fn VheaTable::to_json(Self) -> Json
+pub fn VheaTable::to_repr(Self) -> @debug.Repr
 
 pub struct VmtxTable {
-  advances : Array[Int]
-  tsbs : Array[Int]
+  advances : Array[Int32]
+  tsbs : Array[Int32]
 } derive(ToJson, @debug.Debug)
-pub fn VmtxTable::parse(BytesView, Int, Int) -> Result[Self, SfntError]
+pub fn VmtxTable::parse(BytesView, Int32, Int32) -> Result[Self, SfntError]
+pub fn VmtxTable::to_json(Self) -> Json
+pub fn VmtxTable::to_repr(Self) -> @debug.Repr
 
 pub struct VorgMetric {
-  glyph : Int
-  origin_y : Int
+  glyph : Int32
+  origin_y : Int32
 } derive(Eq, ToJson, @debug.Debug)
+pub fn VorgMetric::equal(Self, Self) -> Bool
+pub fn VorgMetric::not_equal(Self, Self) -> Bool
+pub fn VorgMetric::to_json(Self) -> Json
+pub fn VorgMetric::to_repr(Self) -> @debug.Repr
 
 pub struct VorgTable {
-  major_version : Int
-  minor_version : Int
-  default_origin_y : Int
+  major_version : Int32
+  minor_version : Int32
+  default_origin_y : Int32
   metrics : Array[VorgMetric]
 } derive(ToJson, @debug.Debug)
-pub fn VorgTable::origin_y_for(Self, Int) -> Int
-pub fn VorgTable::origin_y_override(Self, Int) -> Int?
+pub fn VorgTable::origin_y_for(Self, Int32) -> Int32
+pub fn VorgTable::origin_y_override(Self, Int32) -> Int32?
 pub fn VorgTable::parse(BytesView) -> Result[Self, SfntError]
+pub fn VorgTable::to_json(Self) -> Json
+pub fn VorgTable::to_repr(Self) -> @debug.Repr
 
 // Type aliases
 
 // Traits
-

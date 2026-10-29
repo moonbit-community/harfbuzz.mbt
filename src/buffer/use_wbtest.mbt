@@ -18,14 +18,14 @@ test "use reorder repha before post-base" {
   buffer.add_codepoint(10U)
   buffer.add_codepoint(11U)
   buffer.add_codepoint(12U)
-  let categories : Array[Int] = [use_cat_r, 1, use_cat_vblw]
-  let syllables : Array[Int] = []
+  let categories : Array[Int32] = [use_cat_r, 1, use_cat_vblw]
+  let syllables : Array[Int32] = []
   let syllable = (1 << 4) | use_syllable_type_standard_cluster
   for _ in 0..<categories.length() {
     syllables.push(syllable)
   }
   reorder_use_syllables(buffer, categories, syllables)
-  let result : Array[UInt] = []
+  let result : Array[UInt32] = []
   for info in buffer.infos() {
     result.push(info.codepoint)
   }
@@ -39,14 +39,14 @@ test "use reorder vpre after halant" {
   buffer.add_codepoint(21U)
   buffer.add_codepoint(22U)
   buffer.add_codepoint(23U)
-  let categories : Array[Int] = [1, use_cat_h, 2, use_cat_vpre]
-  let syllables : Array[Int] = []
+  let categories : Array[Int32] = [1, use_cat_h, 2, use_cat_vpre]
+  let syllables : Array[Int32] = []
   let syllable = (1 << 4) | use_syllable_type_standard_cluster
   for _ in 0..<categories.length() {
     syllables.push(syllable)
   }
   reorder_use_syllables(buffer, categories, syllables)
-  let result : Array[UInt] = []
+  let result : Array[UInt32] = []
   for info in buffer.infos() {
     result.push(info.codepoint)
   }
@@ -55,8 +55,8 @@ test "use reorder vpre after halant" {
 
 ///|
 test "use feature masks apply arabic isol" {
-  let categories : Array[Int] = [1]
-  let syllables : Array[Int] = [(1 << 4) | use_syllable_type_standard_cluster]
+  let categories : Array[Int32] = [1]
+  let syllables : Array[Int32] = [(1 << 4) | use_syllable_type_standard_cluster]
   let masks = build_use_feature_masks(categories, syllables, arabic_actions=[
     arabic_action_isol,
   ])
@@ -66,9 +66,9 @@ test "use feature masks apply arabic isol" {
 
 ///|
 test "use feature masks apply arabic init medi fina" {
-  let categories : Array[Int] = [1, 1, 1, 1]
+  let categories : Array[Int32] = [1, 1, 1, 1]
   let syllable = (1 << 4) | use_syllable_type_standard_cluster
-  let syllables : Array[Int] = [syllable, syllable, syllable, syllable]
+  let syllables : Array[Int32] = [syllable, syllable, syllable, syllable]
   let masks = build_use_feature_masks(categories, syllables, arabic_actions=[
     arabic_action_isol, arabic_action_init, arabic_action_medi, arabic_action_fina,
   ])

@@ -51,15 +51,15 @@ let post_standard_names : Array[String] = [
 ///|
 struct ExpectedGlyph {
   name : String
-  cluster : Int
-  x_advance : Int
-  x_offset : Int
-  y_offset : Int
+  cluster : Int32
+  x_advance : Int32
+  x_offset : Int32
+  y_offset : Int32
 } derive(Eq, Debug)
 
 ///|
 fn bytes_to_ascii_string(bytes : Bytes) -> String {
-  let sb = StringBuilder::new(size_hint=bytes.length())
+  let sb = StringBuilder(size_hint=bytes.length())
   for b in bytes {
     sb.write_char(b.to_char())
   }
@@ -67,8 +67,8 @@ fn bytes_to_ascii_string(bytes : Bytes) -> String {
 }
 
 ///|
-fn build_glyph_name_map(post : @sfnt.PostTable) -> Map[String, UInt] {
-  let map : Map[String, UInt] = {}
+fn build_glyph_name_map(post : @sfnt.PostTable) -> Map[String, UInt32] {
+  let map : Map[String, UInt32] = Map([])
   if post.version == 0x00010000 {
     for i in 0..<post_standard_names.length() {
       map[post_standard_names[i]] = i.reinterpret_as_uint()
@@ -105,7 +105,7 @@ fn build_glyph_name_map(post : @sfnt.PostTable) -> Map[String, UInt] {
 ///|
 fn shape_with_aat(
   font : @font.Font,
-  codepoints : Array[UInt],
+  codepoints : Array[UInt32],
 ) -> @buffer.Buffer raise {
   let buffer = @buffer.Buffer::new()
   for cp in codepoints {
@@ -121,7 +121,7 @@ fn shape_with_aat(
 ///|
 fn assert_shaped(
   buffer : @buffer.Buffer,
-  name_map : Map[String, UInt],
+  name_map : Map[String, UInt32],
   expected : Array[ExpectedGlyph],
 ) -> Unit raise {
   let infos = buffer.infos()

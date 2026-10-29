@@ -15,7 +15,7 @@
 ///|
 /// Generated from refs/harfbuzz/src/hb-ot-shaper-indic-table.cc.
 ///
-let indic_table : Array[UInt] = [
+let indic_table : Array[UInt32] = [
   3584U, 3584U, 3584U, 3584U, 3584U, 1034U, 3584U, 3584U, 1034U, 1034U, 1034U, 1034U,
   1034U, 1034U, 1034U, 1034U, 1034U, 1034U, 3584U, 3584U, 3584U, 3584U, 3584U, 3584U,
   3584U, 3584U, 3385U, 3385U, 3584U, 3584U, 3584U, 3584U, 3584U, 3584U, 3584U, 3584U,
@@ -166,9 +166,9 @@ let indic_table : Array[UInt] = [
 
 ///|
 priv struct IndicRange {
-  start : UInt
-  end : UInt
-  offset : Int
+  start : UInt32
+  end : UInt32
+  offset : Int32
 }
 
 ///|
@@ -192,16 +192,16 @@ let indic_ranges : Array[IndicRange] = [
 ]
 
 ///|
-let indic_special_00a0 : UInt = 1034U
+let indic_special_00a0 : UInt32 = 1034U
 
 ///|
-let indic_special_25cc : UInt = 1035U
+let indic_special_25cc : UInt32 = 1035U
 
 ///|
-let indic_default : UInt = 3584U
+let indic_default : UInt32 = 3584U
 
 ///|
-fn indic_get_categories(u : UInt) -> UInt {
+fn indic_get_categories(u : UInt32) -> UInt32 {
   if u == 0x00A0U {
     return indic_special_00a0
   }
@@ -218,11 +218,11 @@ fn indic_get_categories(u : UInt) -> UInt {
 }
 
 ///|
-fn indic_category(value : UInt) -> UInt {
+fn indic_category(value : UInt32) -> UInt32 {
   value & 0xffU
 }
 
 ///|
-fn indic_position(value : UInt) -> Int {
+fn indic_position(value : UInt32) -> Int32 {
   (value >> 8).reinterpret_as_int()
 }

@@ -16,7 +16,7 @@
 /// Generated from scripts/emoji-data.txt.
 
 ///|
-let emoji_ranges : Array[(UInt, UInt)] = [
+let emoji_ranges : Array[(UInt32, UInt32)] = [
   (0x23U, 0x23U),
   (0x2AU, 0x2AU),
   (0x30U, 0x39U),
@@ -171,7 +171,7 @@ let emoji_ranges : Array[(UInt, UInt)] = [
 ]
 
 ///|
-let emoji_presentation_ranges : Array[(UInt, UInt)] = [
+let emoji_presentation_ranges : Array[(UInt32, UInt32)] = [
   (0x231AU, 0x231BU),
   (0x23E9U, 0x23ECU),
   (0x23F0U, 0x23F0U),
@@ -256,10 +256,10 @@ let emoji_presentation_ranges : Array[(UInt, UInt)] = [
 ]
 
 ///|
-let emoji_modifier_ranges : Array[(UInt, UInt)] = [(0x1F3FBU, 0x1F3FFU)]
+let emoji_modifier_ranges : Array[(UInt32, UInt32)] = [(0x1F3FBU, 0x1F3FFU)]
 
 ///|
-let emoji_modifier_base_ranges : Array[(UInt, UInt)] = [
+let emoji_modifier_base_ranges : Array[(UInt32, UInt32)] = [
   (0x261DU, 0x261DU),
   (0x26F9U, 0x26F9U),
   (0x270AU, 0x270DU),
@@ -303,7 +303,7 @@ let emoji_modifier_base_ranges : Array[(UInt, UInt)] = [
 ]
 
 ///|
-let emoji_component_ranges : Array[(UInt, UInt)] = [
+let emoji_component_ranges : Array[(UInt32, UInt32)] = [
   (0x23U, 0x23U),
   (0x2AU, 0x2AU),
   (0x30U, 0x39U),
@@ -317,7 +317,7 @@ let emoji_component_ranges : Array[(UInt, UInt)] = [
 ]
 
 ///|
-let extended_pictographic_ranges : Array[(UInt, UInt)] = [
+let extended_pictographic_ranges : Array[(UInt32, UInt32)] = [
   (0xA9U, 0xA9U),
   (0xAEU, 0xAEU),
   (0x203CU, 0x203CU),

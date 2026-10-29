@@ -58,7 +58,7 @@ fn OutlineVector::normalize_len(self : OutlineVector) -> Double {
 /// Outline path container (points + contour end indices).
 pub struct Outline {
   points : Array[OutlinePoint]
-  contours : Array[Int]
+  contours : Array[Int32]
 } derive(Debug, ToJson)
 
 ///|
