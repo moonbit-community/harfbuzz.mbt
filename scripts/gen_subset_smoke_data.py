@@ -277,7 +277,7 @@ def emit() -> None:
     lines.append("")
     lines.append("///|")
     lines.append("fn merge_byte_maps(parts : Array[Map[String, Bytes]]) -> Map[String, Bytes] {")
-    lines.append("  let out : Map[String, Bytes] = {}")
+    lines.append("  let out : Map[String, Bytes] = Map([])")
     lines.append("  for part in parts {")
     lines.append("    for key, value in part {")
     lines.append("      out[key] = value")
