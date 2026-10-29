@@ -15,7 +15,7 @@
 ///|
 test "face basics" {
   let bytes : Bytes = [0x00, 0x01, 0x02]
-  let face = Face::from_bytes(bytes)
+  let face = @face.Face::from_bytes(bytes)
   @debug.debug_inspect(face.get_index(), content="0")
   @debug.debug_inspect(face.get_upem(), content="0")
   @debug.debug_inspect(face.get_glyph_count(), content="0")
@@ -24,7 +24,7 @@ test "face basics" {
 ///|
 test "face table storage" {
   let bytes : Bytes = [0x10, 0x11, 0x12, 0x13]
-  let face = Face::from_bytes(bytes)
+  let face = @face.Face::from_bytes(bytes)
   let tag = @common.Tag::from_chars('h', 'e', 'a', 'd')
   let table = @blob.Blob::from_bytes([0x00, 0x01])
   face.set_table(tag, table)
@@ -38,7 +38,7 @@ test "face table storage" {
 
 ///|
 test "face setters" {
-  let face = Face::from_bytes([0x00])
+  let face = @face.Face::from_bytes([0x00])
   face.set_index(2)
   face.set_upem(1024)
   face.set_glyph_count(500)
@@ -52,7 +52,7 @@ test "face reference blob and optional table" {
   let bytes : Bytes = [
     0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
   ]
-  let face = Face::from_bytes(bytes)
+  let face = @face.Face::from_bytes(bytes)
   let blob = face.reference_blob()
   @debug.debug_inspect(blob.len(), content="12")
   inspect(
@@ -79,30 +79,30 @@ test "face reference blob and optional table" {
 ///|
 test "face_count handles sfnt and ttc headers" {
   let empty = @blob.Blob::from_bytes([])
-  @debug.debug_inspect(face_count(empty), content="0")
+  @debug.debug_inspect(@face.face_count(empty), content="0")
 
   let unknown = @blob.Blob::from_bytes([0x01, 0x02, 0x03, 0x04])
-  @debug.debug_inspect(face_count(unknown), content="0")
+  @debug.debug_inspect(@face.face_count(unknown), content="0")
 
   let sfnt = @blob.Blob::from_bytes([0x00, 0x01, 0x00, 0x00])
-  @debug.debug_inspect(face_count(sfnt), content="1")
+  @debug.debug_inspect(@face.face_count(sfnt), content="1")
 
   let otto = @blob.Blob::from_bytes([0x4f, 0x54, 0x54, 0x4f])
-  @debug.debug_inspect(face_count(otto), content="1")
+  @debug.debug_inspect(@face.face_count(otto), content="1")
 
   let true_tag = @blob.Blob::from_bytes([0x74, 0x72, 0x75, 0x65])
-  @debug.debug_inspect(face_count(true_tag), content="1")
+  @debug.debug_inspect(@face.face_count(true_tag), content="1")
 
   let typ1 = @blob.Blob::from_bytes([0x74, 0x79, 0x70, 0x31])
-  @debug.debug_inspect(face_count(typ1), content="1")
+  @debug.debug_inspect(@face.face_count(typ1), content="1")
 
   let ttc = @blob.Blob::from_bytes([
     0x74, 0x74, 0x63, 0x66, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02,
   ])
-  @debug.debug_inspect(face_count(ttc), content="2")
+  @debug.debug_inspect(@face.face_count(ttc), content="2")
 
   let ttc_negative = @blob.Blob::from_bytes([
     0x74, 0x74, 0x63, 0x66, 0x00, 0x01, 0x00, 0x00, 0xff, 0xff, 0xff, 0xff,
   ])
-  @debug.debug_inspect(face_count(ttc_negative), content="0")
+  @debug.debug_inspect(@face.face_count(ttc_negative), content="0")
 }

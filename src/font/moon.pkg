@@ -1,7 +1,9 @@
 import {
-  "moonbit-community/harfbuzz/face",
   "moonbitlang/core/debug",
-  "moonbitlang/core/encoding/utf8",
+}
+
+import {
+  "moonbit-community/harfbuzz/face",
   "moonbitlang/core/math",
   "moonbit-community/harfbuzz/aat",
   "moonbit-community/harfbuzz/blob",
@@ -13,3 +15,7 @@ import {
   "moonbit-community/harfbuzz/ot/var" @ot_var,
   "moonbit-community/harfbuzz/sfnt",
 }
+
+import {
+  "moonbitlang/core/encoding/utf8",
+} for "test"

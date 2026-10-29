@@ -1,6 +1,9 @@
 import {
-  "moonbit-community/harfbuzz/blob",
   "moonbitlang/core/debug",
+}
+
+import {
+  "moonbit-community/harfbuzz/blob",
   "moonbitlang/core/encoding/utf8",
   "moonbit-community/harfbuzz/common",
 }

@@ -13,13 +13,13 @@
 // limitations under the License.
 
 ///|
-fn push_u16(bytes : Array[Byte], value : Int) -> Unit {
+fn push_u16(bytes : Array[Byte], value : Int32) -> Unit {
   bytes.push(((value >> 8) & 0xff).to_byte())
   bytes.push((value & 0xff).to_byte())
 }
 
 ///|
-fn push_u32(bytes : Array[Byte], value : Int) -> Unit {
+fn push_u32(bytes : Array[Byte], value : Int32) -> Unit {
   bytes.push(((value >> 24) & 0xff).to_byte())
   bytes.push(((value >> 16) & 0xff).to_byte())
   bytes.push(((value >> 8) & 0xff).to_byte())
@@ -41,7 +41,11 @@ fn build_cmap_table(subtable : Bytes) -> Bytes {
 }
 
 ///|
-fn build_cmap_format12(start : UInt, end : UInt, start_gid : UInt) -> Bytes {
+fn build_cmap_format12(
+  start : UInt32,
+  end : UInt32,
+  start_gid : UInt32,
+) -> Bytes {
   let bytes : Array[Byte] = []
   push_u16(bytes, 12)
   push_u16(bytes, 0)
@@ -94,7 +98,11 @@ fn build_sfnt_with_table(tag : @common.Tag, table_bytes : Bytes) -> Bytes {
 }
 
 ///|
-fn build_font_bytes_cmap(start : UInt, end : UInt, start_gid : UInt) -> Bytes {
+fn build_font_bytes_cmap(
+  start : UInt32,
+  end : UInt32,
+  start_gid : UInt32,
+) -> Bytes {
   let cmap = build_cmap_table(build_cmap_format12(start, end, start_gid))
   build_sfnt_with_table(@common.Tag::from_chars('c', 'm', 'a', 'p'), cmap)
 }
@@ -104,7 +112,7 @@ test "syllabic dotted circle requires font mapping" {
   let font = @font.Font::from_bytes(build_font_bytes_cmap(0x41U, 0x41U, 1U))
   let buffer = Buffer::new()
   buffer.add_codepoint(0x0301U)
-  let syllables : Array[Int] = [1]
+  let syllables : Array[Int32] = [1]
   let inserted = match
     insert_dotted_circle_for_syllables(font, buffer, syllables, 1) {
     Err(err) => fail("shape error: \{@debug.to_string(err)}")
@@ -121,7 +129,7 @@ test "syllabic dotted circle uses font mapping" {
   let font = @font.Font::from_bytes(build_font_bytes_cmap(0x25CCU, 0x25CCU, 1U))
   let buffer = Buffer::new()
   buffer.add_codepoint(0x0301U)
-  let syllables : Array[Int] = [1]
+  let syllables : Array[Int32] = [1]
   let inserted = match
     insert_dotted_circle_for_syllables(font, buffer, syllables, 1) {
     Err(err) => fail("shape error: \{@debug.to_string(err)}")
@@ -139,7 +147,7 @@ test "syllabic dotted circle for broken syllable list" {
   let font = @font.Font::from_bytes(build_font_bytes_cmap(0x25CCU, 0x25CCU, 1U))
   let buffer = Buffer::new()
   buffer.add_codepoint(0x0301U)
-  let syllables : Array[Int] = [1]
+  let syllables : Array[Int32] = [1]
   let inserted = match
     insert_dotted_circle_for_syllables(font, buffer, syllables, 1) {
     Err(err) => fail("shape error: \{@debug.to_string(err)}")
@@ -158,7 +166,7 @@ test "syllabic dotted circle once per broken syllable" {
   let buffer = Buffer::new()
   buffer.add_codepoint(0x0301U)
   buffer.add_codepoint(0x0301U)
-  let syllables : Array[Int] = [1, 1]
+  let syllables : Array[Int32] = [1, 1]
   let inserted = match
     insert_dotted_circle_for_syllables(font, buffer, syllables, 1) {
     Err(err) => fail("shape error: \{@debug.to_string(err)}")
@@ -178,8 +186,8 @@ test "syllabic dotted circle inserts after repha in broken syllable" {
   let buffer = Buffer::new()
   buffer.add_codepoint(0x41U)
   buffer.add_codepoint(0x42U)
-  let syllables : Array[Int] = [1, 1]
-  let categories : Array[Int] = [indic_cat_repha, 0]
+  let syllables : Array[Int32] = [1, 1]
+  let categories : Array[Int32] = [indic_cat_repha, 0]
   let inserted = match
     insert_dotted_circle_for_syllables_with_repha(
       font, buffer, syllables, 1, categories, indic_cat_repha,

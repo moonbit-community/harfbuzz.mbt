@@ -18,9 +18,9 @@ let f16dot16_scale : Double = 1.0 / 65536.0
 ///|
 /// Track table entry.
 pub(all) struct TrackTableEntry {
-  track : Int
-  name_id : Int
-  values : Array[Int]
+  track : Int32
+  name_id : Int32
+  values : Array[Int32]
 } derive(Eq, Debug, ToJson)
 
 ///|
@@ -32,7 +32,7 @@ fn TrackTableEntry::track_value(self : TrackTableEntry) -> Double {
 fn TrackTableEntry::value_for_size(
   self : TrackTableEntry,
   ptem : Double,
-  size_table : Array[Int],
+  size_table : Array[Int32],
 ) -> Double {
   let n_sizes = size_table.length()
   if n_sizes == 0 {
@@ -97,7 +97,7 @@ fn TrackTableEntry::value_for_size(
 /// Track data for a direction.
 pub(all) struct TrackData {
   track_table : Array[TrackTableEntry]
-  size_table : Array[Int]
+  size_table : Array[Int32]
 } derive(Eq, Debug, ToJson)
 
 ///|
@@ -138,8 +138,8 @@ fn TrackData::tracking(
 ///|
 /// Parsed trak table.
 pub struct TrakTable {
-  version : Int
-  format : Int
+  version : Int32
+  format : Int32
   horiz : TrackData?
   vert : TrackData?
 } derive(Eq, Debug, ToJson)
@@ -192,7 +192,7 @@ pub fn TrakTable::tracking(
   self : TrakTable,
   ptem : Double,
   horizontal : Bool,
-  track? : Double = 0.0,
+  track~ : Double = 0.0,
 ) -> Double {
   let data = if horizontal { self.horiz } else { self.vert }
   match data {
@@ -204,7 +204,7 @@ pub fn TrakTable::tracking(
 ///|
 fn parse_track_data(
   data : BytesView,
-  offset : Int,
+  offset : Int32,
 ) -> Result[TrackData, AatError] {
   if offset < 0 || offset + 8 > data.length() {
     return Err(UnexpectedEof)
@@ -224,7 +224,7 @@ fn parse_track_data(
       if size_abs < 0 || size_abs + n_sizes * 4 > data.length() {
         return Err(UnexpectedEof)
       }
-      let size_table : Array[Int] = []
+      let size_table : Array[Int32] = []
       for i in 0..<n_sizes {
         let size_value = read_i32(data, size_abs + i * 4)
         match size_value {
@@ -254,7 +254,7 @@ fn parse_track_data(
             if values_abs < 0 || values_abs + n_sizes * 2 > data.length() {
               return Err(UnexpectedEof)
             }
-            let values : Array[Int] = []
+            let values : Array[Int32] = []
             for j in 0..<n_sizes {
               let value = read_i16(data, values_abs + j * 2)
               match value {

@@ -1,22 +1,33 @@
 name: Check and Test
 on:
+  workflow_dispatch:
   pull_request:
   push:
     branches:
       - "main"
+
+permissions:
+  contents: read
+concurrency:
+  group: check-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build:
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
+        toolchain: [latest]
+        include:
+          - os: ubuntu-latest
+            toolchain: nightly
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
       - name: install-ubuntu
         if: ${{ matrix.os != 'windows-latest' }}
         run: |
-          curl -fsSL https://cli.moonbitlang.com/install/unix.sh | bash
+          curl -fsSL https://cli.moonbitlang.com/install/unix.sh | bash -s -- "${{ matrix.toolchain || 'latest' }}"
           echo "$HOME/.moon/bin" >> $GITHUB_PATH
       - name: install-windows
         if: ${{ matrix.os == 'windows-latest' }}
@@ -29,16 +40,31 @@ jobs:
           moon version --all
           moon update
 
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
       - name: moon check
         run: |
-          moon check --target all --deny-warn
+          # Keep Result API compatibility (78) and generated font fixtures (33).
+          moon check --target all --deny-warn --warn-list '-78-33'
 
       - name: moon test
         run: |
           moon test --target all
+          moon test --target all --release
 
       - name: lint
         run: |
           moon fmt && git diff --exit-code
-          moon info && git diff --exit-code
+          moon info --target all && git diff --exit-code
 
+      - name: Check JavaScript example
+        working-directory: examples/js_svg
+        run: |
+          moon build --target js --release
+          node ../../scripts/check_demo.cjs
+          moon fmt && git diff --exit-code
+      - name: Check extracted package
+        if: matrix.os == 'ubuntu-latest'
+        run: python3 scripts/check_package.py

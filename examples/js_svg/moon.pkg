@@ -1,0 +1,16 @@
+import {
+  "moonbitlang/core/debug",
+  "moonbit-community/harfbuzz/buffer" @hb_buffer,
+  "moonbit-community/harfbuzz/draw" @hb_draw,
+  "moonbit-community/harfbuzz/font" @hb_font,
+  "moonbit-community/harfbuzz/shape" @hb_shape,
+}
+
+pkgtype(kind: "executable")
+
+options(
+  targets: {
+    "main_js.mbt": [ "js" ],
+    "main_stub.mbt": [ "native", "llvm", "wasm", "wasm-gc" ],
+  },
+)

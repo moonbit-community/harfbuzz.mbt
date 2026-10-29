@@ -13,30 +13,30 @@
 // limitations under the License.
 
 ///|
-let op_charstrings_cff2 : Int = 0x11
+let op_charstrings_cff2 : Int32 = 0x11
 
 ///|
-let op_fdarray_cff2 : Int = (12 << 8) | 36
+let op_fdarray_cff2 : Int32 = (12 << 8) | 36
 
 ///|
-let op_fdselect_cff2 : Int = (12 << 8) | 37
+let op_fdselect_cff2 : Int32 = (12 << 8) | 37
 
 ///|
-let op_vstore_cff2 : Int = 0x18
+let op_vstore_cff2 : Int32 = 0x18
 
 ///|
-let op_private_cff2 : Int = 0x12
+let op_private_cff2 : Int32 = 0x12
 
 ///|
-let op_subrs_cff2 : Int = 0x13
+let op_subrs_cff2 : Int32 = 0x13
 
 ///|
-let op_vsindexdict_cff2 : Int = 0x16
+let op_vsindexdict_cff2 : Int32 = 0x16
 
 ///|
 pub struct Cff2PrivateDict {
   local_subrs : CffIndex?
-  ivs : Int
+  ivs : Int32
 } derive(Eq, Debug, ToJson)
 
 ///|
@@ -48,11 +48,11 @@ pub struct Cff2Table {
   fd_array : CffIndex
   private_dicts : Array[Cff2PrivateDict]
   var_store : @ot_var.ItemVariationStore?
-  fd_select : Array[Int]?
-  fdselect_offset : Int
-  vstore_offset : Int
-  top_dict_offset : Int
-  top_dict_size : Int
+  fd_select : Array[Int32]?
+  fdselect_offset : Int32
+  vstore_offset : Int32
+  top_dict_offset : Int32
+  top_dict_size : Int32
 } derive(Eq, Debug, ToJson)
 
 ///|
@@ -160,8 +160,8 @@ pub fn Cff2Table::parse(data : BytesView) -> Result[Cff2Table, CffError] {
 ///|
 pub fn Cff2Table::glyph_bounds(
   self : Cff2Table,
-  glyph : Int,
-  coords : Array[Int],
+  glyph : Int32,
+  coords : Array[Int32],
 ) -> Result[CffBounds?, CffError] {
   if glyph < 0 || glyph >= self.charstrings.count {
     return Err(InvalidFormat)
@@ -194,15 +194,15 @@ pub fn Cff2Table::glyph_bounds(
 }
 
 ///|
-pub fn Cff2Table::glyph_count(self : Cff2Table) -> Int {
+pub fn Cff2Table::glyph_count(self : Cff2Table) -> Int32 {
   self.charstrings.count
 }
 
 ///|
 fn cff2_clone_entries(
-  entries : Map[Int, Array[CffNumber]],
-) -> Map[Int, Array[CffNumber]] {
-  let next : Map[Int, Array[CffNumber]] = {}
+  entries : Map[Int32, Array[CffNumber]],
+) -> Map[Int32, Array[CffNumber]] {
+  let next : Map[Int32, Array[CffNumber]] = Map([])
   entries.eachi((_, key, value) => next[key] = value.copy())
   next
 }
@@ -222,15 +222,18 @@ fn cff2_build_index_items(index : CffIndex) -> Result[Array[Bytes], CffError] {
 
 ///|
 fn cff2_replace_entry(
-  entries : Map[Int, Array[CffNumber]],
-  op : Int,
+  entries : Map[Int32, Array[CffNumber]],
+  op : Int32,
   values : Array[CffNumber],
 ) -> Unit {
   entries[op] = values
 }
 
 ///|
-fn cff2_remove_entry(entries : Map[Int, Array[CffNumber]], op : Int) -> Unit {
+fn cff2_remove_entry(
+  entries : Map[Int32, Array[CffNumber]],
+  op : Int32,
+) -> Unit {
   match entries.get(op) {
     None => ()
     Some(_) => entries.remove(op)
@@ -290,7 +293,7 @@ fn build_private_dict_cff2(
 }
 
 ///|
-fn build_fdselect_format0(fds : Array[Int]) -> Result[Bytes, CffError] {
+fn build_fdselect_format0(fds : Array[Int32]) -> Result[Bytes, CffError] {
   let bytes : Array[Byte] = []
   bytes.push(0)
   for fd in fds {
@@ -344,11 +347,11 @@ fn parse_cff2_private_dict_entries(
 
 ///|
 fn build_top_dict_cff2(
-  base : Map[Int, Array[CffNumber]],
-  charstrings_offset : Int,
-  fdarray_offset : Int,
-  fdselect_offset : Int,
-  vstore_offset : Int,
+  base : Map[Int32, Array[CffNumber]],
+  charstrings_offset : Int32,
+  fdarray_offset : Int32,
+  fdselect_offset : Int32,
+  vstore_offset : Int32,
 ) -> Result[Bytes, CffError] {
   let entries = cff2_clone_entries(base)
   cff2_replace_entry(entries, op_charstrings_cff2, [Int(charstrings_offset)])
@@ -369,7 +372,7 @@ fn build_top_dict_cff2(
 ///|
 fn cff2_var_store_bytes(
   data : BytesView,
-  offset : Int,
+  offset : Int32,
 ) -> Result[Bytes?, CffError] {
   if offset <= 0 {
     return Ok(None)
@@ -392,7 +395,7 @@ fn cff2_var_store_bytes(
 ///|
 pub fn Cff2Table::subset(
   self : Cff2Table,
-  glyphs : Array[Int],
+  glyphs : Array[Int32],
 ) -> Result[Bytes, CffError] {
   if glyphs.is_empty() {
     return Err(InvalidFormat)
@@ -431,9 +434,9 @@ pub fn Cff2Table::subset(
     None => None
     Some(values) => Some(values)
   }
-  let unique_fds : Array[Int] = []
+  let unique_fds : Array[Int32] = []
   let fd_seen : Array[Bool] = Array::make(self.fd_array.count, false)
-  let glyph_fds : Array[Int] = []
+  let glyph_fds : Array[Int32] = []
   for gid in glyphs {
     let fd = match fd_values {
       None => 0
@@ -450,14 +453,14 @@ pub fn Cff2Table::subset(
       unique_fds.push(fd)
     }
   }
-  let fd_map : Array[Int] = Array::make(self.fd_array.count, -1)
+  let fd_map : Array[Int32] = Array::make(self.fd_array.count, -1)
   for i in 0..<unique_fds.length() {
     let old_fd = unique_fds[i]
     if old_fd >= 0 && old_fd < fd_map.length() {
       fd_map[old_fd] = i
     }
   }
-  let new_glyph_fds : Array[Int] = []
+  let new_glyph_fds : Array[Int32] = []
   for fd in glyph_fds {
     if fd < 0 || fd >= fd_map.length() {
       return Err(InvalidFormat)
@@ -661,8 +664,8 @@ fn parse_fd_array_private_dicts(
 ///|
 fn parse_cff2_private_dict(
   data : BytesView,
-  offset : Int,
-  size : Int,
+  offset : Int32,
+  size : Int32,
 ) -> Result[Cff2PrivateDict, CffError] {
   if size <= 0 {
     return Ok({ local_subrs: None, ivs: 0, })
@@ -698,7 +701,7 @@ fn parse_cff2_private_dict(
 ///|
 fn parse_cff2_var_store(
   data : BytesView,
-  offset : Int,
+  offset : Int32,
 ) -> Result[@ot_var.ItemVariationStore, CffError] {
   let size = read_u16_int(data, offset)
   let size = match size {
@@ -729,9 +732,9 @@ fn map_var_error(err : @ot_var.VarError) -> CffError {
 ///|
 fn parse_fdselect(
   data : BytesView,
-  offset : Int,
-  glyph_count : Int,
-) -> Result[Array[Int], CffError] {
+  offset : Int32,
+  glyph_count : Int32,
+) -> Result[Array[Int32], CffError] {
   if glyph_count < 0 {
     return Err(InvalidFormat)
   }
@@ -743,7 +746,7 @@ fn parse_fdselect(
         if offset + 1 + glyph_count > data.length() {
           return Err(UnexpectedEof)
         }
-        let values : Array[Int] = []
+        let values : Array[Int32] = []
         for i in 0..<glyph_count {
           values.push(data[offset + 1 + i].to_int())
         }
@@ -757,8 +760,8 @@ fn parse_fdselect(
               return Err(InvalidFormat)
             }
             let mut pos = offset + 3
-            let starts : Array[Int] = []
-            let fds : Array[Int] = []
+            let starts : Array[Int32] = []
+            let fds : Array[Int32] = []
             for _ in 0..<range_count {
               let start = read_u16_int(data, pos)
               let fd = read_u8_int(data, pos + 2)
@@ -777,7 +780,7 @@ fn parse_fdselect(
               Err(err) => return Err(err)
               Ok(value) => value
             }
-            let values : Array[Int] = Array::make(glyph_count, 0)
+            let values : Array[Int32] = Array::make(glyph_count, 0)
             for i in 0..<starts.length() {
               let start = starts[i]
               let end = if i + 1 < starts.length() {
@@ -806,8 +809,8 @@ fn parse_fdselect(
               return Err(InvalidFormat)
             }
             let mut pos = offset + 5
-            let starts : Array[Int] = []
-            let fds : Array[Int] = []
+            let starts : Array[Int32] = []
+            let fds : Array[Int32] = []
             for _ in 0..<range_count {
               let start = read_u32_int(data, pos)
               let fd = read_u16_int(data, pos + 4)
@@ -826,7 +829,7 @@ fn parse_fdselect(
               Err(err) => return Err(err)
               Ok(value) => value
             }
-            let values : Array[Int] = Array::make(glyph_count, 0)
+            let values : Array[Int32] = Array::make(glyph_count, 0)
             for i in 0..<starts.length() {
               let start = starts[i]
               let end = if i + 1 < starts.length() {

@@ -7,125 +7,125 @@ import {
 }
 
 // Values
-pub let arabic_joining_group_alaph : UInt
+pub let arabic_joining_group_alaph : UInt32
 
-pub let arabic_joining_group_dalath_rish : UInt
+pub let arabic_joining_group_dalath_rish : UInt32
 
-pub fn arabic_joining_type(UInt) -> UInt
+pub fn arabic_joining_type(UInt32) -> UInt32
 
-pub let arabic_joining_type_d : UInt
+pub let arabic_joining_type_d : UInt32
 
-pub let arabic_joining_type_l : UInt
+pub let arabic_joining_type_l : UInt32
 
-pub let arabic_joining_type_r : UInt
+pub let arabic_joining_type_r : UInt32
 
-pub fn arabic_joining_type_raw(UInt) -> UInt
+pub fn arabic_joining_type_raw(UInt32) -> UInt32
 
-pub let arabic_joining_type_t : UInt
+pub let arabic_joining_type_t : UInt32
 
-pub let arabic_joining_type_u : UInt
+pub let arabic_joining_type_u : UInt32
 
-pub let arabic_joining_type_x : UInt
+pub let arabic_joining_type_x : UInt32
 
-pub let arabic_shaping_first : UInt
+pub let arabic_shaping_first : UInt32
 
-pub fn arabic_shaping_form(UInt, Int) -> UInt?
+pub fn arabic_shaping_form(UInt32, Int32) -> UInt32?
 
-pub let arabic_shaping_last : UInt
+pub let arabic_shaping_last : UInt32
 
-pub fn combining_class(UInt) -> UInt
+pub fn combining_class(UInt32) -> UInt32
 
-pub fn compose(UInt, UInt) -> UInt?
+pub fn compose(UInt32, UInt32) -> UInt32?
 
-pub fn decompose(UInt) -> (UInt, UInt)?
+pub fn decompose(UInt32) -> (UInt32, UInt32)?
 
-pub let gc_close_punctuation : UInt
+pub let gc_close_punctuation : UInt32
 
-pub let gc_connect_punctuation : UInt
+pub let gc_connect_punctuation : UInt32
 
-pub let gc_control : UInt
+pub let gc_control : UInt32
 
-pub let gc_currency_symbol : UInt
+pub let gc_currency_symbol : UInt32
 
-pub let gc_dash_punctuation : UInt
+pub let gc_dash_punctuation : UInt32
 
-pub let gc_decimal_number : UInt
+pub let gc_decimal_number : UInt32
 
-pub let gc_enclosing_mark : UInt
+pub let gc_enclosing_mark : UInt32
 
-pub let gc_final_punctuation : UInt
+pub let gc_final_punctuation : UInt32
 
-pub let gc_format : UInt
+pub let gc_format : UInt32
 
-pub let gc_initial_punctuation : UInt
+pub let gc_initial_punctuation : UInt32
 
-pub let gc_letter_number : UInt
+pub let gc_letter_number : UInt32
 
-pub let gc_line_separator : UInt
+pub let gc_line_separator : UInt32
 
-pub let gc_lowercase_letter : UInt
+pub let gc_lowercase_letter : UInt32
 
-pub let gc_math_symbol : UInt
+pub let gc_math_symbol : UInt32
 
-pub let gc_modifier_letter : UInt
+pub let gc_modifier_letter : UInt32
 
-pub let gc_modifier_symbol : UInt
+pub let gc_modifier_symbol : UInt32
 
-pub let gc_non_spacing_mark : UInt
+pub let gc_non_spacing_mark : UInt32
 
-pub let gc_open_punctuation : UInt
+pub let gc_open_punctuation : UInt32
 
-pub let gc_other_letter : UInt
+pub let gc_other_letter : UInt32
 
-pub let gc_other_number : UInt
+pub let gc_other_number : UInt32
 
-pub let gc_other_punctuation : UInt
+pub let gc_other_punctuation : UInt32
 
-pub let gc_other_symbol : UInt
+pub let gc_other_symbol : UInt32
 
-pub let gc_paragraph_separator : UInt
+pub let gc_paragraph_separator : UInt32
 
-pub let gc_private_use : UInt
+pub let gc_private_use : UInt32
 
-pub let gc_space_separator : UInt
+pub let gc_space_separator : UInt32
 
-pub let gc_spacing_mark : UInt
+pub let gc_spacing_mark : UInt32
 
-pub let gc_surrogate : UInt
+pub let gc_surrogate : UInt32
 
-pub let gc_titlecase_letter : UInt
+pub let gc_titlecase_letter : UInt32
 
-pub let gc_unassigned : UInt
+pub let gc_unassigned : UInt32
 
-pub let gc_uppercase_letter : UInt
+pub let gc_uppercase_letter : UInt32
 
-pub fn general_category(UInt) -> UInt
+pub fn general_category(UInt32) -> UInt32
 
-pub fn is_default_ignorable(UInt) -> Bool
+pub fn is_default_ignorable(UInt32) -> Bool
 
-pub fn is_emoji(UInt) -> Bool
+pub fn is_emoji(UInt32) -> Bool
 
-pub fn is_emoji_component(UInt) -> Bool
+pub fn is_emoji_component(UInt32) -> Bool
 
-pub fn is_emoji_modifier(UInt) -> Bool
+pub fn is_emoji_modifier(UInt32) -> Bool
 
-pub fn is_emoji_modifier_base(UInt) -> Bool
+pub fn is_emoji_modifier_base(UInt32) -> Bool
 
-pub fn is_emoji_presentation(UInt) -> Bool
+pub fn is_emoji_presentation(UInt32) -> Bool
 
-pub fn is_extended_pictographic(UInt) -> Bool
+pub fn is_extended_pictographic(UInt32) -> Bool
 
-pub fn is_mark(UInt) -> Bool
+pub fn is_mark(UInt32) -> Bool
 
-pub fn is_variation_selector(UInt) -> Bool
+pub fn is_variation_selector(UInt32) -> Bool
 
-pub fn mirroring(UInt) -> UInt
+pub fn mirroring(UInt32) -> UInt32
 
-pub fn modified_combining_class(UInt) -> UInt
+pub fn modified_combining_class(UInt32) -> UInt32
 
-pub fn script(UInt) -> @common.Script
+pub fn script(UInt32) -> @common.Script
 
-pub fn space_fallback_type(UInt) -> SpaceFallbackType
+pub fn space_fallback_type(UInt32) -> SpaceFallbackType
 
 // Errors
 
@@ -145,8 +145,11 @@ pub enum SpaceFallbackType {
   SpacePunctuation
   SpaceNarrow
 } derive(Eq, ToJson, @debug.Debug)
+pub fn SpaceFallbackType::equal(Self, Self) -> Bool
+pub fn SpaceFallbackType::not_equal(Self, Self) -> Bool
+pub fn SpaceFallbackType::to_json(Self) -> Json
+pub fn SpaceFallbackType::to_repr(Self) -> @debug.Repr
 
 // Type aliases
 
 // Traits
-

@@ -14,41 +14,41 @@
 
 ///|
 pub(all) struct LookupSegmentSingle {
-  first : UInt
-  last : UInt
-  value : UInt
+  first : UInt32
+  last : UInt32
+  value : UInt32
 } derive(Eq, Debug, ToJson)
 
 ///|
 pub(all) struct LookupSegmentArray {
-  first : UInt
-  last : UInt
-  values : Array[UInt]
+  first : UInt32
+  last : UInt32
+  values : Array[UInt32]
 } derive(Eq, Debug, ToJson)
 
 ///|
 pub(all) struct LookupSingle {
-  glyph : UInt
-  value : UInt
+  glyph : UInt32
+  value : UInt32
 } derive(Eq, Debug, ToJson)
 
 ///|
 pub(all) enum LookupTable {
-  Format0(Array[UInt])
+  Format0(Array[UInt32])
   Format2(Array[LookupSegmentSingle])
   Format4(Array[LookupSegmentArray])
   Format6(Array[LookupSingle])
-  Format8(UInt, Array[UInt])
-  Format10(Int, UInt, Array[UInt])
+  Format8(UInt32, Array[UInt32])
+  Format10(Int32, UInt32, Array[UInt32])
 } derive(Eq, Debug, ToJson)
 
 ///|
-fn within_range(glyph : UInt, first : UInt, last : UInt) -> Bool {
+fn within_range(glyph : UInt32, first : UInt32, last : UInt32) -> Bool {
   glyph >= first && glyph <= last
 }
 
 ///|
-fn LookupTable::value_for(self : LookupTable, glyph : UInt) -> UInt? {
+fn LookupTable::value_for(self : LookupTable, glyph : UInt32) -> UInt32? {
   match self {
     Format0(values) => {
       let idx = glyph.reinterpret_as_int()
@@ -113,9 +113,9 @@ fn LookupTable::value_for(self : LookupTable, glyph : UInt) -> UInt? {
 ///|
 fn read_lookup_value(
   data : BytesView,
-  offset : Int,
-  value_size : Int,
-) -> Result[UInt, AatError] {
+  offset : Int32,
+  value_size : Int32,
+) -> Result[UInt32, AatError] {
   if value_size == 2 {
     read_u16(data, offset)
   } else if value_size == 4 {
@@ -128,9 +128,9 @@ fn read_lookup_value(
 ///|
 fn parse_format0(
   data : BytesView,
-  offset : Int,
-  num_glyphs : Int,
-  value_size : Int,
+  offset : Int32,
+  num_glyphs : Int32,
+  value_size : Int32,
 ) -> Result[LookupTable, AatError] {
   if num_glyphs < 0 {
     return Err(InvalidFormat)
@@ -139,7 +139,7 @@ fn parse_format0(
   if start < 0 || start + num_glyphs * value_size > data.length() {
     return Err(UnexpectedEof)
   }
-  let values : Array[UInt] = []
+  let values : Array[UInt32] = []
   for i in 0..<num_glyphs {
     let value = read_lookup_value(data, start + i * value_size, value_size)
     match value {
@@ -153,8 +153,8 @@ fn parse_format0(
 ///|
 fn parse_binsearch_header(
   data : BytesView,
-  offset : Int,
-) -> Result[(Int, Int, Int), AatError] {
+  offset : Int32,
+) -> Result[(Int32, Int32, Int32), AatError] {
   let unit_size = read_u16_int(data, offset)
   let n_units = read_u16_int(data, offset + 2)
   let search_range = read_u16_int(data, offset + 4)
@@ -178,8 +178,8 @@ fn parse_binsearch_header(
 ///|
 fn parse_format2(
   data : BytesView,
-  offset : Int,
-  value_size : Int,
+  offset : Int32,
+  value_size : Int32,
 ) -> Result[LookupTable, AatError] {
   let header = parse_binsearch_header(data, offset + 2)
   match header {
@@ -217,8 +217,8 @@ fn parse_format2(
 ///|
 fn parse_format4(
   data : BytesView,
-  offset : Int,
-  value_size : Int,
+  offset : Int32,
+  value_size : Int32,
 ) -> Result[LookupTable, AatError] {
   let header = parse_binsearch_header(data, offset + 2)
   match header {
@@ -253,7 +253,7 @@ fn parse_format4(
               values_start + count * value_size > data.length() {
               return Err(UnexpectedEof)
             }
-            let values : Array[UInt] = []
+            let values : Array[UInt32] = []
             for j in 0..<count {
               let value = read_lookup_value(
                 data,
@@ -277,8 +277,8 @@ fn parse_format4(
 ///|
 fn parse_format6(
   data : BytesView,
-  offset : Int,
-  value_size : Int,
+  offset : Int32,
+  value_size : Int32,
 ) -> Result[LookupTable, AatError] {
   let header = parse_binsearch_header(data, offset + 2)
   match header {
@@ -314,8 +314,8 @@ fn parse_format6(
 ///|
 fn parse_format8(
   data : BytesView,
-  offset : Int,
-  value_size : Int,
+  offset : Int32,
+  value_size : Int32,
 ) -> Result[LookupTable, AatError] {
   let first = read_u16(data, offset + 2)
   let glyph_count = read_u16_int(data, offset + 4)
@@ -330,7 +330,7 @@ fn parse_format8(
       if start < 0 || start + glyph_count * value_size > data.length() {
         return Err(UnexpectedEof)
       }
-      let values : Array[UInt] = []
+      let values : Array[UInt32] = []
       for i in 0..<glyph_count {
         let value = read_lookup_value(data, start + i * value_size, value_size)
         match value {
@@ -346,7 +346,7 @@ fn parse_format8(
 ///|
 fn parse_format10(
   data : BytesView,
-  offset : Int,
+  offset : Int32,
 ) -> Result[LookupTable, AatError] {
   let value_size = read_u16_int(data, offset + 2)
   let first = read_u16(data, offset + 4)
@@ -363,7 +363,7 @@ fn parse_format10(
       if start < 0 || start + glyph_count * value_size > data.length() {
         return Err(UnexpectedEof)
       }
-      let values : Array[UInt] = []
+      let values : Array[UInt32] = []
       for i in 0..<glyph_count {
         let mut value = 0U
         let base = start + i * value_size
@@ -380,9 +380,9 @@ fn parse_format10(
 ///|
 fn parse_lookup_with_value_size(
   data : BytesView,
-  offset : Int,
-  num_glyphs : Int,
-  value_size : Int,
+  offset : Int32,
+  num_glyphs : Int32,
+  value_size : Int32,
 ) -> Result[LookupTable, AatError] {
   let format = read_u16_int(data, offset)
   match format {
@@ -403,8 +403,8 @@ fn parse_lookup_with_value_size(
 ///|
 fn parse_lookup(
   data : BytesView,
-  offset : Int,
-  num_glyphs : Int,
+  offset : Int32,
+  num_glyphs : Int32,
 ) -> Result[LookupTable, AatError] {
   parse_lookup_with_value_size(data, offset, num_glyphs, 2)
 }

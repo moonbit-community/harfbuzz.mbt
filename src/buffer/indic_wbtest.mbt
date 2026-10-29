@@ -18,9 +18,9 @@ test "indic reorder by positions with joiner attach" {
   buffer.add_codepoint(10U)
   buffer.add_codepoint(11U)
   buffer.add_codepoint(12U)
-  let categories : Array[Int] = [1, indic_cat_n, 1]
-  let positions : Array[Int] = [4, 6, 2]
-  let syllables : Array[Int] = []
+  let categories : Array[Int32] = [1, indic_cat_n, 1]
+  let positions : Array[Int32] = [4, 6, 2]
+  let syllables : Array[Int32] = []
   let syllable = (1 << 4) | indic_syllable_type_consonant_syllable
   for _ in 0..<categories.length() {
     syllables.push(syllable)
@@ -35,7 +35,7 @@ test "indic reorder by positions with joiner attach" {
     [],
     [],
   )
-  let result : Array[UInt] = []
+  let result : Array[UInt32] = []
   for info in buffer.infos() {
     result.push(info.codepoint)
   }

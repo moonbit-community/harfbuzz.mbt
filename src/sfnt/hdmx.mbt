@@ -15,15 +15,15 @@
 ///|
 /// HDMX device record.
 pub struct HdmxRecord {
-  pixel_size : Int
-  max_width : Int
-  widths : Array[Int]
+  pixel_size : Int32
+  max_width : Int32
+  widths : Array[Int32]
 } derive(Debug, ToJson)
 
 ///|
 /// Parsed hdmx table.
 pub struct HdmxTable {
-  version : Int
+  version : Int32
   records : Array[HdmxRecord]
 } derive(Debug, ToJson)
 
@@ -50,7 +50,7 @@ pub fn HdmxTable::parse(data : BytesView) -> Result[HdmxTable, SfntError] {
         let pixel_size = data[offset].to_uint().reinterpret_as_int()
         let max_width = data[offset + 1].to_uint().reinterpret_as_int()
         let widths_len = record_size - 2
-        let widths : Array[Int] = []
+        let widths : Array[Int32] = []
         let mut cursor = offset + 2
         let end = offset + record_size
         if cursor + widths_len > end {

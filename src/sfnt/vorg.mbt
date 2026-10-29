@@ -15,16 +15,16 @@
 ///|
 /// VORG metric entry.
 pub struct VorgMetric {
-  glyph : Int
-  origin_y : Int
+  glyph : Int32
+  origin_y : Int32
 } derive(Eq, Debug, ToJson)
 
 ///|
 /// Parsed VORG table.
 pub struct VorgTable {
-  major_version : Int
-  minor_version : Int
-  default_origin_y : Int
+  major_version : Int32
+  minor_version : Int32
+  default_origin_y : Int32
   metrics : Array[VorgMetric]
 } derive(Debug, ToJson)
 
@@ -71,7 +71,7 @@ pub fn VorgTable::parse(data : BytesView) -> Result[VorgTable, SfntError] {
 
 ///|
 /// Return override origin for glyph if present.
-pub fn VorgTable::origin_y_override(self : VorgTable, glyph : Int) -> Int? {
+pub fn VorgTable::origin_y_override(self : VorgTable, glyph : Int32) -> Int32? {
   for metric in self.metrics {
     if metric.glyph == glyph {
       return Some(metric.origin_y)
@@ -82,7 +82,7 @@ pub fn VorgTable::origin_y_override(self : VorgTable, glyph : Int) -> Int? {
 
 ///|
 /// Return origin Y for glyph, falling back to default.
-pub fn VorgTable::origin_y_for(self : VorgTable, glyph : Int) -> Int {
+pub fn VorgTable::origin_y_for(self : VorgTable, glyph : Int32) -> Int32 {
   match self.origin_y_override(glyph) {
     Some(value) => value
     None => self.default_origin_y

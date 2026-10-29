@@ -15,21 +15,21 @@
 ///|
 /// Parsed post table (subset).
 pub struct PostTable {
-  version : Int
-  italic_angle : Int
-  underline_position : Int
-  underline_thickness : Int
-  is_fixed_pitch : Int
-  min_mem_type42 : Int
-  max_mem_type42 : Int
-  min_mem_type1 : Int
-  max_mem_type1 : Int
-  glyph_name_indices : Array[Int]?
+  version : Int32
+  italic_angle : Int32
+  underline_position : Int32
+  underline_thickness : Int32
+  is_fixed_pitch : Int32
+  min_mem_type42 : Int32
+  max_mem_type42 : Int32
+  min_mem_type1 : Int32
+  max_mem_type1 : Int32
+  glyph_name_indices : Array[Int32]?
   custom_names : Array[Bytes]?
 } derive(Debug, ToJson)
 
 ///|
-fn read_i32(data : BytesView, offset : Int) -> Result[Int, SfntError] {
+fn read_i32(data : BytesView, offset : Int32) -> Result[Int32, SfntError] {
   match read_u32(data, offset) {
     Err(err) => Err(err)
     Ok(value) => Ok(value.reinterpret_as_int())
@@ -39,13 +39,13 @@ fn read_i32(data : BytesView, offset : Int) -> Result[Int, SfntError] {
 ///|
 fn parse_post_names(
   data : BytesView,
-  offset : Int,
-  num_glyphs : Int,
-) -> Result[(Array[Int], Array[Bytes]), SfntError] {
+  offset : Int32,
+  num_glyphs : Int32,
+) -> Result[(Array[Int32], Array[Bytes]), SfntError] {
   if num_glyphs < 0 {
     return Err(InvalidFormat)
   }
-  let indices : Array[Int] = []
+  let indices : Array[Int32] = []
   let mut cursor = offset
   let end = data.length()
   for _ in 0..<num_glyphs {
@@ -114,7 +114,7 @@ pub fn PostTable::parse(data : BytesView) -> Result[PostTable, SfntError] {
       Ok(min_mem_type1),
       Ok(max_mem_type1),
     ) => {
-      let mut glyph_name_indices : Array[Int]? = None
+      let mut glyph_name_indices : Array[Int32]? = None
       let mut custom_names : Array[Bytes]? = None
       if version == 0x00020000 {
         let num_glyphs = read_u16_int(data, 32)

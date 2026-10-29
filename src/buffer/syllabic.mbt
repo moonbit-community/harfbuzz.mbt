@@ -13,14 +13,14 @@
 // limitations under the License.
 
 ///|
-let dotted_circle_codepoint : UInt = 0x25CCU
+let dotted_circle_codepoint : UInt32 = 0x25CCU
 
 ///|
 fn insert_dotted_circle_for_syllables(
   font : @font.Font,
   buffer : Buffer,
-  syllables : Array[Int],
-  broken_type : Int,
+  syllables : Array[Int32],
+  broken_type : Int32,
 ) -> Result[Bool, ShapeError] {
   if buffer.infos.length() != syllables.length() || buffer.infos.is_empty() {
     return Ok(false)
@@ -70,10 +70,10 @@ fn insert_dotted_circle_for_syllables(
 fn insert_dotted_circle_for_syllables_with_repha(
   font : @font.Font,
   buffer : Buffer,
-  syllables : Array[Int],
-  broken_type : Int,
-  categories : Array[Int],
-  repha_category : Int,
+  syllables : Array[Int32],
+  broken_type : Int32,
+  categories : Array[Int32],
+  repha_category : Int32,
 ) -> Result[Bool, ShapeError] {
   if buffer.infos.length() != syllables.length() ||
     buffer.infos.is_empty() ||
@@ -149,9 +149,9 @@ fn apply_gsub_features_for_syllables(
   buffer : Buffer,
   gsub : @ot_tables.GsubTable,
   feature_tags : Array[@common.Tag],
-  syllables : Array[Int],
-  glyph_masks? : Array[UInt] = [],
-  script_tag? : @common.Tag = buffer.script.to_tag(),
+  syllables : Array[Int32],
+  glyph_masks~ : Array[UInt32] = [],
+  script_tag~ : @common.Tag = buffer.script.to_tag(),
 ) -> Result[Unit, ShapeError] {
   if syllables.is_empty() || syllables.length() != buffer.infos.length() {
     return Ok(())
@@ -166,7 +166,7 @@ fn apply_gsub_features_for_syllables(
   }
   let script_tag = script_tag
   let lang_tag = language_to_ot_tag(buffer.language)
-  let feature_lookups : Array[Array[Int]] = []
+  let feature_lookups : Array[Array[Int32]] = []
   for feature_tag in feature_tags {
     let lookup_offsets = match
       gsub
@@ -192,10 +192,10 @@ fn apply_gsub_features_for_syllables(
   if !has_lookups {
     return Ok(())
   }
-  let mut current_glyphs : Array[UInt] = []
-  let mut current_clusters : Array[Int] = []
-  let mut current_unicodes : Array[UInt] = []
-  let mut current_masks : Array[UInt] = []
+  let mut current_glyphs : Array[UInt32] = []
+  let mut current_clusters : Array[Int32] = []
+  let mut current_unicodes : Array[UInt32] = []
+  let mut current_masks : Array[UInt32] = []
   for info in buffer.infos {
     current_glyphs.push(info.codepoint)
     current_clusters.push(info.cluster)
@@ -221,10 +221,10 @@ fn apply_gsub_features_for_syllables(
       i = j
       continue
     }
-    let mut sub_glyphs : Array[UInt] = []
-    let mut sub_clusters : Array[Int] = []
-    let mut sub_masks : Array[UInt] = []
-    let sub_unicodes : Array[UInt] = []
+    let mut sub_glyphs : Array[UInt32] = []
+    let mut sub_clusters : Array[Int32] = []
+    let mut sub_masks : Array[UInt32] = []
+    let sub_unicodes : Array[UInt32] = []
     for k in start..<end {
       sub_glyphs.push(current_glyphs[k])
       sub_clusters.push(current_clusters[k])
@@ -280,10 +280,10 @@ fn apply_gsub_features_for_syllables(
     let old_len = end - start
     let new_len = sub_glyphs.length()
     if sub_changed || new_len != old_len {
-      let next_glyphs : Array[UInt] = []
-      let next_clusters : Array[Int] = []
-      let next_unicodes : Array[UInt] = []
-      let next_masks : Array[UInt] = []
+      let next_glyphs : Array[UInt32] = []
+      let next_clusters : Array[Int32] = []
+      let next_unicodes : Array[UInt32] = []
+      let next_masks : Array[UInt32] = []
       for k in 0..<start {
         next_glyphs.push(current_glyphs[k])
         next_clusters.push(current_clusters[k])

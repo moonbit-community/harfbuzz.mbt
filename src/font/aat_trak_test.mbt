@@ -209,7 +209,7 @@ fn build_font_bytes_aat_trak() -> Bytes {
 
 ///|
 test "aat trak parse" {
-  let font = Font::from_bytes(build_font_bytes_aat_trak())
+  let font = @font.Font::from_bytes(build_font_bytes_aat_trak())
   let trak = match font.trak() {
     Err(err) => fail("trak parse failed: \{@debug.to_string(err)}")
     Ok(None) => fail("trak table missing")

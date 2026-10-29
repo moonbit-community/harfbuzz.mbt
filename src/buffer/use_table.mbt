@@ -15,7 +15,7 @@
 ///|
 /// Generated from refs/harfbuzz/src/hb-ot-shaper-use-table.hh.
 ///
-let use_table_u8 : Array[Int] = [
+let use_table_u8 : Array[Int32] = [
   16, 50, 51, 51, 51, 52, 51, 83, 118, 131, 57, 58, 59, 195, 211, 62, 51, 51, 51,
   51, 51, 51, 51, 51, 51, 51, 51, 51, 51, 51, 51, 51, 51, 51, 51, 51, 51, 51, 51,
   51, 51, 51, 51, 51, 51, 51, 51, 51, 51, 51, 51, 51, 51, 51, 51, 51, 51, 51, 51,
@@ -166,7 +166,7 @@ let use_table_u8 : Array[Int] = [
 ]
 
 ///|
-let use_table_u16 : Array[Int] = [
+let use_table_u16 : Array[Int32] = [
   0, 0, 1, 2, 0, 3, 0, 3, 0, 0, 4, 5, 0, 6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
   0, 7, 0, 0, 0, 0, 0, 0, 0, 8, 0, 0, 0, 0, 0, 0, 0, 9, 10, 11, 12, 0, 0, 0, 0, 10,
   13, 0, 0, 14, 10, 10, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 18, 26, 27, 21,
@@ -212,15 +212,15 @@ let use_table_u16 : Array[Int] = [
 ]
 
 ///|
-fn use_table_b4(a : Array[Int], i : Int) -> Int {
+fn use_table_b4(a : Array[Int32], i : Int32) -> Int32 {
   (a[i >> 1] >> ((i & 1) << 2)) & 15
 }
 
 ///|
-let use_table_limit : Int = 921600
+let use_table_limit : Int32 = 921600
 
 ///|
-fn use_get_category(u : UInt) -> UInt {
+fn use_get_category(u : UInt32) -> UInt32 {
   let code = u.reinterpret_as_int()
   if code >= use_table_limit {
     return use_syllable_machine_ex_O

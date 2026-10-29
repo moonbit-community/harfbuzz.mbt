@@ -30,14 +30,14 @@ suberror BlobError {
 /// Blob wraps binary data with a view range.
 pub struct Blob {
   bytes : Bytes
-  offset : Int
-  length : Int
+  offset : Int32
+  length : Int32
   mode : MemoryMode
 } derive(Eq, Debug, ToJson)
 
 ///|
 /// Create a blob from bytes.
-pub fn Blob::from_bytes(bytes : Bytes, mode? : MemoryMode = Readonly) -> Blob {
+pub fn Blob::from_bytes(bytes : Bytes, mode~ : MemoryMode = Readonly) -> Blob {
   { bytes, offset: 0, length: bytes.length(), mode, }
 }
 
@@ -52,7 +52,7 @@ pub fn Blob::from_bytes_copy(bytes : Bytes) -> Blob {
 /// Create a blob from a byte array view.
 pub fn Blob::from_array(
   bytes : ArrayView[Byte],
-  mode? : MemoryMode = Readonly,
+  mode~ : MemoryMode = Readonly,
 ) -> Blob {
   Blob::from_bytes(Bytes::from_array(bytes), mode~)
 }
@@ -61,8 +61,8 @@ pub fn Blob::from_array(
 /// Create a sub-blob.
 pub fn Blob::sub(
   self : Blob,
-  offset : Int,
-  length : Int,
+  offset : Int32,
+  length : Int32,
 ) -> Result[Blob, BlobError] {
   if offset < 0 || length < 0 {
     return Err(OutOfBounds)
@@ -84,7 +84,7 @@ pub fn Blob::sub(
 
 ///|
 /// Return the blob length in bytes.
-pub fn Blob::len(self : Blob) -> Int {
+pub fn Blob::len(self : Blob) -> Int32 {
   self.length
 }
 
@@ -108,7 +108,7 @@ pub fn Blob::to_bytes(self : Blob) -> Bytes {
 
 ///|
 /// Raw byte access with bounds checking.
-pub fn Blob::get(self : Blob, index : Int) -> Byte? {
+pub fn Blob::get(self : Blob, index : Int32) -> Byte? {
   if index < 0 || index >= self.length {
     None
   } else {

@@ -724,7 +724,7 @@ fn build_font_bytes_noto_handwriting_colr1() -> Bytes {
 
 ///|
 test "cpal v0 parse" {
-  let font = Font::from_bytes(build_font_bytes_cpal_v0())
+  let font = @font.Font::from_bytes(build_font_bytes_cpal_v0())
   let cpal = match font.cpal() {
     Err(err) => fail("cpal v0 parse failed: \{@debug.to_string(err)}")
     Ok(None) => fail("cpal v0 table missing")
@@ -739,7 +739,7 @@ test "cpal v0 parse" {
 
 ///|
 test "cpal v1 parse" {
-  let font = Font::from_bytes(build_font_bytes_cpal_v1())
+  let font = @font.Font::from_bytes(build_font_bytes_cpal_v1())
   let cpal = match font.cpal() {
     Err(err) => fail("cpal v1 parse failed: \{@debug.to_string(err)}")
     Ok(None) => fail("cpal v1 table missing")
@@ -762,7 +762,7 @@ test "cpal v1 parse" {
 
 ///|
 test "colr v0 parse" {
-  let font = Font::from_bytes(build_font_bytes_chromacheck_colr())
+  let font = @font.Font::from_bytes(build_font_bytes_chromacheck_colr())
   let colr = match font.colr() {
     Err(err) => fail("colr v0 parse failed: \{@debug.to_string(err)}")
     Ok(None) => fail("colr table missing")
@@ -780,7 +780,7 @@ test "colr v0 parse" {
 
 ///|
 test "colr v1 parse" {
-  let font = Font::from_bytes(build_font_bytes_noto_handwriting_colr1())
+  let font = @font.Font::from_bytes(build_font_bytes_noto_handwriting_colr1())
   let colr = match font.colr() {
     Err(err) => fail("colr v1 parse failed: \{@debug.to_string(err)}")
     Ok(None) => fail("colr table missing")
@@ -798,7 +798,7 @@ test "colr v1 parse" {
 
 ///|
 test "colr v1 walk paint" {
-  let font = Font::from_bytes(build_font_bytes_noto_handwriting_colr1())
+  let font = @font.Font::from_bytes(build_font_bytes_noto_handwriting_colr1())
   let colr = match font.colr() {
     Err(err) => fail("colr v1 parse failed: \{@debug.to_string(err)}")
     Ok(None) => fail("colr table missing")
@@ -818,7 +818,7 @@ test "colr v1 walk paint" {
 
 ///|
 test "colr clip extents none for v0" {
-  let font = Font::from_bytes(build_font_bytes_chromacheck_colr())
+  let font = @font.Font::from_bytes(build_font_bytes_chromacheck_colr())
   let colr = match font.colr() {
     Err(err) => fail("colr v0 parse failed: \{@debug.to_string(err)}")
     Ok(None) => fail("colr table missing")

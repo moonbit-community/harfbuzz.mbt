@@ -13,14 +13,14 @@
 // limitations under the License.
 
 ///|
-let max_paint_depth : Int = 64
+let max_paint_depth : Int32 = 64
 
 ///|
 fn resolve_offset(
-  base : Int,
-  rel : Int,
+  base : Int32,
+  rel : Int32,
   data : BytesView,
-) -> Result[Int, ColorError] {
+) -> Result[Int32, ColorError] {
   let abs = base + rel
   if abs < 0 || abs >= data.length() {
     Err(UnexpectedEof)
@@ -32,7 +32,7 @@ fn resolve_offset(
 ///|
 fn parse_color_stop(
   data : BytesView,
-  offset : Int,
+  offset : Int32,
   has_var : Bool,
 ) -> Result[@paint.ColorStop, ColorError] {
   let stop_offset = read_i16(data, offset)
@@ -59,15 +59,15 @@ fn parse_color_stop(
 ///|
 fn parse_color_line(
   data : BytesView,
-  offset : Int,
+  offset : Int32,
   has_var : Bool,
 ) -> Result[@paint.ColorLine, ColorError] {
-  let extend = read_u8_int(data, offset)
+  let extend_mode = read_u8_int(data, offset)
   let count = read_u16_int(data, offset + 1)
-  match (extend, count) {
+  match (extend_mode, count) {
     (Err(err), _) => Err(err)
     (_, Err(err)) => Err(err)
-    (Ok(extend), Ok(count)) => {
+    (Ok(extend_mode), Ok(count)) => {
       if count < 0 {
         return Err(InvalidFormat)
       }
@@ -84,7 +84,7 @@ fn parse_color_line(
           Ok(value) => stops.push(value)
         }
       }
-      Ok({ extend, stops, })
+      Ok({ extend_mode, stops, })
     }
   }
 }
@@ -92,7 +92,7 @@ fn parse_color_line(
 ///|
 fn parse_affine(
   data : BytesView,
-  offset : Int,
+  offset : Int32,
   has_var : Bool,
 ) -> Result[@paint.Affine2x3, ColorError] {
   let xx = read_i32(data, offset)
@@ -125,8 +125,8 @@ fn parse_affine(
 ///|
 fn parse_paint(
   data : BytesView,
-  offset : Int,
-  depth : Int,
+  offset : Int32,
+  depth : Int32,
 ) -> Result[@paint.Paint, ColorError] {
   if depth <= 0 {
     return Err(InvalidFormat)
@@ -703,7 +703,7 @@ fn parse_paint(
 ///|
 fn parse_paint_root(
   data : BytesView,
-  offset : Int,
+  offset : Int32,
 ) -> Result[@paint.Paint, ColorError] {
   parse_paint(data, offset, max_paint_depth)
 }

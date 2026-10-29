@@ -24,7 +24,7 @@ fn has_tag(tags : ArrayView[@common.Tag], tag : @common.Tag) -> Bool {
 
 ///|
 test "buffer basics" {
-  let buffer = Buffer::new()
+  let buffer = @buffer.Buffer::new()
   assert_true(buffer.is_empty())
   buffer.add_codepoint(65U)
   buffer.add_codepoint(66U, cluster=10)
@@ -36,7 +36,7 @@ test "buffer basics" {
 
 ///|
 test "buffer add string" {
-  let buffer = Buffer::new()
+  let buffer = @buffer.Buffer::new()
   buffer.add_string("ab")
   let infos = buffer.infos()
   inspect(buffer.len(), content="2")
@@ -46,7 +46,7 @@ test "buffer add string" {
 
 ///|
 test "buffer properties" {
-  let buffer = Buffer::new()
+  let buffer = @buffer.Buffer::new()
   buffer.set_direction(@common.direction_ltr)
   buffer.set_script(@common.script_latin)
   buffer.set_language(@common.Language::from_string("en"))
@@ -62,7 +62,7 @@ test "buffer properties" {
 
 ///|
 test "buffer default feature list horizontal" {
-  let buffer = Buffer::new()
+  let buffer = @buffer.Buffer::new()
   buffer.set_direction(@common.direction_ltr)
   let tags = buffer.gsub_features()
   inspect(
@@ -77,7 +77,7 @@ test "buffer default feature list horizontal" {
 
 ///|
 test "buffer default feature list vertical" {
-  let buffer = Buffer::new()
+  let buffer = @buffer.Buffer::new()
   buffer.set_direction(@common.direction_ttb)
   let tags = buffer.gsub_features()
   inspect(
@@ -92,7 +92,7 @@ test "buffer default feature list vertical" {
 
 ///|
 test "buffer default feature list rtl" {
-  let buffer = Buffer::new()
+  let buffer = @buffer.Buffer::new()
   buffer.set_direction(@common.direction_rtl)
   let tags = buffer.gsub_features()
   inspect(
@@ -115,7 +115,7 @@ test "buffer default feature list rtl" {
 
 ///|
 test "buffer feature list honors manual override" {
-  let buffer = Buffer::new()
+  let buffer = @buffer.Buffer::new()
   let custom = @common.Tag::from_chars('a', 'b', 'c', 'd')
   let custom_gpos = @common.Tag::from_chars('w', 'x', 'y', 'z')
   buffer.set_gsub_features([custom])
@@ -131,7 +131,7 @@ test "buffer feature list honors manual override" {
 
 ///|
 test "buffer variation selector fallback" {
-  let buffer = Buffer::new()
+  let buffer = @buffer.Buffer::new()
   @debug.debug_inspect(
     buffer.get_not_found_variation_selector(),
     content="None",
@@ -150,7 +150,7 @@ test "buffer variation selector fallback" {
 
 ///|
 test "buffer clear preserves properties" {
-  let buffer = Buffer::new()
+  let buffer = @buffer.Buffer::new()
   buffer.set_direction(@common.direction_rtl)
   buffer.set_script(@common.script_arabic)
   buffer.set_language(@common.Language::from_string("fa"))
@@ -169,12 +169,12 @@ test "buffer clear preserves properties" {
 
 ///|
 test "buffer merge clusters" {
-  let buffer = Buffer::new()
+  let buffer = @buffer.Buffer::new()
   buffer.add_codepoint(0x61U, cluster=5)
   buffer.add_codepoint(0x62U, cluster=3)
   buffer.add_codepoint(0x63U, cluster=7)
   buffer.merge_clusters(0, 3)
-  let clusters : Array[Int] = []
+  let clusters : Array[Int32] = []
   for info in buffer.infos() {
     clusters.push(info.cluster)
   }
@@ -183,10 +183,10 @@ test "buffer merge clusters" {
 
 ///|
 test "buffer replace glyphs" {
-  let buffer = Buffer::new()
+  let buffer = @buffer.Buffer::new()
   buffer.add_codepoint(0x41U, cluster=2)
-  let infos0 : Array[GlyphInfo] = []
-  let positions0 : Array[GlyphPosition] = []
+  let infos0 : Array[@buffer.GlyphInfo] = []
+  let positions0 : Array[@buffer.GlyphPosition] = []
   for info in buffer.infos() {
     infos0.push(info)
   }
@@ -195,12 +195,12 @@ test "buffer replace glyphs" {
   }
   inspect(buffer.replace_glyphs(infos0), content="true")
   inspect(buffer.len(), content="1")
-  let infos1 : Array[GlyphInfo] = []
+  let infos1 : Array[@buffer.GlyphInfo] = []
   for info in buffer.infos() {
     infos1.push(info)
     infos1.push(info)
   }
-  let positions1 : Array[GlyphPosition] = []
+  let positions1 : Array[@buffer.GlyphPosition] = []
   for pos in positions0 {
     positions1.push(pos)
   }
@@ -210,7 +210,7 @@ test "buffer replace glyphs" {
 
 ///|
 test "buffer verify monotone clusters" {
-  let buffer = Buffer::new()
+  let buffer = @buffer.Buffer::new()
   buffer.set_direction(@common.direction_ltr)
   buffer.add_codepoint(0x41U, cluster=0)
   buffer.add_codepoint(0x42U, cluster=2)
@@ -219,7 +219,7 @@ test "buffer verify monotone clusters" {
 
 ///|
 test "buffer verify non-monotone clusters" {
-  let buffer = Buffer::new()
+  let buffer = @buffer.Buffer::new()
   buffer.set_direction(@common.direction_ltr)
   buffer.add_codepoint(0x41U, cluster=3)
   buffer.add_codepoint(0x42U, cluster=1)
@@ -228,7 +228,7 @@ test "buffer verify non-monotone clusters" {
 
 ///|
 test "buffer guess segment properties" {
-  let buffer = Buffer::new()
+  let buffer = @buffer.Buffer::new()
   buffer.set_script(@common.script_arabic)
   buffer.guess_segment_properties()
   inspect(buffer.get_direction().to_string(), content="rtl")
@@ -242,7 +242,7 @@ test "buffer guess segment properties" {
 
 ///|
 test "buffer guess segment properties script detection" {
-  let buffer = Buffer::new()
+  let buffer = @buffer.Buffer::new()
   buffer.add_codepoint(0x05D0U)
   buffer.guess_segment_properties()
   inspect(buffer.get_script().to_tag().to_string(), content="Hebr")
@@ -251,12 +251,12 @@ test "buffer guess segment properties script detection" {
 
 ///|
 test "buffer normalize combining marks" {
-  let buffer = Buffer::new()
+  let buffer = @buffer.Buffer::new()
   buffer.add_codepoint(0x61U)
   buffer.add_codepoint(0x0301U)
   buffer.add_codepoint(0x0327U)
   buffer.normalize()
-  let cps : Array[UInt] = []
+  let cps : Array[UInt32] = []
   for info in buffer.infos() {
     cps.push(info.codepoint)
   }
@@ -265,11 +265,11 @@ test "buffer normalize combining marks" {
 
 ///|
 test "buffer normalize compose" {
-  let buffer = Buffer::new()
+  let buffer = @buffer.Buffer::new()
   buffer.add_codepoint(0x41U)
   buffer.add_codepoint(0x0301U)
   buffer.normalize()
-  let cps : Array[UInt] = []
+  let cps : Array[UInt32] = []
   for info in buffer.infos() {
     cps.push(info.codepoint)
   }
@@ -278,13 +278,13 @@ test "buffer normalize compose" {
 
 ///|
 test "buffer normalize skips variation selectors" {
-  let buffer = Buffer::new()
+  let buffer = @buffer.Buffer::new()
   buffer.add_codepoint(0x41U)
   buffer.add_codepoint(0x0301U)
   buffer.add_codepoint(0xFE0FU)
   buffer.normalize()
-  let cps : Array[UInt] = []
-  let clusters : Array[Int] = []
+  let cps : Array[UInt32] = []
+  let clusters : Array[Int32] = []
   for info in buffer.infos() {
     cps.push(info.codepoint)
     clusters.push(info.cluster)
@@ -295,12 +295,12 @@ test "buffer normalize skips variation selectors" {
 
 ///|
 test "buffer normalize indic compose exception" {
-  let buffer = Buffer::new()
+  let buffer = @buffer.Buffer::new()
   buffer.set_script(@common.script_bengali)
   buffer.add_codepoint(0x09AFU)
   buffer.add_codepoint(0x09BCU)
   buffer.normalize()
-  let cps : Array[UInt] = []
+  let cps : Array[UInt32] = []
   for info in buffer.infos() {
     cps.push(info.codepoint)
   }
@@ -309,12 +309,12 @@ test "buffer normalize indic compose exception" {
 
 ///|
 test "buffer normalize indic skip mark-base compose" {
-  let buffer = Buffer::new()
+  let buffer = @buffer.Buffer::new()
   buffer.set_script(@common.script_devanagari)
   buffer.add_codepoint(0x0308U)
   buffer.add_codepoint(0x0301U)
   buffer.normalize()
-  let cps : Array[UInt] = []
+  let cps : Array[UInt32] = []
   for info in buffer.infos() {
     cps.push(info.codepoint)
   }
@@ -323,14 +323,14 @@ test "buffer normalize indic skip mark-base compose" {
 
 ///|
 test "buffer normalize hebrew reorder" {
-  let buffer = Buffer::new()
+  let buffer = @buffer.Buffer::new()
   buffer.set_script(@common.script_hebrew)
   buffer.add_codepoint(0x05D0U)
   buffer.add_codepoint(0x05B7U)
   buffer.add_codepoint(0x05B0U)
   buffer.add_codepoint(0x05BDU)
   buffer.normalize()
-  let cps : Array[UInt] = []
+  let cps : Array[UInt32] = []
   for info in buffer.infos() {
     cps.push(info.codepoint)
   }
@@ -339,12 +339,12 @@ test "buffer normalize hebrew reorder" {
 
 ///|
 test "buffer normalize hebrew compose" {
-  let buffer = Buffer::new()
+  let buffer = @buffer.Buffer::new()
   buffer.set_script(@common.script_hebrew)
   buffer.add_codepoint(0x05D0U)
   buffer.add_codepoint(0x05BCU)
   buffer.normalize()
-  let cps : Array[UInt] = []
+  let cps : Array[UInt32] = []
   for info in buffer.infos() {
     cps.push(info.codepoint)
   }
@@ -353,13 +353,13 @@ test "buffer normalize hebrew compose" {
 
 ///|
 test "buffer normalize arabic reorder" {
-  let buffer = Buffer::new()
+  let buffer = @buffer.Buffer::new()
   buffer.set_script(@common.script_arabic)
   buffer.add_codepoint(0x0628U)
   buffer.add_codepoint(0x0652U)
   buffer.add_codepoint(0x0655U)
   buffer.normalize()
-  let cps : Array[UInt] = []
+  let cps : Array[UInt32] = []
   for info in buffer.infos() {
     cps.push(info.codepoint)
   }
@@ -368,13 +368,13 @@ test "buffer normalize arabic reorder" {
 
 ///|
 test "buffer normalize hangul compose" {
-  let buffer = Buffer::new()
+  let buffer = @buffer.Buffer::new()
   buffer.set_script(@common.script_hangul)
   buffer.add_codepoint(0x1100U)
   buffer.add_codepoint(0x1161U)
   buffer.add_codepoint(0x11A8U)
   buffer.normalize()
-  let cps : Array[UInt] = []
+  let cps : Array[UInt32] = []
   for info in buffer.infos() {
     cps.push(info.codepoint)
   }
@@ -383,12 +383,12 @@ test "buffer normalize hangul compose" {
 
 ///|
 test "buffer normalize hangul tone mark" {
-  let buffer = Buffer::new()
+  let buffer = @buffer.Buffer::new()
   buffer.set_script(@common.script_hangul)
   buffer.add_codepoint(0xAC00U)
   buffer.add_codepoint(0x302EU)
   buffer.normalize()
-  let cps : Array[UInt] = []
+  let cps : Array[UInt32] = []
   for info in buffer.infos() {
     cps.push(info.codepoint)
   }
@@ -396,24 +396,24 @@ test "buffer normalize hangul tone mark" {
 }
 
 ///|
-fn push_u16(bytes : Array[Byte], value : Int) -> Unit {
+fn push_u16(bytes : Array[Byte], value : Int32) -> Unit {
   bytes.push(((value >> 8) & 0xff).to_byte())
   bytes.push((value & 0xff).to_byte())
 }
 
 ///|
-fn push_u8(bytes : Array[Byte], value : Int) -> Unit {
+fn push_u8(bytes : Array[Byte], value : Int32) -> Unit {
   bytes.push((value & 0xff).to_byte())
 }
 
 ///|
-fn push_i16(bytes : Array[Byte], value : Int) -> Unit {
+fn push_i16(bytes : Array[Byte], value : Int32) -> Unit {
   let adjusted = if value < 0 { value + 0x10000 } else { value }
   push_u16(bytes, adjusted)
 }
 
 ///|
-fn push_u32(bytes : Array[Byte], value : Int) -> Unit {
+fn push_u32(bytes : Array[Byte], value : Int32) -> Unit {
   bytes.push(((value >> 24) & 0xff).to_byte())
   bytes.push(((value >> 16) & 0xff).to_byte())
   bytes.push(((value >> 8) & 0xff).to_byte())
@@ -421,7 +421,7 @@ fn push_u32(bytes : Array[Byte], value : Int) -> Unit {
 }
 
 ///|
-fn push_u24(bytes : Array[Byte], value : Int) -> Unit {
+fn push_u24(bytes : Array[Byte], value : Int32) -> Unit {
   bytes.push(((value >> 16) & 0xff).to_byte())
   bytes.push(((value >> 8) & 0xff).to_byte())
   bytes.push((value & 0xff).to_byte())
@@ -436,7 +436,7 @@ fn build_sfnt(tables : Array[(@common.Tag, Bytes)]) -> Bytes {
   push_u16(bytes, 0)
   push_u16(bytes, 0)
   let mut offset = 12 + tables.length() * 16
-  let records : Array[(@common.Tag, Int, Int)] = []
+  let records : Array[(@common.Tag, Int32, Int32)] = []
   for entry in tables {
     let (tag, table) = entry
     records.push((tag, offset, table.length()))
@@ -463,7 +463,7 @@ fn build_sfnt(tables : Array[(@common.Tag, Bytes)]) -> Bytes {
 }
 
 ///|
-fn build_head(upem : Int, loc_format : Int) -> Bytes {
+fn build_head(upem : Int32, loc_format : Int32) -> Bytes {
   let bytes : Array[Byte] = Array::make(54, b'\x00')
   bytes[18] = ((upem >> 8) & 0xff).to_byte()
   bytes[19] = (upem & 0xff).to_byte()
@@ -473,7 +473,7 @@ fn build_head(upem : Int, loc_format : Int) -> Bytes {
 }
 
 ///|
-fn build_maxp(num_glyphs : Int) -> Bytes {
+fn build_maxp(num_glyphs : Int32) -> Bytes {
   let bytes : Array[Byte] = Array::make(6, b'\x00')
   bytes[4] = ((num_glyphs >> 8) & 0xff).to_byte()
   bytes[5] = (num_glyphs & 0xff).to_byte()
@@ -481,7 +481,7 @@ fn build_maxp(num_glyphs : Int) -> Bytes {
 }
 
 ///|
-fn build_hhea(number_of_hmetrics : Int) -> Bytes {
+fn build_hhea(number_of_hmetrics : Int32) -> Bytes {
   let bytes : Array[Byte] = Array::make(36, b'\x00')
   bytes[34] = ((number_of_hmetrics >> 8) & 0xff).to_byte()
   bytes[35] = (number_of_hmetrics & 0xff).to_byte()
@@ -489,7 +489,7 @@ fn build_hhea(number_of_hmetrics : Int) -> Bytes {
 }
 
 ///|
-fn build_vhea(number_of_vmetrics : Int) -> Bytes {
+fn build_vhea(number_of_vmetrics : Int32) -> Bytes {
   let bytes : Array[Byte] = Array::make(36, b'\x00')
   bytes[34] = ((number_of_vmetrics >> 8) & 0xff).to_byte()
   bytes[35] = (number_of_vmetrics & 0xff).to_byte()
@@ -531,7 +531,7 @@ fn build_hmtx_ot() -> Bytes {
 }
 
 ///|
-fn build_loca_short(offsets : Array[Int]) -> Bytes {
+fn build_loca_short(offsets : Array[Int32]) -> Bytes {
   let bytes : Array[Byte] = []
   for offset in offsets {
     push_u16(bytes, offset / 2)
@@ -595,7 +595,7 @@ fn build_script_list_for(tag : @common.Tag) -> Bytes {
 }
 
 ///|
-fn build_script_table(feature_indices : Array[Int]) -> Bytes {
+fn build_script_table(feature_indices : Array[Int32]) -> Bytes {
   let bytes : Array[Byte] = []
   push_u16(bytes, 4)
   push_u16(bytes, 0)
@@ -738,7 +738,7 @@ fn build_layout_table_with_script_list(
 }
 
 ///|
-fn build_gsub_subtable(target : Int, substitute : Int) -> Bytes {
+fn build_gsub_subtable(target : Int32, substitute : Int32) -> Bytes {
   let bytes : Array[Byte] = []
   push_u16(bytes, 2)
   push_u16(bytes, 8)
@@ -863,7 +863,11 @@ fn build_cmap_table(subtable : Bytes) -> Bytes {
 }
 
 ///|
-fn build_cmap_format12(start : UInt, end : UInt, start_gid : UInt) -> Bytes {
+fn build_cmap_format12(
+  start : UInt32,
+  end : UInt32,
+  start_gid : UInt32,
+) -> Bytes {
   let bytes : Array[Byte] = []
   push_u16(bytes, 12)
   push_u16(bytes, 0)
@@ -877,7 +881,9 @@ fn build_cmap_format12(start : UInt, end : UInt, start_gid : UInt) -> Bytes {
 }
 
 ///|
-fn build_cmap_format12_groups(groups : Array[(UInt, UInt, UInt)]) -> Bytes {
+fn build_cmap_format12_groups(
+  groups : Array[(UInt32, UInt32, UInt32)],
+) -> Bytes {
   let bytes : Array[Byte] = []
   let length = 16 + groups.length() * 12
   push_u16(bytes, 12)
@@ -896,8 +902,8 @@ fn build_cmap_format12_groups(groups : Array[(UInt, UInt, UInt)]) -> Bytes {
 
 ///|
 fn build_cmap_format14_non_default(
-  selector : UInt,
-  mappings : Array[(UInt, UInt)],
+  selector : UInt32,
+  mappings : Array[(UInt32, UInt32)],
 ) -> Bytes {
   let bytes : Array[Byte] = []
   let non_default_offset = 21
@@ -919,8 +925,8 @@ fn build_cmap_format14_non_default(
 
 ///|
 fn build_cmap_format14_default(
-  selector : UInt,
-  ranges : Array[(UInt, UInt)],
+  selector : UInt32,
+  ranges : Array[(UInt32, UInt32)],
 ) -> Bytes {
   let bytes : Array[Byte] = []
   let default_offset = 21
@@ -1375,7 +1381,7 @@ fn build_font_bytes_mark_fallback_position() -> Bytes {
 ///|
 test "buffer shape basic" {
   let font = @font.Font::from_bytes(build_font_bytes())
-  let buffer = Buffer::new()
+  let buffer = @buffer.Buffer::new()
   buffer.add_string("A")
   let result = buffer.shape_basic(font)
   match result {
@@ -1391,7 +1397,7 @@ test "buffer shape basic" {
 ///|
 test "buffer shape basic fallback for space and hyphen" {
   let font = @font.Font::from_bytes(build_font_bytes_space_fallback())
-  let buffer = Buffer::new()
+  let buffer = @buffer.Buffer::new()
   buffer.add_codepoint(0x00A0U)
   buffer.add_codepoint(0x2011U)
   let result = buffer.shape_basic(font)
@@ -1407,7 +1413,7 @@ test "buffer shape basic fallback for space and hyphen" {
 ///|
 test "buffer shape basic fallback space advances" {
   let font = @font.Font::from_bytes(build_font_bytes_space_fallback())
-  let buffer = Buffer::new()
+  let buffer = @buffer.Buffer::new()
   buffer.add_codepoint(0x2003U)
   buffer.add_codepoint(0x202FU)
   let result = buffer.shape_basic(font)
@@ -1423,7 +1429,7 @@ test "buffer shape basic fallback space advances" {
 ///|
 test "buffer shape basic vertical advances" {
   let font = @font.Font::from_bytes(build_font_bytes())
-  let buffer = Buffer::new()
+  let buffer = @buffer.Buffer::new()
   buffer.set_direction(@common.direction_ttb)
   buffer.add_string("A")
   let result = buffer.shape_basic(font)
@@ -1439,7 +1445,7 @@ test "buffer shape basic vertical advances" {
 ///|
 test "buffer shape ot default ignorable zeroed" {
   let font = @font.Font::from_bytes(build_font_bytes_default_ignorables())
-  let buffer = Buffer::new()
+  let buffer = @buffer.Buffer::new()
   buffer.add_codepoint(0x200DU)
   let result = buffer.shape_ot(font)
   match result {
@@ -1455,7 +1461,7 @@ test "buffer shape ot default ignorable zeroed" {
 ///|
 test "buffer shape ot default ignorable zeroed snapshot" {
   let font = @font.Font::from_bytes(build_font_bytes_default_ignorables())
-  let buffer = Buffer::new()
+  let buffer = @buffer.Buffer::new()
   buffer.add_codepoint(0x200DU)
   let result = buffer.shape_ot(font)
   match result {
@@ -1464,7 +1470,7 @@ test "buffer shape ot default ignorable zeroed snapshot" {
   }
   let infos = buffer.infos()
   let positions = buffer.positions()
-  let snapshot : Array[(UInt, Int, Int, Int, Int)] = []
+  let snapshot : Array[(UInt32, Int32, Int32, Int32, Int32)] = []
   for i in 0..<infos.length() {
     snapshot.push(
       (
@@ -1482,7 +1488,7 @@ test "buffer shape ot default ignorable zeroed snapshot" {
 ///|
 test "buffer shape ot preserve default ignorable" {
   let font = @font.Font::from_bytes(build_font_bytes_default_ignorables())
-  let buffer = Buffer::new()
+  let buffer = @buffer.Buffer::new()
   buffer.set_preserve_default_ignorables(true)
   buffer.add_codepoint(0x200DU)
   let result = buffer.shape_ot(font)
@@ -1497,7 +1503,7 @@ test "buffer shape ot preserve default ignorable" {
 ///|
 test "buffer shape ot preserve default ignorable snapshot" {
   let font = @font.Font::from_bytes(build_font_bytes_default_ignorables())
-  let buffer = Buffer::new()
+  let buffer = @buffer.Buffer::new()
   buffer.set_preserve_default_ignorables(true)
   buffer.add_codepoint(0x200DU)
   let result = buffer.shape_ot(font)
@@ -1507,7 +1513,7 @@ test "buffer shape ot preserve default ignorable snapshot" {
   }
   let infos = buffer.infos()
   let positions = buffer.positions()
-  let snapshot : Array[(UInt, Int, Int, Int, Int)] = []
+  let snapshot : Array[(UInt32, Int32, Int32, Int32, Int32)] = []
   for i in 0..<infos.length() {
     snapshot.push(
       (
@@ -1525,7 +1531,7 @@ test "buffer shape ot preserve default ignorable snapshot" {
 ///|
 test "buffer shape ot variation selector fallback" {
   let font = @font.Font::from_bytes(build_font_bytes_default_ignorables())
-  let buffer = Buffer::new()
+  let buffer = @buffer.Buffer::new()
   buffer.set_remove_default_ignorables(true)
   buffer.set_not_found_variation_selector(Some(3U))
   buffer.add_codepoint(0xFE0FU)
@@ -1544,7 +1550,7 @@ test "buffer shape ot variation selector fallback" {
 ///|
 test "buffer shape ot variation selector fallback snapshot" {
   let font = @font.Font::from_bytes(build_font_bytes_default_ignorables())
-  let buffer = Buffer::new()
+  let buffer = @buffer.Buffer::new()
   buffer.set_remove_default_ignorables(true)
   buffer.set_not_found_variation_selector(Some(3U))
   buffer.add_codepoint(0xFE0FU)
@@ -1555,7 +1561,7 @@ test "buffer shape ot variation selector fallback snapshot" {
   }
   let infos = buffer.infos()
   let positions = buffer.positions()
-  let snapshot : Array[(UInt, Int, Int, Int, Int)] = []
+  let snapshot : Array[(UInt32, Int32, Int32, Int32, Int32)] = []
   for i in 0..<infos.length() {
     snapshot.push(
       (
@@ -1573,7 +1579,7 @@ test "buffer shape ot variation selector fallback snapshot" {
 ///|
 test "buffer shape ot variation selector mapping snapshot" {
   let font = @font.Font::from_bytes(build_font_bytes_variation_selector())
-  let buffer = Buffer::new()
+  let buffer = @buffer.Buffer::new()
   buffer.add_codepoint(0x41U)
   buffer.add_codepoint(0xFE0FU)
   let result = buffer.shape_ot(font)
@@ -1583,7 +1589,7 @@ test "buffer shape ot variation selector mapping snapshot" {
   }
   let infos = buffer.infos()
   let positions = buffer.positions()
-  let snapshot : Array[(UInt, Int, Int, Int, Int)] = []
+  let snapshot : Array[(UInt32, Int32, Int32, Int32, Int32)] = []
   for i in 0..<infos.length() {
     snapshot.push(
       (
@@ -1603,7 +1609,7 @@ test "buffer shape ot variation selector default snapshot" {
   let font = @font.Font::from_bytes(
     build_font_bytes_variation_selector_default(),
   )
-  let buffer = Buffer::new()
+  let buffer = @buffer.Buffer::new()
   buffer.add_codepoint(0x41U)
   buffer.add_codepoint(0xFE0FU)
   let result = buffer.shape_ot(font)
@@ -1613,7 +1619,7 @@ test "buffer shape ot variation selector default snapshot" {
   }
   let infos = buffer.infos()
   let positions = buffer.positions()
-  let snapshot : Array[(UInt, Int, Int, Int, Int)] = []
+  let snapshot : Array[(UInt32, Int32, Int32, Int32, Int32)] = []
   for i in 0..<infos.length() {
     snapshot.push(
       (
@@ -1631,7 +1637,7 @@ test "buffer shape ot variation selector default snapshot" {
 ///|
 test "buffer serialize glyphs json" {
   let font = @font.Font::from_bytes(build_font_bytes_ot())
-  let buffer = Buffer::new()
+  let buffer = @buffer.Buffer::new()
   buffer.add_string("AB")
   let result = buffer.shape_ot(font)
   match result {
@@ -1648,7 +1654,7 @@ test "buffer serialize glyphs json" {
 ///|
 test "buffer serialize unicode text" {
   let font = @font.Font::from_bytes(build_font_bytes_ot())
-  let buffer = Buffer::new()
+  let buffer = @buffer.Buffer::new()
   buffer.add_string("AB")
   let result = buffer.shape_ot(font)
   match result {
@@ -1662,7 +1668,7 @@ test "buffer serialize unicode text" {
 ///|
 test "buffer shape ot" {
   let font = @font.Font::from_bytes(build_font_bytes_ot())
-  let buffer = Buffer::new()
+  let buffer = @buffer.Buffer::new()
   buffer.add_string("AB")
   let result = buffer.shape_ot(font)
   match result {
@@ -1681,7 +1687,7 @@ test "buffer shape ot" {
 ///|
 test "buffer shape ot snapshot" {
   let font = @font.Font::from_bytes(build_font_bytes_ot())
-  let buffer = Buffer::new()
+  let buffer = @buffer.Buffer::new()
   buffer.add_string("AB")
   let result = buffer.shape_ot(font)
   match result {
@@ -1690,7 +1696,7 @@ test "buffer shape ot snapshot" {
   }
   let infos = buffer.infos()
   let positions = buffer.positions()
-  let snapshot : Array[(UInt, Int, Int, Int, Int)] = []
+  let snapshot : Array[(UInt32, Int32, Int32, Int32, Int32)] = []
   for i in 0..<infos.length() {
     snapshot.push(
       (
@@ -1708,7 +1714,7 @@ test "buffer shape ot snapshot" {
 ///|
 test "buffer shape ot feature filter" {
   let font = @font.Font::from_bytes(build_font_bytes_ot())
-  let buffer = Buffer::new()
+  let buffer = @buffer.Buffer::new()
   buffer.set_gsub_features([@common.Tag::from_chars('k', 'e', 'r', 'n')])
   buffer.set_gpos_features([@common.Tag::from_chars('l', 'i', 'g', 'a')])
   buffer.add_string("AB")
@@ -1729,7 +1735,7 @@ test "buffer shape ot feature filter" {
 ///|
 test "buffer shape ot feature filter snapshot" {
   let font = @font.Font::from_bytes(build_font_bytes_ot())
-  let buffer = Buffer::new()
+  let buffer = @buffer.Buffer::new()
   buffer.set_gsub_features([@common.Tag::from_chars('k', 'e', 'r', 'n')])
   buffer.set_gpos_features([@common.Tag::from_chars('l', 'i', 'g', 'a')])
   buffer.add_string("AB")
@@ -1740,7 +1746,7 @@ test "buffer shape ot feature filter snapshot" {
   }
   let infos = buffer.infos()
   let positions = buffer.positions()
-  let snapshot : Array[(UInt, Int, Int, Int, Int)] = []
+  let snapshot : Array[(UInt32, Int32, Int32, Int32, Int32)] = []
   for i in 0..<infos.length() {
     snapshot.push(
       (
@@ -1758,7 +1764,7 @@ test "buffer shape ot feature filter snapshot" {
 ///|
 test "buffer shape ot single pos" {
   let font = @font.Font::from_bytes(build_font_bytes_ot_single())
-  let buffer = Buffer::new()
+  let buffer = @buffer.Buffer::new()
   buffer.add_string("A")
   let result = buffer.shape_ot(font)
   match result {
@@ -1775,7 +1781,7 @@ test "buffer shape ot single pos" {
 ///|
 test "buffer shape ot single pos snapshot" {
   let font = @font.Font::from_bytes(build_font_bytes_ot_single())
-  let buffer = Buffer::new()
+  let buffer = @buffer.Buffer::new()
   buffer.add_string("A")
   let result = buffer.shape_ot(font)
   match result {
@@ -1784,7 +1790,7 @@ test "buffer shape ot single pos snapshot" {
   }
   let infos = buffer.infos()
   let positions = buffer.positions()
-  let snapshot : Array[(UInt, Int, Int, Int, Int)] = []
+  let snapshot : Array[(UInt32, Int32, Int32, Int32, Int32)] = []
   for i in 0..<infos.length() {
     snapshot.push(
       (
@@ -1802,7 +1808,7 @@ test "buffer shape ot single pos snapshot" {
 ///|
 test "buffer shape ot kern fallback" {
   let font = @font.Font::from_bytes(build_font_bytes_kern())
-  let buffer = Buffer::new()
+  let buffer = @buffer.Buffer::new()
   buffer.add_string("AB")
   let result = buffer.shape_ot(font)
   match result {
@@ -1818,7 +1824,7 @@ test "buffer shape ot kern fallback" {
 ///|
 test "buffer shape ot kern fallback snapshot" {
   let font = @font.Font::from_bytes(build_font_bytes_kern())
-  let buffer = Buffer::new()
+  let buffer = @buffer.Buffer::new()
   buffer.add_string("AB")
   let result = buffer.shape_ot(font)
   match result {
@@ -1827,7 +1833,7 @@ test "buffer shape ot kern fallback snapshot" {
   }
   let infos = buffer.infos()
   let positions = buffer.positions()
-  let snapshot : Array[(UInt, Int, Int, Int, Int)] = []
+  let snapshot : Array[(UInt32, Int32, Int32, Int32, Int32)] = []
   for i in 0..<infos.length() {
     snapshot.push(
       (
@@ -1845,7 +1851,7 @@ test "buffer shape ot kern fallback snapshot" {
 ///|
 test "buffer shape ot kern fallback with non-kern gpos" {
   let font = @font.Font::from_bytes(build_font_bytes_kern_with_gpos())
-  let buffer = Buffer::new()
+  let buffer = @buffer.Buffer::new()
   buffer.add_string("AB")
   let result = buffer.shape_ot(font)
   match result {
@@ -1861,7 +1867,7 @@ test "buffer shape ot kern fallback with non-kern gpos" {
 ///|
 test "buffer shape ot zeroes mark advances without gpos" {
   let font = @font.Font::from_bytes(build_font_bytes_mark_fallback())
-  let buffer = Buffer::new()
+  let buffer = @buffer.Buffer::new()
   buffer.add_codepoint(0x41U)
   buffer.add_codepoint(0x0301U)
   let result = buffer.shape_ot(font)
@@ -1877,7 +1883,7 @@ test "buffer shape ot zeroes mark advances without gpos" {
 ///|
 test "buffer shape ot zeroes mark advances using gdef mark class" {
   let font = @font.Font::from_bytes(build_font_bytes_mark_fallback_gdef())
-  let buffer = Buffer::new()
+  let buffer = @buffer.Buffer::new()
   buffer.add_codepoint(0x41U)
   buffer.add_codepoint(0x42U)
   let result = buffer.shape_ot(font)
@@ -1893,7 +1899,7 @@ test "buffer shape ot zeroes mark advances using gdef mark class" {
 ///|
 test "buffer shape ot gdef mark class snapshot" {
   let font = @font.Font::from_bytes(build_font_bytes_mark_fallback_gdef())
-  let buffer = Buffer::new()
+  let buffer = @buffer.Buffer::new()
   buffer.add_codepoint(0x41U)
   buffer.add_codepoint(0x42U)
   let result = buffer.shape_ot(font)
@@ -1903,7 +1909,7 @@ test "buffer shape ot gdef mark class snapshot" {
   }
   let infos = buffer.infos()
   let positions = buffer.positions()
-  let snapshot : Array[(UInt, Int, Int, Int, Int)] = []
+  let snapshot : Array[(UInt32, Int32, Int32, Int32, Int32)] = []
   for i in 0..<infos.length() {
     snapshot.push(
       (
@@ -1921,7 +1927,7 @@ test "buffer shape ot gdef mark class snapshot" {
 ///|
 test "buffer shape ot fallback mark positioning without gpos" {
   let font = @font.Font::from_bytes(build_font_bytes_mark_fallback_position())
-  let buffer = Buffer::new()
+  let buffer = @buffer.Buffer::new()
   buffer.add_codepoint(0x41U)
   buffer.add_codepoint(0x0301U)
   let result = buffer.shape_ot(font)
@@ -1938,7 +1944,7 @@ test "buffer shape ot fallback mark positioning without gpos" {
 ///|
 test "buffer shape ot fallback mark positioning snapshot" {
   let font = @font.Font::from_bytes(build_font_bytes_mark_fallback_position())
-  let buffer = Buffer::new()
+  let buffer = @buffer.Buffer::new()
   buffer.add_codepoint(0x41U)
   buffer.add_codepoint(0x0301U)
   let result = buffer.shape_ot(font)
@@ -1948,7 +1954,7 @@ test "buffer shape ot fallback mark positioning snapshot" {
   }
   let infos = buffer.infos()
   let positions = buffer.positions()
-  let snapshot : Array[(UInt, Int, Int, Int, Int)] = []
+  let snapshot : Array[(UInt32, Int32, Int32, Int32, Int32)] = []
   for i in 0..<infos.length() {
     snapshot.push(
       (
@@ -1966,7 +1972,7 @@ test "buffer shape ot fallback mark positioning snapshot" {
 ///|
 test "buffer shape ot skips kern for vertical" {
   let font = @font.Font::from_bytes(build_font_bytes_kern())
-  let buffer = Buffer::new()
+  let buffer = @buffer.Buffer::new()
   buffer.set_direction(@common.direction_ttb)
   buffer.add_string("AB")
   let result = buffer.shape_ot(font)
@@ -1981,7 +1987,7 @@ test "buffer shape ot skips kern for vertical" {
 ///|
 test "buffer shape ot skips kern for vertical snapshot" {
   let font = @font.Font::from_bytes(build_font_bytes_kern())
-  let buffer = Buffer::new()
+  let buffer = @buffer.Buffer::new()
   buffer.set_direction(@common.direction_ttb)
   buffer.add_string("AB")
   let result = buffer.shape_ot(font)
@@ -1991,7 +1997,7 @@ test "buffer shape ot skips kern for vertical snapshot" {
   }
   let infos = buffer.infos()
   let positions = buffer.positions()
-  let snapshot : Array[(UInt, Int, Int, Int, Int)] = []
+  let snapshot : Array[(UInt32, Int32, Int32, Int32, Int32)] = []
   for i in 0..<infos.length() {
     snapshot.push(
       (
@@ -2009,7 +2015,7 @@ test "buffer shape ot skips kern for vertical snapshot" {
 ///|
 test "buffer shape myanmar fallback" {
   let font = @font.Font::from_bytes(build_font_bytes())
-  let buffer = Buffer::new()
+  let buffer = @buffer.Buffer::new()
   buffer.set_script(@common.script_myanmar)
   buffer.add_string("A")
   let result = buffer.shape_myanmar(font)
@@ -2024,7 +2030,7 @@ test "buffer shape myanmar fallback" {
 ///|
 test "buffer shape myanmar fallback snapshot" {
   let font = @font.Font::from_bytes(build_font_bytes())
-  let buffer = Buffer::new()
+  let buffer = @buffer.Buffer::new()
   buffer.set_script(@common.script_myanmar)
   buffer.add_string("A")
   let result = buffer.shape_myanmar(font)
@@ -2034,7 +2040,7 @@ test "buffer shape myanmar fallback snapshot" {
   }
   let infos = buffer.infos()
   let positions = buffer.positions()
-  let snapshot : Array[(UInt, Int, Int, Int, Int)] = []
+  let snapshot : Array[(UInt32, Int32, Int32, Int32, Int32)] = []
   for i in 0..<infos.length() {
     snapshot.push(
       (
@@ -2052,7 +2058,7 @@ test "buffer shape myanmar fallback snapshot" {
 ///|
 test "buffer shape myanmar prefers mym2 over dflt" {
   let font = @font.Font::from_bytes(build_font_bytes_myanmar_mym2_dflt())
-  let buffer = Buffer::new()
+  let buffer = @buffer.Buffer::new()
   buffer.set_script(@common.script_myanmar)
   buffer.add_codepoint(0x1000U)
   let result = buffer.shape_myanmar(font)
@@ -2067,7 +2073,7 @@ test "buffer shape myanmar prefers mym2 over dflt" {
 ///|
 test "buffer shape myanmar prefers mym2 over dflt snapshot" {
   let font = @font.Font::from_bytes(build_font_bytes_myanmar_mym2_dflt())
-  let buffer = Buffer::new()
+  let buffer = @buffer.Buffer::new()
   buffer.set_script(@common.script_myanmar)
   buffer.add_codepoint(0x1000U)
   let result = buffer.shape_myanmar(font)
@@ -2077,7 +2083,7 @@ test "buffer shape myanmar prefers mym2 over dflt snapshot" {
   }
   let infos = buffer.infos()
   let positions = buffer.positions()
-  let snapshot : Array[(UInt, Int, Int, Int, Int)] = []
+  let snapshot : Array[(UInt32, Int32, Int32, Int32, Int32)] = []
   for i in 0..<infos.length() {
     snapshot.push(
       (
@@ -2095,7 +2101,7 @@ test "buffer shape myanmar prefers mym2 over dflt snapshot" {
 ///|
 test "buffer shape indic fallback" {
   let font = @font.Font::from_bytes(build_font_bytes())
-  let buffer = Buffer::new()
+  let buffer = @buffer.Buffer::new()
   buffer.set_script(@common.script_devanagari)
   buffer.add_string("A")
   let result = buffer.shape_indic(font)
@@ -2110,7 +2116,7 @@ test "buffer shape indic fallback" {
 ///|
 test "buffer shape indic fallback snapshot" {
   let font = @font.Font::from_bytes(build_font_bytes())
-  let buffer = Buffer::new()
+  let buffer = @buffer.Buffer::new()
   buffer.set_script(@common.script_devanagari)
   buffer.add_string("A")
   let result = buffer.shape_indic(font)
@@ -2120,7 +2126,7 @@ test "buffer shape indic fallback snapshot" {
   }
   let infos = buffer.infos()
   let positions = buffer.positions()
-  let snapshot : Array[(UInt, Int, Int, Int, Int)] = []
+  let snapshot : Array[(UInt32, Int32, Int32, Int32, Int32)] = []
   for i in 0..<infos.length() {
     snapshot.push(
       (
@@ -2138,7 +2144,7 @@ test "buffer shape indic fallback snapshot" {
 ///|
 test "buffer shape indic routes to use for dev3 gsub" {
   let font = @font.Font::from_bytes(build_font_bytes_indic3())
-  let buffer = Buffer::new()
+  let buffer = @buffer.Buffer::new()
   buffer.set_script(@common.script_devanagari)
   buffer.add_codepoint(0x0915U)
   let result = buffer.shape_indic(font)
@@ -2153,7 +2159,7 @@ test "buffer shape indic routes to use for dev3 gsub" {
 ///|
 test "buffer shape indic routes to use for dev3 gsub snapshot" {
   let font = @font.Font::from_bytes(build_font_bytes_indic3())
-  let buffer = Buffer::new()
+  let buffer = @buffer.Buffer::new()
   buffer.set_script(@common.script_devanagari)
   buffer.add_codepoint(0x0915U)
   let result = buffer.shape_indic(font)
@@ -2163,7 +2169,7 @@ test "buffer shape indic routes to use for dev3 gsub snapshot" {
   }
   let infos = buffer.infos()
   let positions = buffer.positions()
-  let snapshot : Array[(UInt, Int, Int, Int, Int)] = []
+  let snapshot : Array[(UInt32, Int32, Int32, Int32, Int32)] = []
   for i in 0..<infos.length() {
     snapshot.push(
       (
@@ -2181,7 +2187,7 @@ test "buffer shape indic routes to use for dev3 gsub snapshot" {
 ///|
 test "buffer shape indic prefers dev2 over dflt" {
   let font = @font.Font::from_bytes(build_font_bytes_indic_dev2_dflt())
-  let buffer = Buffer::new()
+  let buffer = @buffer.Buffer::new()
   buffer.set_script(@common.script_devanagari)
   buffer.add_codepoint(0x0930U)
   buffer.add_codepoint(0x094DU)
@@ -2203,7 +2209,7 @@ test "buffer shape indic prefers dev2 over dflt" {
 ///|
 test "buffer shape indic prefers dev2 over dflt snapshot" {
   let font = @font.Font::from_bytes(build_font_bytes_indic_dev2_dflt())
-  let buffer = Buffer::new()
+  let buffer = @buffer.Buffer::new()
   buffer.set_script(@common.script_devanagari)
   buffer.add_codepoint(0x0930U)
   buffer.add_codepoint(0x094DU)
@@ -2215,7 +2221,7 @@ test "buffer shape indic prefers dev2 over dflt snapshot" {
   }
   let infos = buffer.infos()
   let positions = buffer.positions()
-  let snapshot : Array[(UInt, Int, Int, Int, Int)] = []
+  let snapshot : Array[(UInt32, Int32, Int32, Int32, Int32)] = []
   for i in 0..<infos.length() {
     snapshot.push(
       (
@@ -2237,7 +2243,7 @@ test "buffer shape indic prefers dev2 over dflt snapshot" {
 ///|
 test "buffer shape arabic syriac uses gsub when syrc present" {
   let font = @font.Font::from_bytes(build_font_bytes_syrc_gsub())
-  let buffer = Buffer::new()
+  let buffer = @buffer.Buffer::new()
   buffer.set_script(@common.script_syriac)
   buffer.add_codepoint(0x0628U)
   let result = buffer.shape_arabic(font)
@@ -2252,7 +2258,7 @@ test "buffer shape arabic syriac uses gsub when syrc present" {
 ///|
 test "buffer shape arabic syriac uses gsub snapshot" {
   let font = @font.Font::from_bytes(build_font_bytes_syrc_gsub())
-  let buffer = Buffer::new()
+  let buffer = @buffer.Buffer::new()
   buffer.set_script(@common.script_syriac)
   buffer.add_codepoint(0x0628U)
   let result = buffer.shape_arabic(font)
@@ -2262,7 +2268,7 @@ test "buffer shape arabic syriac uses gsub snapshot" {
   }
   let infos = buffer.infos()
   let positions = buffer.positions()
-  let snapshot : Array[(UInt, Int, Int, Int, Int)] = []
+  let snapshot : Array[(UInt32, Int32, Int32, Int32, Int32)] = []
   for i in 0..<infos.length() {
     snapshot.push(
       (
@@ -2280,7 +2286,7 @@ test "buffer shape arabic syriac uses gsub snapshot" {
 ///|
 test "buffer shape arabic syriac falls back to dflt gsub" {
   let font = @font.Font::from_bytes(build_font_bytes_dflt_gsub())
-  let buffer = Buffer::new()
+  let buffer = @buffer.Buffer::new()
   buffer.set_script(@common.script_syriac)
   buffer.add_codepoint(0x0628U)
   let result = buffer.shape_arabic(font)
@@ -2295,7 +2301,7 @@ test "buffer shape arabic syriac falls back to dflt gsub" {
 ///|
 test "buffer shape arabic syriac dflt gsub snapshot" {
   let font = @font.Font::from_bytes(build_font_bytes_dflt_gsub())
-  let buffer = Buffer::new()
+  let buffer = @buffer.Buffer::new()
   buffer.set_script(@common.script_syriac)
   buffer.add_codepoint(0x0628U)
   let result = buffer.shape_arabic(font)
@@ -2305,7 +2311,7 @@ test "buffer shape arabic syriac dflt gsub snapshot" {
   }
   let infos = buffer.infos()
   let positions = buffer.positions()
-  let snapshot : Array[(UInt, Int, Int, Int, Int)] = []
+  let snapshot : Array[(UInt32, Int32, Int32, Int32, Int32)] = []
   for i in 0..<infos.length() {
     snapshot.push(
       (
@@ -2323,7 +2329,7 @@ test "buffer shape arabic syriac dflt gsub snapshot" {
 ///|
 test "buffer shape use fallback" {
   let font = @font.Font::from_bytes(build_font_bytes())
-  let buffer = Buffer::new()
+  let buffer = @buffer.Buffer::new()
   buffer.set_script(@common.script_sinhala)
   buffer.add_string("A")
   let result = buffer.shape_use(font)
@@ -2338,7 +2344,7 @@ test "buffer shape use fallback" {
 ///|
 test "buffer shape use fallback snapshot" {
   let font = @font.Font::from_bytes(build_font_bytes())
-  let buffer = Buffer::new()
+  let buffer = @buffer.Buffer::new()
   buffer.set_script(@common.script_sinhala)
   buffer.add_string("A")
   let result = buffer.shape_use(font)
@@ -2348,7 +2354,7 @@ test "buffer shape use fallback snapshot" {
   }
   let infos = buffer.infos()
   let positions = buffer.positions()
-  let snapshot : Array[(UInt, Int, Int, Int, Int)] = []
+  let snapshot : Array[(UInt32, Int32, Int32, Int32, Int32)] = []
   for i in 0..<infos.length() {
     snapshot.push(
       (
@@ -2366,7 +2372,7 @@ test "buffer shape use fallback snapshot" {
 ///|
 test "buffer shape hebrew skips gpos without hebr" {
   let font = @font.Font::from_bytes(build_font_bytes_ot())
-  let buffer = Buffer::new()
+  let buffer = @buffer.Buffer::new()
   buffer.set_script(@common.script_hebrew)
   buffer.add_string("AB")
   let result = buffer.shape_hebrew(font)
@@ -2386,7 +2392,7 @@ test "buffer shape hebrew skips gpos without hebr" {
 ///|
 test "buffer shape hebrew skips gpos without hebr snapshot" {
   let font = @font.Font::from_bytes(build_font_bytes_ot())
-  let buffer = Buffer::new()
+  let buffer = @buffer.Buffer::new()
   buffer.set_script(@common.script_hebrew)
   buffer.add_string("AB")
   let result = buffer.shape_hebrew(font)
@@ -2396,7 +2402,7 @@ test "buffer shape hebrew skips gpos without hebr snapshot" {
   }
   let infos = buffer.infos()
   let positions = buffer.positions()
-  let snapshot : Array[(UInt, Int, Int, Int, Int)] = []
+  let snapshot : Array[(UInt32, Int32, Int32, Int32, Int32)] = []
   for i in 0..<infos.length() {
     snapshot.push(
       (
@@ -2414,7 +2420,7 @@ test "buffer shape hebrew skips gpos without hebr snapshot" {
 ///|
 test "buffer shape hebrew applies hebr gpos" {
   let font = @font.Font::from_bytes(build_font_bytes_ot_single_hebr())
-  let buffer = Buffer::new()
+  let buffer = @buffer.Buffer::new()
   buffer.set_script(@common.script_hebrew)
   buffer.add_string("A")
   let result = buffer.shape_hebrew(font)
@@ -2432,7 +2438,7 @@ test "buffer shape hebrew applies hebr gpos" {
 ///|
 test "buffer shape hebrew applies hebr gpos snapshot" {
   let font = @font.Font::from_bytes(build_font_bytes_ot_single_hebr())
-  let buffer = Buffer::new()
+  let buffer = @buffer.Buffer::new()
   buffer.set_script(@common.script_hebrew)
   buffer.add_string("A")
   let result = buffer.shape_hebrew(font)
@@ -2442,7 +2448,7 @@ test "buffer shape hebrew applies hebr gpos snapshot" {
   }
   let infos = buffer.infos()
   let positions = buffer.positions()
-  let snapshot : Array[(UInt, Int, Int, Int, Int)] = []
+  let snapshot : Array[(UInt32, Int32, Int32, Int32, Int32)] = []
   for i in 0..<infos.length() {
     snapshot.push(
       (

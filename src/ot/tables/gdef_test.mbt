@@ -13,13 +13,13 @@
 // limitations under the License.
 
 ///|
-fn push_u16_gdef(bytes : Array[Byte], value : Int) -> Unit {
+fn push_u16_gdef(bytes : Array[Byte], value : Int32) -> Unit {
   bytes.push(((value >> 8) & 0xff).to_byte())
   bytes.push((value & 0xff).to_byte())
 }
 
 ///|
-fn push_u32_gdef(bytes : Array[Byte], value : Int) -> Unit {
+fn push_u32_gdef(bytes : Array[Byte], value : Int32) -> Unit {
   bytes.push(((value >> 24) & 0xff).to_byte())
   bytes.push(((value >> 16) & 0xff).to_byte())
   bytes.push(((value >> 8) & 0xff).to_byte())
@@ -60,7 +60,7 @@ fn build_gdef_table_format1_2() -> Bytes {
 ///|
 test "gdef parse class defs and mark sets" {
   let bytes = build_gdef_table_format1_2()
-  let gdef = match GdefTable::parse(@blob.Blob::from_bytes(bytes)) {
+  let gdef = match @tables.GdefTable::parse(@blob.Blob::from_bytes(bytes)) {
     Err(err) => fail("parse error: \{@debug.to_string(err)}")
     Ok(value) => value
   }

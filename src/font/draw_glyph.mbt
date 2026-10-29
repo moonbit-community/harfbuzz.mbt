@@ -13,10 +13,10 @@
 // limitations under the License.
 
 ///|
-let flag_on_curve : Int = 0x01
+let flag_on_curve : Int32 = 0x01
 
 ///|
-let flag_cubic : Int = 0x80
+let flag_cubic : Int32 = 0x80
 
 ///|
 priv struct DrawPoint {
@@ -30,7 +30,7 @@ fn mid_point(a : DrawPoint, b : DrawPoint) -> DrawPoint {
 }
 
 ///|
-fn scale_coord(value : Double, scale : Int, upem : Int) -> Double {
+fn scale_coord(value : Double, scale : Int32, upem : Int32) -> Double {
   if upem == 0 {
     return value
   }
@@ -40,9 +40,9 @@ fn scale_coord(value : Double, scale : Int, upem : Int) -> Double {
 ///|
 fn scale_point(
   p : @sfnt.GlyphPoint,
-  scale_x : Int,
-  scale_y : Int,
-  upem : Int,
+  scale_x : Int32,
+  scale_y : Int32,
+  upem : Int32,
 ) -> DrawPoint {
   { x: scale_coord(p.x, scale_x, upem), y: scale_coord(p.y, scale_y, upem), }
 }
@@ -50,12 +50,12 @@ fn scale_point(
 ///|
 fn[T] draw_contour(
   points : Array[@sfnt.GlyphPoint],
-  start : Int,
-  end : Int,
+  start : Int32,
+  end : Int32,
   session : @draw.DrawSession[T],
-  scale_x : Int,
-  scale_y : Int,
-  upem : Int,
+  scale_x : Int32,
+  scale_y : Int32,
+  upem : Int32,
 ) -> Unit {
   if start > end {
     return
@@ -162,9 +162,9 @@ fn[T] draw_contour(
 fn[T] draw_glyf_points(
   points : Array[@sfnt.GlyphPoint],
   session : @draw.DrawSession[T],
-  scale_x : Int,
-  scale_y : Int,
-  upem : Int,
+  scale_x : Int32,
+  scale_y : Int32,
+  upem : Int32,
 ) -> Unit {
   let mut start = 0
   let count = points.length()
@@ -183,7 +183,7 @@ fn[T] draw_glyf_points(
 /// Draw glyph outline into draw callbacks. Returns false if unsupported.
 pub fn[T] Font::draw_glyph_or_fail(
   self : Font,
-  glyph : UInt,
+  glyph : UInt32,
   funcs : @draw.DrawFuncs[T],
   draw_data : T,
 ) -> Result[Bool, FontError] {
@@ -202,7 +202,7 @@ pub fn[T] Font::draw_glyph_or_fail(
     Err(err) => return Err(err)
     Ok(value) => value
   }
-  let coords : Array[Int] = match self.var_coords_norm {
+  let coords : Array[Int32] = match self.var_coords_norm {
     None => []
     Some(value) => value
   }
@@ -234,7 +234,7 @@ pub fn[T] Font::draw_glyph_or_fail(
 /// Convenience wrapper that ignores draw failures.
 pub fn[T] Font::draw_glyph(
   self : Font,
-  glyph : UInt,
+  glyph : UInt32,
   funcs : @draw.DrawFuncs[T],
   draw_data : T,
 ) -> Result[Unit, FontError] {

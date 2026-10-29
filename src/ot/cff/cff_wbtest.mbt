@@ -114,8 +114,8 @@ fn empty_index() -> CffIndex {
 }
 
 ///|
-fn zero_charstrings(count : Int) -> CffIndex {
-  let offsets : Array[Int] = Array::make(count + 1, 1)
+fn zero_charstrings(count : Int32) -> CffIndex {
+  let offsets : Array[Int32] = Array::make(count + 1, 1)
   { count, off_size: 1, offsets, data: Bytes::from_array([]), }
 }
 
@@ -125,7 +125,7 @@ fn build_string_index(names : Array[String]) -> CffIndex {
     return empty_index()
   }
   let bytes : Array[Byte] = []
-  let offsets : Array[Int] = [1]
+  let offsets : Array[Int32] = [1]
   let mut cursor = 1
   for name in names {
     let name_bytes = @utf8.encode(name)
@@ -187,7 +187,7 @@ test "cff1 glyph names custom strings" {
   let charstrings = zero_charstrings(3)
   let string_index = build_string_index(["customA", "customB"])
   let standard_len = cff1_standard_strings_len()
-  let map : Map[Int, Int] = {}
+  let map : Map[Int32, Int32] = Map([])
   map[standard_len] = 1
   map[standard_len + 1] = 2
   let cff1 = Cff1Table::{

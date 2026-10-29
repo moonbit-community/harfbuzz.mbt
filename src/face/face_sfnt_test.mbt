@@ -52,7 +52,7 @@ fn build_sfnt_with_table(tag : @common.Tag, table_bytes : Bytes) -> Bytes {
 }
 
 ///|
-fn push_u32(bytes : Array[Byte], value : Int) -> Unit {
+fn push_u32(bytes : Array[Byte], value : Int32) -> Unit {
   bytes.push(((value >> 24) & 0xff).to_byte())
   bytes.push(((value >> 16) & 0xff).to_byte())
   bytes.push(((value >> 8) & 0xff).to_byte())
@@ -60,7 +60,7 @@ fn push_u32(bytes : Array[Byte], value : Int) -> Unit {
 }
 
 ///|
-fn push_u16(bytes : Array[Byte], value : Int) -> Unit {
+fn push_u16(bytes : Array[Byte], value : Int32) -> Unit {
   bytes.push(((value >> 8) & 0xff).to_byte())
   bytes.push((value & 0xff).to_byte())
 }
@@ -96,7 +96,7 @@ fn build_sfnt_with_tables(tables : Array[(@common.Tag, Bytes)]) -> Bytes {
 }
 
 ///|
-fn push_i16(bytes : Array[Byte], value : Int) -> Unit {
+fn push_i16(bytes : Array[Byte], value : Int32) -> Unit {
   let adjusted = if value < 0 { value + 0x10000 } else { value }
   push_u16(bytes, adjusted)
 }
@@ -116,7 +116,11 @@ fn build_cmap_table(subtable : Bytes) -> Bytes {
 }
 
 ///|
-fn build_cmap_format12(start : UInt, end : UInt, start_gid : UInt) -> Bytes {
+fn build_cmap_format12(
+  start : UInt32,
+  end : UInt32,
+  start_gid : UInt32,
+) -> Bytes {
   let bytes : Array[Byte] = []
   push_u16(bytes, 12)
   push_u16(bytes, 0)
@@ -130,7 +134,11 @@ fn build_cmap_format12(start : UInt, end : UInt, start_gid : UInt) -> Bytes {
 }
 
 ///|
-fn build_cmap_format4_simple(start : Int, end : Int, start_gid : Int) -> Bytes {
+fn build_cmap_format4_simple(
+  start : Int32,
+  end : Int32,
+  start_gid : Int32,
+) -> Bytes {
   let seg_count = 2
   let length = 16 + 8 * seg_count
   let id_delta = start_gid - start
@@ -181,7 +189,7 @@ test "face references sfnt table" {
   let tag = @common.Tag::from_chars('n', 'a', 'm', 'e')
   let table_bytes : Bytes = [0x0a, 0x0b]
   let sfnt_bytes = build_sfnt_with_table(tag, table_bytes)
-  let face = Face::from_bytes(sfnt_bytes)
+  let face = @face.Face::from_bytes(sfnt_bytes)
   let table = match face.reference_table(tag) {
     Err(err) => fail("missing table: \{@debug.to_string(err)}")
     Ok(value) => value
@@ -195,8 +203,8 @@ test "face references ttc tables by index" {
   let font0 = build_sfnt_with_table(tag, [0x0a])
   let font1 = build_sfnt_with_table(tag, [0x0b, 0x0c])
   let ttc = build_ttc([font0, font1])
-  let face0 = Face::from_bytes(ttc, index=0)
-  let face1 = Face::from_bytes(ttc, index=1)
+  let face0 = @face.Face::from_bytes(ttc, index=0)
+  let face1 = @face.Face::from_bytes(ttc, index=1)
   let table0 = match face0.reference_table(tag) {
     Err(err) => fail("missing table: \{@debug.to_string(err)}")
     Ok(value) => value
@@ -215,7 +223,7 @@ test "face set_index resets cached tables" {
   let font0 = build_sfnt_with_table(tag, [0x01])
   let font1 = build_sfnt_with_table(tag, [0x02])
   let ttc = build_ttc([font0, font1])
-  let face = Face::from_bytes(ttc, index=0)
+  let face = @face.Face::from_bytes(ttc, index=0)
   let table0 = match face.reference_table(tag) {
     Err(err) => fail("missing table: \{@debug.to_string(err)}")
     Ok(value) => value
@@ -237,7 +245,7 @@ test "face table tags listing" {
     (@common.Tag::from_chars('g', 'a', 's', 'p'), []),
   ]
   let sfnt = build_sfnt_with_tables(tables)
-  let face = Face::from_bytes(sfnt)
+  let face = @face.Face::from_bytes(sfnt)
   let (total0, tags0) = match face.table_tags() {
     Err(err) => fail("table tags error: \{@debug.to_string(err)}")
     Ok(value) => value
@@ -282,7 +290,7 @@ test "face collect unicodes format12" {
   let sfnt = build_sfnt_with_tables([
     (@common.Tag::from_chars('c', 'm', 'a', 'p'), cmap),
   ])
-  let face = Face::from_bytes(sfnt)
+  let face = @face.Face::from_bytes(sfnt)
   let set = match face.collect_unicodes() {
     Err(err) => fail("collect unicodes error: \{@debug.to_string(err)}")
     Ok(value) => value
@@ -305,7 +313,7 @@ test "face collect unicodes format4" {
   let sfnt = build_sfnt_with_tables([
     (@common.Tag::from_chars('c', 'm', 'a', 'p'), cmap),
   ])
-  let face = Face::from_bytes(sfnt)
+  let face = @face.Face::from_bytes(sfnt)
   let set = match face.collect_unicodes() {
     Err(err) => fail("collect unicodes error: \{@debug.to_string(err)}")
     Ok(value) => value

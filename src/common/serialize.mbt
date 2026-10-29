@@ -31,19 +31,19 @@ pub(all) enum SerializeWhence {
 
 ///|
 pub(all) struct SerializeLink {
-  width : Int
-  position : Int
-  objidx : Int
+  width : Int32
+  position : Int32
+  objidx : Int32
   is_signed : Bool
   whence : SerializeWhence
-  bias : Int
+  bias : Int32
 }
 
 ///|
 pub struct SerializeObject {
   data : Bytes
   real_links : Array[SerializeLink]
-  virtual_links : Array[Int]
+  virtual_links : Array[Int32]
 }
 
 ///|
@@ -53,18 +53,18 @@ pub fn SerializeObject::new(data : Bytes) -> SerializeObject {
 
 ///|
 pub fn SerializeLink::new(
-  width : Int,
-  position : Int,
-  objidx : Int,
-  is_signed? : Bool = false,
-  whence? : SerializeWhence = Head,
-  bias? : Int = 0,
+  width : Int32,
+  position : Int32,
+  objidx : Int32,
+  is_signed~ : Bool = false,
+  whence~ : SerializeWhence = Head,
+  bias~ : Int32 = 0,
 ) -> SerializeLink {
   { width, position, objidx, is_signed, whence, bias, }
 }
 
 ///|
-fn max_value_for_width(width : Int) -> UInt? {
+fn max_value_for_width(width : Int32) -> UInt32? {
   if width == 1 {
     Some(0xFFU)
   } else if width == 2 {
@@ -81,9 +81,9 @@ fn max_value_for_width(width : Int) -> UInt? {
 ///|
 fn write_offset(
   data : Array[Byte],
-  position : Int,
-  width : Int,
-  value : UInt,
+  position : Int32,
+  width : Int32,
+  value : UInt32,
 ) -> Result[Unit, SerializeError] {
   let max_value = match max_value_for_width(width) {
     None => return Err(InvalidWidth)
@@ -104,7 +104,7 @@ fn write_offset(
 }
 
 ///|
-fn signed_limits(width : Int) -> (Int, Int)? {
+fn signed_limits(width : Int32) -> (Int32, Int32)? {
   if width <= 0 {
     return None
   }
@@ -118,9 +118,9 @@ fn signed_limits(width : Int) -> (Int, Int)? {
 /// Serialize objects into a contiguous buffer, patching offsets for real links.
 fn serialize_objects_with_starts(
   objects : ArrayView[SerializeObject],
-) -> Result[(Bytes, Array[Int]), SerializeError] {
+) -> Result[(Bytes, Array[Int32]), SerializeError] {
   let count = objects.length()
-  let starts : Array[Int] = []
+  let starts : Array[Int32] = []
   let mut total = 0
   for obj in objects {
     starts.push(total)
@@ -216,17 +216,17 @@ pub fn serialize_objects(
 /// Serialize objects and return their start offsets in the original order.
 pub fn serialize_objects_with_offsets(
   objects : ArrayView[SerializeObject],
-) -> Result[(Bytes, Array[Int]), SerializeError] {
+) -> Result[(Bytes, Array[Int32]), SerializeError] {
   serialize_objects_with_starts(objects)
 }
 
 ///|
 fn order_objects(
   objects : ArrayView[SerializeObject],
-) -> Result[Array[Int], SerializeError] {
+) -> Result[Array[Int32], SerializeError] {
   let count = objects.length()
-  let edges : Array[Array[Int]] = []
-  let indegree : Array[Int] = Array::make(count, 0)
+  let edges : Array[Array[Int32]] = []
+  let indegree : Array[Int32] = Array::make(count, 0)
   for _ in 0..<count {
     edges.push([])
   }
@@ -248,13 +248,13 @@ fn order_objects(
       }
     }
   }
-  let queue : Array[Int] = []
+  let queue : Array[Int32] = []
   for i in 0..<count {
     if indegree[i] == 0 {
       queue.push(i)
     }
   }
-  let order : Array[Int] = []
+  let order : Array[Int32] = []
   let mut index = 0
   while index < queue.length() {
     let node = queue[index]
@@ -277,17 +277,17 @@ fn order_objects(
 /// Compute a packed order that satisfies virtual links.
 pub fn pack_object_order(
   objects : ArrayView[SerializeObject],
-) -> Result[Array[Int], SerializeError] {
+) -> Result[Array[Int32], SerializeError] {
   order_objects(objects)
 }
 
 ///|
 fn remap_objects(
   objects : ArrayView[SerializeObject],
-  order : ArrayView[Int],
+  order : ArrayView[Int32],
 ) -> Result[Array[SerializeObject], SerializeError] {
   let count = objects.length()
-  let new_index : Array[Int] = Array::make(count, -1)
+  let new_index : Array[Int32] = Array::make(count, -1)
   for i in 0..<order.length() {
     let old_idx = order[i]
     if old_idx < 0 || old_idx >= count {
@@ -336,7 +336,7 @@ fn remap_objects(
 /// Serialize objects in a provided order.
 pub fn serialize_objects_in_order(
   objects : ArrayView[SerializeObject],
-  order : ArrayView[Int],
+  order : ArrayView[Int32],
 ) -> Result[Bytes, SerializeError] {
   let remapped = match remap_objects(objects, order) {
     Ok(value) => value
@@ -365,7 +365,7 @@ pub fn serialize_objects_packed(
 /// Serialize objects after packing them to satisfy virtual link ordering, returning the order.
 pub fn serialize_objects_packed_with_order(
   objects : ArrayView[SerializeObject],
-) -> Result[(Bytes, Array[Int]), SerializeError] {
+) -> Result[(Bytes, Array[Int32]), SerializeError] {
   let order = match order_objects(objects) {
     Ok(value) => value
     Err(err) => return Err(err)

@@ -13,7 +13,7 @@
 // limitations under the License.
 
 ///|
-fn push_u32_varc(bytes : Array[Byte], value : Int) -> Unit {
+fn push_u32_varc(bytes : Array[Byte], value : Int32) -> Unit {
   bytes.push(((value >> 24) & 0xff).to_byte())
   bytes.push(((value >> 16) & 0xff).to_byte())
   bytes.push(((value >> 8) & 0xff).to_byte())
@@ -21,13 +21,13 @@ fn push_u32_varc(bytes : Array[Byte], value : Int) -> Unit {
 }
 
 ///|
-fn push_u16_varc(bytes : Array[Byte], value : Int) -> Unit {
+fn push_u16_varc(bytes : Array[Byte], value : Int32) -> Unit {
   bytes.push(((value >> 8) & 0xff).to_byte())
   bytes.push((value & 0xff).to_byte())
 }
 
 ///|
-fn push_i16_varc(bytes : Array[Byte], value : Int) -> Unit {
+fn push_i16_varc(bytes : Array[Byte], value : Int32) -> Unit {
   let adjusted = if value < 0 { value + 0x10000 } else { value }
   push_u16_varc(bytes, adjusted)
 }
@@ -100,7 +100,7 @@ fn build_varc_bytes_with_glyph_record() -> Bytes {
 
 ///|
 test "varc parse" {
-  let varc = match VarcTable::parse(build_varc_bytes()[:]) {
+  let varc = match @var.VarcTable::parse(build_varc_bytes()[:]) {
     Err(err) => fail("parse failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -112,7 +112,7 @@ test "varc parse" {
 
 ///|
 test "varc axis indices list" {
-  let varc = match VarcTable::parse(build_varc_bytes()[:]) {
+  let varc = match @var.VarcTable::parse(build_varc_bytes()[:]) {
     Err(err) => fail("parse failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -125,7 +125,7 @@ test "varc axis indices list" {
 
 ///|
 test "varc condition list" {
-  let varc = match VarcTable::parse(build_varc_bytes_with_condition()[:]) {
+  let varc = match @var.VarcTable::parse(build_varc_bytes_with_condition()[:]) {
     Err(err) => fail("parse failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
@@ -141,7 +141,8 @@ test "varc condition list" {
 
 ///|
 test "varc glyph record" {
-  let varc = match VarcTable::parse(build_varc_bytes_with_glyph_record()[:]) {
+  let varc = match
+    @var.VarcTable::parse(build_varc_bytes_with_glyph_record()[:]) {
     Err(err) => fail("parse failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }

@@ -6,64 +6,82 @@ import {
 }
 
 // Values
-pub let var_idx_none : UInt
+pub let var_idx_none : UInt32
 
 // Errors
 
 // Types and methods
 pub(all) struct Affine2x3 {
-  xx : Int
-  yx : Int
-  xy : Int
-  yy : Int
-  dx : Int
-  dy : Int
-  var_idx_base : UInt?
+  xx : Int32
+  yx : Int32
+  xy : Int32
+  yy : Int32
+  dx : Int32
+  dy : Int32
+  var_idx_base : UInt32?
 } derive(Eq, ToJson, @debug.Debug)
+pub fn Affine2x3::equal(Self, Self) -> Bool
+pub fn Affine2x3::not_equal(Self, Self) -> Bool
+pub fn Affine2x3::to_json(Self) -> Json
+pub fn Affine2x3::to_repr(Self) -> @debug.Repr
 
 pub struct Color {
-  r : Int
-  g : Int
-  b : Int
-  a : Int
+  r : Int32
+  g : Int32
+  b : Int32
+  a : Int32
 } derive(Eq, ToJson, @debug.Debug)
-pub fn Color::from_bgra(Int, Int, Int, Int) -> Self
+pub fn Color::equal(Self, Self) -> Bool
+pub fn Color::from_bgra(Int32, Int32, Int32, Int32) -> Self
+pub fn Color::not_equal(Self, Self) -> Bool
+pub fn Color::to_json(Self) -> Json
+pub fn Color::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ColorLine {
-  extend : Int
+  extend_mode : Int32
   stops : Array[ColorStop]
-} derive(Eq, ToJson, @debug.Debug)
+} derive(Eq, @debug.Debug)
+pub fn ColorLine::equal(Self, Self) -> Bool
+pub fn ColorLine::not_equal(Self, Self) -> Bool
+pub fn ColorLine::to_json(Self) -> Json
+pub fn ColorLine::to_repr(Self) -> @debug.Repr
+pub impl ToJson for ColorLine
 
 pub(all) struct ColorStop {
-  offset : Int
-  palette_index : Int
-  alpha : Int
-  var_idx_base : UInt?
+  offset : Int32
+  palette_index : Int32
+  alpha : Int32
+  var_idx_base : UInt32?
 } derive(Eq, ToJson, @debug.Debug)
+pub fn ColorStop::equal(Self, Self) -> Bool
+pub fn ColorStop::not_equal(Self, Self) -> Bool
+pub fn ColorStop::to_json(Self) -> Json
+pub fn ColorStop::to_repr(Self) -> @debug.Repr
 
 pub(all) enum Paint {
-  ColrLayers(Int, Int)
-  Solid(Int, Int, UInt?)
-  LinearGradient(ColorLine, Int, Int, Int, Int, Int, Int, UInt?)
-  RadialGradient(ColorLine, Int, Int, Int, Int, Int, Int, UInt?)
-  SweepGradient(ColorLine, Int, Int, Int, Int, UInt?)
-  Glyph(Int, Paint)
-  ColrGlyph(Int)
+  ColrLayers(Int32, Int32)
+  Solid(Int32, Int32, UInt32?)
+  LinearGradient(ColorLine, Int32, Int32, Int32, Int32, Int32, Int32, UInt32?)
+  RadialGradient(ColorLine, Int32, Int32, Int32, Int32, Int32, Int32, UInt32?)
+  SweepGradient(ColorLine, Int32, Int32, Int32, Int32, UInt32?)
+  Glyph(Int32, Paint)
+  ColrGlyph(Int32)
   Transform(Affine2x3, Paint)
-  Translate(Int, Int, UInt?, Paint)
-  Scale(Int, Int, UInt?, Paint)
-  ScaleAroundCenter(Int, Int, Int, Int, UInt?, Paint)
-  ScaleUniform(Int, UInt?, Paint)
-  ScaleUniformAroundCenter(Int, Int, Int, UInt?, Paint)
-  Rotate(Int, UInt?, Paint)
-  RotateAroundCenter(Int, Int, Int, UInt?, Paint)
-  Skew(Int, Int, UInt?, Paint)
-  SkewAroundCenter(Int, Int, Int, Int, UInt?, Paint)
-  Composite(Int, Paint, Paint)
+  Translate(Int32, Int32, UInt32?, Paint)
+  Scale(Int32, Int32, UInt32?, Paint)
+  ScaleAroundCenter(Int32, Int32, Int32, Int32, UInt32?, Paint)
+  ScaleUniform(Int32, UInt32?, Paint)
+  ScaleUniformAroundCenter(Int32, Int32, Int32, UInt32?, Paint)
+  Rotate(Int32, UInt32?, Paint)
+  RotateAroundCenter(Int32, Int32, Int32, UInt32?, Paint)
+  Skew(Int32, Int32, UInt32?, Paint)
+  SkewAroundCenter(Int32, Int32, Int32, Int32, UInt32?, Paint)
+  Composite(Int32, Paint, Paint)
 } derive(ToJson, @debug.Debug)
+pub fn Paint::to_json(Self) -> Json
+pub fn Paint::to_repr(Self) -> @debug.Repr
 
 // Type aliases
-pub type VarIdx = UInt
+pub type VarIdx = UInt32
 
 // Traits
-

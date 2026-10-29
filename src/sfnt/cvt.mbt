@@ -15,11 +15,11 @@
 ///|
 /// Control value table (cvt ) raw entries.
 pub struct CvtTable {
-  values : Array[Int]
+  values : Array[Int32]
 } derive(Debug, ToJson)
 
 ///|
-pub fn CvtTable::values(self : CvtTable) -> ArrayView[Int] {
+pub fn CvtTable::values(self : CvtTable) -> ArrayView[Int32] {
   self.values[:]
 }
 
@@ -30,7 +30,7 @@ pub fn CvtTable::parse(data : BytesView) -> Result[CvtTable, SfntError] {
     return Err(InvalidFormat)
   }
   let count = data.length() / 2
-  let values : Array[Int] = []
+  let values : Array[Int32] = []
   let mut pos = 0
   for _ in 0..<count {
     let value = read_i16(data, pos)

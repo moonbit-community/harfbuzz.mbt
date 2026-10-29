@@ -22,8 +22,8 @@ pub struct MetaRecord {
 ///|
 /// Parsed meta table.
 pub struct MetaTable {
-  version : Int
-  flags : Int
+  version : Int32
+  flags : Int32
   records : Array[MetaRecord]
 } derive(Debug, ToJson)
 

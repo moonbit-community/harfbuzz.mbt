@@ -12,140 +12,200 @@ pub suberror AatError {
   UnexpectedEof
   InvalidFormat
 } derive(Eq, ToJson, @debug.Debug)
+pub fn AatError::equal(Self, Self) -> Bool
+pub fn AatError::not_equal(Self, Self) -> Bool
+pub fn AatError::to_json(Self) -> Json
+pub fn AatError::to_repr(Self) -> @debug.Repr
 
 // Types and methods
 pub struct Anchor {
-  x : Int
-  y : Int
+  x : Int32
+  y : Int32
 } derive(Eq, ToJson, @debug.Debug)
+pub fn Anchor::equal(Self, Self) -> Bool
+pub fn Anchor::not_equal(Self, Self) -> Bool
+pub fn Anchor::to_json(Self) -> Json
+pub fn Anchor::to_repr(Self) -> @debug.Repr
 
 pub struct AnkrTable {
-  version : Int
+  version : Int32
   lookup : LookupTable
-  anchor_offset : Int
+  anchor_offset : Int32
   data : Bytes
 } derive(ToJson, @debug.Debug)
-pub fn AnkrTable::get_anchor(Self, UInt, Int) -> Anchor?
+pub fn AnkrTable::get_anchor(Self, UInt32, Int32) -> Anchor?
 pub fn AnkrTable::has_data(Self) -> Bool
-pub fn AnkrTable::parse(BytesView, Int) -> Result[Self, AatError]
+pub fn AnkrTable::parse(BytesView, Int32) -> Result[Self, AatError]
+pub fn AnkrTable::to_json(Self) -> Json
+pub fn AnkrTable::to_repr(Self) -> @debug.Repr
 
 pub enum BslnData {
-  Format0(Array[Int])
-  Format1(Array[Int], LookupTable)
-  Format2(Int, Array[Int])
-  Format3(Int, Array[Int], LookupTable)
+  Format0(Array[Int32])
+  Format1(Array[Int32], LookupTable)
+  Format2(Int32, Array[Int32])
+  Format3(Int32, Array[Int32], LookupTable)
 } derive(ToJson, @debug.Debug)
+pub fn BslnData::to_json(Self) -> Json
+pub fn BslnData::to_repr(Self) -> @debug.Repr
 
 pub struct BslnTable {
-  version : Int
-  format : Int
-  default_baseline : Int
+  version : Int32
+  format : Int32
+  default_baseline : Int32
   data : BslnData
 } derive(ToJson, @debug.Debug)
 pub fn BslnTable::has_data(Self) -> Bool
-pub fn BslnTable::parse(BytesView, Int) -> Result[Self, AatError]
+pub fn BslnTable::parse(BytesView, Int32) -> Result[Self, AatError]
+pub fn BslnTable::to_json(Self) -> Json
+pub fn BslnTable::to_repr(Self) -> @debug.Repr
 
 pub(all) enum ClassTable {
   Lookup(LookupTable)
-  Array(UInt, Array[Int])
+  Array(UInt32, Array[Int32])
 } derive(Eq, ToJson, @debug.Debug)
+pub fn ClassTable::equal(Self, Self) -> Bool
+pub fn ClassTable::not_equal(Self, Self) -> Bool
+pub fn ClassTable::to_json(Self) -> Json
+pub fn ClassTable::to_repr(Self) -> @debug.Repr
 
 pub(all) enum ContextualSubstitutions {
   Lookups(Array[LookupTable])
-  Values(Int, Array[UInt])
+  Values(Int32, Array[UInt32])
 } derive(Eq, ToJson, @debug.Debug)
+pub fn ContextualSubstitutions::equal(Self, Self) -> Bool
+pub fn ContextualSubstitutions::not_equal(Self, Self) -> Bool
+pub fn ContextualSubstitutions::to_json(Self) -> Json
+pub fn ContextualSubstitutions::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ContextualSubtable {
-  coverage_flags : Int
-  sub_feature_flags : UInt
+  coverage_flags : Int32
+  sub_feature_flags : UInt32
   table : StateTable
   substitutions : ContextualSubstitutions
 } derive(Eq, ToJson, @debug.Debug)
+pub fn ContextualSubtable::equal(Self, Self) -> Bool
+pub fn ContextualSubtable::not_equal(Self, Self) -> Bool
+pub fn ContextualSubtable::to_json(Self) -> Json
+pub fn ContextualSubtable::to_repr(Self) -> @debug.Repr
 
 pub struct FeatFeatureName {
-  feature : Int
-  name_id : Int
-  flags : Int
+  feature : Int32
+  name_id : Int32
+  flags : Int32
   settings : Array[FeatSettingName]
 } derive(Eq, ToJson, @debug.Debug)
 pub fn FeatFeatureName::default_setting(Self) -> FeatSettingName?
-pub fn FeatFeatureName::default_setting_index(Self) -> Int?
+pub fn FeatFeatureName::default_setting_index(Self) -> Int32?
+pub fn FeatFeatureName::equal(Self, Self) -> Bool
 pub fn FeatFeatureName::is_exclusive(Self) -> Bool
+pub fn FeatFeatureName::not_equal(Self, Self) -> Bool
+pub fn FeatFeatureName::to_json(Self) -> Json
+pub fn FeatFeatureName::to_repr(Self) -> @debug.Repr
 
 pub struct FeatSettingName {
-  setting : Int
-  name_id : Int
+  setting : Int32
+  name_id : Int32
 } derive(Eq, ToJson, @debug.Debug)
+pub fn FeatSettingName::equal(Self, Self) -> Bool
+pub fn FeatSettingName::not_equal(Self, Self) -> Bool
+pub fn FeatSettingName::to_json(Self) -> Json
+pub fn FeatSettingName::to_repr(Self) -> @debug.Repr
 
 pub struct FeatTable {
-  version : Int
+  version : Int32
   features : Array[FeatFeatureName]
 } derive(ToJson, @debug.Debug)
-pub fn FeatTable::feature(Self, Int) -> FeatFeatureName?
-pub fn FeatTable::feature_types(Self) -> Array[Int]
+pub fn FeatTable::feature(Self, Int32) -> FeatFeatureName?
+pub fn FeatTable::feature_types(Self) -> Array[Int32]
 pub fn FeatTable::has_data(Self) -> Bool
 pub fn FeatTable::parse(BytesView) -> Result[Self, AatError]
+pub fn FeatTable::to_json(Self) -> Json
+pub fn FeatTable::to_repr(Self) -> @debug.Repr
 
 pub(all) struct InsertionSubtable {
-  coverage_flags : Int
-  sub_feature_flags : UInt
+  coverage_flags : Int32
+  sub_feature_flags : UInt32
   table : StateTable
-  insertion_action : Array[UInt]
+  insertion_action : Array[UInt32]
 } derive(Eq, ToJson, @debug.Debug)
+pub fn InsertionSubtable::equal(Self, Self) -> Bool
+pub fn InsertionSubtable::not_equal(Self, Self) -> Bool
+pub fn InsertionSubtable::to_json(Self) -> Json
+pub fn InsertionSubtable::to_repr(Self) -> @debug.Repr
 
 pub struct JustTable {
-  version : Int
-  format : Int
+  version : Int32
+  format : Int32
   horiz : JustificationHeader?
   vert : JustificationHeader?
 } derive(ToJson, @debug.Debug)
 pub fn JustTable::has_data(Self) -> Bool
-pub fn JustTable::parse(BytesView, Int) -> Result[Self, AatError]
+pub fn JustTable::parse(BytesView, Int32) -> Result[Self, AatError]
+pub fn JustTable::to_json(Self) -> Json
+pub fn JustTable::to_repr(Self) -> @debug.Repr
 
 pub struct JustificationHeader {
-  class_table_offset : Int
-  wdc_table_offset : Int
-  pc_table_offset : Int
+  class_table_offset : Int32
+  wdc_table_offset : Int32
+  pc_table_offset : Int32
   lookup : LookupTable?
 } derive(ToJson, @debug.Debug)
+pub fn JustificationHeader::to_json(Self) -> Json
+pub fn JustificationHeader::to_repr(Self) -> @debug.Repr
 
 pub struct KerxAdjustment {
-  x_advance : Int
-  y_advance : Int
-  x_offset : Int
-  y_offset : Int
+  x_advance : Int32
+  y_advance : Int32
+  x_offset : Int32
+  y_offset : Int32
 } derive(Eq, ToJson, @debug.Debug)
+pub fn KerxAdjustment::equal(Self, Self) -> Bool
+pub fn KerxAdjustment::not_equal(Self, Self) -> Bool
+pub fn KerxAdjustment::to_json(Self) -> Json
+pub fn KerxAdjustment::to_repr(Self) -> @debug.Repr
 
 pub struct KerxFormat1 {
   table : StateTable
-  actions : Array[Int]
+  actions : Array[Int32]
 } derive(ToJson, @debug.Debug)
+pub fn KerxFormat1::to_json(Self) -> Json
+pub fn KerxFormat1::to_repr(Self) -> @debug.Repr
 
 pub struct KerxFormat2 {
-  row_width : Int
+  row_width : Int32
   left : LookupTable
   right : LookupTable
-  values : Array[Int]
+  values : Array[Int32]
 } derive(ToJson, @debug.Debug)
+pub fn KerxFormat2::to_json(Self) -> Json
+pub fn KerxFormat2::to_repr(Self) -> @debug.Repr
 
 pub struct KerxFormat4 {
   table : StateTable
-  flags : UInt
-  actions : Array[Int]
+  flags : UInt32
+  actions : Array[Int32]
 } derive(ToJson, @debug.Debug)
+pub fn KerxFormat4::to_json(Self) -> Json
+pub fn KerxFormat4::to_repr(Self) -> @debug.Repr
 
 pub struct KerxFormat6 {
   row_index : LookupTable
   column_index : LookupTable
-  values : Array[Int]
+  values : Array[Int32]
   long_values : Bool
 } derive(ToJson, @debug.Debug)
+pub fn KerxFormat6::to_json(Self) -> Json
+pub fn KerxFormat6::to_repr(Self) -> @debug.Repr
 
 pub struct KerxPair {
-  left : UInt
-  right : UInt
-  value : Int
+  left : UInt32
+  right : UInt32
+  value : Int32
 } derive(Eq, ToJson, @debug.Debug)
+pub fn KerxPair::equal(Self, Self) -> Bool
+pub fn KerxPair::not_equal(Self, Self) -> Bool
+pub fn KerxPair::to_json(Self) -> Json
+pub fn KerxPair::to_repr(Self) -> @debug.Repr
 
 pub enum KerxSubtable {
   Format0(KerxSubtableHeader, Array[KerxPair])
@@ -154,75 +214,109 @@ pub enum KerxSubtable {
   Format4(KerxSubtableHeader, KerxFormat4)
   Format6(KerxSubtableHeader, KerxFormat6)
 } derive(ToJson, @debug.Debug)
+pub fn KerxSubtable::to_json(Self) -> Json
+pub fn KerxSubtable::to_repr(Self) -> @debug.Repr
 
 pub struct KerxSubtableHeader {
-  coverage : UInt
-  tuple_count : Int
+  coverage : UInt32
+  tuple_count : Int32
 } derive(Eq, ToJson, @debug.Debug)
+pub fn KerxSubtableHeader::equal(Self, Self) -> Bool
+pub fn KerxSubtableHeader::not_equal(Self, Self) -> Bool
+pub fn KerxSubtableHeader::to_json(Self) -> Json
+pub fn KerxSubtableHeader::to_repr(Self) -> @debug.Repr
 
 pub struct KerxTable {
-  version : Int
+  version : Int32
   subtables : Array[KerxSubtable]
 } derive(ToJson, @debug.Debug)
-pub fn KerxTable::apply_scaled(Self, Array[UInt], Bool, Int, Int, Int, AnkrTable?, contour_point? : (UInt, Int) -> (Int, Int)?) -> Array[KerxAdjustment]
+pub fn KerxTable::apply_scaled(Self, Array[UInt32], Bool, Int32, Int32, Int32, AnkrTable?, contour_point? : (UInt32, Int32) -> (Int32, Int32)?) -> Array[KerxAdjustment]
 pub fn KerxTable::has_data(Self) -> Bool
-pub fn KerxTable::kern_value(Self, UInt, UInt, Bool) -> Int
-pub fn KerxTable::parse(BytesView, Int) -> Result[Self, AatError]
+pub fn KerxTable::kern_value(Self, UInt32, UInt32, Bool) -> Int32
+pub fn KerxTable::parse(BytesView, Int32) -> Result[Self, AatError]
+pub fn KerxTable::to_json(Self) -> Json
+pub fn KerxTable::to_repr(Self) -> @debug.Repr
 
 pub(all) struct LigatureSubtable {
-  coverage_flags : Int
-  sub_feature_flags : UInt
+  coverage_flags : Int32
+  sub_feature_flags : UInt32
   table : StateTable
-  lig_actions : Array[UInt]
-  components : Array[UInt]
-  ligatures : Array[UInt]
-  lig_action_offset : Int
-  component_offset_words : Int
-  ligature_offset : Int
+  lig_actions : Array[UInt32]
+  components : Array[UInt32]
+  ligatures : Array[UInt32]
+  lig_action_offset : Int32
+  component_offset_words : Int32
+  ligature_offset : Int32
 } derive(Eq, ToJson, @debug.Debug)
+pub fn LigatureSubtable::equal(Self, Self) -> Bool
+pub fn LigatureSubtable::not_equal(Self, Self) -> Bool
+pub fn LigatureSubtable::to_json(Self) -> Json
+pub fn LigatureSubtable::to_repr(Self) -> @debug.Repr
 
 pub(all) struct LookupSegmentArray {
-  first : UInt
-  last : UInt
-  values : Array[UInt]
+  first : UInt32
+  last : UInt32
+  values : Array[UInt32]
 } derive(Eq, ToJson, @debug.Debug)
+pub fn LookupSegmentArray::equal(Self, Self) -> Bool
+pub fn LookupSegmentArray::not_equal(Self, Self) -> Bool
+pub fn LookupSegmentArray::to_json(Self) -> Json
+pub fn LookupSegmentArray::to_repr(Self) -> @debug.Repr
 
 pub(all) struct LookupSegmentSingle {
-  first : UInt
-  last : UInt
-  value : UInt
+  first : UInt32
+  last : UInt32
+  value : UInt32
 } derive(Eq, ToJson, @debug.Debug)
+pub fn LookupSegmentSingle::equal(Self, Self) -> Bool
+pub fn LookupSegmentSingle::not_equal(Self, Self) -> Bool
+pub fn LookupSegmentSingle::to_json(Self) -> Json
+pub fn LookupSegmentSingle::to_repr(Self) -> @debug.Repr
 
 pub(all) struct LookupSingle {
-  glyph : UInt
-  value : UInt
+  glyph : UInt32
+  value : UInt32
 } derive(Eq, ToJson, @debug.Debug)
+pub fn LookupSingle::equal(Self, Self) -> Bool
+pub fn LookupSingle::not_equal(Self, Self) -> Bool
+pub fn LookupSingle::to_json(Self) -> Json
+pub fn LookupSingle::to_repr(Self) -> @debug.Repr
 
 pub(all) enum LookupTable {
-  Format0(Array[UInt])
+  Format0(Array[UInt32])
   Format2(Array[LookupSegmentSingle])
   Format4(Array[LookupSegmentArray])
   Format6(Array[LookupSingle])
-  Format8(UInt, Array[UInt])
-  Format10(Int, UInt, Array[UInt])
+  Format8(UInt32, Array[UInt32])
+  Format10(Int32, UInt32, Array[UInt32])
 } derive(Eq, ToJson, @debug.Debug)
+pub fn LookupTable::equal(Self, Self) -> Bool
+pub fn LookupTable::not_equal(Self, Self) -> Bool
+pub fn LookupTable::to_json(Self) -> Json
+pub fn LookupTable::to_repr(Self) -> @debug.Repr
 
 pub struct LtagTable {
-  version : Int
-  flags : Int
+  version : Int32
+  flags : Int32
   tags : Array[Bytes]
 } derive(ToJson, @debug.Debug)
 pub fn LtagTable::has_data(Self) -> Bool
 pub fn LtagTable::parse(BytesView) -> Result[Self, AatError]
 pub fn LtagTable::tags(Self) -> ArrayView[Bytes]
+pub fn LtagTable::to_json(Self) -> Json
+pub fn LtagTable::to_repr(Self) -> @debug.Repr
 
 pub struct MortTable {
-  version : Int
+  version : Int32
   subtables : Array[MorxSubtable]
 } derive(Eq, ToJson, @debug.Debug)
-pub fn MortTable::apply(Self, Array[UInt], Array[Int], Bool) -> Bool
+pub fn MortTable::apply(Self, Array[UInt32], Array[Int32], Bool) -> Bool
+pub fn MortTable::equal(Self, Self) -> Bool
 pub fn MortTable::has_data(Self) -> Bool
-pub fn MortTable::parse(BytesView, Int) -> Result[Self, AatError]
+pub fn MortTable::not_equal(Self, Self) -> Bool
+pub fn MortTable::parse(BytesView, Int32) -> Result[Self, AatError]
+pub fn MortTable::to_json(Self) -> Json
+pub fn MortTable::to_repr(Self) -> @debug.Repr
 
 pub(all) enum MorxSubtable {
   Noncontextual(NoncontextualSubtable)
@@ -231,82 +325,123 @@ pub(all) enum MorxSubtable {
   Ligature(LigatureSubtable)
   Insertion(InsertionSubtable)
 } derive(Eq, ToJson, @debug.Debug)
+pub fn MorxSubtable::equal(Self, Self) -> Bool
+pub fn MorxSubtable::not_equal(Self, Self) -> Bool
+pub fn MorxSubtable::to_json(Self) -> Json
+pub fn MorxSubtable::to_repr(Self) -> @debug.Repr
 
 pub struct MorxTable {
-  version : Int
+  version : Int32
   subtables : Array[MorxSubtable]
 } derive(Eq, ToJson, @debug.Debug)
-pub fn MorxTable::apply(Self, Array[UInt], Array[Int], Bool) -> Bool
+pub fn MorxTable::apply(Self, Array[UInt32], Array[Int32], Bool) -> Bool
+pub fn MorxTable::equal(Self, Self) -> Bool
 pub fn MorxTable::has_data(Self) -> Bool
-pub fn MorxTable::parse(BytesView, Int) -> Result[Self, AatError]
+pub fn MorxTable::not_equal(Self, Self) -> Bool
+pub fn MorxTable::parse(BytesView, Int32) -> Result[Self, AatError]
+pub fn MorxTable::to_json(Self) -> Json
+pub fn MorxTable::to_repr(Self) -> @debug.Repr
 
 pub(all) struct NoncontextualSubtable {
-  coverage_flags : Int
-  sub_feature_flags : UInt
+  coverage_flags : Int32
+  sub_feature_flags : UInt32
   lookup : LookupTable
 } derive(Eq, ToJson, @debug.Debug)
+pub fn NoncontextualSubtable::equal(Self, Self) -> Bool
+pub fn NoncontextualSubtable::not_equal(Self, Self) -> Bool
+pub fn NoncontextualSubtable::to_json(Self) -> Json
+pub fn NoncontextualSubtable::to_repr(Self) -> @debug.Repr
 
 pub struct OpbdTable {
-  version : Int
-  format : Int
+  version : Int32
+  format : Int32
   lookup : LookupTable
   data : BytesView
 } derive(ToJson, @debug.Debug)
-pub fn OpbdTable::bounds(Self, UInt, contour_point? : (UInt, Int) -> (Int, Int)?) -> Result[OpticalBounds?, AatError]
+pub fn OpbdTable::bounds(Self, UInt32, contour_point? : (UInt32, Int32) -> (Int32, Int32)?) -> Result[OpticalBounds?, AatError]
 pub fn OpbdTable::has_data(Self) -> Bool
-pub fn OpbdTable::parse(BytesView, Int) -> Result[Self, AatError]
+pub fn OpbdTable::parse(BytesView, Int32) -> Result[Self, AatError]
+pub fn OpbdTable::to_json(Self) -> Json
+pub fn OpbdTable::to_repr(Self) -> @debug.Repr
 
 pub struct OpticalBounds {
-  left : Int
-  top : Int
-  right : Int
-  bottom : Int
+  left : Int32
+  top : Int32
+  right : Int32
+  bottom : Int32
 } derive(Eq, ToJson, @debug.Debug)
+pub fn OpticalBounds::equal(Self, Self) -> Bool
+pub fn OpticalBounds::not_equal(Self, Self) -> Bool
+pub fn OpticalBounds::to_json(Self) -> Json
+pub fn OpticalBounds::to_repr(Self) -> @debug.Repr
 
 pub(all) struct RearrangementSubtable {
-  coverage_flags : Int
-  sub_feature_flags : UInt
+  coverage_flags : Int32
+  sub_feature_flags : UInt32
   table : StateTable
 } derive(Eq, ToJson, @debug.Debug)
+pub fn RearrangementSubtable::equal(Self, Self) -> Bool
+pub fn RearrangementSubtable::not_equal(Self, Self) -> Bool
+pub fn RearrangementSubtable::to_json(Self) -> Json
+pub fn RearrangementSubtable::to_repr(Self) -> @debug.Repr
 
 pub(all) struct StateEntry {
-  new_state : Int
-  flags : Int
-  data1 : Int
-  data2 : Int
+  new_state : Int32
+  flags : Int32
+  data1 : Int32
+  data2 : Int32
 } derive(Eq, ToJson, @debug.Debug)
+pub fn StateEntry::equal(Self, Self) -> Bool
+pub fn StateEntry::not_equal(Self, Self) -> Bool
+pub fn StateEntry::to_json(Self) -> Json
+pub fn StateEntry::to_repr(Self) -> @debug.Repr
 
 pub(all) struct StateTable {
-  n_classes : Int
+  n_classes : Int32
   class_table : ClassTable
-  state_array : Array[Int]
+  state_array : Array[Int32]
   entries : Array[StateEntry]
-  state_array_offset : Int
+  state_array_offset : Int32
   extended : Bool
 } derive(Eq, ToJson, @debug.Debug)
+pub fn StateTable::equal(Self, Self) -> Bool
+pub fn StateTable::not_equal(Self, Self) -> Bool
+pub fn StateTable::to_json(Self) -> Json
+pub fn StateTable::to_repr(Self) -> @debug.Repr
 
 pub(all) struct TrackData {
   track_table : Array[TrackTableEntry]
-  size_table : Array[Int]
+  size_table : Array[Int32]
 } derive(Eq, ToJson, @debug.Debug)
+pub fn TrackData::equal(Self, Self) -> Bool
+pub fn TrackData::not_equal(Self, Self) -> Bool
+pub fn TrackData::to_json(Self) -> Json
+pub fn TrackData::to_repr(Self) -> @debug.Repr
 
 pub(all) struct TrackTableEntry {
-  track : Int
-  name_id : Int
-  values : Array[Int]
+  track : Int32
+  name_id : Int32
+  values : Array[Int32]
 } derive(Eq, ToJson, @debug.Debug)
+pub fn TrackTableEntry::equal(Self, Self) -> Bool
+pub fn TrackTableEntry::not_equal(Self, Self) -> Bool
+pub fn TrackTableEntry::to_json(Self) -> Json
+pub fn TrackTableEntry::to_repr(Self) -> @debug.Repr
 
 pub struct TrakTable {
-  version : Int
-  format : Int
+  version : Int32
+  format : Int32
   horiz : TrackData?
   vert : TrackData?
 } derive(Eq, ToJson, @debug.Debug)
+pub fn TrakTable::equal(Self, Self) -> Bool
 pub fn TrakTable::has_data(Self) -> Bool
+pub fn TrakTable::not_equal(Self, Self) -> Bool
 pub fn TrakTable::parse(BytesView) -> Result[Self, AatError]
+pub fn TrakTable::to_json(Self) -> Json
+pub fn TrakTable::to_repr(Self) -> @debug.Repr
 pub fn TrakTable::tracking(Self, Double, Bool, track? : Double) -> Double
 
 // Type aliases
 
 // Traits
-

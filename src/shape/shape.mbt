@@ -25,11 +25,11 @@ pub fn available_shapers() -> Array[String] {
 }
 
 ///|
-let shape_plan_cache : Map[String, ShapePlan] = {}
+let shape_plan_cache : Map[String, ShapePlan] = Map([])
 
 ///|
 fn shape_plan_key(buffer : @buffer.Buffer, shapers : Array[String]) -> String {
-  let sb = StringBuilder::new()
+  let sb = StringBuilder()
   sb.write_view(shapers.join(","))
   sb.write_char('|')
   sb.write_view(buffer.get_direction().to_string())
@@ -56,7 +56,7 @@ pub struct ShapePlan {
 /// Build a shape plan from buffer properties.
 pub fn ShapePlan::from_buffer(
   buffer : @buffer.Buffer,
-  shapers? : Array[String] = [],
+  shapers~ : Array[String] = [],
 ) -> ShapePlan {
   let names = if shapers.is_empty() { default_shapers() } else { shapers }
   let mut selected = "fallback"
@@ -94,7 +94,7 @@ pub fn ShapePlan::shape(
 pub fn shape(
   font : @font.Font,
   buffer : @buffer.Buffer,
-  shapers? : Array[String] = [],
+  shapers~ : Array[String] = [],
 ) -> Result[Unit, @buffer.ShapeError] {
   buffer.guess_segment_properties()
   let names = if shapers.is_empty() { default_shapers() } else { shapers }

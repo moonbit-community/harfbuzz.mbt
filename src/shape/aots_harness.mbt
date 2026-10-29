@@ -15,9 +15,9 @@
 ///|
 pub struct AotsTestCase {
   font : String
-  input : Array[UInt]
+  input : Array[UInt32]
   expected : String
-  feature_values : Array[Int]
+  feature_values : Array[Int32]
   no_positions : Bool
   no_advances : Bool
 } derive(Debug, ToJson)

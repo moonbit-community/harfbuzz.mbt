@@ -15,19 +15,19 @@
 ///|
 /// Public version string for the module.
 /// This is a placeholder while the port is bootstrapped.
-pub let version_major : Int = 0
+pub let version_major : Int32 = 0
 
 ///|
-pub let version_minor : Int = 0
+pub let version_minor : Int32 = 0
 
 ///|
-pub let version_micro : Int = 0
+pub let version_micro : Int32 = 0
 
 ///|
 pub let version : String = "\{version_major}.\{version_minor}.\{version_micro}"
 
 ///|
-pub fn version_tuple() -> (Int, Int, Int) {
+pub fn version_tuple() -> (Int32, Int32, Int32) {
   (version_major, version_minor, version_micro)
 }
 
@@ -37,7 +37,7 @@ pub fn version_string() -> String {
 }
 
 ///|
-pub fn version_atleast(major : Int, minor : Int, micro : Int) -> Bool {
+pub fn version_atleast(major : Int32, minor : Int32, micro : Int32) -> Bool {
   if version_major > major {
     true
   } else if version_major < major {

@@ -13,13 +13,13 @@
 // limitations under the License.
 
 ///|
-fn push_u16_hvar(bytes : Array[Byte], value : Int) -> Unit {
+fn push_u16_hvar(bytes : Array[Byte], value : Int32) -> Unit {
   bytes.push(((value >> 8) & 0xff).to_byte())
   bytes.push((value & 0xff).to_byte())
 }
 
 ///|
-fn push_u32_hvar(bytes : Array[Byte], value : Int) -> Unit {
+fn push_u32_hvar(bytes : Array[Byte], value : Int32) -> Unit {
   bytes.push(((value >> 24) & 0xff).to_byte())
   bytes.push(((value >> 16) & 0xff).to_byte())
   bytes.push(((value >> 8) & 0xff).to_byte())
@@ -27,7 +27,7 @@ fn push_u32_hvar(bytes : Array[Byte], value : Int) -> Unit {
 }
 
 ///|
-fn push_i16_hvar(bytes : Array[Byte], value : Int) -> Unit {
+fn push_i16_hvar(bytes : Array[Byte], value : Int32) -> Unit {
   let adjusted = if value < 0 { value + 0x10000 } else { value }
   push_u16_hvar(bytes, adjusted)
 }
@@ -54,7 +54,7 @@ fn build_var_store_hvar() -> Bytes {
 }
 
 ///|
-fn build_delta_map_hvar(reverse? : Bool = false) -> Bytes {
+fn build_delta_map_hvar(reverse~ : Bool = false) -> Bytes {
   let bytes : Array[Byte] = []
   bytes.push(0) // format
   bytes.push(0x1F) // width=2, inner bits=16
@@ -102,11 +102,11 @@ fn build_hvar_bytes() -> Bytes {
 
 ///|
 test "hvar lsb rsb deltas" {
-  let hvar = match HvarTable::parse(build_hvar_bytes()) {
+  let hvar = match @var.HvarTable::parse(build_hvar_bytes()) {
     Err(err) => fail("parse failed: \{@debug.to_string(err)}")
     Ok(value) => value
   }
-  let coords : Array[Int] = [16384]
+  let coords : Array[Int32] = [16384]
   let lsb = hvar.lsb_delta(1U, coords).round().to_int()
   let rsb = hvar.rsb_delta(1U, coords).round().to_int()
   @debug.debug_inspect((lsb, rsb), content="(20, 10)")

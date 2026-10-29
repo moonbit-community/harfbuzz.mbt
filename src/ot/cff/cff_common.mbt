@@ -19,7 +19,7 @@ pub suberror CffError {
 } derive(Eq, Debug, ToJson)
 
 ///|
-fn read_u8_int(data : BytesView, offset : Int) -> Result[Int, CffError] {
+fn read_u8_int(data : BytesView, offset : Int32) -> Result[Int32, CffError] {
   if offset < 0 || offset + 1 > data.length() {
     return Err(UnexpectedEof)
   }
@@ -27,7 +27,7 @@ fn read_u8_int(data : BytesView, offset : Int) -> Result[Int, CffError] {
 }
 
 ///|
-fn read_u16_int(data : BytesView, offset : Int) -> Result[Int, CffError] {
+fn read_u16_int(data : BytesView, offset : Int32) -> Result[Int32, CffError] {
   if offset < 0 || offset + 2 > data.length() {
     return Err(UnexpectedEof)
   }
@@ -43,7 +43,7 @@ fn read_u16_int(data : BytesView, offset : Int) -> Result[Int, CffError] {
 }
 
 ///|
-fn read_u32_int(data : BytesView, offset : Int) -> Result[Int, CffError] {
+fn read_u32_int(data : BytesView, offset : Int32) -> Result[Int32, CffError] {
   if offset < 0 || offset + 4 > data.length() {
     return Err(UnexpectedEof)
   }
@@ -57,9 +57,9 @@ fn read_u32_int(data : BytesView, offset : Int) -> Result[Int, CffError] {
 ///|
 fn read_cff_offset(
   data : BytesView,
-  offset : Int,
-  size : Int,
-) -> Result[Int, CffError] {
+  offset : Int32,
+  size : Int32,
+) -> Result[Int32, CffError] {
   if size <= 0 || size > 4 {
     return Err(InvalidFormat)
   }

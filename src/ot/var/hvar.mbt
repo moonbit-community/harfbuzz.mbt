@@ -23,7 +23,7 @@ pub struct HvarTable {
 ///|
 fn parse_map_optional(
   data : BytesView,
-  offset : Int,
+  offset : Int32,
 ) -> Result[DeltaSetIndexMap?, VarError] {
   if offset == 0 {
     return Ok(None)
@@ -86,8 +86,8 @@ pub fn HvarTable::parse(data : BytesView) -> Result[HvarTable, VarError] {
 ///|
 pub fn HvarTable::advance_delta(
   self : HvarTable,
-  glyph : UInt,
-  coords : Array[Int],
+  glyph : UInt32,
+  coords : Array[Int32],
 ) -> Double {
   let var_idx = match self.adv_map {
     None => glyph
@@ -99,8 +99,8 @@ pub fn HvarTable::advance_delta(
 ///|
 pub fn HvarTable::lsb_delta(
   self : HvarTable,
-  glyph : UInt,
-  coords : Array[Int],
+  glyph : UInt32,
+  coords : Array[Int32],
 ) -> Double {
   let map = match self.lsb_map {
     None => return 0.0
@@ -113,8 +113,8 @@ pub fn HvarTable::lsb_delta(
 ///|
 pub fn HvarTable::rsb_delta(
   self : HvarTable,
-  glyph : UInt,
-  coords : Array[Int],
+  glyph : UInt32,
+  coords : Array[Int32],
 ) -> Double {
   let map = match self.rsb_map {
     None => return 0.0

@@ -47,8 +47,8 @@ pub fn Buffer::shape_hebrew(
       Err(err) => return Err(Font(err))
       Ok(value) => value
     }
-    let glyphs : Array[UInt] = []
-    let clusters : Array[Int] = []
+    let glyphs : Array[UInt32] = []
+    let clusters : Array[Int32] = []
     for info in self.infos {
       glyphs.push(info.codepoint)
       clusters.push(info.cluster)
