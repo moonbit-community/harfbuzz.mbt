@@ -31,7 +31,7 @@ license and preserved upstream notices.
 - JS SVG demo: `examples/js_svg`
 
 ```bash
-(cd examples/js_svg && moon build --target js)
+(cd examples/js_svg && moon build --target js --release)
 python3 -m http.server
 ```
 

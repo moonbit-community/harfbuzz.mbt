@@ -62,7 +62,8 @@ jobs:
       - name: Check JavaScript example
         working-directory: examples/js_svg
         run: |
-          moon build --target js
+          moon build --target js --release
+          node ../../scripts/check_demo.cjs
           moon fmt && git diff --exit-code
       - name: Check extracted package
         if: matrix.os == 'ubuntu-latest'

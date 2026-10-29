@@ -33,7 +33,7 @@ the concatenated upstream HarfBuzz notice texts.
 (Instructions currently mirrored from `src/README.mbt.md`)
 
 ```bash
-(cd examples/js_svg && moon build --target js)
+(cd examples/js_svg && moon build --target js --release)
 python3 -m http.server
 ```
 

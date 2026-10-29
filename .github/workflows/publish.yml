@@ -29,6 +29,7 @@ jobs:
           moon fmt
           git diff --exit-code
           python3 scripts/check_package.py
+          (cd examples/js_svg && moon build --target js --release && node ../../scripts/check_demo.cjs)
       - name: Publish
         env:
           MOONCAKES_TOKEN: ${{ secrets.MOONCAKES_MOONBIT_COMMUNITY_TOKEN }}
